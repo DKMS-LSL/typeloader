@@ -112,26 +112,26 @@ else
 fi
 
 echo "Configuring folders and copying source files for installation ..."
-mkdir -p /export2/typeloader/cgi-bin
-mv bootstrap /export2/typeloader
-cp -f html/* /export2/typeloader
-cp -f cgi/* /export2/typeloader/cgi-bin
-chmod +x /export2/typeloader/cgi-bin/*.cgi
-cp -f pysrc/* /export2/typeloader/cgi-bin
+mkdir -p /export/typeloader/cgi-bin
+mv bootstrap /export/typeloader
+cp -f html/* /export/typeloader
+cp -f cgi/* /export/typeloader/cgi-bin
+chmod +x /export/typeloader/cgi-bin/*.cgi
+cp -f pysrc/* /export/typeloader/cgi-bin
 echo "done."
 echo ""
 
 echo "Creating and configuring data input and output folders ..."
-mkdir -p /downloads2/bulk
-mkdir -p /downloads2/enabulk
-mkdir -p /downloads2/enafiles
-mkdir -p /downloads2/imgtbulk
-mkdir -p /downloads2/imgtfiles
-mkdir -p /downloads2/imgtinput
-mkdir -p /downloads2/imgtoutput
-mkdir -p /downloads2/xmlfiles
-chown -R www-data /downloads2
-chgrp -R www-data /downloads2
+mkdir -p /downloads/bulk
+mkdir -p /downloads/enabulk
+mkdir -p /downloads/enafiles
+mkdir -p /downloads/imgtbulk
+mkdir -p /downloads/imgtfiles
+mkdir -p /downloads/imgtinput
+mkdir -p /downloads/imgtoutput
+mkdir -p /downloads/xmlfiles
+chown -R www-data /downloads
+chgrp -R www-data /downloads
 echo "done."
 echo ""
 
