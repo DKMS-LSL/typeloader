@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DKMS New Allele Submitter</title>
+<link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap-theme.min.css">
+<script type="text/javascript" src="bootstrap/js/bootstrap.min.js"></script>
+
+</head>
+<body>
+    <nav id="myNavbar" class="navbar navbar-default navbar-inverse navbar-fixed-top" role="navigation">
+        
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbarCollapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">TypeLoader</a>
+            </div>
+            
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="nav navbar-nav">
+                    <li class="active"><a href="http://192.168.2.159/typeloader/index.html">Home</a></li>
+                    <li><a href="" target="_blank">About</a></li>
+                    <li><a href="" target="_blank">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="jumbotron">
+            <h2>Automatic ENA and IMGT Uploads Generator</h2>
+            <p>This web service takes GenDX generated XML files, process them and automatically generate data for direct submission to ENA and IMGT</p>
+            <p><a href="http://www.ebi.ac.uk/ena/submit/data-formats" target="_blank" class="btn btn-success btn-sm">ENA Format</a></p>
+            <p><a href="https://www.ebi.ac.uk/ipd/imgt/hla/subs/submit.html" target="_blank" class="btn btn-success btn-sm">IMGT Format</a></p>
+        </div>
+        <div class="row">
+            <div class="col-xs-4">
+                <h2>Generate Single ENA</h2>
+                <p>Convert a single XML file into a ENA formatted file for submission to EMBL</p>
+                <p><a href="http://192.168.2.159/typeloader/singlexml.html" class="btn btn-success">Upload XML File &raquo;</a></p>
+            </div>
+            <div class="col-xs-4">
+                <h2>Bulk Submission</h2>
+                <p>Concatenate ENA formatted files to generate a single file for bulk submission to EMBL</p>
+                <p><a href="http://192.168.2.159/typeloader/bulk.html" class="btn btn-success">Upload Zip File &raquo;</a></p>
+            </div>
+            <div class="col-xs-4">
+                <h2>Generate IMGT files</h2>
+                <p>Combine ENA formatted files with metadata (other alleles, EMBL submission id) to generate IMGT files</p>
+                <p><a href="http://192.168.2.159/typeloader/imgtgenerator.html" class="btn btn-success">Generate IMGT &raquo;</a></p>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-xs-12">
+                <footer>
+                    <p>&copy; Copyright 2015 DKMS Life Sciences Lab</p>
+                </footer>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

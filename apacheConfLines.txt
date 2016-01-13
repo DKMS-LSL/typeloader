@@ -1,0 +1,17 @@
+Alias /typeloader /export/typeloader
+<Directory /export/typeloader>
+	Order allow,deny
+	Allow from all 
+</Directory>
+
+Alias /downloads /downloads
+<Directory /downloads>
+	Order allow,deny
+	Allow from all 
+</Directory>
+
+ScriptAlias /typeloader/cgi-bin /export/typeloader/cgi-bin/
+<Directory /export/typeloader/cgi-bin/>
+	Options +ExecCGI
+	AddHandler cgi-script .py .cgi
+</Directory>
