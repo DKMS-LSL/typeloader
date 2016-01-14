@@ -57,12 +57,12 @@ refalleleDiffString = """CC   {text}"""
 otherAllelesString = """FT   /{gene}*:{alleleNames}"""
 
 
-exonString = """FT   exon            {{start}..{stop}}
-FT                   /number={exon_num}
+exonString = """FT   Exon            {{start}..{stop}}
+FT                   \number={exon_num}
 """
 
-intronString = """FT   intron          {{start}..{stop}}
-FT                   /number={intron_num}
+intronString = """FT   Intron          {{start}..{stop}}
+FT                   \number={intron_num}
 """
 
 footer= """SQ   Sequence {sequence length} BP; {countA} A; {countC} C; {countG} G; {countT} T; {countOther} other;
