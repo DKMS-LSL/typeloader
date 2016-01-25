@@ -14,6 +14,52 @@ from Bio import SeqIO
 from copy import copy
 from sys import argv
 from pickle import load
+from math import ceil
+
+
+def getMismatchData(annotations):
+    
+    
+    cdsMap = annotations["cdsMap"]
+    alleleSeq = annotations["sequence"]
+    
+    
+    genomicExonCoords = cdsMap.keys()
+    genomicExonCoords.sort()
+    
+    cdsSeq = "".join([alleleSeq[start:end] for (start,end) in genomicExonCoords])
+    closestAlleleCdsSeq = annotations["closestAlleleCdsSeq"]
+    
+    mmCodons = []
+    
+    exon1Length = genomicExonCoords[0][1]
+    numExon1Coords = int(ceil(float(exon1Length)/3))
+    
+    for mmIndex in len(annotations["differences"]["mismatches"]):
+        genomicPos, cdsPos = annotations["differences"]["mismatchPositions"][mmIndex], \
+                             annotations["imgtDifferences"]["mismatchPositions"][mmIndex]
+        if genomicPos == cdsPos:
+            mmCodons.append(())
+            continue
+        
+        canonicalMMCodonNum = int(ceil(float(cdsPos))/3)
+        
+        # IMGT assigns the first codon in exon 2 as codon 1, and the codons in exon 1 with a -1 backwards 
+        if canonicalMMCodonNum > numExon1Coords: imgtMMCodonNum = canonicalMMCodonNum - numExon1Coords
+        else: imgtMMCodonNum = canonicalMMCodonNum - (numExon1Coords + 1)
+        
+        
+        if not (cdsPos % 3):# coords stored are 1-based, python indices are 0-based
+            actualCodonSeq, closestCodonSeq = cdsSeq[cdsPos - 3 : cdsPos], closestAlleleCdsSeq[cdsPos - 3 : cdsPos]
+        elif (cdsPos % 3) == 2:
+            actualCodonSeq, closestCodonSeq = cdsSeq[cdsPos - 2 : cdsPos + 1], closestAlleleCdsSeq[cdsPos - 2 : cdsPos + 1]
+        else:
+            actualCodonSeq, closestCodonSeq = cdsSeq[cdsPos - 1 : cdsPos + 2], closestAlleleCdsSeq[cdsPos - 1 : cdsPos + 2]
+            
+        mmCodons.append((imgtMMCodonNum,(actualCodonSeq, closestCodonSeq)))
+            
+    return mmCodons
+            
 
 def getCoordinates(blastXmlFilename, allelesFilename = allelesFilename, targetFamily = geneFamily):
     
@@ -42,14 +88,15 @@ def processAlleles(closestAlleles, allAlleles):
         closestAlleleName, differences, isExactMatch = closestAlleles[alleleQuery]["name"], closestAlleles[alleleQuery]["differences"], \
                                                        closestAlleles[alleleQuery]["exactMatch"]
         
-        features, coordinates = calculateCoordinates(closestAlleleName, allAlleles, differences)
+        features, coordinates, closestAlleleCdsSequence = calculateCoordinates(closestAlleleName, allAlleles, differences)
         utr5Length = len(allAlleles[closestAlleleName].UTR5)
         
-        features, coordinates, differences, cdsMap = changeToImgtCoords(features, coordinates, differences, utr5Length)
+        features, coordinates, imgtDifferences, cdsMap = changeToImgtCoords(features, coordinates, differences, utr5Length)
         
         
-        annotations[alleleQuery] = {"features":features, "coordinates":coordinates, "differences":differences, "closestAllele":closestAlleleName, \
-                                    "cdsMap":cdsMap, "isExactMatch":isExactMatch}
+        annotations[alleleQuery] = {"features":features, "coordinates":coordinates, "imgtDifferences": imgtDifferences, "differences":differences, \
+                                    "closestAllele":closestAlleleName, "cdsMap":cdsMap, "closestAlleleCdsSequence": closestAlleleCdsSequence, \
+                                    "isExactMatch":isExactMatch}
     
     return annotations
         
@@ -57,6 +104,7 @@ def getClosestAlleleCoordinates(alleleData):
     
     features = []
     coordinates = []
+    closestAlleleCdsSequence = ""
     
     if alleleData.utrpos_dic.has_key("utr5"):
         features.append("utr5")
@@ -72,7 +120,9 @@ def getClosestAlleleCoordinates(alleleData):
     
     features.extend(cdsIds)
     for cdsId in cdsIds:
-        if cdsId[1] == "e": coordinates.append((alleleData.exonpos_dic[cdsId[0]][0] + 1, alleleData.exonpos_dic[cdsId[0]][1]))
+        if cdsId[1] == "e":
+            coordinates.append((alleleData.exonpos_dic[cdsId[0]][0] + 1, alleleData.exonpos_dic[cdsId[0]][1]))
+            closestAlleleCdsSequence += alleleData.seq[alleleData.exonpos_dic[cdsId[0]][0] + 1:alleleData.exonpos_dic[cdsId[0]][1] + 1]
         else: coordinates.append((alleleData.intronpos_dic[cdsId[0]][0] + 1, alleleData.intronpos_dic[cdsId[0]][1]))
            
             
@@ -82,12 +132,12 @@ def getClosestAlleleCoordinates(alleleData):
         
     #coordinates[0] = (coordinates[0][0] + 1, coordinates[0][1])
         
-    return (features, coordinates)
+    return (features, coordinates, closestAlleleCdsSequence)
     
 def calculateCoordinates(alleleName, alleles, differences = {}):
     
     allele = alleles[alleleName]
-    features, coordinates = getClosestAlleleCoordinates(allele)
+    features, coordinates, closestAlleleCdsSequence = getClosestAlleleCoordinates(allele)
     
     
     insertions, deletions, mismatches = differences["insertionPositions"], differences["deletionPositions"], \
@@ -137,7 +187,7 @@ def calculateCoordinates(alleleName, alleles, differences = {}):
         for nextFeatureIndex in range(coordIndex + 1, len(coordinates)):
             coordinates[nextFeatureIndex] = (coordinates[nextFeatureIndex][0] + coordChange, coordinates[nextFeatureIndex][1] + coordChange)
     
-    return (features, coordinates)
+    return (features, coordinates, closestAlleleCdsSequence)
 
 if __name__ == '__main__':
     

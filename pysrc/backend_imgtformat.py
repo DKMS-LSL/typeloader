@@ -28,7 +28,7 @@ FT   submittor      1..{sequence length}
 FT                  /ID="10973T44"
 FT                  /name="Ms. Viviane Albrecht"
 FT                  /alt_contact=""
-FT                  /email="albrecht@dkms-lab.de<mailto:albrecht@dkms-lab.de>,boehme@dkms-lab.de<mailto:boehme@dkms-lab.de>"
+FT                  /email="albrecht@dkms-lab.de,submission@dkms-lab.de"
 FT   source         1..{sequence length}
 FT                  /cell_id="{cell line}"
 FT                  /ethnic_origin="Unknown"
@@ -37,12 +37,12 @@ FT                  /consanguineous="Unknown"
 FT                  /homozygous="No"
 FT                  /lab_of_origin="DKMS Life Science Lab GmbH"
 FT                  /lab_contact="Viviane Albrecht"
-FT                  /material_available="Whole Blood Sample"
+FT                  /material_available="DNA"
 FT                  /cell_bank="Not Available"
 {other_alleles}
 FT   method         1..{sequence length}
 FT                  /primary_sequencing="NGS - Illumina Sequencing Technology"
-FT                  /secondary_sequencing="Direct sequencing of PCR product from DNA(SBT)"
+FT                  /secondary_sequencing="NGS - Pacific Biosciences SMRT Technology"
 FT                  /type_of_primer="Both allele and locus specific"
 FT                  /sequenced_in_isolation="Yes"
 FT                  /no_of_reactions="1"
