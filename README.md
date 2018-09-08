@@ -1,3 +1,3 @@
-![SplashScreen](icons/TypeLoaderSplash.png)
+![SplashScreen](src/icons/TypeLoaderSplash.png)
 
 [Read the User Manual](user_manual/_main.md)

@@ -35,5 +35,6 @@ Here are some useful entry points
 
 * [=> Installation](setup.md)
 * [=> User Accounts](users.md)
+* [=> Adding new alleles](new_allele.md)
 * [=> Colors, icons and status](colors_icons.md)
 * [=> Database Recovery and Logs](recovery_logs.md)
