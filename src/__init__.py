@@ -3,11 +3,12 @@
 
 
 '''
-__author__ = "Vineeth Surendranath"
-__copyright__ = "Copyright 2016, DKMS Life Science Lab GmbH"
+__author__ = "Markus Fuhrmann, Bianca Schoene, Vineeth Surendranath"
+__copyright__ = "Copyright 2018, DKMS Life Science Lab GmbH"
 __license__ = "MIT"
-__maintainer__ = "Vineeth Surendranath"
-__email__ = "surendranath@dkms-lab.de"
+__maintainer__ = "Bianca Schoene"
+__email__ = "schoene@dkms-lab.de"
 
-__version__ = "1.0.0"
-__status__ = "productive"
+__version__ = "2.0.0"
+__status__ = "beta testing"
+__all__ = ["typeloader_GUI"]
