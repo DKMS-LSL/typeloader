@@ -1,0 +1,3 @@
+[submodule "authuser"]
+	path = authuser
+	url = ./src/authuser
