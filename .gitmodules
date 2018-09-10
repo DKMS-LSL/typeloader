@@ -1,3 +1,6 @@
 [submodule "authuser"]
 	path = authuser
 	url = ./src/authuser
+[submodule "src/authuser"]
+	path = src/authuser
+	url = http://srvddgit01.labor.local/bioinf/pylib/authuser.git
