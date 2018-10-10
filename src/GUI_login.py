@@ -574,7 +574,7 @@ def config_files_missing():
     """
     for myfile in [base_config_file, company_config_file]: 
         if not os.path.isfile(myfile):
-            print("File {} does not exist! Please create it before trying again!".format(myfile))
+            print("File {} does not exist! Please create it before trying again!\nAborting...".format(myfile))
             return True
     return False
     

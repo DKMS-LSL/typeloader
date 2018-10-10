@@ -22,6 +22,7 @@ from PyQt5.QtWidgets import (QMainWindow, QApplication, QDialog,
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5 import QtSql
 from PyQt5.QtCore import pyqtSlot, Qt
+from configparser import NoSectionError
 
 import general, db_internal
 import GUI_navigation, GUI_login, GUI_stylesheet
@@ -511,7 +512,7 @@ def remove_lock(settings_dic, log):
         
 if __name__ == '__main__':
     if GUI_login.config_files_missing():
-        sys.exit()
+        sys.exit(1)
     
     curr_time = time.strftime("%Y%m%d_%H%M%S")
     
@@ -523,7 +524,12 @@ if __name__ == '__main__':
     app.setStyleSheet(GUI_stylesheet.make_stylesheet())
     
     cf = GUI_login.get_basic_cf()
-    root_path = cf.get("Paths", "root_path")
+    try:
+        root_path = cf.get("Paths", "root_path")
+    except NoSectionError:
+        print("{} must contain parameter 'root_path' in section [Paths]!\nAborting...".format(GUI_login.base_config_file))
+        sys.exit(1)
+        
     mylog = os.path.join(root_path, "_general", "{}.log".format(curr_time))
     log = general.start_log(level="DEBUG", debug_to_file = mylog)
     log.info("<Start>")
