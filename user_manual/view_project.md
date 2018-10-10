@@ -3,7 +3,7 @@ This [=> Detailled View](detailled_views.md) shows the current state and all dat
 
 To open it, choose a project (either in the [=> Navigation Area](navigation.md), the [=> Projects Overview](overview_project.md) or [=> Alleles Overview](overview_alleles.md), rightclick on it and select ``Open Project View``:
 
-![ProjectView](images/view_project.PNG)
+![ProjectView](images/view_project.png)
 
 The data in this view is organized in three tables:
 
@@ -40,7 +40,7 @@ The list is sorted by the order in which the alleles were uploaded (listed in th
 By rightclicking any of these alleles, you get the option to open its [=> Sample View](view_sample.md).
 
 ##  Changing a project's status  
-A project can be ``Open`` or ``Closed``. (For details, see [=> Colors, icons and status](colors_icons.md).
+A project can be ``Open`` or ``Closed``. (For details, see [=> Colors, icons and status](colors_icons.md).)
 
 To switch a project's status, click the ``Close Project`` or ``Open Project`` button (whichever applies; the button will change its text accordingly) in the center top area. 
 
@@ -49,4 +49,5 @@ In the top right area there are two buttons that allow interaction with a projec
 
  * ``Download files`` opens a dialog where you can choose any of this project's files and save them to a place of your choice.
  * ``Edit a file`` opens a dialog where you can choose any of this project's files. This file will be opened in a window where you can read it. This window also allows editing. 
- ![Pic](images/icon_important.png) **Do not edit project files without *very* good reason!** These files usually contain data about the project's submission to ENA. Therefore changes to them can lead to incongruence with ENA's data. 
+ 
+ ![Pic](images/icon_important.png) **Do not edit project files without *VERY* good reason!** These files usually contain data about the project's submission to ENA. Therefore changes to them can lead to incongruence with ENA's data. 

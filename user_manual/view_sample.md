@@ -2,7 +2,8 @@
 This [=> Detailled View](detailled_views.md) shows the current state and all data concerning one TypeLoader sample in one project.
 
 To open it, choose a target allele (either in the [=> Navigation Area](navigation.md), the [=> Alleles Overview](overview_alleles.md), or the allele's [=> Project View](view_project.md)), rightclick on it and select ``Open Sample View``:
-![SampleView](images/view_sample.PNG)
+
+![SampleView](images/view_sample.png)
 
 The data in this view is organized in three tables:
 
@@ -36,7 +37,7 @@ This table shows all target alleles generated from this sample, with information
   * What's its allele status and lab status (both are [=> color-coded](colors_icons.md))
   * To which project does it belong?
 
-![Pic](images/icon_important.png) **Note that this list is not limited to the current project. If any alleles of the same sample are contained in a different project, they are displayed here, too.**
+![Important](images/icon_important.png) **Note that this list is not limited to the current project. If any alleles of the same sample are contained in a different project, they are displayed here, too.**
 
 **For more details about multiple target alleles for one sample, see [=> Multiple alleles of one sample](multiple_alleles.md).**
 
@@ -64,7 +65,7 @@ All allele status and lab status values are [=> color-coded](colors_icons.md).
 ###  Edit a file 
 Clicking this button will open a dialog with which you can choose a file of this sample to edit by clicking ``Choose File``.
 
-![Pic](images/icon_important.png) **While files of other samples are visible in this dialog, TypeLoader will not allow you to edit them from here. To access them, please go to the SampleView showing this sample and the click ``Choose File``.**
+![Important](images/icon_important.png) **While files of other samples are visible in this dialog, TypeLoader will not allow you to edit them from here. To access them, please go to the SampleView showing this sample and then click ``Choose File``.**
 
 **If your project contains several alleles of the same sample, you can access both from the same sample-view, though.**
 
@@ -77,10 +78,10 @@ Clicking this button will open a dialog with which you can choose a file of this
 
 Click ``Choose files`` to choose the file you want to download.
 
-![Pic](images/icon_important.png) **While files of other samples are visible in this dialog, TypeLoader will not allow you to download them from here. To access them, please go to the SampleView showing this sample and the click ``Choose File``.**
+![Important](images/icon_important.png) **While files of other samples are visible in this dialog, TypeLoader will not allow you to download them from here. To access them, please go to the SampleView showing this sample and the click ``Choose File``.**
 
 **If your project contains several alleles of the same sample, you can access both from the same sample-view, though.**
 
 After you have successfully chosen a file, you can click the now green ``Download!`` button. Then you will be asked to specify the path where to save the file. After confirming, the file you have chosen will be saved there.
 
-![Pic](images/icon_important.png) **Note that if you download and then edit a file, TypeLoader will not know your changes. So if you intend to make changes, you should use the ``Edit a file`` button and edit TypeLoader's internal files instead.**
+![Important](images/icon_important.png) **Note that if you download and then edit a file, TypeLoader will not know your changes. So if you intend to make changes, you should use the ``Edit a file`` button and edit TypeLoader's internal files instead.**

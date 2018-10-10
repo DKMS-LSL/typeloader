@@ -1,5 +1,5 @@
 # ![Icon](images/TypeLoader_32.png) Projects Overview 
-![ProjectsOverview](images/overview_projects_full.PNG)
+![ProjectsOverview](images/overview_projects_full.png)
 
 This [=> Overview](overviews.md) shows all projects of the TypeLoader account logged in (1 row per project). Just like the [=> Alleles Overview](overview_alleles.md), this table can be sorted and filtered by all columns.
 

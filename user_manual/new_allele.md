@@ -32,7 +32,7 @@ If one allele is marked by NSGEngine as "novel", it is auto-selected.
 
 Check the data entered and provide a cell line in the appropriate box. 
 
-![Pic](images/icon_important.png) The cell line must be formatted **lab-locus-nr** (or at least like "<something>-<something>-<something>" if it's just a test upload) and be unique.
+![Pic](images/icon_important.png) The cell line must be formatted **lab-locus-nr** (or at least like "[something]-[something]-[something]" if it's just a test upload) and be unique.
 
 ![Pic](images/icon_important.png) TypeLoader will check the cell line's uniqueness _for this account_ before saving the allele, and complain if it's not unique. However, since ENA requires this field to be absolutely unique, you have to make sure yourself you're not using a cell line of another user!
 </WRAP>

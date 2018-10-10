@@ -15,17 +15,18 @@ So if you are sure there will only be one TypeLoader user at a time in your lab 
 ## Creating a User Account ##
 
 To create a user account, click the ``Create new user`` button on the login screen. This will open the ``New user dialog``:
-![NewUserDialog](images/login_new_user.PNG)
+
+![NewUserDialog](images/login_new_user.png)
 
 Here, you can create a user account. 
 
 ### Optional settings:
  * **Initials:** if not given, these are created from the full name. These are used in project names. 
-* **Email:** you can also specify this later. It is needed for the IPD files, where you will be listed as submittor.
+ * **Email:** you can also specify this later. It is needed for the IPD files, where you will be listed as submittor.
 
 After successfully creating a user account, TypeLoader will create everything needed for this account and log into it.
 
 ### Test User Accounts
-**We highly recommended you create a test user account first**, to validate your server connections and try things out.
+![Important](images/icon_important.png) **We highly recommend you create a test user account first**, to validate your server connections and try things out.
 
 See [=> here](users_test.md) for details. 

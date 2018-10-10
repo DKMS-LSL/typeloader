@@ -48,6 +48,7 @@ After all alleles have been processed, the confirmation box will vanish and the 
 
 ###  (2) Check results 
 ![Pic](images/bulk_upload2.png)
+
 This section shows you the result of your bulk submission. 
 
 First, all alleles that were successfully uploaded are listed. These are now contained in the specified project.
