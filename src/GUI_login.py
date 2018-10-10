@@ -568,6 +568,18 @@ def log_uncaught_exceptions(cls, exception, tb):
     sys.__excepthook__(cls, exception, traceback)
     QCoreApplication.exit(1)   
 
+
+def config_files_missing():
+    """checks whether the config files exist
+    """
+    for myfile in [base_config_file, company_config_file]: 
+        if not os.path.isfile(myfile):
+            print("File {} does not exist! Please create it before trying again!".format(myfile))
+            return True
+    return False
+    
+    
+
 # def generate_inis(log):
 #     from settings_ import user_dic
 #     for user in user_dic:

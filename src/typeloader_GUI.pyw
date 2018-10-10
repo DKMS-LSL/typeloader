@@ -510,6 +510,9 @@ def remove_lock(settings_dic, log):
 # main:
         
 if __name__ == '__main__':
+    if GUI_login.config_files_missing():
+        sys.exit()
+    
     curr_time = time.strftime("%Y%m%d_%H%M%S")
     
     if platform.system() ==  "Windows":
