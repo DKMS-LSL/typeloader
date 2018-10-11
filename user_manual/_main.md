@@ -35,6 +35,7 @@ Here are some useful entry points
 
 * [=> Installation](setup.md)
 * [=> User Accounts](users.md)
+* [=> Layout: What is where in TypeLoader?](layout.md)
 * [=> Adding new alleles](new_allele.md)
 * [=> Colors, icons and status](colors_icons.md)
 * [=> Database Recovery and Logs](recovery_logs.md)
