@@ -591,6 +591,24 @@ def config_files_missing():
 #          
 #         make_new_settings(root_path, user, user_name, short_name, email, address,
 #                           log)
+
+
+def check_root_path(root_path):
+    """checks whether root_path and '_general' subdir was already created 
+    (should happen during setup, but sometimes doesn't due to missing privileges),
+    if not, creates them
+    """  
+    import errno
+    general_dir = os.path.join(root_path, "_general")
+    if os.path.isdir(general_dir):
+        return
+    else:
+        try:
+            os.makedirs(general_dir)
+        except OSError as e:
+            if e.errno != errno.EEXIST: # if dir creation fails for any reason except "dir exists already" 
+                raise
+
 pass
 #===========================================================
 # main:

@@ -529,7 +529,8 @@ if __name__ == '__main__':
     except NoSectionError:
         print("{} must contain parameter 'root_path' in section [Paths]!\nAborting...".format(GUI_login.base_config_file))
         sys.exit(1)
-        
+    
+    GUI_login.check_root_path(root_path)
     mylog = os.path.join(root_path, "_general", "{}.log".format(curr_time))
     log = general.start_log(level="DEBUG", debug_to_file = mylog)
     log.info("<Start>")
