@@ -1,0 +1,12 @@
+Column,type,PK
+Sample_ID_int,TEXT,
+allele_nr,INT,
+cell_line,TEXT,PK
+project,TEXT,
+raw_file_type,TEXT,
+raw_file,TEXT,
+fasta,TEXT,
+blast_xml,TEXT,
+ena_file,TEXT,
+ena_response_file,TEXT,
+IPD_submission_file,TEXT,

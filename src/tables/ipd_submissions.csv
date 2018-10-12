@@ -1,0 +1,6 @@
+Column,TYPE,PK
+Submission_id,TEXT,PK
+Nr_alleles,INT,
+Timestamp_sent,TEXT,
+Timestamp_confirmed,TEXT,
+Success,TEXT,
