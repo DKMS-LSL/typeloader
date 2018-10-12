@@ -574,7 +574,7 @@ def config_files_missing():
     """
     for myfile in [base_config_file, company_config_file]: 
         if not os.path.isfile(myfile):
-            print("File {} does not exist! Please create it before trying again!\nAborting...".format(myfile))
+            raise IOError("File {} does not exist! Please create it before trying again!\nAborting...".format(myfile))
             return True
     return False
     
@@ -605,6 +605,7 @@ def check_root_path(root_path):
     else:
         try:
             os.makedirs(general_dir)
+            print ("Created {}".format(general_dir))
         except OSError as e:
             if e.errno != errno.EEXIST: # if dir creation fails for any reason except "dir exists already" 
                 raise
