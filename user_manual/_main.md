@@ -21,7 +21,7 @@ We are making TypeLoader available to others, to get all those full-length allel
  * Automatically submit files to ENA. [(=> ENA submission)](submission_ena.md)
 
 ## IPD Submission
- * Automatically generate files for IPD submission (once a reply from ENA with an allele ID has been received) [(=> IPD submission)](submission_IPD.md)
+ * Automatically generate files for IPD submission (once a reply from ENA with an allele ID has been received) [(=> IPD submission)](submission_ipd.md)
 
 ## Data management and organization
  * Keep track of all your novel and extended full-length alleles:
@@ -36,6 +36,7 @@ Here are some useful entry points
 * [=> Installation](setup.md)
 * [=> User Accounts](users.md)
 * [=> Layout: What is where in TypeLoader?](layout.md)
+* [=> User Settings](settings.md)
 * [=> Adding new alleles](new_allele.md)
 * [=> Colors, icons and status](colors_icons.md)
 * [=> Database Recovery and Logs](recovery_logs.md)

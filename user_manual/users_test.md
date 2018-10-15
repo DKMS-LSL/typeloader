@@ -16,4 +16,4 @@ This means that in a test account, you can not submit alleles of projects that w
 
 ![Important](images/icon_important.png) **So if you want to test [=> allele submission to ENA](submission_ena.md), best create a fresh project.**
 
-(Since [=> submission to IPD](submission_IPD.md) happens semi-automatically (TypeLoader creates all files, but you have to submit them by email), test users are not necessary to test this process as the files can always be recreated and overwritten.) 
+(Since [=> submission to IPD](submission_ipd.md) happens semi-automatically (TypeLoader creates all files, but you have to submit them by email), test users are not necessary to test this process as the files can always be recreated and overwritten.) 
