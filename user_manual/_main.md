@@ -42,4 +42,5 @@ Here are some useful entry points
 * [=> User Settings](settings.md)
 * [=> Colors, icons and status](colors_icons.md)
 * [=> Database tables](tables.md)
+* [=> Internal data structure](data_structure.md)
 * [=> Database Recovery and Logs](recovery_logs.md)

@@ -3,7 +3,6 @@
 *.afa
 *.dat
 docu*
-data*
 logs*
 Thumbs.db
 temp*
