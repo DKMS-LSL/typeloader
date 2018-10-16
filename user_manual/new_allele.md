@@ -57,15 +57,19 @@ Once you're satisfied with the ENA text and the cell line, click "Save new targe
 
 TypeLoader will then save the ENA text as a file and all the details you have entered plus those inferred from the raw file to its database. 
 
+#### Default values
 By default, the following values are set:
+
   * goal: novel
   * allele status: ENA-ready
   * lab status: completed
 
 For NGSEngine XML files, the following values are set additionally:
+
   * long read data: yes
 
 For DR2S files which provide "software: DR2S" in their header, the following values are set additionally:
+
   * long read data: yes
   * long read phasing: yes
 

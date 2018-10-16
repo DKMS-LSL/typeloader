@@ -29,13 +29,13 @@ If the name is already in use (because the same user already started a project w
 ![NewProject0](images/new_project2.png)
 
 ##  (3) Register project with ENA 
-Now the project must be registered with ENA. To do this, click the now green "Start new project" button.
+Now the project must be registered with ENA. To do this, click the now green ``Start new project`` button.
 
 TypeLoader will then automatically submit the project's details to ENA and retrieve the project ID that ENA generates. This project ID is then displayed as "ENA project nr":
 
 ![NewProject0](images/new_project3.png)
 
-Your project has now been created successfully and you can close the dialog (either using the "Done" button or the X in the upper right corner).
+Your project has now been created successfully and you can close the dialog (either using the ``Done`` button or the X in the upper right corner).
 
 The new project will appear in the [=> Navigation area](navigation.md) and [=> Projects Overview](overview_projects.md) and is automatically selected as current project.
 
