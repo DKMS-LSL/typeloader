@@ -17,7 +17,7 @@ from configparser import ConfigParser
 
 module_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 mypath = os.path.join(module_path)
-mypath_inner = os.path.join(mypath, "typeloader_GUI")
+mypath_inner = os.path.join(mypath, "src")
 sys.path.append(mypath)
 sys.path.append(mypath_inner)
 
@@ -28,7 +28,7 @@ from xml.etree import ElementTree
 # deletion in Test_Clean_Stuff
 shutil.copyfile(os.path.join(mypath_inner, "typeloader_GUI.pyw"), os.path.join(mypath_inner, "typeloader_GUI.py"))
 
-from typeloader_GUI import typeloader_GUI
+import typeloader_GUI
 from typeloader_core import EMBLfunctions as EF
 from typeloader_core import make_imgt_files as MIF
 import GUI_forms_new_project as PROJECT
