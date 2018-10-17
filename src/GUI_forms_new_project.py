@@ -156,6 +156,7 @@ class NewProjectForm(QDialog):
         
         try:
             self.project_name = "_".join([date, initials, self.gene, self.pool])
+            self.project_name = self.project_name.replace(" ","-")
         except Exception as E:
             self.log.error(E)
             QMessageBox.warning(self, "Cannot create project name!",
