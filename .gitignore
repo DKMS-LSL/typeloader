@@ -1,10 +1,7 @@
 *.pyc
-*.fa
 *.afa
-*.dat
 docu*
 logs*
-Thumbs.db
 temp*
 *.db
 config_base.ini
