@@ -146,6 +146,7 @@ class MainGUI(QMainWindow):
         self.view_sample.layout.addWidget(mywidget.download_btn, 0, 7)
         self.view_sample.widget.data_changed.connect(self.on_data_changed)
         self.view_sample.widget.allele_updated.connect(self.change_allele)
+        self.view_sample.widget.sample_table.updated.connect(self.view_ov_alleles.widget.refresh)
         
     def make_stack_widget(self, lbl_text, mywidget):
         """creates a QWidget displaying one view and its main label,
