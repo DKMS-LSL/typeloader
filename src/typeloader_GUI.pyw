@@ -261,7 +261,7 @@ class MainGUI(QMainWindow):
         self.ov_menu.addAction(ov_samples_act)
         self.toolbar.addAction(ov_samples_act)
         
-        ov_projects_act = QAction('&Project overview', self.ov_menu)
+        ov_projects_act = QAction('&Projects overview', self.ov_menu)
         ov_projects_act.setShortcut('Ctrl+Alt+P')
         ov_projects_act.setStatusTip('View overview of all projects')
         ov_projects_act.triggered.connect(partial(self.display, 2))
