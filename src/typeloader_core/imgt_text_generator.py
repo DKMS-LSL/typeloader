@@ -175,6 +175,7 @@ def make_imgt_text(submissionId, cellLine, enaId, befund, closestAllele, diffToC
                             ("{lab contact email}", settings["lab_contact_email"]),
                             ("{lab of origin}", settings["lab_of_origin"]),
                             ("{material available}", settings["material_available"]),
+                            ("{typeloader version}", settings["TL_version"]),
                             ("{primary sequencing tech}", settings["primary_sequencing"]),
                             ("{secondary sequencing tech}", settings["secondary_sequencing"]),
                             ("{type of primer}", settings["type_of_primer"]),
@@ -182,7 +183,6 @@ def make_imgt_text(submissionId, cellLine, enaId, befund, closestAllele, diffToC
                             ("{no of reactions}", settings["no_of_reactions"]),
                             ("{sequencing directions}", settings["sequencing_direction"]),
                             ("{confirmation methods}", settings["confirmation_methods"])
-                            
                             ]
     for (placeholder, replacement) in replace_placeholders:
         imgtText = imgtText.replace(placeholder, replacement)
