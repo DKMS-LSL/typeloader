@@ -25,6 +25,7 @@ from typeloader_core import make_imgt_files as MIF
 from GUI_forms import (CollapsibleDialog, ChoiceSection, FileChoiceTable,
                        FileButton, ProceedButton, QueryButton)
 from GUI_forms_submission_ENA import ProjectInfoTable
+from GUI_misc import settings_ok
 
 #===========================================================
 # parameters:
@@ -85,6 +86,10 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.submission_successful = False
         self.accepted = False
         self.show()
+        ok, msg = settings_ok("IPD", self.settings, self.log)
+        if not ok:
+            QMessageBox.warning(self, "Missing IPD settings", msg)
+            self.close()
         
     def define_sections(self):
         """defining the dialog's sections

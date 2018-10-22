@@ -152,8 +152,11 @@ class SettingTab(QTabWidget):
                                         "hint": "Used in generated IMGT files"},
                       
                       "xml_center_name" : {"section" : "Company",
-                                           "lbl_text" : "Company Name",
-                                           "hint": "Used in all ENA communications"},
+                                           "lbl_text" : "Company Name (for ENA)",
+                                           "hint": "Used in all ENA communication"},
+                      "lab_of_origin" : {"section" : "Company",
+                                         "lbl_text" : "Company Name (for IPD)",
+                                         "hint" : "Used in all IPD communication"},
                       "lab_contact_address" : {"section" : "Company",
                                              "lbl_text" : "Lab Contact's Form of Address",
                                              "hint": "Your lab's IPD contact's form of address"},

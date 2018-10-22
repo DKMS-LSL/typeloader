@@ -174,6 +174,45 @@ class ConfirmResetWidget(QWidget):
             self.data_changed.emit(True)
 
 
+def settings_ok(category, all_settings, log):
+    """checks whether necessary settings have been defined
+    """
+    log.debug("Checking if {} settings are configured...".format(category))
+    if category == "ENA":
+        relevant_settings = {"xml_center_name" : "Company Name (for ENA)",
+                             "ftp_user" : "FTP user",
+                             "ftp_pwd" : "FTP Password"
+                             }
+    elif category == "IPD":
+        relevant_settings = {"submittor_id" : "IPD Submittor ID",
+                             "lab_contact_address" : "Lab Contact's Form of Address",
+                             "lab_contact" : "Lab Contact for IPD",
+                             "lab_contact_email": "Lab Contact Email",
+                             "lab_of_origin" : "Company Name (for IPD)"}
+    
+    else:
+        msg = "I don't know how to check '{}' settings!".format(category)
+        raise ValueError(msg)
+        return False, msg
+ 
+    missing_settings = []
+    for key in relevant_settings:
+        value = all_settings[key]
+        if value.strip() == "":
+            missing_settings.append(relevant_settings[key])
+            
+    if missing_settings:
+        log.warning("Missing {} settings: {}".format(category, ",".join(missing_settings)))
+        msg = "Please specify the following settings under Settings => Company:\n"
+        for item in missing_settings:
+            msg += " - {}\n".format(item)
+        if category == "IPD":
+            msg += "\nAlso, make sure all settings under Settings => Method reflect your workflow accurately, and that your user account has a valid email address.\n"
+        msg += "\nThen try again."
+        return False, msg
+    log.debug("\t=> ok")
+    return True, None
+
 pass
 #===========================================================
 # main:
