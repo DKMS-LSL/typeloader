@@ -125,7 +125,7 @@ def reformat_header_data(header_data, sample_id_ext, log):
         if header_data["lr_data"]:
             header_data["lr_phasing"] = "yes" # DR2S always produces phased long read data
     
-    # store external sample number if given by parameter (needed for tesing):
+    # store external sample number if given by parameter (needed for testing):
     if sample_id_ext:
         header_data["Spendernummer"] = sample_id_ext
         
