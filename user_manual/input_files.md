@@ -7,7 +7,11 @@ TypeLoader accepts sequences for [=> New Alleles](new_allele.md) in either of tw
 ## Fasta files
 Fasta files should contain exactly one sequence. (If they contain more than that, only the first sequence is used. To add multiple fasta sequences at once, use the [=> Bulk Fasta Upload](new_allele_bulk.md).)
 
-**Optionally**, You can use the sequence header to pass data along to TypeLoader, which it will then store for your allele. This should be a list of key-value pairs separated by ";". The following keys are  currently recognized:
+**Optionally**, you can use the sequence header to pass data along to TypeLoader, which it will then store for your allele. This should be a list of key-value pairs separated by ";":
+
+![fasta-header example](images/fasta_header.png)
+
+The following keys are  currently recognized:
 
  * **locus**
  * **ref**, **second**, **third**, **fourth** (all of these allele names are concatenated with 'or' and stored as "partner_allele")
@@ -21,6 +25,7 @@ Fasta files should contain exactly one sequence. (If they contain more than that
  * **software** (software used for full-length genotyping)
  * **version** (version of the software used for full-length genotyping)
  * **date** (date of secondary genotyping)
+
 
 ## XML files
 The XML file exported from NSGEngine contains both alleles of one locus of one sample. If you upload such a file to TypeLoader, the dialog will ask you to clarify which of the alleles you want to add. (If you want to add both alleles, run the [=> New Allele Dialog](new_allele.md) twice with the same file, and choose the other allele during the second run.)
