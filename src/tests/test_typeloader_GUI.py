@@ -22,6 +22,7 @@ sys.path.append(mypath)
 sys.path.append(mypath_inner)
 
 import general, db_internal, GUI_login
+from __init__ import __version__
 from xml.etree import ElementTree
 
 # no .pyw import possibile in linux
@@ -778,7 +779,7 @@ class Test_Send_To_IMGT(unittest.TestCase):
         
         new_ipd_file_path = os.path.join(curr_settings["projects_dir"], self.project_name, curr_settings["ipd_submissions"], data_content_ipd[0][0], "DKMS1000" + samples_dic["sample_1"]["submission_id"] + ".txt")
         reference_file_path = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], samples_dic["sample_1"]["input_dir_origin"], "DKMS1000" + samples_dic["sample_1"]["submission_id"] + ".txt")
-        
+        log.debug("Reference IPD file: {}".format(reference_file_path))
         diff_ipd_files = compare_2_files(new_ipd_file_path, reference_file_path, "IPD")        
         
         self.assertEqual(len(diff_ipd_files["added_sings"]), 0)
@@ -1581,13 +1582,18 @@ def compare_2_files(query_path, reference_path, filetype = ""):
         # change the date in order to compare both ipd files
         now = f"{datetime.datetime.now():%d/%m/%Y}" 
         reference_file = re.sub('DT.*Submitted\)\n.*Release\)', 'DT   {} (Submitted)\nDT   {} (Release)'.format(now, now), reference_file)
+        reference_file = reference_file.replace("{TL-VERSION}", __version__) # replace TL-version part of reference file with current version
 
     diffInstance = difflib.Differ()
     diffList = list(diffInstance.compare(query_file.strip(), reference_file.strip()))
     
     result["added_sings"] = ''.join(x[2:] for x in diffList if x.startswith('+ '))
     result["deleted_sings"]= ''.join(x[2:] for x in diffList if x.startswith('- '))    
-    
+    if result:
+        log.error("Differences found!")
+        log.debug("New file: {}".format(query_path))
+        log.debug("Reference file: {}".format(reference_path))
+        log.debug("Differences:" + ";".join(diffList))
     return result
 
 # functions to order Tests:
