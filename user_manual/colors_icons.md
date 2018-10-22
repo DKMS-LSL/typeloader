@@ -1,4 +1,4 @@
-# ![Icon](images/TypeLoader_32.png)  Colors, Icons and Status
+# ![Icon](images/TypeLoader_32.png)  Colors, Icons, and Status
 
 Target alleles in TypeLoader have two kinds of status:
 
