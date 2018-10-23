@@ -7,6 +7,7 @@ import os
 import re, subprocess, shutil
 import urllib.request
 import hashlib
+from time import time
 
 import hla_embl_parser
 
@@ -21,6 +22,19 @@ remote_checksumfile_index = { \
             }
 
 reference_local_path = r"H:\Mitarbeiterordner\Bianca\Eclipse-Workspaces\Python3\Python3\src\typeloader2\src\reference_data2"
+
+
+def local_file_from_today(local_ref_file, log):
+    """checks last modified date of local file, returns True if it was modified today, else False
+    """
+    modify_date = os.path.getmtime(local_ref_file)
+    now = time()
+    diff = now - modify_date
+    if diff < 86400: # 60 sec * 60 min * 24 h = file from today
+        log.info("\tReference file was already updated today => not updating again")
+        return True
+    return False
+    
 
 def get_remote_md5checksum(db_name, log):
     """retrieves MD5 checksum from IPD's checksum_file 
@@ -44,12 +58,10 @@ def get_remote_md5checksum(db_name, log):
     return md5
 
 
-def get_local_md5checksum(use_dbname, reference_local_path, log):
+def get_local_md5checksum(local_reference_file, log):
     """gets the MD5 checksum of the current local database version
     """
     log.debug("\tGetting checksum of local file...")
-    
-    local_reference_file = os.path.join(reference_local_path, "%s.dat" % use_dbname)
     
     md5 = hashlib.md5(open(local_reference_file, "rb").read()).hexdigest()
     log.debug("\t=> {}".format(md5))
@@ -102,12 +114,16 @@ def update_databases(blast_path, log):
             use_dbname = "KIR"  # biological databases and consistency in naming are arch enemies 
         else:
             use_dbname = db_name
-             
+        
+        local_reference_file = os.path.join(reference_local_path, "{}.dat".format(use_dbname))
+        if local_file_from_today(local_reference_file, log):
+            continue
+        
         remote_md5 = get_remote_md5checksum(db_name, log)
         if not remote_md5:
             log.info("Aborting attempt to update the {} reference".format(db_name))
             continue
-        local_md5 = get_local_md5checksum(use_dbname, reference_local_path, log)
+        local_md5 = get_local_md5checksum(local_reference_file, log)
         if remote_md5 == local_md5:
             log.info("\t=> {} is up to date".format(db_name)) 
             continue
@@ -144,7 +160,10 @@ def update_databases(blast_path, log):
             update_msg += "\n\n"
             
     update_msg = update_msg.strip()
-    log.info(update_msg)
+    if update_msg:
+        log.info(update_msg)
+    else:
+        update_msg = "All up to date."
     return update_msg
 
 
