@@ -114,7 +114,7 @@ def getMismatchData(annotations):
 
 def getCoordinates(blastXmlFilename, allelesFilename, targetFamily, settings, log, isENA=True):
 
-    allAlleles = read_dat_file(allelesFilename, targetFamily, isENA)
+    allAlleles, _ = read_dat_file(allelesFilename, targetFamily, isENA)
     closestAlleles = getClosestKnownAlleles(blastXmlFilename, targetFamily, settings, log)
 
     seqsFile = blastXmlFilename.replace(".blast.xml",".fa")
