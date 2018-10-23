@@ -207,7 +207,7 @@ def settings_ok(category, all_settings, log):
         for item in missing_settings:
             msg += " - {}\n".format(item)
         if category == "IPD":
-            msg += "\nAlso, make sure all settings under Settings => Method reflect your workflow accurately, and that your user account has a valid email address.\n"
+            msg += "\nAlso, make sure all settings under Settings => Method reflect your workflow accurately.\n"
         msg += "\nThen try again."
         return False, msg
     log.debug("\t=> ok")

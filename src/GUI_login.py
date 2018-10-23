@@ -74,10 +74,9 @@ class NewUserForm(QDialog):
         layout.addRow(QLabel("Initials:"), self.short_field)
         
         self.email_field = QLineEdit(self)
-        self.email_field.setPlaceholderText("(optional)")
         layout.addRow(QLabel("Email:"), self.email_field)
         
-        fields = [self.user_field, self.name_field, self.pwd_field]
+        fields = [self.user_field, self.name_field, self.pwd_field, self.email_field]
         ok_btn = ProceedButton("Create user!", items = fields, log = self.log, parent = self)
         for item in fields:
             item.textChanged.connect(ok_btn.check_ready)
