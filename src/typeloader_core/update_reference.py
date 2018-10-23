@@ -3,7 +3,7 @@ update_referce.py
 
 handles updating of the reference data for TypeLoader
 """
-from os import path
+import os
 import re, subprocess, shutil
 import urllib.request
 import hashlib
@@ -49,7 +49,7 @@ def get_local_md5checksum(use_dbname, reference_local_path, log):
     """
     log.debug("\tGetting checksum of local file...")
     
-    local_reference_file = path.join(reference_local_path, "%s.dat" % use_dbname)
+    local_reference_file = os.path.join(reference_local_path, "%s.dat" % use_dbname)
     
     md5 = hashlib.md5(open(local_reference_file, "rb").read()).hexdigest()
     log.debug("\t=> {}".format(md5))
@@ -61,7 +61,7 @@ def make_blast_db(target, ref_dir, blast_path, log):
     returns success (=BOOL), msg (=String if error; None if not)
     """
     log.debug("\tCreating local blast database...")
-    makeblastdb = path.join(blast_path, "makeblastdb")
+    makeblastdb = os.path.join(blast_path, "makeblastdb")
     cmd = "{} -dbtype nucl -in {}/parsed{}.fa".format(makeblastdb, ref_dir, target)
     try:
         subprocess.run(cmd, check=True)
@@ -73,6 +73,20 @@ def make_blast_db(target, ref_dir, blast_path, log):
         log.debug(cmd)
         return False, msg
     
+
+def move_files(ref_path_temp, ref_path, target, log):
+    """moves all files from ref_path_temp to ref_path, replacing existing files
+    """
+    log.debug("\tReplacing old files with new files...")
+    for myfile in os.listdir(ref_path_temp):
+        if target.lower() in myfile.lower():
+            src_path = os.path.join(ref_path_temp, myfile)
+            target_path = os.path.join(ref_path, myfile)
+            log.debug("\t\t- {}".format(myfile))
+            if os.path.exists(target_path):
+                os.remove(target_path)
+            shutil.move(src_path, target_path)
+        
 
 def update_databases(blast_path, log):
     """checks IPD Github account for new releases,
@@ -97,29 +111,38 @@ def update_databases(blast_path, log):
         if remote_md5 == local_md5:
             log.info("\t=> {} is up to date".format(db_name)) 
             continue
-          
+        
         log.info("=> Found new reference version for {}".format(db_name))
+        
+        ref_path_temp = os.path.join(reference_local_path, "temp")
+        try:
+            os.mkdir(ref_path_temp)
+        except OSError: # exists already
+            pass
+        
         log.debug("\tdownloading new file...")
         remote_db_file = remote_db_path["%s_path" % db_name]
-        local_db_file = path.join(reference_local_path, "%s.dat" % use_dbname)
+        local_db_file = os.path.join(ref_path_temp, "%s.dat" % use_dbname)
         with urllib.request.urlopen(remote_db_file, timeout = 10) as db_response, open(local_db_file, "wb") as db_local:
             shutil.copyfileobj(db_response, db_local)
   
         log.debug("\t => successfully downloaded new {} file".format(db_name))
          
         log.debug("\tCreating parsed files...")
-        version = hla_embl_parser.make_parsed_files(use_dbname, reference_local_path, log)
+        version = hla_embl_parser.make_parsed_files(use_dbname, ref_path_temp, log)
         
-        success, msg = make_blast_db(use_dbname, reference_local_path, blast_path, log)
+        success, msg = make_blast_db(use_dbname, ref_path_temp, blast_path, log)
         
         if success:
-            update_msg += """IPD has released a new version of {} ({}). I have updated my reference data accordingly.""".format(db_name.upper(), version)
+            update_msg += """IPD has released a new version of {} ({}). I have updated my {} reference data accordingly.""".format(db_name.upper(), version, db_name.upper())
             update_msg += "\n\n"
+            move_files(ref_path_temp, reference_local_path, db_name, log)
         else:
             log.error(msg)
-            update_msg += """IPD has released a new version of {} ({}), but I could not process it:\n
+            update_msg += """IPD has released a new version of {} ({}), but I could not process it (see below). I'll continue to use the old files for now.
             {}""".format(db_name.upper(), version, msg)
             update_msg += "\n\n"
+            
     update_msg = update_msg.strip()
     log.info(update_msg)
     return update_msg
