@@ -10,3 +10,4 @@ user.pickle
 build*
 log.txt
 blastn*
+reference_data
