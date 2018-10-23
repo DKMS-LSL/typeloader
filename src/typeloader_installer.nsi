@@ -94,7 +94,7 @@ Function settingsPage0
 		Abort
 	${EndIf}
 
-	${NSD_CreateLabel} 0 0 100% 12u "Please enter your preferences (part 1: data storage):"
+	;${NSD_CreateLabel} 0 0 100% 12u "Please enter your preferences (part 1: data storage):"
 
 	${NSD_CreateGroupBox} 0 13u 100% 30u "Where should TypeLoader store the data you create?"
 
@@ -144,7 +144,7 @@ Function settingsPage1
 		Abort
 	${EndIf}
 
-	${NSD_CreateLabel} 0 0 100% 12u "Please enter your preferences (part 2: ENA):"
+	;${NSD_CreateLabel} 0 0 100% 12u "Please enter your preferences (part 2: ENA):"
 
 	${NSD_CreateLabel} 5u 12u 95% 25u "(You can leave any of these empty if unknown, but later you can only reset them for each user individually!)"
 
@@ -192,6 +192,7 @@ Function settingsPage2
         ${If} $UPDATING == "yes"
           Abort
         ${EndIf}
+        !insertmacro MUI_HEADER_TEXT "Preferences (3)" "Please enter your preferences for communication with IPD."
 
         nsDialogs::Create 1018
 	Pop $UserDialog2
@@ -200,7 +201,7 @@ Function settingsPage2
 		Abort
 	${EndIf}
 
-	${NSD_CreateLabel} 0 0 100% 12u "Please enter your preferences (part 3: IPD):"
+	;${NSD_CreateLabel} 0 0 100% 12u "Please enter your preferences (part 3: IPD):"
 
         ${NSD_CreateLabel} 5u 13u 95% 25u "(You can leave any of these empty if unknown, but later you can only reset them for each user individually!)"
 
@@ -2942,6 +2943,7 @@ Section "MainSection" SEC01
   SetOutPath "$INSTDIR\reference_data"
   SetOutPath "$INSTDIR\blastn"
   File "build\exe.win32-3.6\blastn\blastn.exe"
+  File "build\exe.win32-3.6\blastn\makeblastdb.exe"
   File "build\exe.win32-3.6\blastn\MSVCP120.dll"
   File "build\exe.win32-3.6\blastn\msvcr120.dll"
   File "build\exe.win32-3.6\blastn\libgcc_s_seh-1.dll"
@@ -3054,6 +3056,7 @@ Section Uninstall
   Delete "$INSTDIR\blastn\libgcc_s_seh-1.dll"
   Delete "$INSTDIR\blastn\msvcr120.dll"
   Delete "$INSTDIR\blastn\MSVCP120.dll"
+  Delete "$INSTDIR\blastn\makeblastdb.exe"
   Delete "$INSTDIR\blastn\blastn.exe"
   Delete "$INSTDIR\tables\files.csv"
   Delete "$INSTDIR\tables\colors.csv"
