@@ -79,7 +79,8 @@ def make_blast_db(target, ref_dir, blast_path, log):
     
     except Exception as E:
         log.exception(E)
-        msg = "Could not create local blast database:\n{}".format(repr(E))
+        msg = "Could not create local blast database:\n{}\n".format(repr(E))
+        msg += cmd
         log.debug(cmd)
         return False, msg
     
