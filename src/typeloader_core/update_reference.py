@@ -144,10 +144,7 @@ def update_database(db_name, reference_local_path, blast_path, log):
         use_dbname = db_name
         
     ref_path_temp = os.path.join(reference_local_path, "temp")
-    try:
-        os.mkdir(ref_path_temp)
-    except OSError: # exists already
-        pass
+    os.makedirs(ref_path_temp, exist_ok = True)
     
     log.debug("\tdownloading new file...")
     remote_db_file = remote_db_path["%s_path" % db_name]
