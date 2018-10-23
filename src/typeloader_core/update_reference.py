@@ -4,7 +4,7 @@ update_referce.py
 handles updating of the reference data for TypeLoader
 """
 from os import path
-import re, shutil
+import re, subprocess, shutil
 import urllib.request
 import hashlib
 
@@ -56,17 +56,31 @@ def get_local_md5checksum(use_dbname, reference_local_path, log):
     return md5
 
 
-def create_reference_files(db_name, log):
+def make_blast_db(target, ref_dir, blast_path, log):
+    """calls blast to create the local blast database for TypeLoader;
+    returns success (=BOOL), msg (=String if error; None if not)
+    """
+    log.debug("\tCreating local blast database...")
+    makeblastdb = path.join(blast_path, "makeblastdb")
+    cmd = "{} -dbtype nucl -in {}/parsed{}.fa".format(makeblastdb, ref_dir, target)
+    try:
+        subprocess.run(cmd, check=True)
+        return True, None
     
+    except Exception as E:
+        log.exception(E)
+        msg = "Could not create local blast database:\n{}".format(repr(E))
+        log.debug(cmd)
+        return False, msg
     
 
-def update_databases(log):
+def update_databases(blast_path, log):
     """checks IPD Github account for new releases,
     if found, downloads them and creates TypeLoader's reference files
     """
     log.info("Checking IPD for new releases...")
     db_list = ["hla", "kir"]
-    updated = []
+    update_msg = ""
 
     for db_name in db_list:
         log.info("Checking {}...".format(db_name.upper()))
@@ -74,7 +88,7 @@ def update_databases(log):
             use_dbname = "KIR"  # biological databases and consistency in naming are arch enemies 
         else:
             use_dbname = db_name
-            
+             
         remote_md5 = get_remote_md5checksum(db_name, log)
         if not remote_md5:
             log.info("Aborting attempt to update the {} reference".format(db_name))
@@ -83,18 +97,30 @@ def update_databases(log):
         if remote_md5 == local_md5:
             log.info("\t=> {} is up to date".format(db_name)) 
             continue
-        
+          
         log.info("=> Found new reference version for {}".format(db_name))
         log.debug("\tdownloading new file...")
         remote_db_file = remote_db_path["%s_path" % db_name]
         local_db_file = path.join(reference_local_path, "%s.dat" % use_dbname)
         with urllib.request.urlopen(remote_db_file, timeout = 10) as db_response, open(local_db_file, "wb") as db_local:
             shutil.copyfileobj(db_response, db_local)
-
+  
         log.debug("\t => successfully downloaded new {} file".format(db_name))
-        updated.append(db_name.upper())
-    
-    update_msg = "IPD has released a new version of {}. I have updated my reference data accordingly.".format(" and ".join(updated))
+         
+        log.debug("\tCreating parsed files...")
+        version = hla_embl_parser.make_parsed_files(use_dbname, reference_local_path, log)
+        
+        success, msg = make_blast_db(use_dbname, reference_local_path, blast_path, log)
+        
+        if success:
+            update_msg += """IPD has released a new version of {} ({}). I have updated my reference data accordingly.""".format(db_name.upper(), version)
+            update_msg += "\n\n"
+        else:
+            log.error(msg)
+            update_msg += """IPD has released a new version of {} ({}), but I could not process it:\n
+            {}""".format(db_name.upper(), version, msg)
+            update_msg += "\n\n"
+    update_msg = update_msg.strip()
     log.info(update_msg)
     return update_msg
 
@@ -175,7 +201,8 @@ pass
 def main():
     log = start_log(level="DEBUG")
     log.info("<Start>")
-    update_databases(log)
+    blast_path = r"Y:\Projects\typeloader\blast-2.7.1+\bin"
+    update_databases(blast_path, log)
     log.info("<End>")
 
 
