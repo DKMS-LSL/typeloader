@@ -9,7 +9,7 @@ import urllib.request
 import hashlib
 from time import time
 
-import hla_embl_parser
+from . import hla_embl_parser
 
 remote_db_path = { \
             "hla_path" : "https://github.com/ANHIG/IMGTHLA/raw/Latest/hla.dat", \
@@ -20,8 +20,6 @@ remote_checksumfile_index = { \
             "kir_checksums_file" : "https://raw.githubusercontent.com/ANHIG/IPDKIR/Latest/md5checksum.txt", \
             "hla_checksums_file" : "https://raw.githubusercontent.com/ANHIG/IMGTHLA/Latest/md5checksum.txt" \
             }
-
-reference_local_path = r"H:\Mitarbeiterordner\Bianca\Eclipse-Workspaces\Python3\Python3\src\typeloader2\src\reference_data2"
 
 
 def local_file_from_today(local_ref_file, log):
@@ -100,70 +98,79 @@ def move_files(ref_path_temp, ref_path, target, log):
             shutil.move(src_path, target_path)
         
 
-def update_databases(blast_path, log):
-    """checks IPD Github account for new releases,
-    if found, downloads them and creates TypeLoader's reference files
+def check_database(db_name, reference_local_path, log, skip_if_updated_today = True):
+    """checks IPD Github account for new releases
     """
-    log.info("Checking IPD for new releases...")
-    db_list = ["hla", "kir"]
-    update_msg = ""
-
-    for db_name in db_list:
-        log.info("Checking {}...".format(db_name.upper()))
-        if db_name == "kir": 
-            use_dbname = "KIR"  # biological databases and consistency in naming are arch enemies 
-        else:
-            use_dbname = db_name
-        
-        local_reference_file = os.path.join(reference_local_path, "{}.dat".format(use_dbname))
-        if local_file_from_today(local_reference_file, log):
-            continue
+    log.info("Checking {} for IPD update...".format(db_name.upper()))
+    if db_name == "kir": 
+        use_dbname = "KIR"  # biological databases and consistency in naming are arch enemies 
+    else:
+        use_dbname = db_name
+    
+    local_reference_file = os.path.join(reference_local_path, "{}.dat".format(use_dbname))
+    if os.path.isfile(local_reference_file):
+        if skip_if_updated_today:
+            if local_file_from_today(local_reference_file, log):
+                return False, "Reference file was already updated today"
+        local_md5 = get_local_md5checksum(local_reference_file, log)
         
         remote_md5 = get_remote_md5checksum(db_name, log)
         if not remote_md5:
             log.info("Aborting attempt to update the {} reference".format(db_name))
-            continue
-        local_md5 = get_local_md5checksum(local_reference_file, log)
+            return False, "Could not reach IPD's checksum file"
+        
         if remote_md5 == local_md5:
-            log.info("\t=> {} is up to date".format(db_name)) 
-            continue
-        
-        log.info("=> Found new reference version for {}".format(db_name))
-        
-        ref_path_temp = os.path.join(reference_local_path, "temp")
-        try:
-            os.mkdir(ref_path_temp)
-        except OSError: # exists already
-            pass
-        
-        log.debug("\tdownloading new file...")
-        remote_db_file = remote_db_path["%s_path" % db_name]
-        local_db_file = os.path.join(ref_path_temp, "%s.dat" % use_dbname)
-        with urllib.request.urlopen(remote_db_file, timeout = 10) as db_response, open(local_db_file, "wb") as db_local:
-            shutil.copyfileobj(db_response, db_local)
-  
-        log.debug("\t => successfully downloaded new {} file".format(db_name))
-         
-        log.debug("\tCreating parsed files...")
-        version = hla_embl_parser.make_parsed_files(use_dbname, ref_path_temp, log)
-        
-        success, msg = make_blast_db(use_dbname, ref_path_temp, blast_path, log)
-        
-        if success:
-            update_msg += """IPD has released a new version of {} ({}). I have updated my {} reference data accordingly.""".format(db_name.upper(), version, db_name.upper())
-            update_msg += "\n\n"
-            move_files(ref_path_temp, reference_local_path, db_name, log)
-        else:
-            log.error(msg)
-            update_msg += """IPD has released a new version of {} ({}), but I could not process it (see below). I'll continue to use the old files for now.
-            {}""".format(db_name.upper(), version, msg)
-            update_msg += "\n\n"
-            
-    update_msg = update_msg.strip()
-    if update_msg:
-        log.info(update_msg)
+            msg = "\t=> {} is up to date".format(db_name)
+            log.info(msg) 
+            return False, msg
+    
     else:
-        update_msg = "All up to date."
+        log.info("=> No local reference file found")
+        local_md5 = None # if reference file does not exist, download it
+    
+    msg = "=> Found new reference version for {}".format(db_name)
+    log.info(msg)
+    return True, msg
+
+
+def update_database(db_name, reference_local_path, blast_path, log):
+    """updates a reference database
+    """
+    log.info("Retrieving new database version for {}...".format(db_name))
+    update_msg = None
+    if db_name == "kir": 
+        use_dbname = "KIR"  # biological databases and consistency in naming are arch enemies 
+    else:
+        use_dbname = db_name
+        
+    ref_path_temp = os.path.join(reference_local_path, "temp")
+    try:
+        os.mkdir(ref_path_temp)
+    except OSError: # exists already
+        pass
+    
+    log.debug("\tdownloading new file...")
+    remote_db_file = remote_db_path["%s_path" % db_name]
+    local_db_file = os.path.join(ref_path_temp, "%s.dat" % use_dbname)
+    with urllib.request.urlopen(remote_db_file, timeout = 10) as db_response, open(local_db_file, "wb") as db_local:
+        shutil.copyfileobj(db_response, db_local)
+    
+    log.debug("\t => successfully downloaded new {} file".format(db_name))
+     
+    log.debug("\tCreating parsed files...")
+    version = hla_embl_parser.make_parsed_files(use_dbname, ref_path_temp, log)
+    
+    success, msg = make_blast_db(use_dbname, ref_path_temp, blast_path, log)
+    
+    if success:
+        update_msg = """IPD has released a new version of {} ({}). I have updated my {} reference data accordingly.""".format(db_name.upper(), version, db_name.upper())
+        move_files(ref_path_temp, reference_local_path, db_name, log)
+    else:
+        log.error(msg)
+        update_msg = """IPD has released a new version of {} ({}), but I could not process it (see below). I'll continue to use the old files for now.
+        {}""".format(db_name.upper(), version, msg)
+          
+    log.info(update_msg)
     return update_msg
 
 
@@ -243,8 +250,16 @@ pass
 def main():
     log = start_log(level="DEBUG")
     log.info("<Start>")
+    db_list = ["hla", "kir"]
     blast_path = r"Y:\Projects\typeloader\blast-2.7.1+\bin"
-    update_databases(blast_path, log)
+    reference_local_path = r"H:\Mitarbeiterordner\Bianca\Eclipse-Workspaces\Python3\Python3\src\typeloader2\src\reference_data2"
+    
+    for db_name in db_list:
+        new_version, msg = check_database(db_name, reference_local_path, log, skip_if_updated_today = False)
+        if new_version:
+            update_msg = update_database(db_name, reference_local_path, blast_path, log)
+            
+
     log.info("<End>")
 
 

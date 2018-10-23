@@ -72,7 +72,7 @@ class MainGUI(QMainWindow):
         self.display(2) # index of initially displayed stack-item
         
         self.add_menu()
-    
+        
     def make_leftlist(self):
         """sets up the navigation area
         """
@@ -563,6 +563,7 @@ if __name__ == '__main__':
             ex = MainGUI(mydb, log, settings_dic)
             ex.showMaximized()
             splash.finish(ex)
+            GUI_login.check_for_reference_updates(log, settings_dic, ex)
             result = app.exec_()
             cleanup_recovery(settings_dic, log)
             ok = True

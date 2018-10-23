@@ -22,7 +22,9 @@ from PyQt5.QtGui import QIcon
 
 import general, db_internal
 from authuser import user
+from typeloader_core import update_reference
 from GUI_forms import ProceedButton
+from PyQt5.Qt import QMessageBox
 
 #===========================================================
 # parameters:
@@ -331,6 +333,8 @@ class LoginForm(QDialog):
                 QMessageBox.information(self, error, msg)
             else:
                 QMessageBox.warning(self, error, msg)
+
+
 pass
 
 #===========================================================
@@ -491,6 +495,39 @@ def dump_db(curr_time, settings_dic, log):
     shutil.copy(db_file, db_file_temp)
     
 
+def check_for_reference_updates(log, settings, parent):
+    db_list = ["hla", "kir"]
+    blast_path = os.path.dirname(settings["blast_path"])
+    reference_local_path = os.path.join(settings["root_path"], settings["general_dir"], settings["reference_dir"])
+    
+    update_me = []
+    for db_name in db_list:
+        new_version_found, _ = update_reference.check_database(db_name, reference_local_path, log, 
+                                                           skip_if_updated_today = False)
+        if new_version_found:
+            update_me.append(db_name.upper())
+    
+    if update_me:
+        targets = " and ".join(update_me)
+        msg = "Found new reference version for {}. Should I update now?\n".format(targets)
+        msg += "(This should take about a minute, please wait after clicking Yes.)"
+        reply = QMessageBox.question(parent, "New reference found",
+                          msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+        
+        if reply == QMessageBox.No:
+            log.info("User chose not to update the database.")
+            return
+        
+        msges = []
+        for db_name in update_me:
+            db_name = db_name.lower()
+            update_msg = update_reference.update_database(db_name, reference_local_path, blast_path, log)
+            msges.append(update_msg)
+        QMessageBox.information(parent, "Reference data updated", 
+                                       "\n\n".join(msges))
+            
+        
+     
 def startup(user, curr_time, log):
     """performs startup actions 
     (between 'login accepted' and 'main window start')
@@ -556,7 +593,7 @@ def check_for_newer_version(myurl, repo, log):
             log.info("\t=> You are currently using the newest version of TypeLoader. :)")
             return newer_version, error, False
     
-        
+    
 def log_uncaught_exceptions(cls, exception, tb):
     """reimplementation of sys.excepthook;
     catches uncaught exceptions, logs them and exits the app
