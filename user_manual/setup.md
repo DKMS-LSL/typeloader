@@ -37,3 +37,5 @@ You will have to submit your first IPD file by hand (you can let TypeLoader crea
  * IPD contact's **Form of Address:** This is what you provided as "title". (Dr./Mr./Mrs./Ms. etc)
  * IPD contact's **Email:** This is the email adress you registered with.
  * IPD contact's **Submittor ID:** This is the submitter ID you received from IPD.
+
+See [=> First Start](first_start.md) for how to continue after setup.

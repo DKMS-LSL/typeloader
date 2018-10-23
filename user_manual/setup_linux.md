@@ -56,7 +56,7 @@ blast_path: <path to blastn>
 
 ```
 
-![important](images/icon_important.png) **Please note that you will have to create the directory given as root_path. (The Windows installer does this by itself.)**
+![important](images/icon_important.png) **Please note that you will have to manually create the directory given as root_path. (The Windows installer does this by itself.)**
 
 ![important](images/icon_important.png) **All paths must be absolute paths (starting from /home/), not shortened path (starting with ~).**
 
@@ -102,3 +102,5 @@ You will have to submit your first IPD file by hand (you can let TypeLoader crea
 
 ## Running TypeLoader
 Once you have everything set up, rename the file ``src/typeloader_GUI.pyw`` to the extension .py. Then you should be able to execute this as a Python file to run TypeLoader.
+
+See [=> First Start](first_start.md) for how to continue after setup.
