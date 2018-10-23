@@ -13,7 +13,7 @@ for myfile in os.listdir("tables"):
 
 
 build_exe_options = {"includes": ["authuser", "typeloader_core"],
-                     "include_files": ["config_raw.ini", 'icons/', 'tables/', 'reference_data/', 'blastn/', "LICENSE.txt"],
+                     "include_files": ["config_raw.ini", 'icons/', 'tables/', 'blastn/', "LICENSE.txt"],
                      "excludes": ["tkinter"]}
 
 base = None
@@ -21,7 +21,7 @@ if sys.platform == "win32":
     base = "Win32GUI"
     
 setup(name = "TypeLoader",
-      version = "2.0.1",
+      version = "2.1.0",
       description = "TypeLoader",
       options = {"build_exe": build_exe_options},
       executables = [Executable("typeloader_GUI.pyw", 
