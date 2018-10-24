@@ -46,3 +46,10 @@ Here are some useful entry points
 * [=> Database tables](tables.md)
 * [=> Internal data structure](data_structure.md)
 * [=> Database Recovery and Logs](recovery_logs.md)
+
+## Development
+TypeLoader is still under active development. We enthusiastically welcome your contributions and feedback!(Ideally, create an issue or a merge request.)
+
+* [=> Planned features](future.md)
+* [=> Create an issue](https://github.com/DKMS-LSL/typeloader/issues)
+ 
