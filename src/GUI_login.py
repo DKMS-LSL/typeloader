@@ -364,8 +364,8 @@ def make_new_settings(root_path, user, user_name, short_name, email, address,
                 g.write(line)
                 
         g.write("[Paths]\n")
-        g.write("raw_files_path: {}\n".format("C:\\"))
-        g.write("default_saving_dir: {}\n".format("C:\\"))
+        g.write("raw_files_path: {}\n".format(""))
+        g.write("default_saving_dir: {}\n".format(""))
         cf = get_basic_cf(log)
         g.write("root_path: {}\n".format(cf.get("Paths", "root_path")))
         g.write("blast_path: {}\n".format(cf.get("Paths", "blast_path")))
