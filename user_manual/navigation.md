@@ -2,7 +2,7 @@
 
 The left panel of TypeLoader's GUI is a navigation area which shows the structure of all projects and target alleles of the user logged in. It can be used to navigate between these items.
 
-![NavigationArea](images/navigation.PNG)
+![NavigationArea](images/navigation.png)
 
 All items are displayed hierarchically:
 

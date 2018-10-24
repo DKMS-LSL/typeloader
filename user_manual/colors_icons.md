@@ -1,4 +1,4 @@
-# ![Icon](images/TypeLoader_32.png)  Colors, Icons and Status
+# ![Icon](images/TypeLoader_32.png)  Colors, Icons, and Status
 
 Target alleles in TypeLoader have two kinds of status:
 
@@ -7,18 +7,20 @@ Target alleles in TypeLoader have two kinds of status:
 
 Both have designated values, and each status value belongs to a category.
 
+*Projects* in TypeLoader have a **Project Status**. 
+
 ##  Status categories and colors 
-Status values are grouped into categories, which signify whether there is currently anything that needs to be done with this allele.
+Allele status and lab status values are grouped into categories, which signify whether there is currently anything that needs to be done with this allele.
 
 Each category has an assigned color and icon:
 
-| Category | Color      | Meaning | Category |
+| Category | Color      | Meaning | Icon |
 |----------|------------|---------|-----|
-| ToDo     | **yellow** | To proceed with this allele, the user must do something. | ToDo |
-| Pending  | **grey**   | This allele has been submitted to ENA or IPD and is awaiting their response. | ToDo |
-| Done     | **green**  | All work on this allele has been finished. | ToDo |
-| Error    | **red**    | Something is wrong with this allele. | ToDo |
-| Unknown  | **white**  | TypeLoader does not know this status! | ToDo |
+| ToDo     | **yellow** | To proceed with this allele, the user must do something. | ![todo](images/icon_todo.png)|
+| Pending  | **grey**   | This allele has been submitted to ENA or IPD and is awaiting their response. | ![todo](images/icon_pending.png) |
+| Done     | **green**  | All work on this allele has been finished. | ![todo](images/icon_done.png) |
+| Error    | **red**    | Something is wrong with this allele. | ![todo](images/icon_error.png) |
+| Unknown  | **white**  | TypeLoader does not know this status! |  |
 
 ##  Allele Status 
 The allele status designates the overall status of the allele. TypeLoader knows the following status values for the allele status (in the order in which they are usually encountered):
@@ -59,3 +61,36 @@ TypeLoader knows the following status values for the lab status (in the order in
 ![Pic](images/icon_important.png) **Note that all alleles that are created in TypeLoader by uploading a sequence file already start with the lab status "completed".**
 
 **To use the other lab status values, the alleles have to be initialized at an earlier point, which is not yet supported.**
+
+## Project Status
+
+All TypeLoader projects have a status, which can be one of two values:
+
+  * Open
+  * Closed
+
+###  What it means 
+####  Open projects 
+The status ``Open`` should be used for projects with contain non-finished alleles.
+
+Only for open projects can you
+
+  * add new alleles (using the [=> New Allele Dialog](new_allele.md)
+  * submit alleles to ENA
+  * submit alleles to IPD
+
+Open projects are listed first in the [=> Navigation Area](navigation.md) (this section is always extended on startup). 
+
+The [=> Projects Overview](overview_project.md) by default only shows open projects.
+
+####  Closed projects 
+The status ``Closed`` should be used for projects on which all work has been finished. All their target alleles should have a ``green`` allele status (see above).
+
+(Basically, this status is used to get old projects out of the way of those projects that are still being worked on.)
+
+Closed projects are listed separately on the bottom of the [=> Navigation Area](navigation.md). By default, this section is colapsed on startup.
+
+The [=> Projects Overview](overview_project.md) by default hides all closed projects. They can be shown using a toggle-button.
+
+###  Changing the project status 
+To change a project's status, open its [=> Project View](view_project.md) and click the ``Close Project`` or ``Open Project`` button (whichever applies; the button will change its text accordingly) in the center top area. 

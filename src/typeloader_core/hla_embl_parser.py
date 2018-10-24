@@ -9,7 +9,7 @@ parser functions for repeat use
 #===========================================================
 #import modules:
 
-from sys import argv
+import os, re
 from pickle import dump
 import sys
 
@@ -55,14 +55,20 @@ class Allele:
 #===========================================================
 # reading functions:
 
-def read_dat_file(dat_file, target, isENA = False, verbose = False):
+def read_dat_file(dat_file, target, log, isENA = False, verbose = False):
     """reads content of a .dat file (EMBL format),
     returns list of allele objects.
     The parameter 'target' expects one of the following: "HLA", "Blutgruppen","CCR5", "KIR".
     """
     alleles = []
+    version = ""
+    curr_release_pattern1 = "\(rel. (.*?), current release"
+    curr_release_regex1 = re.compile(curr_release_pattern1) 
+    curr_release_pattern2 = "\(rel. (.*?), last updated"
+    curr_release_regex2 = re.compile(curr_release_pattern2)
+
     if verbose:
-        print("Lese %s ein..." % dat_file)
+        log.info("Reading {}...".format(dat_file))
     with open(dat_file, "r") as f:
         data = f.readlines()
         for i in range(len(data)):
@@ -94,10 +100,17 @@ def read_dat_file(dat_file, target, isENA = False, verbose = False):
                     elif allele.find("_")>0:
                         locus = allele.split("_")[0]
                     else:
-                        print("!!!Cannot see Locus of Allele %s! Please adjust Input file!" % allele)
-                        print(line)
+                        log.error("!!!Cannot see Locus of Allele %s! Please adjust Input file!" % allele)
+                        log.error(line)
                         sys.exit()
 
+            elif line.startswith("DT"):
+                line = line.lower()
+                for regex in (curr_release_regex1, curr_release_regex2):
+                    match = regex.search(line)
+                    if match:
+                        version = match.groups()[0]
+                
             elif line.startswith("DE"):
                 s = line.split()
                 if target in ["HLA", "HLA_23_with_introns", "Phasing_HLA_23", "KIR"]:
@@ -181,7 +194,7 @@ def read_dat_file(dat_file, target, isENA = False, verbose = False):
                 else:
                     alleles.append(myAllele)
     if verbose:
-        print("\t%s Allele von %s erfolgreich eingelesen!" % (len(alleles), target))
+        log.info("\t=> successfully read {} of {} alleles!" % (len(alleles), target))
 
     alleleHash = {}
     for allele in alleles:
@@ -190,9 +203,7 @@ def read_dat_file(dat_file, target, isENA = False, verbose = False):
         #       if ((allele.name != "HLA-DQB1*05:03:01:01") or (allele.name != "HLA-DQB1*06:01:01")): continue
         alleleHash[allele.name] = allele
 
-
-
-    return alleleHash
+    return alleleHash, version
 
 
 #===========================================================
@@ -218,26 +229,40 @@ def write_fasta(alleles, output_fasta, no_UTR = False, verbose = False):
     if verbose:
         print("\tFertig!")
 
-if __name__ == '__main__':
-
-    # is only used to update reference data, see update_reference.sh
-    imgt_download_file, target = argv[1], argv[2]
-    alleles = read_dat_file(imgt_download_file, target)
-
-    fasta_file = open(argv[3], "w")
-    for allele_name in list(alleles.keys()):
-        allele_data = alleles[allele_name]
-        if (target == "HLA"):
-            fasta_file.write(">%s\n" % allele_name)
-            fasta_file.write("%s\n" % allele_data.seq)
-        elif (target == "KIR"):
-            # take only full length KIR alleles
-            if ((len(allele_data.UTR3) > 0) & (len(allele_data.UTR5) > 0)):
+def make_parsed_files(target, ref_dir, log):
+    """creates the parsed reference files from IPD's files
+    """
+    ipd_download_file = os.path.join(ref_dir, "{}.dat".format(target))
+    fa_filename = os.path.join(ref_dir, "parsed{}.fa".format(target))
+    dump_filename = os.path.join(ref_dir, "parsed{}.dump".format(target))
+    version_file = os.path.join(ref_dir, "curr_version_{}.txt".format(target.lower()))
+    
+    log.debug("\t\tReading alleles from {}...".format(ipd_download_file))
+    alleles, version = read_dat_file(ipd_download_file, target.upper(), log)
+    
+    log.debug("\t\tWriting {}...".format(fa_filename))
+    with open(fa_filename, "w") as fasta_file:
+        for allele_name in list(alleles.keys()):
+            allele_data = alleles[allele_name]
+            if (target == "hla"):
                 fasta_file.write(">%s\n" % allele_name)
                 fasta_file.write("%s\n" % allele_data.seq)
-        else: pass
-    fasta_file.close()
+            elif (target == "KIR"):
+                # take only full length KIR alleles
+                if ((len(allele_data.UTR3) > 0) & (len(allele_data.UTR5) > 0)):
+                    fasta_file.write(">%s\n" % allele_name)
+                    fasta_file.write("%s\n" % allele_data.seq)
+            else: 
+                pass
+    
+    log.debug("\t\tWriting {}...".format(dump_filename))
+    with open(dump_filename, "wb") as alleleDumpFile:
+        dump(alleles, alleleDumpFile)
+        
+    log.debug("\t\tWriting {}...".format(version_file))
+    with open(version_file, "w") as g:
+        g.write(version)
+    return version
 
-    alleleDumpFile = open(argv[4], "w")
-    dump(alleles, alleleDumpFile)
-    alleleDumpFile.close()
+if __name__ == '__main__':
+    pass

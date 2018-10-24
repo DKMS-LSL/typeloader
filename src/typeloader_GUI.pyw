@@ -22,6 +22,7 @@ from PyQt5.QtWidgets import (QMainWindow, QApplication, QDialog,
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5 import QtSql
 from PyQt5.QtCore import pyqtSlot, Qt
+from configparser import NoSectionError
 
 import general, db_internal
 import GUI_navigation, GUI_login, GUI_stylesheet
@@ -71,7 +72,7 @@ class MainGUI(QMainWindow):
         self.display(2) # index of initially displayed stack-item
         
         self.add_menu()
-    
+        
     def make_leftlist(self):
         """sets up the navigation area
         """
@@ -145,6 +146,7 @@ class MainGUI(QMainWindow):
         self.view_sample.layout.addWidget(mywidget.download_btn, 0, 7)
         self.view_sample.widget.data_changed.connect(self.on_data_changed)
         self.view_sample.widget.allele_updated.connect(self.change_allele)
+        self.view_sample.widget.sample_table.updated.connect(self.view_ov_alleles.widget.refresh)
         
     def make_stack_widget(self, lbl_text, mywidget):
         """creates a QWidget displaying one view and its main label,
@@ -260,7 +262,7 @@ class MainGUI(QMainWindow):
         self.ov_menu.addAction(ov_samples_act)
         self.toolbar.addAction(ov_samples_act)
         
-        ov_projects_act = QAction('&Project overview', self.ov_menu)
+        ov_projects_act = QAction('&Projects overview', self.ov_menu)
         ov_projects_act.setShortcut('Ctrl+Alt+P')
         ov_projects_act.setStatusTip('View overview of all projects')
         ov_projects_act.triggered.connect(partial(self.display, 2))
@@ -510,6 +512,9 @@ def remove_lock(settings_dic, log):
 # main:
         
 if __name__ == '__main__':
+    if GUI_login.config_files_missing():
+        sys.exit(1)
+    
     curr_time = time.strftime("%Y%m%d_%H%M%S")
     
     if platform.system() ==  "Windows":
@@ -520,7 +525,13 @@ if __name__ == '__main__':
     app.setStyleSheet(GUI_stylesheet.make_stylesheet())
     
     cf = GUI_login.get_basic_cf()
-    root_path = cf.get("Paths", "root_path")
+    try:
+        root_path = cf.get("Paths", "root_path")
+    except NoSectionError:
+        print("{} must contain parameter 'root_path' in section [Paths]!\nAborting...".format(GUI_login.base_config_file))
+        sys.exit(1)
+    
+    GUI_login.check_root_path(root_path)
     mylog = os.path.join(root_path, "_general", "{}.log".format(curr_time))
     log = general.start_log(level="DEBUG", debug_to_file = mylog)
     log.info("<Start>")
@@ -552,6 +563,7 @@ if __name__ == '__main__':
             ex = MainGUI(mydb, log, settings_dic)
             ex.showMaximized()
             splash.finish(ex)
+            GUI_login.check_for_reference_updates(log, settings_dic, ex)
             result = app.exec_()
             cleanup_recovery(settings_dic, log)
             ok = True

@@ -1,5 +1,5 @@
 # ![Icon](images/TypeLoader_32.png) Alleles Overview 
-![ProjectsOverview](images/overview_alleles_full.PNG)
+![ProjectsOverview](images/overview_alleles_full.png)
 
 This [=> Overview](overviews.md) shows all target alleles of the TypeLoader account logged in (1 row per allele). Just like the [=> Projects Overview](overview_project.md), this table can be sorted and filtered by all columns.
 

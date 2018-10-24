@@ -38,6 +38,7 @@ def blastSequences(inputFastaFile, parsedFasta, settings, log,
     if not os.path.isfile(blastXmlOutputFile):
         log.error("BlastXMLFile not generated!")
         log.debug(blast_command)
+        return False
     return blastXmlOutputFile
 
 
@@ -149,6 +150,12 @@ def blastRawSeqs(inputFilename, filetype, settings, log):
         BlastXMLFile = blastSequences(fastaFilename, parsedFasta, settings, log)
     except Exception as E:
         log.exception(E)
+        return (False, "Error while trying to BLAST raw sequence", repr("E"))
+    if not BlastXMLFile:
+        msg = "BlastXMLFile not generated!\n"
+        msg += "Please make sure the BLAST path in your user settings is correct!\n"
+        msg += "(Current BLAST path: {})".format(settings["blast_path"])
+        return (False, "Error while trying to BLAST raw sequence", msg)
         
     with open(versionFilename) as f:
         curr_version = f.read().strip()

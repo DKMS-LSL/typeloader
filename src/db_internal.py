@@ -338,9 +338,10 @@ def clean_tables(cursor, log):
           
     
 def query_database(query, db_file, log, cursor = None):
-    """returns results of a single query
+    """returns results of a single query (using sqlite)
     """
     conn = None
+    log.debug("Querying database...")
     if not cursor:
         conn, cursor = open_connection(db_file, log)
     try:
@@ -349,13 +350,34 @@ def query_database(query, db_file, log, cursor = None):
         print(query)
         cursor.execute(query)
     data = cursor.fetchall()
-    log.debug("{} rows found".format(len(data)))
+    log.debug("=> {} rows found".format(len(data)))
     if conn:
         conn.commit()
         cursor.close()
         conn.close()
     return data
-    
+
+
+def execute_query_sqlite(query, db_file, log, cursor = None):
+    """executes a single query
+    """
+    conn = None
+    log.debug("Executing query...")
+    if not cursor:
+        conn, cursor = open_connection(db_file, log)
+    try:
+        cursor.execute(query)
+    except:
+        print(query)
+        cursor.execute(query)
+    conn.commit()
+    log.debug("\t=> Query executed")
+    if conn:
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+
 def make_clean_db(db_file, log):
     """fills db_file with all necessary tables (empty)
     """

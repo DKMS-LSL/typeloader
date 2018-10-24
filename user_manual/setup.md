@@ -1,4 +1,7 @@
-# ![Icon](images/TypeLoader_32.png) Installing TypeLoader #
+# ![Icon](images/TypeLoader_32.png) Installing TypeLoader
+
+## Linux ##
+See the [Linux Setup page](setup_linux.md).
 
 ## Windows ##
 Download the file `Setup_TypeLoader.exe` under `installer` => `windows` and install it with admin privileges. The wizard will guide you through the installation process.
@@ -35,5 +38,4 @@ You will have to submit your first IPD file by hand (you can let TypeLoader crea
  * IPD contact's **Email:** This is the email adress you registered with.
  * IPD contact's **Submittor ID:** This is the submitter ID you received from IPD.
 
-## Linux ##
-There currently is no Linux installer (though there will be). You should be able to download the code and run it by executing the file ``typeloader_GUI.pyw``, though. (You might have to change its extension to ``typeloader_GUI.py``.) (Needs Python 3.6 or higher, with PyQt5 installed.) 
+See [=> First Start](first_start.md) for how to continue after setup.

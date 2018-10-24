@@ -261,6 +261,7 @@ class Navigation(QWidget):
         """
         self.log.debug("Setting up Navigation area UI...")
         self.tree = QTreeView()
+        self.tree.doubleClicked.connect(self.onDoubleClick)
         self.grid = QGridLayout()
         self.setLayout(self.grid)
         self.header_lbl = QLabel("Projects and Samples:", self)
@@ -425,6 +426,31 @@ class Navigation(QWidget):
                     self.log.info("Deleting {} #{} of project {}".format(sample, nr, project))
                     self.delete_sample(sample, nr, project, status)
     
+    @pyqtSlot(QModelIndex)
+    def onDoubleClick(self, index):
+        """open SampleView or ProjectView
+        """
+        nodetype = self.model.nodeType(index)
+        if nodetype == "Project":
+            project = self.model.data(index, Qt.DisplayRole)
+            status = self.model.data(self.model.parent(index), Qt.DisplayRole)
+            self.changed_projects.emit(project, status)
+            self.change_view.emit(3)
+            self.log.debug("Navigation emitted changed_projects & change_view to ProjectView")
+            
+        elif nodetype == "Sample":
+            sample_list = self.model.data(index, Qt.DisplayRole).split()
+            sample = sample_list[0]
+            if len(sample_list) > 1:
+                nr = int(sample_list[1][1:-1])
+            else:
+                nr = 1
+            project = self.model.data(self.model.parent(index), Qt.DisplayRole)
+            status = self.model.data(self.model.parent(self.model.parent(index)), Qt.DisplayRole)
+            self.changed_allele.emit(sample, nr, project)
+            self.change_view.emit(4)
+            self.log.debug("Navigation emitted changed_alleles & change_view to AlleleView")
+                    
     @pyqtSlot(str)
     def select_project(self, project):
         """looks for <project> in the tree-model and selects it if found;

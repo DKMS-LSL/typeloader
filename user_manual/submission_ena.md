@@ -2,6 +2,7 @@
 To submit (one or multiple) alleles to ENA, click ``Submit to ENA`` in the menu or toolbar, or choose ``Submit project to ENA`` in the [=> Projects Overview](overview_project.md).
 
 This will open the ENA Submission Dialog:
+
 ![EnaSubmission1](images/ena_submission1.png)
 
 ##  (1) Choose a project 

@@ -22,6 +22,7 @@ import general, db_internal
 from typeloader_core import EMBLfunctions as EF
 from GUI_forms import (CollapsibleDialog, ChoiceSection, 
                        ProceedButton, QueryButton, FileChoiceTable)
+from GUI_misc import settings_ok
 
 #===========================================================
 # parameters:
@@ -160,6 +161,11 @@ class ENASubmissionForm(CollapsibleDialog):
         self.accepted = True
         self.problem_samples = []
         self.show()
+        
+        ok, msg = settings_ok("ENA", self.settings, self.log)
+        if not ok:
+            QMessageBox.warning(self, "Missing ENA settings", msg)
+            self.close()
         
     def define_sections(self):
         """defining the dialog's sections

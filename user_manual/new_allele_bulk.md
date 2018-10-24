@@ -14,8 +14,8 @@ To give TypeLoader the files you want to bulk-upload, you need a .csv file conta
   * **nr**: an identifier for this line; it must be a unique number and should be incremented. TypeLoader will use this number to give you feedback whether this allele was successfully uploaded or not.
   * **file_dir**: the directory where the fasta file is located
   * **file_name**: the file name of the fasta file you want to upload
-  * **sample_id_int**: the internal sample ID for the sample 
-  * **sample_id_ext**: the external sample ID for the sample
+  * **sample\_id_int**: the internal sample ID for the sample 
+  * **sample\_id_ext**: the external sample ID for the sample
   * **customer**: (optional) the customer who issued the sample
   * **cell_line**: (optional) the cell line the final allele should have
 
@@ -48,10 +48,11 @@ After all alleles have been processed, the confirmation box will vanish and the 
 
 ###  (2) Check results 
 ![Pic](images/bulk_upload2.png)
+
 This section shows you the result of your bulk submission. 
 
 First, all alleles that were successfully uploaded are listed. These are now contained in the specified project.
 
 Then, all alleles that produced any kind of error or problem are listed, together with the error message. These were not added to TypeLoader. You will need to fix these before you can upload them.
 
-Clicking "Ok" will close the dialog.
+Clicking ``Ok`` will close the dialog.

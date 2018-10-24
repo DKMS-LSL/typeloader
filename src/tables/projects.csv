@@ -1,0 +1,11 @@
+Column,TYPE,PK
+Project_Name,TEXT,PK
+Project_status,TEXT,
+Creation_date,TEXT,
+Username,TEXT,
+Gene,TEXT,
+Pool,TEXT,
+Title,TEXT,
+Description,TEXT,
+ENA_ID_project,TEXT,
+ENA_ID_submission,TEXT,

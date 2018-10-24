@@ -1,12 +1,7 @@
-*.csv
 *.pyc
-*.fa
 *.afa
-*.dat
 docu*
-data*
 logs*
-Thumbs.db
 temp*
 *.db
 config_base.ini
@@ -15,4 +10,4 @@ user.pickle
 build*
 log.txt
 blastn*
-authuser/git*
+reference_data*

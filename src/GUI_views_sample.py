@@ -4,12 +4,15 @@
 from PyQt5.QtSql import QSqlQuery, QSqlRelation
 from PyQt5.QtWidgets import (QHeaderView, QTabWidget, QGridLayout,
                              QWidget, QMessageBox,
-                             QLabel, QApplication)
-from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
+                             QLabel, QApplication, QMenu,
+                             QFormLayout, QPushButton, QLineEdit)
+from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot, QPoint
+from PyQt5.Qt import QDialog
+from PyQt5.QtGui import QIcon
 
 import sys, os
 
-import general, GUI_misc
+import general, GUI_misc, db_internal
 from db_internal import alleles_header_dic
 from GUI_overviews import (InvertedTable, FilterableTable, edit_on_manual_submit,
                            SqlQueryModel_filterable, SqlQueryModel_editable,
@@ -22,9 +25,62 @@ from __init__ import __version__
 #===========================================================
 # classes:
 
+class ChangeExtIdDialog(QDialog):
+    """allow the user to change the external sample ID of a sample
+    through a popup dialog
+    """
+    updated = pyqtSignal()
+    
+    def __init__(self, log, sample_id_int, sample_id_ext, parent = None):
+        super().__init__()
+        self.log = log
+        self.sample_id_ext = sample_id_ext
+        self.sample_id_int = sample_id_int
+        self.init_UI()
+        self.setWindowIcon(QIcon(general.favicon))
+        
+    def init_UI(self):
+        self.log.debug("Opening ChangeExtIdDialog...")
+        layout = QFormLayout()
+        self.setLayout(layout)
+        self.title = "Change a sample's external sample ID"
+        
+        self.sample_ext_field = QLineEdit(self)
+        self.sample_ext_field.setText(self.sample_id_ext)
+        layout.addRow(QLabel("New External Sample-ID:"), self.sample_ext_field)
+        
+        self.ok_btn = QPushButton("Save", self)
+        layout.addRow(self.ok_btn)
+        self.ok_btn.clicked.connect(self.on_clicked)
+            
+    def on_clicked(self):
+        """when ok_btn is clicked, get content of fields and emit it
+        """
+        self.log.debug("Asking for confirmation...")
+        self.sample_id_ext_new = self.sample_ext_field.text().strip()
+        msg = "Are you really sure you want to change the external sample ID "
+        msg += "of {} from {} to {}?".format(self.sample_id_int, self.sample_id_ext, self.sample_id_ext_new)
+        reply = QMessageBox.question(self, 'Confirm change of external sample ID', msg, QMessageBox.Yes | 
+            QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            query = """Update SAMPLES set sample_id_ext = '{}' where sample_id_ext = '{}' and 
+            sample_id_int = '{}'""".format(self.sample_id_ext_new, self.sample_id_ext, self.sample_id_int)
+            success, _ = db_internal.execute_query(query, 0, self.log, "Updating table SAMPLES", 
+                                      "Updating the external sample ID", self)
+            
+            if success:
+                self.log.info("""Changed external sample ID of sample {} from {} to {}
+                            """.format(self.sample_id_int, self.sample_id_ext, self.sample_id_ext_new))
+                self.log.debug("Emitting signal 'updated'")
+                self.updated.emit()
+                self.close()
+
+        
 class SampleTable(InvertedTable):
     """shows general info of one sample
     """
+    updated = pyqtSignal()
+    
     def __init__(self, log, mydb):
         super().__init__(log, mydb)
         self.create_model()
@@ -38,6 +94,8 @@ class SampleTable(InvertedTable):
         v_header = self.table.verticalHeader()
         v_header.setFixedWidth(110)
         self.table.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self.open_menu)
         
     def create_model(self):
 #         query_text = "select * from samples"
@@ -53,6 +111,35 @@ class SampleTable(InvertedTable):
         self.model.layoutAboutToBeChanged.emit()
         self.model.setFilter("Sample_ID_int = '{}'".format(sample_id_int))
         self.model.layoutChanged.emit()
+
+    @pyqtSlot(QPoint)
+    def open_menu(self, pos):
+        """provides a context menu
+        """
+        self.log.debug("Opening context menu of SampleTable...")
+        try:
+            menu = QMenu()
+            change_ext_act = menu.addAction("Change External Donor-ID")
+            
+            action = menu.exec_(self.table.mapToGlobal(pos))
+            if action:
+                if action == change_ext_act:
+                    self.sample_id_int = self.model.data(self.model.index(0, 0))
+                    sample_id_ext = self.model.data(self.model.index(0, 1))
+                    self.qbox = ChangeExtIdDialog(self.log, self.sample_id_int, sample_id_ext, self)
+                    self.qbox.updated.connect(self.updated.emit)
+                    self.qbox.updated.connect(self.refilter)
+                    self.qbox.exec_()
+                    
+        except Exception as E:
+            self.log.exception(E)
+            
+    def refilter(self):
+        """refilters SampleTable after external sample ID was changed
+        """
+        self.log.debug("Refiltering SampleTable...")
+        self.filter_sample_table(self.sample_id_int)
+        
 
 
 class SampleAlleles(FilterableTable):

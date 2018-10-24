@@ -9,10 +9,10 @@ from PyQt5.QtCore import Qt, pyqtSignal, QPoint, pyqtSlot
 
 import sys, os
 
-import general, GUI_misc
+import general
 from db_internal import execute_query
 from GUI_overviews import (InvertedTable, FilterableTable, SqlQueryModel_filterable,
-                           edit_on_manual_submit, EditFilesButton, EditFileDialog,
+                           EditFilesButton, EditFileDialog,
                            DownloadFilesButton, DownloadFilesDialog)
 from __init__ import __version__
 

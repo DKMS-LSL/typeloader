@@ -1,0 +1,9 @@
+Column,TYPE,PK
+Project_name,TEXT,
+Submission_id,TEXT,PK
+Nr_alleles,INT,
+Timestamp_sent,TEXT,
+Timestamp_confirmed,TEXT,
+ACC_analysis,TEXT,
+ACC_submission,TEXT,
+Success,TEXT,

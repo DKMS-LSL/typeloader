@@ -57,9 +57,22 @@ def getMismatchData(annotations):
 
         canonicalMMCodonNum = int(ceil(float(cdsPos)/3))
 
+        """
+        # older version which was got class I codon assignments correct, and class II assignments wrong
         # IMGT assigns the first codon in exon 2 as codon 1, and the codons in exon 1 with a -1 backwards
         if canonicalMMCodonNum > numExon1Coords: imgtMMCodonNum = canonicalMMCodonNum - numExon1Coords
         else: imgtMMCodonNum = canonicalMMCodonNum - (numExon1Coords + 1)
+        """
+
+        """
+        The first codon per IMGT definition corresponds to the start of the mature protein
+        For class I, this is exon 2, and for class II, this is exon 1
+        """
+ 
+        if closestallele.find("DPB1") != -1: imgtMMCodonNum = canonicalMMCodonNum
+        else:
+            if canonicalMMCodonNum > numExon1Coords: imgtMMCodonNum = canonicalMMCodonNum - numExon1Coords
+            else: imgtMMCodonNum = canonicalMMCodonNum - (numExon1Coords + 1)
 
         """
         Getting rid of the codon sequence madness, sort of bruting it
@@ -101,7 +114,7 @@ def getMismatchData(annotations):
 
 def getCoordinates(blastXmlFilename, allelesFilename, targetFamily, settings, log, isENA=True):
 
-    allAlleles = read_dat_file(allelesFilename, targetFamily, isENA)
+    allAlleles, _ = read_dat_file(allelesFilename, targetFamily, isENA)
     closestAlleles = getClosestKnownAlleles(blastXmlFilename, targetFamily, settings, log)
 
     seqsFile = blastXmlFilename.replace(".blast.xml",".fa")

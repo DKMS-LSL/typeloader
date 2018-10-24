@@ -125,96 +125,102 @@ def reformat_header_data(header_data, sample_id_ext, log):
         if header_data["lr_data"]:
             header_data["lr_phasing"] = "yes" # DR2S always produces phased long read data
     
-    # store external sample number if given by parameter (needed for tesing):
+    # store external sample number if given by parameter (needed for testing):
     if sample_id_ext:
         header_data["Spendernummer"] = sample_id_ext
         
             
 def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_filename, allelesFilename, header_data, settings, log):
     log.debug("Processing sequence file...")
-    if filetype == "XML":
-        closestAlleles = CA.getClosestKnownAlleles(blastXmlFile, targetFamily, settings, log)
-        genDxAlleleNames = list(closestAlleles.keys())
-        if closestAlleles[genDxAlleleNames[0]] == 0 or closestAlleles[genDxAlleleNames[1]] == 0:
-            # No BLAST hit at position 1
-            msg = "No BLAST hit at position 1"
-            log.warning(msg)
-            return False, "Problem in XML file", msg
-        
-        closestAlleleNames = [closestAlleles[genDxAlleleName]["name"] for genDxAlleleName in genDxAlleleNames]
-        geneNames = [alleleName.split("*")[0] for alleleName in genDxAlleleNames]
-        alleleNames = ["%s:new" % alleleName.split(":")[0] for alleleName in closestAlleleNames]
-         
-        products = []
-        for geneName in geneNames:
-            if geneName.startswith("D"):
-                products.append(flatfile_dic["productname_hla_ii"])
-            else:
-                products.append(flatfile_dic["productname_hla_i"])
-        
-        (gendx_result, gene, name, product) = (genDxAlleleNames[0], geneNames[0], alleleNames[0], products[0])
-        allele1 = Allele(gendx_result, gene, name, product, targetFamily)
-             
-        (gendx_result, gene, name, product) = (genDxAlleleNames[1], geneNames[1], alleleNames[1], products[1])
-        allele2 = Allele(gendx_result, gene, name, product, targetFamily)
-        
-        myalleles = [allele1, allele2]
-        ENA_text = ""
-        cellLine = ""
-     
-    else: # Fasta-File:
-        annotations = COO.getCoordinates(blastXmlFile, allelesFilename, targetFamily, settings, log)
-        alleles = [allele for allele in annotations.keys()]
-        # take the first sequence in fasta file
-        alleleName = alleles[0]
-        if annotations[alleleName] is None:
-            # No BLAST hit at position 1
-            msg = "No BLAST hit at position 1"
-            log.warning(msg)
-            return False, "Problem in XML file", msg
-        else:
-            extraInformation = annotations[alleleName]["extraInformation"]
-            closestAlleleName = annotations[alleleName]["closestAllele"]
-            geneName = closestAlleleName.split("*")[0]
-            newAlleleName = "%s:new" % closestAlleleName.split(":")[0]
-             
-            # set productName and function
-            gene_tag = "gene"
-            if targetFamily == settings["gene_kir"]: # if KIR
-                productName_FT = geneName + " " + flatfile_dic["productname_kir_short"]
-                productName_DE = flatfile_dic["productname_kir_long"]
-                function = flatfile_dic["function_kir"]
-                if geneName in settings["pseudogenes"].split("|"):
-                    gene_tag = "pseudogene"
-            else:
-                function = flatfile_dic["function_hla"]
-                geneName = geneName.split("-")[1]
-                # D ...for DQB, DPB, DRB
-                if geneName.startswith("D"):
-                    productName_FT = productName_DE = (flatfile_dic["productname_hla_ii"]) # class 2 gene
-                else:
-                    productName_FT = productName_DE = (flatfile_dic["productname_hla_i"]) # class 1 gene
+    try:
+        if filetype == "XML":
+            closestAlleles = CA.getClosestKnownAlleles(blastXmlFile, targetFamily, settings, log)
+            genDxAlleleNames = list(closestAlleles.keys())
+            if closestAlleles[genDxAlleleNames[0]] == 0 or closestAlleles[genDxAlleleNames[1]] == 0:
+                # No BLAST hit at position 1
+                msg = "No BLAST hit at position 1"
+                log.warning(msg)
+                return False, "Problem in XML file", msg
             
-            with open(fasta_filename, "rU") as f:
-                parser = SeqIO.parse(f, "fasta")
-                record = parser.__next__()
-                cellLine = record.id.strip()
+            closestAlleleNames = [closestAlleles[genDxAlleleName]["name"] for genDxAlleleName in genDxAlleleNames]
+            geneNames = [alleleName.split("*")[0] for alleleName in genDxAlleleNames]
+            alleleNames = ["%s:new" % alleleName.split(":")[0] for alleleName in closestAlleleNames]
              
-            posHash, sequences = EF.get_coordinates_from_annotation(annotations)
-             
-            currentPosHash = posHash[alleleName]
-            sequence = sequences[alleleName]
-            features = annotations[alleleName]["features"]
-            enaPosHash = BME.transform(currentPosHash)
-             
-            generalData = BME.make_globaldata(gene_tag = gene_tag, gene = geneName, allele = newAlleleName, product_DE = productName_DE, product_FT = productName_FT, 
-                                              function = function, species = flatfile_dic["species"], 
-                                              seqLen = str(len(sequence)), cellline = cellLine)
-            ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash) + BME.make_genemodel(BE.backend_dict, generalData, enaPosHash, extraInformation, features, 0, 0) + BME.make_footer(BE.backend_dict, sequence)
-            myallele = Allele("", geneName, newAlleleName, productName_FT, targetFamily, cellLine, newAlleleName)
-            myalleles = [myallele]
-            #TODO (future): accept multiple sequences from one fasta file
-    return True, myalleles, ENA_text, cellLine
+            products = []
+            for geneName in geneNames:
+                if geneName.startswith("D"):
+                    products.append(flatfile_dic["productname_hla_ii"])
+                else:
+                    products.append(flatfile_dic["productname_hla_i"])
+            
+            (gendx_result, gene, name, product) = (genDxAlleleNames[0], geneNames[0], alleleNames[0], products[0])
+            allele1 = Allele(gendx_result, gene, name, product, targetFamily)
+                 
+            (gendx_result, gene, name, product) = (genDxAlleleNames[1], geneNames[1], alleleNames[1], products[1])
+            allele2 = Allele(gendx_result, gene, name, product, targetFamily)
+            
+            myalleles = [allele1, allele2]
+            ENA_text = ""
+            cellLine = ""
+         
+        else: # Fasta-File:
+            annotations = COO.getCoordinates(blastXmlFile, allelesFilename, targetFamily, settings, log)
+            alleles = [allele for allele in annotations.keys()]
+            # take the first sequence in fasta file
+            alleleName = alleles[0]
+            if annotations[alleleName] is None:
+                # No BLAST hit at position 1
+                msg = "No BLAST hit at position 1"
+                log.warning(msg)
+                return False, "Problem in XML file", msg
+            else:
+                extraInformation = annotations[alleleName]["extraInformation"]
+                closestAlleleName = annotations[alleleName]["closestAllele"]
+                geneName = closestAlleleName.split("*")[0]
+                newAlleleName = "%s:new" % closestAlleleName.split(":")[0]
+                 
+                # set productName and function
+                gene_tag = "gene"
+                if targetFamily == settings["gene_kir"]: # if KIR
+                    productName_FT = geneName + " " + flatfile_dic["productname_kir_short"]
+                    productName_DE = flatfile_dic["productname_kir_long"]
+                    function = flatfile_dic["function_kir"]
+                    if geneName in settings["pseudogenes"].split("|"):
+                        gene_tag = "pseudogene"
+                else:
+                    function = flatfile_dic["function_hla"]
+                    geneName = geneName.split("-")[1]
+                    # D ...for DQB, DPB, DRB
+                    if geneName.startswith("D"):
+                        productName_FT = productName_DE = (flatfile_dic["productname_hla_ii"]) # class 2 gene
+                    else:
+                        productName_FT = productName_DE = (flatfile_dic["productname_hla_i"]) # class 1 gene
+                
+                with open(fasta_filename, "rU") as f:
+                    parser = SeqIO.parse(f, "fasta")
+                    record = parser.__next__()
+                    cellLine = record.id.strip()
+                 
+                posHash, sequences = EF.get_coordinates_from_annotation(annotations)
+                 
+                currentPosHash = posHash[alleleName]
+                sequence = sequences[alleleName]
+                features = annotations[alleleName]["features"]
+                enaPosHash = BME.transform(currentPosHash)
+                 
+                generalData = BME.make_globaldata(gene_tag = gene_tag, gene = geneName, allele = newAlleleName, product_DE = productName_DE, product_FT = productName_FT, 
+                                                  function = function, species = flatfile_dic["species"], 
+                                                  seqLen = str(len(sequence)), cellline = cellLine)
+                ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash) + BME.make_genemodel(BE.backend_dict, generalData, enaPosHash, extraInformation, features, 0, 0) + BME.make_footer(BE.backend_dict, sequence)
+                myallele = Allele("", geneName, newAlleleName, productName_FT, targetFamily, cellLine, newAlleleName)
+                myalleles = [myallele]
+                #TODO (future): accept multiple sequences from one fasta file
+        return True, myalleles, ENA_text, cellLine
+    except Exception as E:
+        log.error(E)
+        log.exception(E)
+        return False, "Error while processing the sequence file", repr(E)
+        
 
 
 def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log):

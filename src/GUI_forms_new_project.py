@@ -21,6 +21,7 @@ from PyQt5.QtGui import QIcon
 
 import general
 from typeloader_core import EMBLfunctions as EF
+from GUI_misc import settings_ok
 
 import db_internal
 
@@ -56,6 +57,10 @@ class NewProjectForm(QDialog):
             self.project_name = None
             self.success = False
             self.show()
+            ok, msg = settings_ok("ENA", self.settings, self.log)
+            if not ok:
+                QMessageBox.warning(self, "Missing ENA settings", msg)
+                self.close()
         except Exception as E:
             QMessageBox.warning(self, "Problem with NewProjectForm", "Could not open NewProjectForm:\n\n" + repr(E))
             log.error(E)
@@ -156,6 +161,7 @@ class NewProjectForm(QDialog):
         
         try:
             self.project_name = "_".join([date, initials, self.gene, self.pool])
+            self.project_name = self.project_name.replace(" ","-")
         except Exception as E:
             self.log.error(E)
             QMessageBox.warning(self, "Cannot create project name!",

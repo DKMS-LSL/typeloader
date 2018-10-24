@@ -22,7 +22,9 @@ from PyQt5.QtGui import QIcon
 
 import general, db_internal
 from authuser import user
+from typeloader_core import update_reference
 from GUI_forms import ProceedButton
+from PyQt5.Qt import QMessageBox
 
 #===========================================================
 # parameters:
@@ -72,10 +74,9 @@ class NewUserForm(QDialog):
         layout.addRow(QLabel("Initials:"), self.short_field)
         
         self.email_field = QLineEdit(self)
-        self.email_field.setPlaceholderText("(optional)")
         layout.addRow(QLabel("Email:"), self.email_field)
         
-        fields = [self.user_field, self.name_field, self.pwd_field]
+        fields = [self.user_field, self.name_field, self.pwd_field, self.email_field]
         ok_btn = ProceedButton("Create user!", items = fields, log = self.log, parent = self)
         for item in fields:
             item.textChanged.connect(ok_btn.check_ready)
@@ -331,6 +332,8 @@ class LoginForm(QDialog):
                 QMessageBox.information(self, error, msg)
             else:
                 QMessageBox.warning(self, error, msg)
+
+
 pass
 
 #===========================================================
@@ -361,8 +364,8 @@ def make_new_settings(root_path, user, user_name, short_name, email, address,
                 g.write(line)
                 
         g.write("[Paths]\n")
-        g.write("raw_files_path: {}\n".format("C:\\"))
-        g.write("default_saving_dir: {}\n".format("C:\\"))
+        g.write("raw_files_path: {}\n".format(""))
+        g.write("default_saving_dir: {}\n".format(""))
         cf = get_basic_cf(log)
         g.write("root_path: {}\n".format(cf.get("Paths", "root_path")))
         g.write("blast_path: {}\n".format(cf.get("Paths", "blast_path")))
@@ -439,6 +442,7 @@ def get_settings(user, log, cf = None):
             settings_dic[key] = value   
     if settings_dic["modus"] in ["testing", "debugging"]:
         settings_dic["embl_submission"] = settings_dic["embl_submission_test"]
+    settings_dic["TL_version"] = __version__
     log.info("\t=>Success")
     return settings_dic
     
@@ -490,6 +494,39 @@ def dump_db(curr_time, settings_dic, log):
     shutil.copy(db_file, db_file_temp)
     
 
+def check_for_reference_updates(log, settings, parent):
+    db_list = ["hla", "kir"]
+    blast_path = os.path.dirname(settings["blast_path"])
+    reference_local_path = os.path.join(settings["root_path"], settings["general_dir"], settings["reference_dir"])
+    
+    update_me = []
+    for db_name in db_list:
+        new_version_found, _ = update_reference.check_database(db_name, reference_local_path, log, 
+                                                           skip_if_updated_today = False)
+        if new_version_found:
+            update_me.append(db_name.upper())
+    
+    if update_me:
+        targets = " and ".join(update_me)
+        msg = "Found new reference version for {}. Should I update now?\n".format(targets)
+        msg += "(This should take about a minute, please wait after clicking Yes.)"
+        reply = QMessageBox.question(parent, "New reference found",
+                          msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+        
+        if reply == QMessageBox.No:
+            log.info("User chose not to update the database.")
+            return
+        
+        msges = []
+        for db_name in update_me:
+            db_name = db_name.lower()
+            update_msg = update_reference.update_database(db_name, reference_local_path, blast_path, log)
+            msges.append(update_msg)
+        QMessageBox.information(parent, "Reference data updated", 
+                                       "\n\n".join(msges))
+            
+        
+     
 def startup(user, curr_time, log):
     """performs startup actions 
     (between 'login accepted' and 'main window start')
@@ -555,7 +592,7 @@ def check_for_newer_version(myurl, repo, log):
             log.info("\t=> You are currently using the newest version of TypeLoader. :)")
             return newer_version, error, False
     
-        
+    
 def log_uncaught_exceptions(cls, exception, tb):
     """reimplementation of sys.excepthook;
     catches uncaught exceptions, logs them and exits the app
@@ -568,6 +605,18 @@ def log_uncaught_exceptions(cls, exception, tb):
     sys.__excepthook__(cls, exception, traceback)
     QCoreApplication.exit(1)   
 
+
+def config_files_missing():
+    """checks whether the config files exist
+    """
+    for myfile in [base_config_file, company_config_file]: 
+        if not os.path.isfile(myfile):
+            raise IOError("File {} does not exist! Please create it before trying again!\nAborting...".format(myfile))
+            return True
+    return False
+    
+    
+
 # def generate_inis(log):
 #     from settings_ import user_dic
 #     for user in user_dic:
@@ -579,6 +628,25 @@ def log_uncaught_exceptions(cls, exception, tb):
 #          
 #         make_new_settings(root_path, user, user_name, short_name, email, address,
 #                           log)
+
+
+def check_root_path(root_path):
+    """checks whether root_path and '_general' subdir was already created 
+    (should happen during setup, but sometimes doesn't due to missing privileges),
+    if not, creates them
+    """  
+    import errno
+    general_dir = os.path.join(root_path, "_general")
+    if os.path.isdir(general_dir):
+        return
+    else:
+        try:
+            os.makedirs(general_dir)
+            print ("Created {}".format(general_dir))
+        except OSError as e:
+            if e.errno != errno.EEXIST: # if dir creation fails for any reason except "dir exists already" 
+                raise
+
 pass
 #===========================================================
 # main:
