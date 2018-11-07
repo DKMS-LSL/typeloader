@@ -113,7 +113,15 @@ def make_genemodel(backend_dict,general,enaPosHash, extraInformation, features, 
 def make_footer(backend_dict, sequence,seqwidth=80):
 
     fText = backend_dict["footer"]
-    return fText.replace("{sequence}","\n".join(textwrap.wrap(sequence,seqwidth)))
+    sequence_lines = textwrap.wrap(sequence,seqwidth)
+
+    # This is a workaround for ENA ignoring the last line of the sequence if there are only 2 bases on that line (#53)
+    # Once ENA fixes this bug, this if section can be removed
+    if len(sequence) % seqwidth == 2: 
+        new_sequence_lines = sequence_lines[:-2] 
+        new_sequence_lines.append(sequence_lines[-2] + sequence_lines[-1])
+        sequence_lines = new_sequence_lines
+    return fText.replace("{sequence}","\n".join(sequence_lines))
 
 
 if __name__ == '__main__':

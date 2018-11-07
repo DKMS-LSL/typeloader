@@ -557,6 +557,7 @@ def get_latest_version(myurl, repo, log):
                 else:
                     log.debug("\t\t!Did not find a quote delimiter in the version line!")
     except Exception as E:
+        print(E)
         log.exception(E)   
              
     if version:
