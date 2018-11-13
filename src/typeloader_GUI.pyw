@@ -30,6 +30,7 @@ import GUI_forms_new_project, GUI_forms_new_allele, GUI_forms_new_allele_bulk
 import GUI_forms_submission_ENA, GUI_forms_submission_IPD
 import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample
 import GUI_views_settings
+import GUI_download_files
 from GUI_misc import UnderConstruction
 
 #===========================================================
@@ -295,6 +296,12 @@ class MainGUI(QMainWindow):
         self.options_menu.addAction(settings_act)
         self.toolbar.addAction(settings_act)
         
+        dld_ex_act = QAction("&Download example files", self.options_menu)
+        dld_ex_act.setShortcut('Ctrl+D')
+        dld_ex_act.triggered.connect(self.open_ExampleFileDialog)
+        settings_act.setStatusTip('Download example files')
+        self.options_menu.addAction(dld_ex_act)
+        
 #         # generate status report:
 #         report_status_act = QAction('Generate status report', self)
 #         report_status_act.setShortcut('Ctrl+R')
@@ -357,9 +364,14 @@ class MainGUI(QMainWindow):
             self.log.exception(E)
         
     def open_user_settings_dialog(self):
-        """opens the 'UserSettings' dialog & connects its signals to the rest-GUI
+        """opens the 'UserSettings' dialog
         """
         GUI_views_settings.UserSettingsDialog(self.settings, self.log, self)
+        
+    def open_ExampleFileDialog(self):
+        """opens the 'ExampleFiles' dialog
+        """
+        GUI_download_files.ExampleFileDialog(self.settings, self.log, self)
         
     def on_projects_changed(self):
         """when a new project has been created or a project been deleted,
