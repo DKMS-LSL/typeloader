@@ -121,6 +121,7 @@ project_accession = "" ## this will be set in create project
 
 app = QApplication(sys.argv)
 
+today = datetime.datetime.now()
 
 #===========================================================
 # test cases:
@@ -1328,13 +1329,36 @@ class Test_Views(unittest.TestCase):
             
             for col in [41, 44, 45, 46]:
                 self.assertEqual(model.data(model.index(col, 0), Qt.DisplayRole), "")
+        
+        def test_tab7_history(self):
+            """tests whether content of SampleView widget 'Details about Allele' tab 'allele history' is correct
+            """
+            view = widget.tabs[6]
+            model = view.flipped_model
+            curr_date = today.strftime("%Y-%m-%d")
+            
+            # test content and headers of columns:
+            self.assertEqual(model.headerData(0, Qt.Vertical, Qt.DisplayRole), "Original genotyping")
+            self.assertEqual(model.headerData(1, Qt.Vertical, Qt.DisplayRole), "Novel allele detection")
+            self.assertEqual(model.headerData(2, Qt.Vertical, Qt.DisplayRole), "New genotyping")
+            self.assertEqual(model.headerData(3, Qt.Vertical, Qt.DisplayRole), "Upload of sequence")
+            self.assertEqual(model.data(model.index(3, 0), Qt.DisplayRole), curr_date)
+            self.assertEqual(model.headerData(4, Qt.Vertical, Qt.DisplayRole), "Submitted to ENA")
+            self.assertEqual(model.data(model.index(4, 0), Qt.DisplayRole), curr_date)
+            self.assertEqual(model.headerData(5, Qt.Vertical, Qt.DisplayRole), "Accepted by ENA")
+#             self.assertEqual(model.data(model.index(5, 0), Qt.DisplayRole), "2018-07-10") # compare to get_file_creation_date(ENA_reply_file), if necessary
+            self.assertEqual(model.headerData(6, Qt.Vertical, Qt.DisplayRole), "Submitted to IPD")
+            self.assertEqual(model.data(model.index(6, 0), Qt.DisplayRole), curr_date)
+            self.assertEqual(model.headerData(7, Qt.Vertical, Qt.DisplayRole), "Accepted by IPD")
+            self.assertEqual(model.data(model.index(7, 0), Qt.DisplayRole), "")
             
         test_tab1_general(self)
         test_tab2_typing_old(self)
         test_tab3_lab(self)
         test_tab4_typing_new(self)
         test_tab5_ena(self)
-#         test_tab6_IPD(self) # #TODO: re-enable as soon as final state of IPD tab is decided upon
+        test_tab6_IPD(self) # #TODO: re-enable as soon as final state of IPD tab is decided upon
+        test_tab7_history(self)
         
         
 class Test_Make_IMGT_Files_py(unittest.TestCase):
@@ -1580,7 +1604,7 @@ def compare_2_files(query_path, reference_path, filetype = ""):
     
     if filetype == "IPD":
         # change the date in order to compare both ipd files
-        now = f"{datetime.datetime.now():%d/%m/%Y}" 
+        now = today.strftime("%d/%m/%Y") 
         reference_file = re.sub('DT.*Submitted\)\n.*Release\)', 'DT   {} (Submitted)\nDT   {} (Release)'.format(now, now), reference_file)
         reference_file = reference_file.replace("{TL-VERSION}", __version__) # replace TL-version part of reference file with current version
 
