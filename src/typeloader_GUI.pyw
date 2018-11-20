@@ -105,7 +105,7 @@ class MainGUI(QMainWindow):
         self.stacked_widgits[1] = "Alleles Overview"
         mywidget = GUI_views_OValleles.AllelesOverview(self.log, self.mydb)
         self.log.debug("=> Making stack widget...")
-        self.view_ov_alleles = self.make_stack_widget("Alleles overview", mywidget)
+        self.view_ov_alleles = self.make_stack_widget("Alleles Overview", mywidget)
         self.log.debug("=> Stack item created")
         self.view_ov_alleles.widget.changed_projects.connect(self.change_project)
         self.view_ov_alleles.widget.change_view.connect(self.display)
@@ -114,7 +114,7 @@ class MainGUI(QMainWindow):
         self.log.debug("\tCreating stack item 2: Projects overview")
         self.stacked_widgits[2] = "Projects Overview"
         mywidget = GUI_views_OVprojects.ProjectsOverview(self.log, self.mydb, self)
-        self.view_ov_projects = self.make_stack_widget("Projects overview", mywidget)
+        self.view_ov_projects = self.make_stack_widget("Projects Overview", mywidget)
         self.view_ov_projects.widget.changed_projects.connect(self.change_project)
         self.view_ov_projects.widget.change_view.connect(self.display)
         self.view_ov_projects.widget.deleted_project.connect(self.on_projects_changed)
@@ -256,14 +256,14 @@ class MainGUI(QMainWindow):
         # See overviews (ov):
         self.ov_menu = self.menubar.addMenu('&Overviews')
         
-        ov_samples_act = QAction('&Alleles overview', self.ov_menu)
+        ov_samples_act = QAction('&Alleles Overview', self.ov_menu)
         ov_samples_act.setShortcut('Ctrl+Alt+A')
         ov_samples_act.setStatusTip('View overview of all samples')
         ov_samples_act.triggered.connect(partial(self.display, 1))
         self.ov_menu.addAction(ov_samples_act)
         self.toolbar.addAction(ov_samples_act)
         
-        ov_projects_act = QAction('&Projects overview', self.ov_menu)
+        ov_projects_act = QAction('&Projects Overview', self.ov_menu)
         ov_projects_act.setShortcut('Ctrl+Alt+P')
         ov_projects_act.setStatusTip('View overview of all projects')
         ov_projects_act.triggered.connect(partial(self.display, 2))
