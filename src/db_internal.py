@@ -472,7 +472,7 @@ def main(log):
 
         
 if __name__ == '__main__':
-    log = general.start_log(level="DEBUG", info_to_file=log_file)
+    log = general.start_log(level="DEBUG")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
     main(log)
     log.info("<End>")
