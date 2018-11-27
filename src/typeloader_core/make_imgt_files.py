@@ -9,6 +9,7 @@ from .befundparser import getOtherAlleles
 from .coordinates import getCoordinates
 from .enaemailparser import parse_embl_response
 from .imgt_text_generator import make_imgt_text
+from .errors import IncompleteSequenceError
 from os import path, mkdir, system
 from sys import argv
 from functools import reduce
@@ -136,6 +137,8 @@ def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, bef
         newAlleleStub = getNewAlleleNameFromEna(enafile).split(":")[0]
         try: 
             annotations = getCoordinates(blastOp, allelesFilename, targetFamily, settings, log, isENA=False)
+        except IncompleteSequenceError as E:
+            return False, (" {}:\n".format(cell_line)) + E.msg
         except Exception as E:
             print("Blast output : ", blastOp)
             print(allelesFilename, targetFamily)
@@ -143,7 +146,7 @@ def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, bef
             log.exception(E)
             log.warning("Blast messed up?")
             continue
-
+        
         isSameGene = reduce(lambda x,y: x & y, [annotations[genDxAlleleName]["closestAllele"].startswith(newAlleleStub) \
             for genDxAlleleName in list(annotations.keys())])
 

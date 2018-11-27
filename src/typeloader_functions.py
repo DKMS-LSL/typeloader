@@ -20,12 +20,13 @@ from collections import defaultdict
 
 from typeloader_core import (EMBLfunctions as EF, coordinates as COO, backend_make_ena as BME, 
                              backend_enaformat as BE, getAlleleSeqsAndBlast as GASB,
-                             closestallele as CA)
+                             closestallele as CA, errors)
 import general, db_internal
 #===========================================================
 # parameters:
 
 from __init__ import __version__
+from src.typeloader_core.errors import IncompleteSequenceError
 
 flatfile_dic = {"function_hla" : "antigen presenting molecule",
                 "function_kir" : "killer-immunoglobulin receptor",
@@ -134,7 +135,11 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
     log.debug("Processing sequence file...")
     try:
         if filetype == "XML":
-            closestAlleles = CA.getClosestKnownAlleles(blastXmlFile, targetFamily, settings, log)
+            try:
+                closestAlleles = CA.getClosestKnownAlleles(blastXmlFile, targetFamily, settings, log)
+            except errors.IncompleteSequenceError as E:
+                return False, "Incomplete sequence", E.msg
+        
             genDxAlleleNames = list(closestAlleles.keys())
             if closestAlleles[genDxAlleleNames[0]] == 0 or closestAlleles[genDxAlleleNames[1]] == 0:
                 # No BLAST hit at position 1
@@ -164,7 +169,10 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
             cellLine = ""
          
         else: # Fasta-File:
-            annotations = COO.getCoordinates(blastXmlFile, allelesFilename, targetFamily, settings, log)
+            try:
+                annotations = COO.getCoordinates(blastXmlFile, allelesFilename, targetFamily, settings, log)
+            except errors.IncompleteSequenceError as E:
+                return False, "Incomplete sequence", E.msg
             alleles = [allele for allele in annotations.keys()]
             # take the first sequence in fasta file
             alleleName = alleles[0]
