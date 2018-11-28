@@ -32,6 +32,8 @@ flatfile_dic = {"function_hla" : "antigen presenting molecule",
                 "function_kir" : "killer-immunoglobulin receptor",
                 "productname_hla_i" : "MHC class I antigen",
                 "productname_hla_ii" : "MHC class II antigen",
+                "productname_hla_i_null" : "MHC class I antigen null allele",
+                "productname_hla_ii_null" : "MHC class II antigen null allele",
                 "productname_kir_long" : "Human Killer-cell Immunoglobulin-like Receptor",
                 "productname_kir_short" : "Killer-cell Immunoglobulin-like Receptor",
                 "species" : "Homo sapiens"}
@@ -186,6 +188,14 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 closestAlleleName = annotations[alleleName]["closestAllele"]
                 geneName = closestAlleleName.split("*")[0]
                 newAlleleName = "%s:new" % closestAlleleName.split(":")[0]
+                
+                posHash, sequences = EF.get_coordinates_from_annotation(annotations)
+            
+                currentPosHash = posHash[alleleName]
+                sequence = sequences[alleleName]
+                features = annotations[alleleName]["features"]
+                enaPosHash = BME.transform(currentPosHash)
+                null_allele, msg = BME.is_null_allele(sequence, enaPosHash)                
                  
                 # set productName and function
                 gene_tag = "gene"
@@ -200,26 +210,21 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                     geneName = geneName.split("-")[1]
                     # D ...for DQB, DPB, DRB
                     if geneName.startswith("D"):
-                        productName_FT = productName_DE = (flatfile_dic["productname_hla_ii"]) # class 2 gene
+                        productName_FT = productName_DE = (flatfile_dic["productname_hla_ii"]) \
+                            if null_allele == False else (flatfile_dic["productname_hla_ii_null"]) # class 2 gene
                     else:
-                        productName_FT = productName_DE = (flatfile_dic["productname_hla_i"]) # class 1 gene
+                        productName_FT = productName_DE = (flatfile_dic["productname_hla_i"]) \
+                            if null_allele == False else (flatfile_dic["productname_hla_i_null"]) # class 1 gene
                 
                 with open(fasta_filename, "rU") as f:
                     parser = SeqIO.parse(f, "fasta")
                     record = parser.__next__()
                     cellLine = record.id.strip()
                  
-                posHash, sequences = EF.get_coordinates_from_annotation(annotations)
-                 
-                currentPosHash = posHash[alleleName]
-                sequence = sequences[alleleName]
-                features = annotations[alleleName]["features"]
-                enaPosHash = BME.transform(currentPosHash)
-                 
                 generalData = BME.make_globaldata(gene_tag = gene_tag, gene = geneName, allele = newAlleleName, product_DE = productName_DE, product_FT = productName_FT, 
                                                   function = function, species = flatfile_dic["species"], 
                                                   seqLen = str(len(sequence)), cellline = cellLine)
-                ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash) + BME.make_genemodel(BE.backend_dict, generalData, enaPosHash, extraInformation, features, 0, 0) + BME.make_footer(BE.backend_dict, sequence)
+                ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, null_allele) + BME.make_genemodel(BE.backend_dict, generalData, enaPosHash, extraInformation, features, 0, 0) + BME.make_footer(BE.backend_dict, sequence)
                 myallele = Allele("", geneName, newAlleleName, productName_FT, targetFamily, cellLine, newAlleleName)
                 myalleles = [myallele]
                 #TODO (future): accept multiple sequences from one fasta file
@@ -247,6 +252,9 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log):
     enaPosHash = BME.transform(currentPosHash)
     extraInformation = annotations[allele.alleleName]["extraInformation"]
     features = annotations[allele.alleleName]["features"]
+    null_allele, msg = BME.is_null_allele(sequence, enaPosHash)
+    
+    allele.productName_FT = allele.productName_FT + " null allele" if null_allele else allele.productName_FT
 
     generalData = BME.make_globaldata(gene_tag = "gene",
                                       gene = allele.geneName, 
@@ -257,7 +265,7 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log):
                                       species = flatfile_dic["species"], 
                                       seqLen = str(len(sequence)), 
                                       cellline = allele.cellLine)
-    ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash) 
+    ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, null_allele) 
     ENA_text += BME.make_genemodel(BE.backend_dict, generalData, enaPosHash, 
                                     extraInformation, features, allele.fromExon, allele.toExon) 
     ENA_text += BME.make_footer(BE.backend_dict, sequence)

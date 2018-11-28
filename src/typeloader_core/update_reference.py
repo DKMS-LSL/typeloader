@@ -7,6 +7,7 @@ import os
 import re, subprocess, shutil
 import urllib.request
 import hashlib
+import getpass
 from time import time
 
 from . import hla_embl_parser
@@ -74,7 +75,8 @@ def make_blast_db(target, ref_dir, blast_path, log):
     makeblastdb = os.path.join(blast_path, "makeblastdb")
     cmd = "{} -dbtype nucl -in {}/parsed{}.fa".format(makeblastdb, ref_dir, target)
     try:
-        subprocess.run(cmd, check=True)
+        #subprocess.run(cmd, check=True)
+        discard = os.system(cmd)
         return True, None
     
     except Exception as E:
