@@ -32,6 +32,7 @@ import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_s
 import GUI_views_settings
 import GUI_download_files
 from GUI_misc import UnderConstruction
+from patches import execute_patches
 
 #===========================================================
 # parameters:
@@ -549,6 +550,8 @@ if __name__ == '__main__':
     log.info("<Start>")
     
     sys.excepthook = log_uncaught_exceptions
+    
+    execute_patches(log)
     
     login = GUI_login.LoginForm(log)
     result = None
