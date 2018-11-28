@@ -27,6 +27,7 @@ label_style_normal = "QLabel {default}"
 label_style_main = "QLabel { font-weight: bold; font-size: 12pt }"
 label_style_2nd = "QLabel { font-weight: bold; font-size: 10pt }"
 label_style_entry = "QLabel {background: white; border: 1 px black}"
+label_style_italic = "QLabel {font: italic}"
 label_style_attention = "QLabel {background: DKMSyellow}".replace("DKMSyellow", stylesheet.color_dic["DKMSyellow"])
 
 btn_style_normal = "QPushButton {default}"
