@@ -195,7 +195,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 sequence = sequences[alleleName]
                 features = annotations[alleleName]["features"]
                 enaPosHash = BME.transform(currentPosHash)
-                null_allele, msg = BME.is_null_allele(sequence, enaPosHash)                
+                null_allele, _ = BME.is_null_allele(sequence, enaPosHash)                
                  
                 # set productName and function
                 gene_tag = "gene"
@@ -205,6 +205,9 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                     function = flatfile_dic["function_kir"]
                     if geneName in settings["pseudogenes"].split("|"):
                         gene_tag = "pseudogene"
+                        null_allele = False
+                    else:
+                        allele.productName_FT = allele.productName_FT + " null allele" if null_allele else allele.productName_FT
                 else:
                     function = flatfile_dic["function_hla"]
                     geneName = geneName.split("-")[1]
@@ -252,10 +255,13 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log):
     enaPosHash = BME.transform(currentPosHash)
     extraInformation = annotations[allele.alleleName]["extraInformation"]
     features = annotations[allele.alleleName]["features"]
-    null_allele, msg = BME.is_null_allele(sequence, enaPosHash)
     
-    allele.productName_FT = allele.productName_FT + " null allele" if null_allele else allele.productName_FT
-
+    if allele.geneName in settings["pseudogenes"].split("|"):
+        null_allele = False # whole locus is already pseudogene
+    else:
+        null_allele, _ = BME.is_null_allele(sequence, enaPosHash)
+        allele.productName_FT = allele.productName_FT + " null allele" if null_allele else allele.productName_FT
+    
     generalData = BME.make_globaldata(gene_tag = "gene",
                                       gene = allele.geneName, 
                                       allele = allele.newAlleleName, 
