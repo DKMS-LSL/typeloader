@@ -103,19 +103,19 @@ class MainGUI(QMainWindow):
         self.view_under_construction = self.make_stack_widget("Under construction", mywidget)
         
         self.log.debug("\tCreating stack item 1: Alleles overview")
-        self.stacked_widgits[1] = "Alleles Overview"
+        self.stacked_widgits[1] = "Allele Overview"
         mywidget = GUI_views_OValleles.AllelesOverview(self.log, self.mydb)
         self.log.debug("=> Making stack widget...")
-        self.view_ov_alleles = self.make_stack_widget("Alleles Overview", mywidget)
+        self.view_ov_alleles = self.make_stack_widget("Allele Overview", mywidget)
         self.log.debug("=> Stack item created")
         self.view_ov_alleles.widget.changed_projects.connect(self.change_project)
         self.view_ov_alleles.widget.change_view.connect(self.display)
         self.view_ov_alleles.widget.changed_allele.connect(self.change_allele)
-        self.log.debug("\t=> Alleles Overview done")
-        self.log.debug("\tCreating stack item 2: Projects overview")
-        self.stacked_widgits[2] = "Projects Overview"
+        self.log.debug("\t=> Allele Overview done")
+        self.log.debug("\tCreating stack item 2: Project overview")
+        self.stacked_widgits[2] = "Project Overview"
         mywidget = GUI_views_OVprojects.ProjectsOverview(self.log, self.mydb, self)
-        self.view_ov_projects = self.make_stack_widget("Projects Overview", mywidget)
+        self.view_ov_projects = self.make_stack_widget("Project Overview", mywidget)
         self.view_ov_projects.widget.changed_projects.connect(self.change_project)
         self.view_ov_projects.widget.change_view.connect(self.display)
         self.view_ov_projects.widget.deleted_project.connect(self.on_projects_changed)
@@ -257,16 +257,16 @@ class MainGUI(QMainWindow):
         # See overviews (ov):
         self.ov_menu = self.menubar.addMenu('&Overviews')
         
-        ov_samples_act = QAction('&Alleles Overview', self.ov_menu)
+        ov_samples_act = QAction('&Allele Overview', self.ov_menu)
         ov_samples_act.setShortcut('Ctrl+Alt+A')
-        ov_samples_act.setStatusTip('View overview of all samples')
+        ov_samples_act.setStatusTip('View an overview of all samples')
         ov_samples_act.triggered.connect(partial(self.display, 1))
         self.ov_menu.addAction(ov_samples_act)
         self.toolbar.addAction(ov_samples_act)
         
-        ov_projects_act = QAction('&Projects Overview', self.ov_menu)
+        ov_projects_act = QAction('&Project Overview', self.ov_menu)
         ov_projects_act.setShortcut('Ctrl+Alt+P')
-        ov_projects_act.setStatusTip('View overview of all projects')
+        ov_projects_act.setStatusTip('View an overview of all projects')
         ov_projects_act.triggered.connect(partial(self.display, 2))
         self.ov_menu.addAction(ov_projects_act)
         self.toolbar.addAction(ov_projects_act)
@@ -283,7 +283,7 @@ class MainGUI(QMainWindow):
         
         IPD_act = QAction('Submit to &IPD', self.submit_menu)
         IPD_act.setShortcut('Ctrl+I')
-        IPD_act.setStatusTip('Submit alleles to IPD')
+        IPD_act.setStatusTip('Submit alleles of a project to IPD')
         IPD_act.triggered.connect(self.open_IPD_submission_dialog)
         self.submit_menu.addAction(IPD_act)
         self.toolbar.addAction(IPD_act)
