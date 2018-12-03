@@ -229,6 +229,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                                                   seqLen = str(len(sequence)), cellline = cellLine)
                 ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, null_allele) + BME.make_genemodel(BE.backend_dict, generalData, enaPosHash, extraInformation, features, 0, 0) + BME.make_footer(BE.backend_dict, sequence)
                 myallele = Allele("", geneName, newAlleleName, productName_FT, targetFamily, cellLine, newAlleleName)
+                myallele.null_allele = null_allele
                 myalleles = [myallele]
                 #TODO (future): accept multiple sequences from one fasta file
         return True, myalleles, ENA_text, cellLine
@@ -257,10 +258,10 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log):
     features = annotations[allele.alleleName]["features"]
     
     if allele.geneName in settings["pseudogenes"].split("|"):
-        null_allele = False # whole locus is already pseudogene
+        allele.null_allele = False # whole locus is already pseudogene
     else:
-        null_allele, _ = BME.is_null_allele(sequence, enaPosHash)
-        allele.productName_FT = allele.productName_FT + " null allele" if null_allele else allele.productName_FT
+        allele.null_allele, _ = BME.is_null_allele(sequence, enaPosHash)
+        allele.productName_FT = allele.productName_FT + " null allele" if allele.null_allele else allele.productName_FT
     
     generalData = BME.make_globaldata(gene_tag = "gene",
                                       gene = allele.geneName, 
@@ -271,7 +272,7 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log):
                                       species = flatfile_dic["species"], 
                                       seqLen = str(len(sequence)), 
                                       cellline = allele.cellLine)
-    ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, null_allele) 
+    ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, allele.null_allele) 
     ENA_text += BME.make_genemodel(BE.backend_dict, generalData, enaPosHash, 
                                     extraInformation, features, allele.fromExon, allele.toExon) 
     ENA_text += BME.make_footer(BE.backend_dict, sequence)
@@ -440,12 +441,16 @@ def save_new_allele_to_db(allele, project, sample_name, cell_line,
             reference = "IPD-KIR"
         if not allele.partner_allele:
             allele.partner_allele = header_data["partner_allele"]
-
+        if allele.null_allele:
+            null_allele = 'yes'
+        else:
+            null_allele = 'no'
         update_queries = []
         # update ALLELES table:
         update_alleles_query = """INSERT INTO alleles 
         (sample_id_int, allele_nr, project_name, project_nr, cell_line, local_name, GENE, 
-        Goal, Allele_status, Lab_Status,
+        Goal, Allele_status, Lab_Status, 
+        null_allele,
         target_allele, partner_allele, reference_database,
         long_read_data, long_read_phasing, long_read_technology,
         short_read_data, short_read_phasing, short_read_technology,
@@ -453,13 +458,15 @@ def save_new_allele_to_db(allele, project, sample_name, cell_line,
         kommentar, Database_version, upload_date)
         VALUES 
         ('{}', '{}', '{}', {}, '{}', '{}', '{}', 
-        'novel', 'ENA-ready', 'completed',
+        'novel', 'ENA-ready', 'completed', 
+        '{}',
         '{}', '{}', '{}',
         '{}', '{}', '{}',
         '{}', '{}', '{}',
         '{}', '{}', '{}', 
         '{}', '{}', '{}')
-        """.format(sample_name, allele_nr, project, project_nr, cell_line, local_name, allele.gene, 
+        """.format(sample_name, allele_nr, project, project_nr, cell_line, local_name, allele.gene,
+                   null_allele,
                    allele.newAlleleName, allele.partner_allele, reference,
                    header_data["lr_data"], header_data["lr_phasing"], header_data["lr_tech"], 
                    header_data["sr_data"], header_data["sr_phasing"], header_data["sr_tech"],
