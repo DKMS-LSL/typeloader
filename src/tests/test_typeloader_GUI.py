@@ -904,6 +904,7 @@ class Test_Views(unittest.TestCase):
         self.assertEqual(model.data(model.index(1, 25)), samples_dic["sample_2"]["partner_allele"])
         self.assertEqual(model.headerData(26, Qt.Horizontal, Qt.DisplayRole), "Mismatch Position")
         self.assertEqual(model.headerData(27, Qt.Horizontal, Qt.DisplayRole), "Null Allele?")
+        self.assertEqual(model.data(model.index(0, 27)), "no")
         self.assertEqual(model.headerData(28, Qt.Horizontal, Qt.DisplayRole), "Software (new)")
         self.assertEqual(model.data(model.index(0, 28)), "")
         self.assertEqual(model.data(model.index(1, 28)), "NGSengine")
@@ -957,7 +958,7 @@ class Test_Views(unittest.TestCase):
         self.assertEqual(model.headerData(61, Qt.Horizontal, Qt.DisplayRole), "IPD Submission successful?")
 
         # check expected empty columns:
-        empty_columns = [9, 10, 11, 12, 13, 15, 17, 18, 19, 22, 23, 26, 27, 
+        empty_columns = [9, 10, 11, 12, 13, 15, 17, 18, 19, 22, 23, 26, 
                          33, 34, 35, 41, 42, 43, 60]
         for col in empty_columns:
             for row in [0, 1]:
@@ -1142,7 +1143,11 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.headerData(13, Qt.Vertical, Qt.DisplayRole), "Genotyping Date")
             
             for col in shown_columns:
-                self.assertEqual(model.data(model.index(col, 0), Qt.DisplayRole), "")
+                value = model.data(model.index(col, 0), Qt.DisplayRole)
+                msg = "Col {} ({}) should be empty, but contains {}!".format(col, 
+                                                                             model.headerData(col, Qt.Vertical, Qt.DisplayRole),
+                                                                             value)
+                self.assertEqual(value, "", msg)
             
         def test_tab3_lab(self):
             """tests whether content of SampleView widget 'Details about Allele' tab 'Lab Processing' is correct
@@ -1172,7 +1177,11 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.headerData(23, Qt.Vertical, Qt.DisplayRole), "Comment")
             
             for col in [15, 16, 17, 18, 19, 20, 21, 22, 23]:
-                self.assertEqual(model.data(model.index(col, 0), Qt.DisplayRole), "")
+                value = model.data(model.index(col, 0), Qt.DisplayRole)
+                msg = "Col {} ({}) should be empty, but contains {}!".format(col, 
+                                                                             model.headerData(col, Qt.Vertical, Qt.DisplayRole),
+                                                                             value)
+                self.assertEqual(value, "", msg)
         
         def test_tab4_typing_new(self):
             """tests whether content of SampleView widget 'Details about Allele' tab 'New Genotyping' is correct
@@ -1188,6 +1197,7 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.headerData(25, Qt.Vertical, Qt.DisplayRole), "Partner Allele")
             self.assertEqual(model.headerData(26, Qt.Vertical, Qt.DisplayRole), "Mismatch Position")
             self.assertEqual(model.headerData(27, Qt.Vertical, Qt.DisplayRole), "Null Allele?")
+            self.assertEqual(model.data(model.index(27, 0), Qt.DisplayRole), "no")
             self.assertEqual(model.headerData(28, Qt.Vertical, Qt.DisplayRole), "Software (new)")
             self.assertEqual(model.headerData(29, Qt.Vertical, Qt.DisplayRole), "Software Version")
             self.assertEqual(model.headerData(30, Qt.Vertical, Qt.DisplayRole), "Genotyping Date")
@@ -1198,8 +1208,12 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.headerData(34, Qt.Vertical, Qt.DisplayRole), "Official Allele Name")
             self.assertEqual(model.headerData(35, Qt.Vertical, Qt.DisplayRole), "New or confirmed?")
             
-            for col in [25, 26, 27, 28, 29, 30, 33, 34, 35]:
-                self.assertEqual(model.data(model.index(col, 0), Qt.DisplayRole), "")
+            for col in [25, 26, 28, 29, 30, 33, 34, 35]:
+                value = model.data(model.index(col, 0), Qt.DisplayRole)
+                msg = "Col {} ({}) should be empty, but contains {}!".format(col, 
+                                                                             model.headerData(col, Qt.Vertical, Qt.DisplayRole),
+                                                                             value)
+                self.assertEqual(value, "", msg)
    
         def test_tab5_ena(self):
             """tests whether content of SampleView widget 'Details about Allele' tab 'ENA submission' is correct
@@ -1328,7 +1342,11 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.headerData(46, Qt.Vertical, Qt.DisplayRole), "IPD_RELEASE")
             
             for col in [41, 44, 45, 46]:
-                self.assertEqual(model.data(model.index(col, 0), Qt.DisplayRole), "")
+                value = model.data(model.index(col, 0), Qt.DisplayRole)
+                msg = "Col {} ({}) should be empty, but contains {}!".format(col, 
+                                                                             model.headerData(col, Qt.Vertical, Qt.DisplayRole),
+                                                                             value)
+                self.assertEqual(value, "", msg)
         
         def test_tab7_history(self):
             """tests whether content of SampleView widget 'Details about Allele' tab 'allele history' is correct
