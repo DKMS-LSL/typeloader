@@ -67,7 +67,7 @@ def getNewAlleleNameFromEna(enaFile):
     return newAlleleName
 
 
-def get_IPD_counter(config_file, lock_file, log):
+def get_IPD_counter(config_file, lock_file, settings, log):
     """checks if IPD_counter is currently locked;
     if not, gets current counter;
     if yes, creates lock_file + returns counter + config-parser object (later needed to update the value)
@@ -79,8 +79,10 @@ def get_IPD_counter(config_file, lock_file, log):
         log.warning(msg)
         return False, msg
     
-    with open(lock_file, "w") as _: # create lockfile
-        os.utime(lock_file)
+    if settings["modus"] == "productive":
+        with open(lock_file, "w") as _: # create lockfile
+            log.debug("Creating IPD counter lockfile under {}...".format(lock_file))
+            os.utime(lock_file)
     
     cf = ConfigParser()
     cf.read(config_file)
@@ -140,7 +142,7 @@ def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, bef
     
     config_file = os.path.join(settings["root_path"], "_general", "counter_config.ini")
     lock_file = os.path.join(settings["root_path"], "_general", "ipd_nr.lock")
-    success, result = get_IPD_counter(config_file, lock_file, log)
+    success, result = get_IPD_counter(config_file, lock_file, settings, log)
     if not success:
         msg = result
         log.warning(msg)
