@@ -636,8 +636,25 @@ class Test_Send_To_IMGT(unittest.TestCase):
         if skip_other_tests:
             self.skipTest(self, "Skipping Submission to IPD because skip_other_tests is set to True")
         else:
-            self.project_name = project_name # "20180710_SA_A_1292" 
+            query = "SELECT project_name from projects"
+            success, data_content = execute_db_query(query, 
+                                         1, 
+                                         log, 
+                                         "Get data from {}", 
+                                         "Successful select * from {}", 
+                                         "Can't get rows from {}", 
+                                         "PROJECTS")  
+            self.assertTrue(success, "Could not retrieve project name from table PROJECTS")
+            self.project_name = data_content[0][0]
             self.form = IPD.IPDSubmissionForm(log, mydb, self.project_name, curr_settings, parent = None)
+            query = """update ALLELES set IPD_submission_nr = 'DKMS1000{}' 
+            where Sample_ID_int = '{}'and allele_nr = 1""".format(samples_dic["sample_1"]["submission_id"],
+                                                                  samples_dic["sample_1"]["id_int"])
+            execute_db_query(query, 0, log, 
+                            "updating {}.IPD_submission_nr", 
+                            "Successfully updated {}.IPD_submission_nr", 
+                            "Can't update {}.IPD_submission_nr", 
+                            "ALLELES")    
         
     @classmethod
     def tearDownClass(self):
@@ -651,10 +668,15 @@ class Test_Send_To_IMGT(unittest.TestCase):
         # click to proceed to section 2
         self.form.ok_btn1.click()
         
-        self.form.ENA_file_widget.field.setText(os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], samples_dic["sample_1"]["input_dir_origin"], samples_dic["sample_1"]["curr_ipd_ena_acc_file"]))
-        self.form.befund_widget.field.setText(os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], samples_dic["sample_1"]["input_dir_origin"], samples_dic["sample_1"]["curr_ipd_befund_file"]))
-        self.form.submission_id_widget.field.setText(samples_dic["sample_1"]["submission_id"])
+        ENA_file = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], samples_dic["sample_1"]["input_dir_origin"], samples_dic["sample_1"]["curr_ipd_ena_acc_file"])
+        log.debug("ENA-file: {}".format(ENA_file))
+        self.form.ENA_file_widget.field.setText(ENA_file)
+        befund_file = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], samples_dic["sample_1"]["input_dir_origin"], samples_dic["sample_1"]["curr_ipd_befund_file"])
+        log.debug("befund-file: {}".format(befund_file))
+        self.form.befund_widget.field.setText(befund_file)
         
+        log.debug("Clicking ok_btn2...")
+        self.form.ok_btn2.check_ready()
         self.form.ok_btn2.click()
         
         # they are activated by initialisation, but to be sure...
@@ -1389,15 +1411,16 @@ class Test_Make_IMGT_Files_py(unittest.TestCase):
             self.skipTest(self, "Skipping Test_Make_IMGT_Files because skip_other_tests is set to True")
         else:
             self.data_dir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], samples_dic["sample_3"]["input_dir_origin"])
-            self.samples = [(samples_dic["sample_3"]["id_int"], samples_dic["sample_3"]["base_name"])] 
+            self.start_num = samples_dic["sample_3"]["submission_id"]
+            self.IPD_filename = "DKMS1000" + self.start_num
+            self.samples = [(samples_dic["sample_3"]["id_int"], samples_dic["sample_3"]["base_name"], self.IPD_filename)] 
             self.file_dic = {samples_dic["sample_3"]["base_name"] : {"blast_xml" : samples_dic["sample_3"]["blast_file_name"],
                                                                      "ena_file" : samples_dic["sample_3"]["ena_file_name"]}}
             self.ENA_id_map, self.ENA_gene_map = MIF.parse_email(os.path.join(self.data_dir, samples_dic["sample_3"]["curr_ipd_ena_acc_file"]))
             self.pretypings = os.path.join(self.data_dir, samples_dic["sample_3"]["curr_ipd_befund_file"])
             self.curr_time = time.strftime("%Y%m%d%H%M%S")
             self.subm_id = "IPD_{}".format(self.curr_time)        
-            self.start_num = samples_dic["sample_3"]["submission_id"]        
-        
+            
     @classmethod
     def tearDownClass(self):
         pass
@@ -1410,9 +1433,9 @@ class Test_Make_IMGT_Files_py(unittest.TestCase):
         """
         MIF.write_imgt_files(self.data_dir, self.samples, self.file_dic, self.ENA_id_map, 
                              self.ENA_gene_map, self.pretypings, self.subm_id, 
-                             self.data_dir, self.start_num, curr_settings, log)
+                             self.data_dir, curr_settings, log)
         
-        self.ipd_submission_file = os.path.join(self.data_dir, "DKMS1000" + self.start_num + "_confirmation.txt")
+        self.ipd_submission_file = os.path.join(self.data_dir, self.IPD_filename + "_confirmation.txt")
         self.ipd_submission_zipfile = os.path.join(self.data_dir, self.subm_id + ".zip")
         
         self.assertTrue(os.path.exists(self.ipd_submission_file))
