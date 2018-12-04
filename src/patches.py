@@ -10,6 +10,7 @@ implements retroactive changes to the database or config files
 
 import os, sys
 from configparser import ConfigParser
+
 from GUI_login import base_config_file, raw_config_file, company_config_file, user_config_file
 
 #===========================================================
@@ -91,7 +92,36 @@ def patch_config(root_path, users, log):
                 cf.set(section, key, value)
             with open(user_config, "w") as g:
                 cf.write(g)
-        
+
+
+def check_patching_necessary_linux(log):
+    """checks config files for missing values
+    """
+    from collections import defaultdict
+    log.debug("Checking if any config patches necessary...")
+    patchme_dic = {company_config_file : {"Company" : ["ipd_shortname", "ipd_submission_length"]}
+                   }
+    needs_patching = defaultdict(list)
+    for config_file in patchme_dic:
+        cf = ConfigParser()
+        cf.read(config_file)
+        for section in patchme_dic[config_file]:
+            for option in patchme_dic[config_file][section]:
+                if not cf.has_option(section, option):
+                    log.warning("""Config files outdated: option '{}' in section [{}] of {} missing, please specify!
+                    """.format(option, section, config_file))
+                    needs_patching[config_file].append((section, option))
+    if needs_patching:
+        msg = "The following settings are missing from your TypeLoader config files:\n\n"
+        for config_file in needs_patching:
+            msg += "{}:\n".format(config_file)
+            for (section, option) in needs_patching[config_file]:
+                msg += "- [{}]: {}\n".format(section, option)
+        msg += "\nPlease add these values manually, then restart TypeLoader!"
+        msg += "\n(For more detailed infos, see the user_manual page 'patches.md'.)"
+        return True, msg
+    return False, None
+            
 
 #===========================================================
 # main:
@@ -108,6 +138,6 @@ if __name__ == '__main__':
     import general
     log = general.start_log(level="DEBUG")
     log.info("<Start patches.py>")
-    execute_patches(log)
+    check_patching_necessary(log)
     log.info("<End patches.py>")
     

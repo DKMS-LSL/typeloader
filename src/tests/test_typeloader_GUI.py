@@ -700,9 +700,6 @@ class Test_Send_To_IMGT(unittest.TestCase):
         
         self.form.submit_btn.click()
         self.form.ok_btn.click()
-        
-    
-    #@unittest.skip("demonstrating skipping")        
     def test_updated_alleles_entries(self):
         """
         Test if ALLELES have been updated correctly

@@ -32,7 +32,7 @@ import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_s
 import GUI_views_settings
 import GUI_download_files
 from GUI_misc import UnderConstruction
-from patches import execute_patches
+from patches import check_patching_necessary_linux, execute_patches
 
 #===========================================================
 # parameters:
@@ -530,7 +530,9 @@ if __name__ == '__main__':
     
     curr_time = time.strftime("%Y%m%d_%H%M%S")
     
-    if platform.system() ==  "Windows":
+    windows = False
+    if platform.system() == "Windows":
+        windows = True
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(__version__) # use favicon as TaskBar icon in Windows
     
     app = QApplication(sys.argv)
@@ -551,6 +553,11 @@ if __name__ == '__main__':
     
     sys.excepthook = log_uncaught_exceptions
     
+    if not windows: # under Windows, these are covered by the Installer
+        patchme, msg = check_patching_necessary_linux(log)
+        if patchme:
+            QMessageBox.warning(None, "TypeLoader config files need updating!", msg)
+            sys.exit()
     execute_patches(log)
     
     login = GUI_login.LoginForm(log)
