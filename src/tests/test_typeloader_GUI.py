@@ -30,7 +30,7 @@ from xml.etree import ElementTree
 shutil.copyfile(os.path.join(mypath_inner, "typeloader_GUI.pyw"), os.path.join(mypath_inner, "typeloader_GUI.py"))
 
 import typeloader_GUI
-from typeloader_core import errors, EMBLfunctions as EF, make_imgt_files as MIF
+from typeloader_core import errors, EMBLfunctions as EF, make_imgt_files as MIF, backend_make_ena as BME
 import GUI_forms_new_project as PROJECT
 import GUI_forms_new_allele as ALLELE
 import GUI_forms_submission_ENA as ENA
@@ -85,7 +85,7 @@ samples_dic =  {# samples to test
                                "ena_file_name" : "DKMS-LSL-KIR3DP1-1.ena.txt",
                                "id_int" : "ID15390636",
                                "id_ext" : "1370324_A",
-                               "submission_id" : "3333"}                
+                               "submission_id" : "3333"}                              
                 }
 
 settings_both = {"reference_dir" : "reference_data_unittest",
@@ -1634,7 +1634,65 @@ class Test_rejection_short_UTR3(unittest.TestCase):
         ref_error = errors.IncompleteSequenceError(missing_bp)
         self.assertEqual(msg, ref_error.msg)
         
-
+class Test_null_alleles(unittest.TestCase):
+    """ 
+    test if TypeLoader correctly annotates null alleles
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping Test_null_alleles because skip_other_tests is set to True")
+        else:
+            self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "null_allele")
+            self.file_dic = {"C_no_na" : ("DKMS-LSL-C-2910.fa", "DKMS-LSL-C-2910.ena.txt"),
+                                          "C_na" : ("DKMS-LSL-C-2952.fa", "DKMS-LSL-C-2952.ena.txt"),                               
+                                          "DBP1_no_na" : ("DKMS-LSL-DPB1-2887.pacbio.minimap.fa", "DKMS-LSL-DPB1-2887.ena.txt"),
+                                          "KIR2DL5_no_na" : ("DKMS-LSL-KIR2DL5-39.fa", "DKMS-LSL-KIR2DL5-39.ena.txt"),
+                                          "KIR2DL5_na" : ("DKMS-LSL-KIR2DL5-39_corrupt.fa", "DKMS-LSL-KIR2DL5-39_corrupt.ena.txt"),                               
+                                          "KIR3DP1_na" : ("DKMS-LSL-KIR3DP1-15.fa", "DKMS-LSL-KIR3DP1-15.ena.txt")
+                                          }            
+        
+    @classmethod
+    def tearDownClass(self):
+        pass
+    
+    def test_null_allele_algorithm(self):
+        """test if null allele algorithm works
+        """        
+        custom_seq_not_null = "ACCGTTTGGTGGTGA"
+        custom_seq_stop_codon_1 = "ACCGTTTGGTAATGA" # TAA
+        custom_seq_stop_codon_2 = "ACCGTTTGGTGATGA" # TGA
+        custom_seq_stop_codon_3 = "ACCGTTTGGTAGTGA" # TAG
+        custom_seq_not_divisable = "ACCGTTTGGTGTGA" # 14 bases
+        
+        self.assertFalse(BME.is_null_allele(custom_seq_not_null, {"cds": {1: (1, 15)}})[0])
+        self.assertTrue(BME.is_null_allele(custom_seq_stop_codon_1, {"cds": {1: (1, 15)}})[0])
+        self.assertTrue(BME.is_null_allele(custom_seq_stop_codon_2, {"cds": {1: (1, 15)}})[0])
+        self.assertTrue(BME.is_null_allele(custom_seq_stop_codon_3, {"cds": {1: (1, 15)}})[0])
+        self.assertTrue(BME.is_null_allele(custom_seq_not_divisable, {"cds": {1: (1, 14)}})[0])
+    
+    def test_fasta_null_allele(self):
+        """test different fasta files, 
+        """
+        
+        for key, value in self.file_dic.items():
+            
+            raw_path = os.path.join(self.mydir, value[0])
+            reference_path = os.path.join(self.mydir, value[1])
+            
+            log.info("Processing:" + key)
+            log.info("raw_path:" + raw_path)
+            log.info("reference_path:" + reference_path)
+                             
+            results = typeloader_functions.upload_parse_sequence_file(raw_path, curr_settings, log)
+            success_upload, sample_name, filetype, temp_raw_file, blastXmlFile, targetFamily, fasta_filename, allelesFilename, header_data = results
+            sucess, myalleles, ENA_text, cellLine = typeloader_functions.process_sequence_file("PROJECT_NAME", filetype, blastXmlFile, targetFamily, fasta_filename, allelesFilename, header_data, curr_settings, log)        
+        
+            result = compare_2_files(reference_path = reference_path, query_var = ENA_text)
+            
+            self.assertEqual(len(result["added_sings"]), 0)
+            self.assertEqual(len(result["deleted_sings"]), 0)              
+        
 class Test_Clean_Stuff(unittest.TestCase):
     """ 
     Remove all directories and files written by  all unit tests
@@ -1690,24 +1748,32 @@ def delete_written_samples(clear_every_row, table, log, column = "", value = "")
                               "deleting samples with {} {} in table {}".format(column, value, table), 
                               "cant delete sample with {} {} in table {}".format(column, value, table))
 
-def compare_2_files(query_path, reference_path, filetype = ""):
+def compare_2_files(query_path = "", reference_path = "", filetype = "", query_var = "", reference_var = ""):
+    
     result = {}
     
-    with open(query_path , 'r') as myfile: query_file = myfile.read()
-    with open(reference_path , 'r') as myfile: reference_file = myfile.read()            
+    if query_path == "":
+        query_text = query_var
+    else:
+        with open(query_path , 'r') as myfile: query_text = myfile.read()
+        
+    if reference_path == "":
+        reference_text = reference_var
+    else:
+        with open(reference_path , 'r') as myfile: reference_text = myfile.read()            
     
     if filetype == "IPD":
         # change the date in order to compare both ipd files
         now = today.strftime("%d/%m/%Y") 
-        reference_file = re.sub('DT.*Submitted\)\n.*Release\)', 'DT   {} (Submitted)\nDT   {} (Release)'.format(now, now), reference_file)
-        reference_file = reference_file.replace("{TL-VERSION}", __version__) # replace TL-version part of reference file with current version
+        reference_text = re.sub('DT.*Submitted\)\n.*Release\)', 'DT   {} (Submitted)\nDT   {} (Release)'.format(now, now), reference_text)
+        reference_text = reference_text.replace("{TL-VERSION}", __version__) # replace TL-version part of reference file with current version
 
     diffInstance = difflib.Differ()
-    diffList = list(diffInstance.compare(query_file.strip(), reference_file.strip()))
+    diffList = list(diffInstance.compare(query_text.strip(), reference_text.strip()))
     
     result["added_sings"] = ''.join(x[2:] for x in diffList if x.startswith('+ '))
     result["deleted_sings"]= ''.join(x[2:] for x in diffList if x.startswith('- '))    
-    if result:
+    if result["added_sings"] != "" or result["deleted_sings"] != "":
         log.error("Differences found!")
         log.debug("New file: {}".format(query_path))
         log.debug("Reference file: {}".format(reference_path))

@@ -26,7 +26,8 @@ import general, db_internal
 # parameters:
 
 from __init__ import __version__
-from src.typeloader_core.errors import IncompleteSequenceError
+#from src.typeloader_core.errors import IncompleteSequenceError
+from typeloader_core.errors import IncompleteSequenceError
 
 flatfile_dic = {"function_hla" : "antigen presenting molecule",
                 "function_kir" : "killer-immunoglobulin receptor",
@@ -207,12 +208,12 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                         gene_tag = "pseudogene"
                         null_allele = False
                     else:
-                        allele.productName_FT = allele.productName_FT + " null allele" if null_allele else allele.productName_FT
+                        productName_FT = productName_FT + " null allele" if null_allele else productName_FT
                 else:
                     function = flatfile_dic["function_hla"]
-                    geneName = geneName.split("-")[1]
+                    geneName_short = geneName.split("-")[1]
                     # D ...for DQB, DPB, DRB
-                    if geneName.startswith("D"):
+                    if geneName_short.startswith("D"):
                         productName_FT = productName_DE = (flatfile_dic["productname_hla_ii"]) \
                             if null_allele == False else (flatfile_dic["productname_hla_ii_null"]) # class 2 gene
                     else:
