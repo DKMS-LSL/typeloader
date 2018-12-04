@@ -57,6 +57,7 @@ class IPDFileChoiceTable(FileChoiceTable):
                          instant_accept_status = "ENA submitted", parent = self)
     
     def refresh(self, project, addfilter):
+        self.log.debug("refreshing IPDFileChoiceTable...")
         self.myfilter = " where alleles.project_name = '{}' {} order by ENA_submission_id, project_nr".format(project, addfilter)
         self.fill_UI()
         
@@ -68,7 +69,7 @@ class IPDSubmissionForm(CollapsibleDialog):
     
     def __init__(self, log, mydb, project, settings, parent = None):
         self.log = log
-        self.log.info("Opening 'IPD Sumbission' Dialog...")
+        self.log.info("Opening 'IPD Submission' Dialog...")
         self.mydb = mydb
         self.project = project
         self.settings = settings
@@ -125,6 +126,7 @@ class IPDSubmissionForm(CollapsibleDialog):
     def proceed_to2(self, _):
         """proceed to next section
         """
+        self.log.debug("proceed_to_2")
         self.project = self.proj_widget.field.text()
         self.refresh_section3()
         self.proceed_sections(0, 1)
@@ -153,7 +155,7 @@ class IPDSubmissionForm(CollapsibleDialog):
             befund_file_btn.change_to_normal()
         layout.addWidget(self.befund_widget, 1, 0)
         
-        self.ok_btn2 = ProceedButton("Proceed", [self.proj_widget.field, self.befund_widget.field], self.log, 0)
+        self.ok_btn2 = ProceedButton("Proceed", [self.ENA_file_widget.field, self.befund_widget.field], self.log, 0)
         self.proj_widget.choice.connect(self.ok_btn2.check_ready)
         self.befund_widget.choice.connect(self.ok_btn2.check_ready)
         layout.addWidget(self.ok_btn2, 0, 1,3,1)
@@ -173,6 +175,7 @@ class IPDSubmissionForm(CollapsibleDialog):
     def proceed_to3(self, _):
         """proceed to next section
         """
+        self.log.debug("proceed_to_3")
         self.parse_ENA_file()
         self.refresh_section3()
         self.proceed_sections(1, 2)

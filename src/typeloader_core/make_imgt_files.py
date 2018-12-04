@@ -125,11 +125,13 @@ def update_IPD_counter(new_value, cf, config_file, lock_file, log):
 
 def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, befund_csv_file,
                    settings, log):
+    log.debug("Making IPD data...")
     geneMap = {"gene":[settings["gene_hla"], settings["gene_kir"]]}
     (patientBefundMap, customer_dic) = getPatientBefund(befund_csv_file)
     
     if not patientBefundMap:
         msg = customer_dic
+        log.warning(msg)
         return False, msg, None
     
     imgt_data = {}
@@ -141,7 +143,9 @@ def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, bef
     success, result = get_IPD_counter(config_file, lock_file, log)
     if not success:
         msg = result
+        log.warning(msg)
         return success, msg, None
+    
     (submissionCounter, counter_cf) = result
     fixedString = settings["ipd_shortname"]
     variablePartLength = settings["ipd_submission_length"]
@@ -236,9 +240,9 @@ def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, bef
                                                  closestAllele, diffToClosest, imgtDiff, 
                                                  enafile, sequence, geneMap, settings)
 
-
     update_IPD_counter(submissionCounter, counter_cf, config_file, lock_file, log)
     
+    log.debug("\t=> successfully made IPD data")
     return imgt_data, cell_lines, customer_dic
 
 def zip_imgt_files(folderpath, submission_id, imgt_files, log):
@@ -264,6 +268,7 @@ def write_imgt_files(project_dir, samples, file_dic, ENA_id_map, ENA_gene_map,
     zip_file = ""
     imgt_files = []
     cell_lines = []
+    imgt_file_names = None
     try:
         log.debug("\tMaking IPD data...")
         results = make_imgt_data(project_dir, samples, file_dic, ENA_id_map, ENA_gene_map, 
