@@ -638,12 +638,22 @@ def check_root_path(root_path):
     """  
     import errno
     general_dir = os.path.join(root_path, "_general")
+    counter_config = os.path.join(general_dir, "counter_config.ini")
+        
     if os.path.isdir(general_dir):
-        return
+        if os.path.isfile(counter_config):
+            return
+        else:
+            with open(counter_config, "w") as g:
+                g.write("[Counter]\nipd_submissions = 0\n")
+                return
     else:
         try:
             os.makedirs(general_dir)
             print ("Created {}".format(general_dir))
+            with open(counter_config, "w") as g:
+                g.write("[Counter]\nipd_submissions = 0\n")
+            print ("Created counter config file")
         except OSError as e:
             if e.errno != errno.EEXIST: # if dir creation fails for any reason except "dir exists already" 
                 raise
