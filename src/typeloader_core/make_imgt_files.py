@@ -240,7 +240,8 @@ def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, bef
                                                  closestAllele, diffToClosest, imgtDiff, 
                                                  enafile, sequence, geneMap, settings)
 
-    update_IPD_counter(submissionCounter, counter_cf, config_file, lock_file, log)
+    if settings["modus"] == "productive":
+        update_IPD_counter(submissionCounter, counter_cf, config_file, lock_file, log)
     
     log.debug("\t=> successfully made IPD data")
     return imgt_data, cell_lines, customer_dic
