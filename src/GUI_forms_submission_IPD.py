@@ -39,12 +39,13 @@ class IPDFileChoiceTable(FileChoiceTable):
     so user can choose which to submit to IPD
     """
     def __init__(self, project, log, parent = None):
-        query = """select project_nr, alleles.sample_id_int, alleles.cell_line, allele_status, ENA_submission_id
+        query = """select project_nr, alleles.sample_id_int, alleles.cell_line, allele_status, 
+        ENA_submission_id, IPD_submission_nr
         from alleles
          join files on alleles.sample_id_int = files.sample_id_int and alleles.allele_nr = files.allele_nr
         """.format(project)
-        num_columns = 5
-        header = ["Submit?", "Nr", "Sample", "Cell Line", "Allele Status", "ENA submission ID"]
+        num_columns = 6
+        header = ["Submit?", "Nr", "Sample", "Cell Line", "Allele Status", "ENA submission ID", "IPD submission ID"]
         if parent:
             self.settings = parent.settings
         else:
@@ -74,7 +75,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.label_width = 150
         super().__init__(parent)
         
-        self.resize(1100,500)
+        self.resize(1150,500)
         self.setWindowTitle("Submit alleles to IPD")
         self.setWindowIcon(QIcon(general.favicon))
         self.samples = []
@@ -139,7 +140,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         ENA_file_btn = FileButton("Upload email attachment from ENA reply", mypath, parent=self)
         self.ENA_file_widget = ChoiceSection("ENA reply file:", [ENA_file_btn], self, label_width=self.label_width)
         if self.settings["modus"] == "debugging":
-            self.ENA_file_widget.field.setText(r"\\nasdd12\daten\data\Typeloader\admin\projects\20180716_ADMIN_KIR3DP1_PB4\IPD-submissions\IPD_20180716102641\ENA_Accession_3DP1")
+            self.ENA_file_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\IPD_Test\ENA_Accession_3DP1")
             ENA_file_btn.change_to_normal()
             
         layout.addWidget(self.ENA_file_widget, 0, 0)
@@ -148,21 +149,13 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.befund_widget = ChoiceSection("Pretyping file:", [befund_file_btn], self, label_width=self.label_width)
         self.befund_widget.setWhatsThis("Choose a file containing a list of previously identified alleles for all loci for each sample")
         if self.settings["modus"] == "debugging":
-            self.befund_widget.field.setText(r"\\nasdd12\daten\data\Typeloader\admin\projects\20180716_ADMIN_KIR3DP1_PB4\IPD-submissions\IPD_20180716102641\Befunde_neu.csv")
+            self.befund_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\IPD_Test\Befunde_neu.csv")
             befund_file_btn.change_to_normal()
         layout.addWidget(self.befund_widget, 1, 0)
         
-        self.submission_id_widget = ChoiceSection("IPD Submission Nr Start:", [], self, label_width=self.label_width)
-        self.submission_id_widget.field.setReadOnly(False)
-        if self.settings["modus"] == "debugging":
-            self.submission_id_widget.field.setText("222")
-        layout.addWidget(self.submission_id_widget, 2, 0)
-            
-        self.ok_btn2 = ProceedButton("Proceed", [self.proj_widget.field, self.befund_widget.field, 
-                                                 self.submission_id_widget.field], self.log, 0)
+        self.ok_btn2 = ProceedButton("Proceed", [self.proj_widget.field, self.befund_widget.field], self.log, 0)
         self.proj_widget.choice.connect(self.ok_btn2.check_ready)
         self.befund_widget.choice.connect(self.ok_btn2.check_ready)
-        self.submission_id_widget.field.textChanged.connect(self.ok_btn2.check_ready)
         layout.addWidget(self.ok_btn2, 0, 1,3,1)
         self.ok_btn2.proceed.connect(self.proceed_to3)
         self.sections.append(("(2) Upload ENA reply file:", mywidget))
@@ -236,25 +229,16 @@ class IPDSubmissionForm(CollapsibleDialog):
             if box.checkState():
                 sample = self.project_files.item(i, 2).text()
                 cell_line = self.project_files.item(i, 3).text()
-                self.samples.append((sample, cell_line))
+                IPD_nr = self.project_files.item(i, 6).text()
+                self.samples.append((sample, cell_line, IPD_nr))
 
     def get_values(self):
         """retrieves values for IPD file generation from GUI
         """
         self.pretypings = self.befund_widget.field.text().strip()
         self.project = self.proj_widget.field.text().strip()
-        self.start_num = self.submission_id_widget.field.text().strip()
         self.curr_time = time.strftime("%Y%m%d%H%M%S")
         self.subm_id = "IPD_{}".format(self.curr_time)
-        
-        # check data integrity:
-        try:
-            self.start_num = int(self.start_num)
-        except ValueError:
-            self.log.warning("'{}' (IPD Submission Number) is not a valid number!".format(self.start_num))
-            QMessageBox.warning(self, "Invalid IPD Submission Number", "'IPD Submission Nr Start' must be a number!")
-            self.submit_btn.setChecked(False)
-            return False
         
         return True
     
@@ -262,7 +246,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         """retrieves ena_file and blast_xml for each chosen sample
         """
         self.file_dic = {}
-        for (sample_id_int, cell_line) in self.samples:
+        for (sample_id_int, cell_line, _) in self.samples:
             self.file_dic[cell_line] = {}
             query = """select blast_xml, ena_file from files 
             where sample_id_int = '{}' and cell_line = '{}'""".format(sample_id_int, cell_line)
@@ -296,7 +280,7 @@ class IPDSubmissionForm(CollapsibleDialog):
             
             results = MIF.write_imgt_files(project_dir, self.samples, self.file_dic, self.ENA_id_map, 
                                            self.ENA_gene_map, self.pretypings, self.subm_id, 
-                                           mydir, self.start_num, self.settings, self.log)
+                                           mydir, self.settings, self.log)
             if not results[0]:
                 QMessageBox.warning(self, "IPD file creation error", results[1])
                 return
@@ -345,7 +329,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         """proceed to next section
         """
         text = "Successfully created IPD files for {} alleles:\n".format(len(self.samples))
-        for (sample, cell_line) in self.samples:
+        for (sample, cell_line, _) in self.samples:
             text += "\t- {} ({})\n".format(cell_line, sample)
         self.textbox.setText(text)
         self.download_btn.setEnabled(True)
@@ -372,7 +356,7 @@ class IPDSubmissionForm(CollapsibleDialog):
             try:
                 self.log.info("Saving changes to db...")
                 update_queries = []
-                for (sample, cell_line) in self.samples:
+                for (sample, cell_line, _) in self.samples:
                     # update allele_status for individual alleles:    
                     IPD_submission_nr = self.cell_lines[cell_line]
                     update_query = """update alleles set allele_status = 'IPD submitted',
