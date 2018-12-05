@@ -188,7 +188,8 @@ def settings_ok(category, all_settings, log):
                              "lab_contact_address" : "Lab Contact's Form of Address",
                              "lab_contact" : "Lab Contact for IPD",
                              "lab_contact_email": "Lab Contact Email",
-                             "lab_of_origin" : "Company Name (for IPD)"}
+                             "lab_of_origin" : "Company Name (for IPD)",
+                             "ipd_shortname" : "Company Short Name (for IPD)"}
     
     else:
         msg = "I don't know how to check '{}' settings!".format(category)
@@ -207,7 +208,7 @@ def settings_ok(category, all_settings, log):
         for item in missing_settings:
             msg += " - {}\n".format(item)
         if category == "IPD":
-            msg += "\nAlso, make sure all settings under Settings => Method reflect your workflow accurately.\n"
+            msg += "\nAlso, make sure all settings under Settings => Method reflect your workflow accurately!\n"
         msg += "\nThen try again."
         return False, msg
     log.debug("\t=> ok")
