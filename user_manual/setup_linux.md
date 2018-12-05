@@ -76,7 +76,8 @@ lab_contact:
 lab_contact_address: 
 lab_contact_email: 
 submittor_id:
-
+ipd_shortname:
+ipd_submission_lenght: 7
 ```
 
 ##### ENA Settings:
@@ -99,6 +100,8 @@ You will have to submit your first IPD file by hand (you can let TypeLoader crea
  * **lab\_contact_address:** Your lab contact's form of address (this is what you provided as "title". (Dr./Mr./Mrs./Ms. etc))
  * **lab\_contact_email:** This is the email adress you registered your IPD contact person with.
  * **submittor_id:** This is the submitter ID you received from IPD.
+ * **ipd_shortname:** A short identifier for your lab (ideally an acronym etc). The generated IPD submission file names will start with this. Use only letters.
+ * **ipd\_submission\_length:** The number of digits used for the allele number in the file names of IPD submission files. We recommend setting this value to 7 as specified here.
 
 ## Running TypeLoader
 Once you have everything set up, rename the file ``src/typeloader_GUI.pyw`` to the extension .py. Then you should be able to execute this as a Python file to run TypeLoader.
