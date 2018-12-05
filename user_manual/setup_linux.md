@@ -56,8 +56,6 @@ blast_path: <path to blastn>
 
 ```
 
-![important](images/icon_important.png) **Please note that you will have to manually create the directory given as root_path. (The Windows installer does this by itself.)**
-
 ![important](images/icon_important.png) **All paths must be absolute paths (starting from /home/), not shortened path (starting with ~).**
 
 #### config_company.ini
