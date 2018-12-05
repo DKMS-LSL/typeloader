@@ -4,7 +4,7 @@
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "TypeLoader"
-!define PRODUCT_VERSION "2.1.0"
+!define PRODUCT_VERSION "2.2.0"
 !define PRODUCT_PUBLISHER "DKMS Life Science Lab GmbH"
 !define PRODUCT_WEB_SITE "https://github.com/DKMS-LSL/typeloader"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\TypeLoader.exe"
@@ -35,27 +35,29 @@ Var UserDialog2
 
 Var Path_fld
 Var Path_btn
-Var TL_PATH
+Var TL_PATH # root_path for TypeLoader's data
 
-Var center_fld
+Var center_fld # lab name for ENA
 Var /global XML_CENTER
-Var ftp_user_fld
+Var ftp_user_fld # ftp user for ENA
 Var /global FTP_USER
-Var ftp_pwd_fld
+Var ftp_pwd_fld # ftp password for ENA
 Var /global FTP_PWD
-Var proxy_fld
+Var proxy_fld # proxy
 Var /global PROXY
 
-Var lab_fld
+Var lab_fld # lab name for IPD
 Var /global LAB
-Var contact_fld
+Var contact_fld # IPD contact
 Var /global CONTACT
-Var contact_add_fld
+Var contact_add_fld # form of address for contact
 Var /global CONTACT_ADD
-Var contact_email_fld
+Var contact_email_fld # email for contact
 Var /global CONTACT_EMAIL
-Var submittor_fld
+Var submittor_fld # submittor ID for IPD
 Var /global SUBMITTOR_ID
+Var ipd_short_fld # short name for IPD submissions
+Var /global IPD_SHORT
 Var /global UPDATING
 
 #Page directory
@@ -78,6 +80,7 @@ Function .onInit
         StrCpy $SUBMITTOR_ID ""
 
         StrCpy $UPDATING "no"
+        StrCpy $IPD_SHORT ""
 
 FunctionEnd
 
@@ -93,8 +96,6 @@ Function settingsPage0
 	${If} $UserDialog == error
 		Abort
 	${EndIf}
-
-	;${NSD_CreateLabel} 0 0 100% 12u "Please enter your preferences (part 1: data storage):"
 
 	${NSD_CreateGroupBox} 0 13u 100% 30u "Where should TypeLoader store the data you create?"
 
@@ -144,26 +145,24 @@ Function settingsPage1
 		Abort
 	${EndIf}
 
-	;${NSD_CreateLabel} 0 0 100% 12u "Please enter your preferences (part 2: ENA):"
+	${NSD_CreateLabel} 5u 0u 95% 25u "(You can leave any of these empty if unknown, but later you can only reset them for each user individually!)"
 
-	${NSD_CreateLabel} 5u 12u 95% 25u "(You can leave any of these empty if unknown, but later you can only reset them for each user individually!)"
+	${NSD_CreateGroupBox} 0 25u 100% 75u "Settings for communication with ENA"
 
-	${NSD_CreateGroupBox} 0 30u 100% 75u "Settings for communication with ENA"
-
-	${NSD_CreateLabel} 5u 45u 28% 12u "Centre Name:"
-	${NSD_CreateText} 30% 45u 50% 12u "$XML_CENTER"
+	${NSD_CreateLabel} 5u 40u 28% 12u "Centre Name:"
+	${NSD_CreateText} 30% 40u 50% 12u "$XML_CENTER"
 	Pop $center_fld
 
-        ${NSD_CreateLabel} 5u 60u 28% 12u "FTP user:"
-	${NSD_CreateText} 30% 60u 50% 12u "$FTP_USER"
+        ${NSD_CreateLabel} 5u 55u 28% 12u "FTP user:"
+	${NSD_CreateText} 30% 55u 50% 12u "$FTP_USER"
 	Pop $ftp_user_fld
 
-	${NSD_CreateLabel} 5u 75u 28% 12u "FTP password:"
-	${NSD_CreateText} 30% 75u 50% 12u "$FTP_PWD"
+	${NSD_CreateLabel} 5u 70u 28% 12u "FTP password:"
+	${NSD_CreateText} 30% 70u 50% 12u "$FTP_PWD"
 	Pop $ftp_pwd_fld
 
-        ${NSD_CreateLabel} 5u 90u 28% 12u "Proxy (if needed):"
-	${NSD_CreateText} 30% 90u 50% 12u "$PROXY"
+        ${NSD_CreateLabel} 5u 85u 28% 12u "Proxy (if needed):"
+	${NSD_CreateText} 30% 85u 50% 12u "$PROXY"
 	Pop $proxy_fld
 
 	nsDialogs::Show
@@ -201,31 +200,34 @@ Function settingsPage2
 		Abort
 	${EndIf}
 
-	;${NSD_CreateLabel} 0 0 100% 12u "Please enter your preferences (part 3: IPD):"
+	${NSD_CreateLabel} 5u 0u 95% 25u "(You can leave any of these empty if unknown, but later you can only reset them for each user individually!)"
 
-        ${NSD_CreateLabel} 5u 13u 95% 25u "(You can leave any of these empty if unknown, but later you can only reset them for each user individually!)"
-
-        ${NSD_CreateGroupBox} 0 30u 100% 25u "Your lab name for IPD"
-	${NSD_CreateLabel} 5u 40u 28% 12u "Lab Name:"
-	${NSD_CreateText} 30% 40u 50% 12u "$LAB"
+        ${NSD_CreateGroupBox} 0 20u 100% 40u "Your lab name for IPD"
+        
+	${NSD_CreateLabel} 5u 30u 28% 12u "Lab Name:"
+	${NSD_CreateText} 30% 30u 50% 12u "$LAB"
 	Pop $lab_fld
 
-	${NSD_CreateGroupBox} 0 55u 100% 75u "Your lab's IPD contact person"
+	${NSD_CreateLabel} 5u 45u 28% 12u "Short name/acronym:"
+	${NSD_CreateText} 30% 45u 50% 12u "$IPD_SHORT"
+	Pop $ipd_short_fld
 
-  	${NSD_CreateLabel} 5u 65u 28% 12u "Full Name:"
-	${NSD_CreateText} 30% 65u 50% 12u "$CONTACT"
+	${NSD_CreateGroupBox} 0 65u 100% 70u "Your lab's IPD contact person"
+
+  	${NSD_CreateLabel} 5u 75u 28% 12u "Full Name:"
+	${NSD_CreateText} 30% 75u 50% 12u "$CONTACT"
 	Pop $contact_fld
 
-	${NSD_CreateLabel} 5u 80u 28% 12u "Form of Address:"
-	${NSD_CreateText} 30% 80u 50% 12u "$CONTACT_ADD"
+	${NSD_CreateLabel} 5u 90u 28% 12u "Form of Address:"
+	${NSD_CreateText} 30% 90u 50% 12u "$CONTACT_ADD"
 	Pop $contact_add_fld
 
-	${NSD_CreateLabel} 5u 95u 28% 12u "Email:"
-	${NSD_CreateText} 30% 95u 50% 12u "$CONTACT_EMAIL"
+	${NSD_CreateLabel} 5u 105u 28% 12u "Email:"
+	${NSD_CreateText} 30% 105u 50% 12u "$CONTACT_EMAIL"
 	Pop $contact_email_fld
 
-	${NSD_CreateLabel} 5u 115u 28% 12u "Submittor ID:"
-	${NSD_CreateText} 30% 115u 50% 12u "$SUBMITTOR_ID"
+	${NSD_CreateLabel} 5u 120u 28% 12u "Submittor ID:"
+	${NSD_CreateText} 30% 120u 50% 12u "$SUBMITTOR_ID"
 	Pop $submittor_fld
 
 	nsDialogs::Show
@@ -235,6 +237,7 @@ FunctionEnd
 Function settingsPage2Leave
 
 	${NSD_GetText} $lab_fld $LAB
+	${NSD_GetText} $ipd_short_fld $IPD_SHORT
 	${NSD_GetText} $contact_fld $CONTACT
 	${NSD_GetText} $contact_add_fld $CONTACT_ADD
 	${NSD_GetText} $contact_email_fld $CONTACT_EMAIL
@@ -247,10 +250,13 @@ Function settingsPage2Leave
         FileWrite $2 "lab_contact: $CONTACT$\r$\n"
         FileWrite $2 "lab_contact_address: $CONTACT_ADD$\r$\n"
         FileWrite $2 "lab_contact_email: $CONTACT_EMAIL$\r$\n"
-        FileWrite $2 "submittor_id: $SUBMITTOR_ID$\r$\n$\r$\n"
+        FileWrite $2 "submittor_id: $SUBMITTOR_ID$\r$\n"
+        FileWrite $2 "ipd_shortname: $IPD_SHORT$\r$\n"
+        FileWrite $2 "ipd_submission_length = 7$\r$\n$\r$\n"
         FileClose $2
 
 FunctionEnd
+
 
 ; Start menu page
 var ICONS_GROUP
@@ -2940,7 +2946,6 @@ Section "MainSection" SEC01
   File "build\exe.win32-3.6\tables\projects.csv"
   File "build\exe.win32-3.6\tables\colors.csv"
   File "build\exe.win32-3.6\tables\files.csv"
-  SetOutPath "$INSTDIR\reference_data"
   SetOutPath "$INSTDIR\blastn"
   File "build\exe.win32-3.6\blastn\blastn.exe"
   File "build\exe.win32-3.6\blastn\makeblastdb.exe"
@@ -5530,7 +5535,6 @@ Section Uninstall
 
   RMDir "$SMPROGRAMS\$ICONS_GROUP"
   RMDir "$INSTDIR\tables"
-  RMDir "$INSTDIR\reference_data"
   RMDir "$INSTDIR\platforms"
   RMDir "$INSTDIR\lib\xmlrpc"
   RMDir "$INSTDIR\lib\xml\sax"
