@@ -1,7 +1,7 @@
 Column,type,PK
 Sample_ID_int,TEXT,
 allele_nr,INT,
-cell_line,TEXT,PK
+local_name,TEXT,
 project,TEXT,
 raw_file_type,TEXT,
 raw_file,TEXT,
