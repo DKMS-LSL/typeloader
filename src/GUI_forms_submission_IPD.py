@@ -39,13 +39,13 @@ class IPDFileChoiceTable(FileChoiceTable):
     so user can choose which to submit to IPD
     """
     def __init__(self, project, log, parent = None):
-        query = """select project_nr, alleles.sample_id_int, alleles.cell_line, allele_status, 
+        query = """select project_nr, alleles.sample_id_int, alleles.Local_name, allele_status, 
         ENA_submission_id, IPD_submission_nr
         from alleles
          join files on alleles.sample_id_int = files.sample_id_int and alleles.allele_nr = files.allele_nr
         """.format(project)
         num_columns = 6
-        header = ["Submit?", "Nr", "Sample", "Cell Line", "Allele Status", "ENA submission ID", "IPD submission ID"]
+        header = ["Submit?", "Nr", "Sample", "Allele", "Allele Status", "ENA submission ID", "IPD submission ID"]
         if parent:
             self.settings = parent.settings
         else:
@@ -252,7 +252,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         for (sample_id_int, cell_line, _) in self.samples:
             self.file_dic[cell_line] = {}
             query = """select blast_xml, ena_file from files 
-            where sample_id_int = '{}' and cell_line = '{}'""".format(sample_id_int, cell_line)
+            where sample_id_int = '{}' and local_name = '{}'""".format(sample_id_int, cell_line)
             success, data = db_internal.execute_query(query, 2, self.log, 
                                 "retrieving sample files", "Database error", self)
             if success:
@@ -472,7 +472,7 @@ if __name__ == '__main__':
     print(settings_dic["modus"])
     mydb = create_connection(log, settings_dic["db_file"])
     
-    project = "20180716_ADMIN_KIR3DP1_PB4"
+    project = "20181204_ADMIN_mixed_IPD"
     app = QApplication(sys.argv)
     ex = IPDSubmissionForm(log, mydb, project, settings_dic)
     ex.show()

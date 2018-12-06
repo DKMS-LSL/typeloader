@@ -197,19 +197,48 @@ def patch_config(root_path, users, log):
 pass
 #===========================================================
 # functions for database patches:
-def cleanup_missing_cell_lines_in_files_table(settings, conn, cursor, log):
-    """adds missing cell_lines to table FILES (fixes #149)
-    """
-    log.info("Fixing database (issue #149)...")
-    log.info("\tGetting cell_lines from table ALLELES...")
-    query = "select cell_line, sample_id_int, allele_nr from ALLELES"
-    items = db_internal.query_database(query, None, log, cursor)
+
+def remove_cell_line_from_files(settings, conn, cursor, log):
+    log.info("Removing column cell_line from table FILES...")
+    q0_drop_new_table = "DROP TABLE FILES_NEW" #if table remains from error during last attempt
+    try:
+        cursor.execute(q0_drop_new_table)
+    except: # if it's not there (it should not be there!)
+        pass
     
-    log.info("\tWriting cell_lines into table FILES...")
-    update_query = "update or ignore FILES set cell_line = :1 where sample_id_int = :2 and allele_nr = :3"
-    cursor.executemany(update_query, items)
+    q1_new_table = """CREATE TABLE FILES_NEW 
+                (SAMPLE_ID_INT TEXT , ALLELE_NR INT , LOCAL_NAME TEXT, PROJECT TEXT , 
+                RAW_FILE_TYPE TEXT , RAW_FILE TEXT , FASTA TEXT , BLAST_XML TEXT , 
+                ENA_FILE TEXT , ENA_RESPONSE_FILE TEXT , IPD_SUBMISSION_FILE TEXT )"""
+    cursor.execute(q1_new_table)
+    q2_copy_data = """INSERT INTO FILES_NEW (SAMPLE_ID_INT, ALLELE_NR, LOCAL_NAME, PROJECT, 
+                RAW_FILE_TYPE, RAW_FILE, FASTA, BLAST_XML, 
+                ENA_FILE, ENA_RESPONSE_FILE, IPD_SUBMISSION_FILE)
+               SELECT SAMPLE_ID_INT, ALLELE_NR, '', PROJECT, 
+                RAW_FILE_TYPE, RAW_FILE, FASTA, BLAST_XML, 
+                ENA_FILE, ENA_RESPONSE_FILE, IPD_SUBMISSION_FILE FROM FILES"""
+    cursor.execute(q2_copy_data)
+    q3_drop_old_table = "DROP TABLE FILES"
+    cursor.execute(q3_drop_old_table)
+    q4_rename_new_table = "ALTER TABLE FILES_NEW RENAME TO FILES"
+    cursor.execute(q4_rename_new_table)
     conn.commit()
     log.info("\t=> Done")
+
+def add_missing_local_names_to_files_table(settings, conn, cursor, log):
+    """adds missing local names to table FILES
+    """
+    log.info("Adding local_names to table FILES...")
+    log.info("\tGetting local_names from table ALLELES...")
+    query = "select local_name, sample_id_int, allele_nr from ALLELES"
+    items = db_internal.query_database(query, None, log, cursor)
+    
+    log.info("\tWriting local_names into table FILES...")
+    update_query = "update or ignore FILES set local_name = :1 where sample_id_int = :2 and allele_nr = :3"
+    cursor.executemany(update_query, items)
+    conn.commit()
+    log.info("\t=> Done")    
+    
     
 def patch_database(settings, log):
     """patches the SQLite database of the current user
@@ -224,7 +253,8 @@ def patch_database(settings, log):
     
     conn, cursor = db_internal.open_connection(settings["db_file"], log)
     
-    cleanup_missing_cell_lines_in_files_table(settings, conn, cursor, log)
+    remove_cell_line_from_files(settings, conn, cursor, log)
+    add_missing_local_names_to_files_table(settings, conn, cursor, log)
     
     cursor.close()
     conn.close()

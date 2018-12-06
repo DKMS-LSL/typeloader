@@ -574,7 +574,7 @@ if __name__ == '__main__':
             db_file = settings_dic["db_file"]
             
             # implement db bugfixes:
-            db_internal.cleanup_missing_cell_lines_in_files_table(settings_dic, log) #149
+            patches.patch_database(settings_dic, log)
             
             mydb = create_connection(log, db_file) 
     
