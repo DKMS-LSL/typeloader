@@ -252,7 +252,9 @@ Function settingsPage2Leave
         FileWrite $2 "lab_contact_email: $CONTACT_EMAIL$\r$\n"
         FileWrite $2 "submittor_id: $SUBMITTOR_ID$\r$\n"
         FileWrite $2 "ipd_shortname: $IPD_SHORT$\r$\n"
-        FileWrite $2 "ipd_submission_length = 7$\r$\n$\r$\n"
+        FileWrite $2 "ipd_submission_length: 7$\r$\n"
+        FileWrite $2 "last_tl_version: ${PRODUCT_VERSION}$\r$\n$\r$\n"
+
         FileClose $2
 
 FunctionEnd
