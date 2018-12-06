@@ -417,22 +417,7 @@ def show_table_content(table, cursor, log):
         log.info(row)
 
 
-def cleanup_missing_cell_lines_in_files_table(settings, log):
-    """adds missing cell_lines to table FILES (fixes #149)
-    """
-    log.info("Fixing database (issue #149)...")
-    log.info("\tGetting cell_lines from table ALLELES...")
-    conn, cursor = open_connection(settings["db_file"], log)
-    query = "select cell_line, sample_id_int, allele_nr from ALLELES"
-    items = query_database(query, None, log, cursor)
-    
-    log.info("\tWriting cell_lines into table FILES...")
-    update_query = "update or ignore FILES set cell_line = :1 where sample_id_int = :2 and allele_nr = :3"
-    cursor.executemany(update_query, items)
-    conn.commit()
-    cursor.close()
-    conn.close()
-    log.info("\t=> Done")
+
 
 
 pass

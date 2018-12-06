@@ -16,7 +16,7 @@ from PyQt5.QtWidgets import (QApplication, QLabel, QMessageBox,
 from PyQt5.Qt import pyqtSignal
 from PyQt5.QtGui import QIcon
 
-import general
+import general, db_internal
 from GUI_login import base_config_file, raw_config_file, company_config_file, user_config_file, get_settings
 from GUI_forms import ProceedButton
 
@@ -86,6 +86,7 @@ class GetPatchInput(QDialog):
             g.write("[Company]\n")
             g.write("ipd_shortname = {}\n".format(ipd_short))
             g.write("ipd_submission_length = 7\n")
+            g.write("last_tl_version = 2.1.0\n")
             
         self.log.debug("\tWriting submission counter file...")
         submission_counter_file = os.path.join(self.root_path, "_general", "counter_config.ini")
@@ -97,15 +98,13 @@ class GetPatchInput(QDialog):
 
 
 #===========================================================
-# functions:
-
-
+# functions for config patches:
 
 def check_patching_necessary(log):
     """checks config files for missing values
     """
     log.debug("Checking if any config patches necessary...")
-    patchme_dic = {company_config_file : {"Company" : ["ipd_shortname", "ipd_submission_length"]}
+    patchme_dic = {company_config_file : {"Company" : ["ipd_shortname", "ipd_submission_length", "last_tl_version"]}
                    }
     needs_patching = False
     for config_file in patchme_dic:
@@ -194,6 +193,42 @@ def patch_config(root_path, users, log):
                 cf.set(section, key, value)
             with open(user_config, "w") as g:
                 cf.write(g)           
+
+pass
+#===========================================================
+# functions for database patches:
+def cleanup_missing_cell_lines_in_files_table(settings, conn, cursor, log):
+    """adds missing cell_lines to table FILES (fixes #149)
+    """
+    log.info("Fixing database (issue #149)...")
+    log.info("\tGetting cell_lines from table ALLELES...")
+    query = "select cell_line, sample_id_int, allele_nr from ALLELES"
+    items = db_internal.query_database(query, None, log, cursor)
+    
+    log.info("\tWriting cell_lines into table FILES...")
+    update_query = "update or ignore FILES set cell_line = :1 where sample_id_int = :2 and allele_nr = :3"
+    cursor.executemany(update_query, items)
+    conn.commit()
+    log.info("\t=> Done")
+    
+def patch_database(settings, log):
+    """patches the SQLite database of the current user
+    """
+    log.info("Patching database if necessary...")
+    
+    last_patched_tl_version = settings["last_tl_version"]
+    if last_patched_tl_version > "2.2":
+        log.info("\t=> everything up to date")
+        return
+    log.info("\t=> patching needed!")
+    
+    conn, cursor = db_internal.open_connection(settings["db_file"], log)
+    
+    cleanup_missing_cell_lines_in_files_table(settings, conn, cursor, log)
+    
+    cursor.close()
+    conn.close()
+    
 pass
 #===========================================================
 # main:
@@ -206,12 +241,18 @@ def execute_patches(root_path, log):
     
 
 if __name__ == '__main__':
-    from GUI_login import get_basic_cf
+    import GUI_login
     log = general.start_log(level="DEBUG")
     log.info("<Start patches.py>")
-    app = QApplication(sys.argv)
-    cf = get_basic_cf()
-    root_path = cf.get("Paths", "root_path")
-    request_user_input(root_path, app, log)
+#     app = QApplication(sys.argv)
+#     cf = GUI_login.get_basic_cf()
+#     root_path = cf.get("Paths", "root_path")
+#     patchme = check_patching_necessary(log)
+#     if patchme:
+#         request_user_input(root_path, app, log)
+#         execute_patches(root_path, log)
+    settings = GUI_login.get_settings("admin", log)
+    patch_database(settings, log)
+    
     log.info("<End patches.py>")
     
