@@ -354,7 +354,21 @@ def change_pk_of_ALLELES(conn, cursor, log):
     log.info("\t=> Done")
     
 
-def patch_database(settings, log):
+def update_last_tl_version(settings, version, log):
+    """updates the last_tl_version setting of this user with the current software version
+    after all patches are done
+    """
+    log.info("Updating user config with current version {}...".format(version))
+    user_config = settings["user_cf"]
+    cf = ConfigParser()
+    cf.read(user_config)
+    cf.set("Company", "last_tl_version", version)
+    with open(user_config, "w") as g:
+        cf.write(g)
+    log.info("\t=> Done")
+    
+
+def patch_database(settings, version, log):
     """patches the SQLite database of the current user
     """
     log.info("Patching database if necessary...")
@@ -365,15 +379,25 @@ def patch_database(settings, log):
         return
     log.info("\t=> patching needed!")
     
-    conn, cursor = db_internal.open_connection(settings["db_file"], log)
+    try:
+        conn, cursor = db_internal.open_connection(settings["db_file"], log)
     
-    add_cell_line_to_SAMPLES(settings, conn, cursor, log)
-    change_pk_of_ALLELES(conn, cursor, log)
-    replace_cell_line_in_FILES(conn, cursor, log)
-    add_missing_local_names_to_FILES(conn, cursor, log)
+        add_cell_line_to_SAMPLES(settings, conn, cursor, log)
+        change_pk_of_ALLELES(conn, cursor, log)
+        replace_cell_line_in_FILES(conn, cursor, log)
+        add_missing_local_names_to_FILES(conn, cursor, log)
+        
+        cursor.close()
+        conn.close()
+        success = True
+    except Exception as E:
+        log.exception(E)
+        log.error(E)
+        success = False
     
-    cursor.close()
-    conn.close()
+    if success:
+        update_last_tl_version(settings, version, log)
+    
     
 pass
 #===========================================================
@@ -386,8 +410,31 @@ def execute_patches(root_path, log):
     patch_config(root_path, users, log)
     
 
+def prepare_fresh_file_for_debugging(settings, log):
+    """for tests during development, reset database and 
+    """
+    import shutil
+    if not settings["modus"] == "debugging":
+        raise ValueError("Modus is '{}', not 'debugging' => will not replace database!".format(settings["modus"]))
+    
+    log.info("Resetting data.db and config file for debugging...")
+    log.info("\tdata.db...")
+    login_dir = settings["login_dir"]
+    db_file = os.path.join(login_dir, "data.db")
+    os.remove(db_file)
+    shutil.copy(os.path.join(login_dir, "data_old.db"), os.path.join(login_dir, "data.db"))
+    
+    log.info("\tconfig.ini...")
+    update_last_tl_version(settings, "2.1.0", log)
+    log.info("\t=> Done")
+    
+    
+    
+
 if __name__ == '__main__':
     import GUI_login
+    from __init__ import __version__
+    
     log = general.start_log(level="DEBUG")
     log.info("<Start patches.py>")
 #     app = QApplication(sys.argv)
@@ -397,8 +444,10 @@ if __name__ == '__main__':
 #     if patchme:
 #         request_user_input(root_path, app, log)
 #         execute_patches(root_path, log)
+
     settings = GUI_login.get_settings("admin", log)
-    patch_database(settings, log)
+    prepare_fresh_file_for_debugging(settings, log)
+    patch_database(settings, __version__, log)
     
     log.info("<End patches.py>")
     
