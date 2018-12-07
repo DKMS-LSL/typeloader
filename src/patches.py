@@ -276,18 +276,31 @@ def add_cell_line_to_SAMPLES(settings, conn, cursor, log):
     """table SAMPLES: adds missing column cell_line
     """
     log.info("Adding column cell_line to table SAMPLES...")
-    q1_add_column = "alter table SAMPLES add column CELL_LINE"
-    cursor.execute(q1_add_column)
+    q0_drop_new_table = "DROP TABLE SAMPLES_NEW" #if table remains from error during last attempt
+    try:
+        cursor.execute(q0_drop_new_table)
+    except: # if it's not there that's fine (it should not be there!)
+        pass
     
-    log.debug("\tGetting existing samples...")
-    q2_get_samples = "select sample_id_int, sample_id_ext from SAMPLES"
-    items = db_internal.query_database(q2_get_samples, None, log, cursor)
+    q1_get_samples = "select sample_id_int, sample_id_ext, customer from SAMPLES"
+    items = db_internal.query_database(q1_get_samples, None, log, cursor)
+    items = [(item[0], item[1], '{}_{}'.format(settings["cell_line_token"], item[0]), item[2]) for item in items]
     
-    items = [('{}_{}'.format(settings["cell_line_token"], item[0]), item[0], item[1]) for item in items]
-    log.info("\tWriting local_names into table FILES...")
-    update_query = "update SAMPLES set cell_line = :1 where sample_id_int = :2 and sample_id_ext = :3"
-    cursor.executemany(update_query, items)
+    q2_new_table = """CREATE TABLE SAMPLES_NEW 
+                (SAMPLE_ID_INT TEXT PRIMARY KEY, SAMPLE_ID_EXT TEXT, CELL_LINE TEXT, CUSTOMER TEXT)"""
+    cursor.execute(q2_new_table)
+    
+    q3_insert_query = """insert into SAMPLES_NEW (SAMPLE_ID_INT, SAMPLE_ID_EXT, CELL_LINE, CUSTOMER)
+    values (:1, :2, :3, :4)
+    """
+    cursor.executemany(q3_insert_query, items)
+    
+    q4_drop_old_table = "DROP TABLE SAMPLES"
+    cursor.execute(q4_drop_old_table)
+    q5_rename_new_table = "ALTER TABLE SAMPLES_NEW RENAME TO SAMPLES"
+    cursor.execute(q5_rename_new_table)
     conn.commit()
+    
     log.info("\t=> Done") 
     
     
