@@ -574,7 +574,7 @@ if __name__ == '__main__':
             db_file = settings_dic["db_file"]
             
             # implement db bugfixes:
-            patches.patch_database(settings_dic, log)
+            patches.patch_database(settings_dic, __version__, log)
             
             mydb = create_connection(log, db_file) 
     

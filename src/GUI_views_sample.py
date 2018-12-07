@@ -88,7 +88,8 @@ class SampleTable(InvertedTable):
         self.header_lbl.setText("General Information:")
         self.model.setHeaderData(0, Qt.Horizontal, "Internal Donor-ID")
         self.model.setHeaderData(1, Qt.Horizontal, "External Donor-ID")
-        self.model.setHeaderData(2, Qt.Horizontal, "Customer")
+        self.model.setHeaderData(2, Qt.Horizontal, "Cell Line")
+        self.model.setHeaderData(3, Qt.Horizontal, "Customer")
         self.setMaximumHeight(170)
         self.setMaximumWidth(300)
         v_header = self.table.verticalHeader()
@@ -168,7 +169,7 @@ class SampleAlleles(FilterableTable):
         self.log.debug("Creating the table model...")
         q = QSqlQuery()
         query = """SELECT sample_id_int, allele_nr, 
-            ('#' || allele_nr || ' (' || gene || ')') as Target_allele, cell_line,
+            ('#' || allele_nr || ' (' || gene || ')') as Target_allele, local_name,
             Allele_Status, Lab_Status, project_name
         FROM alleles
          """
@@ -178,7 +179,7 @@ class SampleAlleles(FilterableTable):
         self.model.setQuery(q)
         
         self.model.setHeaderData(2, Qt.Horizontal, "Target Allele")
-        self.model.setHeaderData(3, Qt.Horizontal, "Cell Line")
+        self.model.setHeaderData(3, Qt.Horizontal, "Allele Name")
         self.model.setHeaderData(4, Qt.Horizontal, "Allele Status")
         self.model.setHeaderData(5, Qt.Horizontal, "Lab Status")
         self.model.setHeaderData(6, Qt.Horizontal, "Project")
