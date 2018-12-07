@@ -24,7 +24,7 @@ from PyQt5 import QtSql
 from PyQt5.QtCore import pyqtSlot, Qt
 from configparser import NoSectionError
 
-import general, db_internal
+import general
 import GUI_navigation, GUI_login, GUI_stylesheet
 import GUI_forms_new_project, GUI_forms_new_allele, GUI_forms_new_allele_bulk 
 import GUI_forms_submission_ENA, GUI_forms_submission_IPD
