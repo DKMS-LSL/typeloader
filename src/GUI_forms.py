@@ -111,7 +111,8 @@ class ProceedButton(QPushButton):
     """
     proceed = pyqtSignal(int)
      
-    def __init__(self, text = "", items = [], log = None, section = 0, parent = None):
+    def __init__(self, text = "", items = [], log = None, section = 0, parent = None,
+                 only1 = False):
         """constructor
         """
         super().__init__(text, parent)
@@ -122,6 +123,7 @@ class ProceedButton(QPushButton):
         self.setEnabled(False)
         self.setCheckable(True)
         self.clicked.connect(self.on_clicked)
+        self.only1 = only1
         self.check_ready()
          
     @pyqtSlot(str)
@@ -150,6 +152,9 @@ class ProceedButton(QPushButton):
                     pass
                 if not text:
                     ready = False
+            elif "QCheckBox" in item_type:
+                if item.isChecked():
+                    active_fields += 1
             else:
                 if item.isEnabled():
                     active_fields += 1
@@ -159,8 +164,13 @@ class ProceedButton(QPushButton):
                         text = item.text()
                     if not text:
                         ready = False
+        
         if active_fields == 0: # if nothing selected
             ready = False
+        elif self.only1: # if only one should be selected
+            if active_fields != 1:
+                ready = False
+        
         if ready:
             self.log.debug("\tReady!")
             self.setEnabled(True)
