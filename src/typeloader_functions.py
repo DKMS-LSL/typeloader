@@ -220,6 +220,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
             else:
                 extraInformation = annotations[alleleName]["extraInformation"]
                 closestAlleleName = annotations[alleleName]["closestAllele"]
+                #ToDo: store closest allele in db
                 geneName = closestAlleleName.split("*")[0]
                 newAlleleName = "%s:new" % closestAlleleName.split(":")[0]
                 
@@ -260,7 +261,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 
                 generalData = BME.make_globaldata(gene_tag = gene_tag, gene = geneName, allele = newAlleleName, product_DE = productName_DE, product_FT = productName_FT, 
                                                   function = function, species = flatfile_dic["species"], 
-                                                  seqLen = str(len(sequence)), cellline = myallele.cell_line)
+                                                  seqLen = str(len(sequence)), cellline = myallele.local_name)
                 ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, null_allele) + BME.make_genemodel(BE.backend_dict, generalData, enaPosHash, extraInformation, features, 0, 0) + BME.make_footer(BE.backend_dict, sequence)
                 #TODO (future): accept multiple sequences from one fasta file
         return True, myalleles, ENA_text
@@ -302,7 +303,7 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log):
                                       function = flatfile_dic["function_hla"], 
                                       species = flatfile_dic["species"], 
                                       seqLen = str(len(sequence)), 
-                                      cellline = allele.cell_line)
+                                      cellline = allele.local_name)
     ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, allele.null_allele) 
     ENA_text += BME.make_genemodel(BE.backend_dict, generalData, enaPosHash, 
                                     extraInformation, features, allele.fromExon, allele.toExon) 
@@ -538,6 +539,7 @@ def bulk_upload_new_alleles(csv_file, project, settings, mydb, log):
                 header_data["Customer"] = customer
             # process raw file:
             sample_name = sample_id_int
+            header_data["sample_id_int"] = sample_id_int
             results = process_sequence_file(project, filetype, blastXmlFile, 
                                             targetFamily, fasta_filename, allelesFilename, 
                                             header_data, settings, log)
