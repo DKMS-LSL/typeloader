@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-import datetime
-from . import EMBLfunctions as EF
+import contextlib
 import re, os
 from zipfile import ZipFile
 from configparser import ConfigParser
@@ -11,8 +10,7 @@ from .coordinates import getCoordinates
 from .enaemailparser import parse_embl_response
 from .imgt_text_generator import make_imgt_text
 from .errors import IncompleteSequenceError
-from os import path, mkdir, system
-from sys import argv
+from os import path
 from functools import reduce
 
 # load .ini file
@@ -157,28 +155,32 @@ def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, bef
         if not path.exists(enafile):
             msg = "Can't find ena file: {}".format(enafile)
             log.warning(msg)
-            os.remove(lock_file)
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(lock_file)
             return False, msg, None
         
         blastOp = path.join(project_dir, sample, file_dic[cell_line]["blast_xml"])
         if not path.exists(blastOp): 
             msg = "Can't find blast.xml file: {}".format(blastOp)
             log.warning(msg)
-            os.remove(lock_file)
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(lock_file)
             return False, msg, None
         try: 
             enaId = cellEnaIdMap[cell_line]
         except KeyError:
             msg = "Can't find ENA ID for {}".format(cell_line)
             log.warning(msg)
-            os.remove(lock_file)
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(lock_file)
             return False, msg, None
         try: 
             gene = geneMapENA[cell_line]
         except KeyError:
             msg = "Can't find gene for {}".format(cell_line)
             log.warning(msg)
-            os.remove(lock_file)
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(lock_file)
             return False, msg, None
 
         # search the current targetfamily and allele DB
@@ -198,7 +200,8 @@ def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, bef
         except KeyError:
             msg = "Can't find pretyping for {}.\n(Please make sure that the internal donor ID is listed in the first column of your pretypings file.)".format(sample)
             print(patientBefundMap)
-            os.remove(lock_file)
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(lock_file)
             log.warning(msg)
             return False, msg, None
 
@@ -213,7 +216,8 @@ def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, bef
             log.error(E)
             log.exception(E)
             log.warning("Blast messed up?")
-            os.remove(lock_file)
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(lock_file)
             continue
         
         isSameGene = reduce(lambda x,y: x & y, [annotations[genDxAlleleName]["closestAllele"].startswith(newAlleleStub) \
@@ -302,6 +306,7 @@ def write_imgt_files(project_dir, samples, file_dic, ENA_id_map, ENA_gene_map,
         log.exception(E)
         success = False
         error = E
+        return False, repr(Es)
 
     return (zip_file, cell_lines, customer_dic, resultText, imgt_file_names, success, error)
 
