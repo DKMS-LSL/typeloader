@@ -387,7 +387,7 @@ def patch_database(settings, version, log):
     log.info("Patching database if necessary...")
     
     last_patched_tl_version = settings["last_tl_version"]
-    if last_patched_tl_version > "2.2":
+    if last_patched_tl_version > "2.1":
         log.info("\t=> everything up to date")
         return
     log.info("\t=> patching needed!")
