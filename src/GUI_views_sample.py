@@ -321,10 +321,10 @@ class AlleleView(QTabWidget):
         #columns: goal, target_allele, partner_allele, MM-pos, null_allele, software, version, date, ref_db, db version, int. allele name, off. allele name, new/confirmed
         hidden_rows = list(range(7)) + list(range(8, 24)) + list(range(36, 46))
         mytab = TabTableSimple(self.log, self.db, 0, "alleles", hidden_rows, headers = alleles_header_dic)
-        mytab.table.setItemDelegateForRow(7, ComboDelegate(self, general.field_options["goal"]))
+        mytab.table.setItemDelegateForRow(7, ComboDelegate(self, general.field_options["goal"], editable = True))
         mytab.table.setItemDelegateForRow(27, ComboDelegate(self, general.field_options["yesno"])) # Null allele
         if self.settings["xml_center_name"] == "DKMS LIFE SCIENCE LAB":
-            mytab.table.setItemDelegateForRow(28, ComboDelegate(self, general.field_options["software_new"]))
+            mytab.table.setItemDelegateForRow(28, ComboDelegate(self, general.field_options["software_new"], editable = True))
         mytab.table.setItemDelegateForRow(31, ComboDelegate(self, general.field_options["ref_db"]))
         mytab.table.setItemDelegateForRow(35, ComboDelegate(self, general.field_options["new_confirmed"]))
         self.addTab(mytab, "New Genotyping")
@@ -586,8 +586,8 @@ def main():
     app = QApplication(sys.argv)
     sys.excepthook = log_uncaught_exceptions
     
-    project_name = "20180716_ADMIN_KIR3DP1_PB4"
-    sample_id_int = "ID908158"
+    project_name = "20181207_ADMIN_HLA-B_NEB1"
+    sample_id_int = "ID64798343"
     ex = SampleView(log, mydb, sample_id_int, project_name)
     ex.show()#Maximized()
     result = app.exec_()
