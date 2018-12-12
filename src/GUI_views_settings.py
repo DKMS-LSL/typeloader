@@ -210,9 +210,6 @@ class SettingTab(QTabWidget):
                                           "lbl_text" : "Type of Primer",
                                           "hint": "Used in generated IMGT files"},
                       
-                      "local_name_basis" : {"section" : "Pref",
-                                          "lbl_text" : "ID to base local name on",
-                                          "hint": "An allele's local name can be generated based on its internal or external sample ID"},
                       "fasta_extensions" : {"section" : "Pref",
                                           "lbl_text" : "Fasta File Extensions",
                                           "hint": "These extensions are recognized as fasta files. Must be separated by |, no whitespaces!"},
@@ -265,9 +262,14 @@ class SettingTab(QTabWidget):
         mytab.layout = layout
         
         combobox_fields = {"address_form" : ["Dr.", "Ms.", "Mrs.", "Mr.", "Ass. Prof.", "Prof.", "Med. Prof."],
+                           "material_available" : ["DNA", "Cell line", "None"],
                            "sequencing_direction" : ["OneSided", "Both"],
                            "sequenced_in_isolation" : ["yes", "no"],
-                           "local_name_basis" : ["internal", "external"]}
+                           "primary_sequencing" : ["NGS - Illumina Sequencing Technology", "NGS - Pacific Biosciences SMRT Technology",
+                                                   "NGS - Oxford Nanopore Technology", "Sanger Sequencing"],
+                           "secondary_sequencing" : ["NGS - Illumina Sequencing Technology", "NGS - Pacific Biosciences SMRT Technology",
+                                                   "NGS - Oxford Nanopore Technology", "Sanger Sequencing"],
+                           "type_of_primer" : ["Both allele and locus specific", "Locus specific", "Allele specific", "Allele group specific"]}
         for section in sections:
             for (key, value) in self.cf.items(section):
                 key = key.lower()
@@ -281,6 +283,8 @@ class SettingTab(QTabWidget):
                                 self.mydic[key]["field"].addItem(v2)
                         self.mydic[key]["field"].activated.connect(self.catch_unconfirmed_data)
                         self.mydic[key]["value"] = self.mydic[key]["field"].currentIndex()
+                        self.mydic[key]["field"].setEditable(True)
+                        self.mydic[key]["field"].editTextChanged.connect(self.catch_unconfirmed_data)
                     else: # line edits
                         self.mydic[key]["type"] = "QLineEdit"
                         self.mydic[key]["field"] = QLineEdit(value, self)
