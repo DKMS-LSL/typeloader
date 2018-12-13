@@ -1,7 +1,7 @@
 # ![Icon](images/TypeLoader_32.png) Sample View 
-This [=> Detailled View](detailled_views.md) shows the current state and all data concerning one TypeLoader sample in one project.
+This [=> Detailed View](detailed_views.md) shows the current state and all data concerning one TypeLoader sample in one project.
 
-To open it, choose a target allele (either in the [=> Navigation Area](navigation.md), the [=> Alleles Overview](overview_alleles.md), or the allele's [=> Project View](view_project.md)), rightclick on it and select ``Open Sample View``:
+To open it, choose a target allele (either in the [=> Navigation Area](navigation.md), the [=> Allele Overview](overview_alleles.md), or the allele's [=> Project View](view_project.md)), rightclick on it and select ``Open Sample View``:
 
 ![SampleView](images/view_sample.png)
 

@@ -1,7 +1,7 @@
 # ![Icon](images/TypeLoader_32.png) Submit alleles to IPD 
 ![Important](images/icon_important.png) **Your IPD user settings will be incorporated into the IPD files you generate. So make sure yours are ok before you start (using the [=> Settings Dialog](settings.md)). If this is your first IPD submission, create just one file, edit it manually and submit it via  [IPD's Submission Page](https://www.ebi.ac.uk/ipd/imgt/hla/subs/submit.html) to receive your submittor ID for future submissions.**
 
-To submit (one or multiple) alleles to IPG (IMGT/HLA or KIR), click ``Submit to IPD`` in the menu or toolbar, or choose ``Submit project to IPD`` in the [=> Projects Overview](overview_project.md).
+To submit (one or multiple) alleles to IPG (IMGT/HLA or KIR), click ``Submit to IPD`` in the menu or toolbar, or choose ``Submit project to IPD`` in the [=> Project Overview](overview_project.md).
 This will open the IPD Submission Dialog:
 
 ![IPDSubmission](images/ipd_submission1.png)

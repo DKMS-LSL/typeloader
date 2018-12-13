@@ -1,7 +1,7 @@
 # ![Icon](images/TypeLoader_32.png) Project View 
-This [=> Detailled View](detailled_views.md) shows the current state and all data concerning one TypeLoader project.
+This [=> Detailed View](detailed_views.md) shows the current state and all data concerning one TypeLoader project.
 
-To open it, choose a project (either in the [=> Navigation Area](navigation.md), the [=> Projects Overview](overview_project.md) or [=> Alleles Overview](overview_alleles.md), rightclick on it and select ``Open Project View``:
+To open it, choose a project (either in the [=> Navigation Area](navigation.md), the [=> Project Overview](overview_project.md) or [=> Allele Overview](overview_alleles.md), rightclick on it and select ``Open Project View``:
 
 ![ProjectView](images/view_project.png)
 

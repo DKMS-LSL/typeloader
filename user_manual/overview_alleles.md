@@ -1,7 +1,7 @@
-# ![Icon](images/TypeLoader_32.png) Alleles Overview 
-![ProjectsOverview](images/overview_alleles_full.png)
+# ![Icon](images/TypeLoader_32.png) Allele Overview 
+![Allele Overview](images/overview_alleles_full.png)
 
-This [=> Overview](overviews.md) shows all target alleles of the TypeLoader account logged in (1 row per allele). Just like the [=> Projects Overview](overview_project.md), this table can be sorted and filtered by all columns.
+This [=> Overview](overviews.md) shows all target alleles of the TypeLoader account logged in (1 row per allele). Just like the [=> Project Overview](overview_project.md), this table can be sorted and filtered by all columns.
 
 Cells in the columns ``allele status`` and ``lab status`` are [=> color-coded](colors_icons.md).
 

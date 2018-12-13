@@ -16,14 +16,17 @@ In the second tab, you can see and edit data about your company, mainly the cont
 ## Lab Method Settings
 ![settings3](images/settings3.png)
 
-In the thirds tab, you can enter data about the methods applied by your lab. These are included in all IPD submission files, so should accurately represent the methods applied in your lab. Note that several of these are required for acceptance by IPD (see [IPD's submission page](https://www.ebi.ac.uk/ipd/imgt/hla/subs/submit.html) for details).
+In the third tab, you can enter data about the methods applied by your lab to characterize the alleles you upload to TypeLoader. These are included in all IPD submission files, so they **must** accurately represent the methods applied in your lab. Note that several of these are required for acceptance by IPD (see [IPD's submission page](https://www.ebi.ac.uk/ipd/imgt/hla/subs/submit.html) for details).
+
+![important](images/icon_important.png) **Currently, TypeLoader assumes that all your samples come from the same workflow, so these metadata are stored here globally. (You can, however, overwrite the primary and secondary sequencing technology for an individual allele via the header of your [=> input fasta files](input_files.md).)**
+
+**If you are generating TypeLoader alleles from different workflows within your lab (other than merely using different sequencing technologies), you can either create one [=> TypeLoader-user](users.md) per workflow and configure each accordingly (recommended), or you could update the metadata in your settings accurately every time before you create IPD files (error prone!).**
 
 ## Preferences
 ![settings4](images/settings4.png)
 
 In the last tab, you can set your personal preferences as well as parameters for TypeLoader:
 
- * **ID to base local name on**: the fiel "local name" for each allele is generated automatically, either based on the sample's internal or external sample ID (by default, the internal sample ID is used).
  * **Fasta file extensions**: these file extensions are recognized as fasta files. The list must be delimited by | (no spaces).
  * **KIR pseudogenes**: these KIR genes are recognized and treated as pseudogenes. The list must be delimited by | (no spaces).
  * **Days to store recovery**: when you close TypeLoader, all *your* recovery data (log files and database dumps) *older than this many days* are deleted.

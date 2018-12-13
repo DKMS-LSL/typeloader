@@ -16,8 +16,8 @@ To start a new project, you must give the following details:
 * **User:** This is the full name of the user starting this project. TypeLoader will automatically enter the name associated with the logged in user account. The associated initials are later used for the project name. You can also enter a different name - then the initials for the project name will be inferred from the full name given here.
 * **Gene**: This is the gene the sequences of this project belong to. If the project will cover several loci, use "mixed".
 * **Pool**: The name of the sample pool or experiment.
-* **Title**: Optionally, you can give your project a title. This will be stored and reported to ENA, and can be usefull for filtering the [=> Projects Overview](overview_projects.md). Keep it short and concise.
-* **Description**: Optionally, you can give your project a description. This will be stored and reported to ENA, and can be usefull for filtering the [=> Projects Overview](overview_projects.md). Keep it short and concise.
+* **Title**: Optionally, you can give your project a title. This will be stored and reported to ENA, and can be usefull for filtering the [=> Project Overview](overview_projects.md). Keep it short and concise.
+* **Description**: Optionally, you can give your project a description. This will be stored and reported to ENA, and can be usefull for filtering the [=> Project Overview](overview_projects.md). Keep it short and concise.
 
 ##  (2) Generate project 
 After all details have been entered, click the green "Click to generate" button. TypeLoader will then generate the project's name as follows:
@@ -37,6 +37,6 @@ TypeLoader will then automatically submit the project's details to ENA and retri
 
 Your project has now been created successfully and you can close the dialog (either using the ``Done`` button or the X in the upper right corner).
 
-The new project will appear in the [=> Navigation area](navigation.md) and [=> Projects Overview](overview_projects.md) and is automatically selected as current project.
+The new project will appear in the [=> Navigation area](navigation.md) and [=> Project Overview](overview_projects.md) and is automatically selected as current project.
 
 Now you can add sequences to your project using the [=> New Alleles Dialog](new_allele.md).
