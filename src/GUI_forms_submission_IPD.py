@@ -163,6 +163,9 @@ class IPDSubmissionForm(CollapsibleDialog):
         """checks if this is this user's first IPD submission;
         if yes, asks for confirmation before proceeding
         """
+        if self.settings["modus"] == "staging":
+            return True
+        
         self.log.debug("Checking if this is your first IPD submission...")
         query = "select submission_id from ipd_submissions where success = 'yes' LIMIT 1"
         success, data = db_internal.execute_query(query, 1, self.log, "Checking for previous IPD submissions", "Database error", self)
