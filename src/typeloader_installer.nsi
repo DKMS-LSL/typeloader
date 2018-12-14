@@ -58,6 +58,9 @@ Var submittor_fld # submittor ID for IPD
 Var /global SUBMITTOR_ID
 Var ipd_short_fld # short name for IPD submissions
 Var /global IPD_SHORT
+Var cell_line_token_fld # beginning of cell_lines and local_names
+Var /global CL_TOKEN
+
 Var /global UPDATING
 
 #Page directory
@@ -80,7 +83,8 @@ Function .onInit
         StrCpy $SUBMITTOR_ID ""
 
         StrCpy $UPDATING "no"
-        StrCpy $IPD_SHORT ""
+        StrCpy $IPD_SHORT "a short acronym of your company; use only letters or hyphens!"
+        StrCpy $CL_TOKEN "a short acronym of your company; use only letters or hyphens!"
 
 FunctionEnd
 
@@ -147,7 +151,7 @@ Function settingsPage1
 
 	${NSD_CreateLabel} 5u 0u 95% 25u "(You can leave any of these empty if unknown, but later you can only reset them for each user individually!)"
 
-	${NSD_CreateGroupBox} 0 25u 100% 75u "Settings for communication with ENA"
+	${NSD_CreateGroupBox} 0 25u 100% 95u "Settings for communication with ENA"
 
 	${NSD_CreateLabel} 5u 40u 28% 12u "Centre Name:"
 	${NSD_CreateText} 30% 40u 50% 12u "$XML_CENTER"
@@ -165,6 +169,10 @@ Function settingsPage1
 	${NSD_CreateText} 30% 85u 50% 12u "$PROXY"
 	Pop $proxy_fld
 
+        ${NSD_CreateLabel} 5u 100u 28% 12u "Cell line identifier:"
+	${NSD_CreateText} 30% 100u 50% 12u "$CL_TOKEN"
+	Pop $cell_line_token_fld
+
 	nsDialogs::Show
 
 FunctionEnd
@@ -174,6 +182,7 @@ Function settingsPage1Leave
 	${NSD_GetText} $ftp_pwd_fld $FTP_PWD
 	${NSD_GetText} $proxy_fld $PROXY
 	${NSD_GetText} $center_fld $XML_CENTER
+	${NSD_GetText} $cell_line_token_fld $CL_TOKEN
 
          # write company config file:
         FileOpen $1 $INSTDIR\config_company.ini w
@@ -182,6 +191,7 @@ Function settingsPage1Leave
         FileWrite $1 "ftp_user: $FTP_USER$\r$\n"
         FileWrite $1 "ftp_pwd: $FTP_PWD$\r$\n"
         FileWrite $1 "proxy: $PROXY$\r$\n"
+        FileWrite $1 "cell_line_token: $CL_TOKEN$\r$\n"
         FileClose $1
         pop $UPDATING
 
