@@ -1,3 +1,0 @@
-# ![Icon](images/TypeLoader_32.png) Changing method metadata of individual alleles
-
-![important](images/icon_important.png) Currently, TypeLoader assumes that all your samples come from the same workflow, so these metadata are stored here globally. (You can, however, overwrite the secondary sequencing technology for an individual allele via the keys "short\_read\_type" or "long\_read\_type" (with long\_read\_type taking precedence over short\_read\_type if both are provided) in the header of your [=> input fasta files](input_files.md) or using the [=> SampleView](view_sample.md) of an individual sample.*

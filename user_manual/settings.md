@@ -19,9 +19,9 @@ In the second tab, you can see and edit data about your company, mainly the cont
 
 In the third tab, you can enter data about the methods applied by your lab to characterize the alleles you upload to TypeLoader. These are included in all IPD submission files, so they **must** accurately represent the methods applied in your lab. Note that several of these are required for acceptance by IPD (see [IPD's submission page](https://www.ebi.ac.uk/ipd/imgt/hla/subs/submit.html) for details).
 
-![important](images/icon_important.png) **Currently, TypeLoader assumes that all your samples come from the same workflow, so these metadata are stored here globally. (You can, however, overwrite some of these for individual samples, see [=> Changing method metadata](changing_metadata.md).)**
+![important](images/icon_important.png) **Currently, TypeLoader assumes that all your samples come from the same workflow, so these metadata are stored here globally.**
 
-**If you are generating TypeLoader alleles from different workflows within your lab (other than merely using different sequencing technologies), you can either create one [=> TypeLoader-user](users.md) per workflow and configure each accordingly (recommended), or you could update the metadata in your settings accurately every time before you create IPD files (error prone!).**
+**If you are generating TypeLoader alleles from different workflows within your lab, you can either create one [=> TypeLoader-user](users.md) per workflow and configure each accordingly (recommended), or you could update the metadata in your settings accurately every time before you create IPD files (error prone!).**
 
 ## Preferences
 ![settings4](images/settings4.png)
