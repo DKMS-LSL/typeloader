@@ -1,7 +1,7 @@
 # ![Icon](images/TypeLoader_32.png) Sample View 
 This [=> Detailed View](detailed_views.md) shows the current state and all data concerning one TypeLoader sample in one project.
 
-To open it, choose a target allele (either in the [=> Navigation Area](navigation.md), the [=> Allele Overview](overview_alleles.md), or the allele's [=> Project View](view_project.md)), rightclick on it and select ``Open Sample View``:
+To open it, choose a target allele (either in the [=> Navigation Area](navigation.md), the [=> Allele Overview](overview_alleles.md), or the allele's [=> Project View](view_project.md)), rightclick on it and select ``Open Sample View``, or just doubleclick the allele in the [=> Navigation Area](navigation.md):
 
 ![SampleView](images/view_sample.png)
 
@@ -18,37 +18,38 @@ Additionally, there are two buttons to interact with the sample's files:
 
 (See below for more details.)
 
+Many of the values in this view can be edited, although some are protected from editing to ensure data consistency. All edits have to be confirmed via the ``Confirm all changes`` button (or rejected via the ``Reset all changes`` button) before any other view can be used.
+
 ##  General Information 
 This table gives information about the sample from which the target allele was sequenced:
 
   * Internal sample ID
   * External sample ID
+  * Cell line
   * Customer
 
-The table can be edited to add or change the customer. 
-
-All edits have to be confirmed via the ``Confirm all changes`` button (or rejected via the ``Reset all changes`` button) before any other view can be used.
+The table can be edited to add or change the customer. It is also possible to change the external sample ID (to correct mis-spellings etc.) via a rightclick menu.
 
 ##  Alleles 
 This table shows all target alleles generated from this sample, with information to identify them and easily see their status values:
 
-  * which allele is this within this sample?
-  * What's its cell line?
-  * What's its allele status and lab status (both are [=> color-coded](colors_icons.md))
+  * Which allele is this within this sample?
+  * What is its allele ID?
+  * What are its allele status and lab status (both are [=> color-coded](colors_icons.md))?
   * To which project does it belong?
 
-![Important](images/icon_important.png) **Note that this list is not limited to the current project. If any alleles of the same sample are contained in a different project, they are displayed here, too.**
+![Important](images/icon_important.png) **Note that this list is not limited to the current project. If any alleles of the same sample are contained in a different project of the same user, they are displayed here, too.**
 
 **For more details about multiple target alleles for one sample, see [=> Multiple alleles of one sample](multiple_alleles.md).**
 
 This table is not editable. It can be filtered on all columns using the filter above it.
 
-Clicking any row will re-filter the Allele Details View below to this allele.
+Clicking any row will re-filter the Allele Details section below to this allele.
 
 ##  Allele Details 
 This section displays lots of detailed information about the chosen target allele. For ease of use and comprehension, the information is sorted into categories and displayed in tabs (one tab per category):
 
-  * **General**: general information about the target allele and it's status
+  * **General**: general information about the target allele and its status
   * **Original genotyping**: information about the original genotyping during primary analysis (note: not used, yet!)
   * **Lab processing**: information about the lab processing steps and lab progress on the sample (note: not used, yet!)
   * **New genotyping**: information about the full length secondary genotyping 
@@ -56,8 +57,6 @@ This section displays lots of detailed information about the chosen target allel
   * **IPD submission**: information about the IPD submission of the target allele (note: only filled after successfully generating an IPD submission file)
 
 The data in all tabs is editable, although some rows have been protected from editing to keep the data consistent with what has been submitted. 
-
-All edits have to be confirmed via the ``Confirm all changes`` button (or rejected via the ``Reset all changes`` button) before any other view can be used.
 
 All allele status and lab status values are [=> color-coded](colors_icons.md).
 

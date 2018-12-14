@@ -5,7 +5,8 @@ If you have a lot of **fasta files** you want to upload to TypeLoader, you can u
 
 This feature uses a .csv file specifying the files to upload and their sample data.
 
-![Pic](images/icon_important.png) Please note that - unlike the [=> New Allele Dialog](new_allele.md) - this dialog will **not** show you the created ENA text files. To check these, you have to visit each allele's [=> Sample View](view_sample.md) and use the ``Edit a file`` button.
+![Pic](images/icon_important.png) Please note that - unlike the [=> New Allele Dialog](new_allele.md) - this dialog will **not** show you the created ENA text files. To check these, you have to visit each allele's [=> Sample View](view_sample.md) and use the ``Edit a file`` button. 
+**Therefore, we recommend not using this feature until you have gotten familiar with adding individual alleles using the [=> New Allele Dialog](new_allele.md).**
 
 
 ##  The bulk upload csv 
@@ -17,21 +18,17 @@ To give TypeLoader the files you want to bulk-upload, you need a .csv file conta
   * **sample\_id_int**: the internal sample ID for the sample 
   * **sample\_id_ext**: the external sample ID for the sample
   * **customer**: (optional) the customer who issued the sample
-  * **cell_line**: (optional) the cell line the final allele should have
 
 ![Pic](images/bulk_upload_csv.png)
 
-![Pic](images/icon_important.png) If a cell\_line is given and also contained in the fasta header, TypeLoader will use the cell\_line given in the .csv. To use the cell_line from the fasta header, keep this column empty.
-
 The customer will be added to the database if provided, or left empty if not.
-
 
 ##  Performing a bulk fasta upload 
 To use this feature, use the Menu to choose ``New`` => ``New sequences (bulk fasta upload)``. This will open the New Allele Bulk Upload-dialog:
 
 ![Pic](images/bulk_upload0.png)
 
-###  (1) Upload bulk-submission 
+###  (1) Upload bulk files
 Use the ``Choose csv file with target allele fasta files`` button to choose your .csv file.
 
 Use the panel on the right side to choose an existing open project or start a new one.
@@ -42,7 +39,7 @@ After clicking ``Upload``, TypeLoader will ask you to confirm that you really wa
 
 Clicking ``Yes`` will start the bulk-upload of your target alleles.
 
-![Pic](images/icon_important.png) Bulk-upload takes a while (depending on the number of files you want to upload as well as their size). The confirmation box will remain visible until all files have been processed.
+![Pic](images/icon_important.png) **Bulk-upload takes a while (depending on the number of files you want to upload as well as their size and your computer). The confirmation box will remain visible until all files have been processed.**
 
 After all alleles have been processed, the confirmation box will vanish and the next section will expand to show you the results:
 

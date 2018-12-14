@@ -1,7 +1,7 @@
 # ![Icon](images/TypeLoader_32.png) Project View 
 This [=> Detailed View](detailed_views.md) shows the current state and all data concerning one TypeLoader project.
 
-To open it, choose a project (either in the [=> Navigation Area](navigation.md), the [=> Project Overview](overview_project.md) or [=> Allele Overview](overview_alleles.md), rightclick on it and select ``Open Project View``:
+To open it, choose a project (either in the [=> Navigation Area](navigation.md), the [=> Project Overview](overview_project.md) or [=> Allele Overview](overview_alleles.md), rightclick on it and select ``Open Project View``, or just doubleclick the project in the [=> Navigation Area](navigation.md):
 
 ![ProjectView](images/view_project.png)
 
@@ -15,7 +15,7 @@ The data in this view is organized in three tables:
 This table gives a summary of all statistical data of this project:
 
   * How many alleles are contained? (nr\_alleles)
-  * How many are finished? (closed) (see [=> Colors, icons and status](colors_icons.md) for which status are considered closed)
+  * How many are finished? (closed) (see [=> Colors, icons and status](colors_icons.md) for which status values are considered closed)
   * How many have been submitted to ENA and IPD?
   * How many have been accepted by IPD?
   * How many have been abandoned?
@@ -37,7 +37,7 @@ This table lists all alleles of a project with their respective allele status an
 
 The list is sorted by the order in which the alleles were uploaded (listed in the column ``Nr``).
 
-By rightclicking any of these alleles, you get the option to open its [=> Sample View](view_sample.md).
+By rightclicking any of these alleles, you get the option to open its [=> Sample View](view_sample.md), where you can see more details about it and make necessary edits.
 
 ##  Changing a project's status  
 A project can be ``Open`` or ``Closed``. (For details, see [=> Colors, icons and status](colors_icons.md).)
@@ -45,9 +45,9 @@ A project can be ``Open`` or ``Closed``. (For details, see [=> Colors, icons and
 To switch a project's status, click the ``Close Project`` or ``Open Project`` button (whichever applies; the button will change its text accordingly) in the center top area. 
 
 ## Accessing a project's files
-In the top right area there are two buttons that allow interaction with a project's files:
+In the top right area, there are two buttons that allow interaction with a project's files:
 
  * ``Download files`` opens a dialog where you can choose any of this project's files and save them to a place of your choice.
  * ``Edit a file`` opens a dialog where you can choose any of this project's files. This file will be opened in a window where you can read it. This window also allows editing. 
  
- ![Pic](images/icon_important.png) **Do not edit project files without *VERY* good reason!** These files usually contain data about the project's submission to ENA. Therefore changes to them can lead to incongruence with ENA's data. 
+ ![Pic](images/icon_important.png) **Do not edit project files without *VERY* good reason!** These files usually contain data about the project's submission to ENA. Therefore changes to them can lead to incongruence with ENA's data! 

@@ -46,7 +46,7 @@ This table contains one row per target allele uploaded to TypeLoader. One sample
 | 1 | ALLELE\_NR | INT | number of this target allele within this sample | no |
 | 2 | PROJECT\_NAME | TEXT | project this target allele belongs to | no |
 | 3 | PROJECT\_NR | INT | number of this target allele within its project | no |
-| 4 | CELL\_LINE\_OLD | TEXT | previously unique identifier of the allele, now empty) | no |
+| 4 | CELL\_LINE\_OLD | TEXT | previously unique identifier of the allele, now empty | no |
 | 5 | LOCAL\_NAME | TEXT | an automatically generated unique ID for this target allele based on its internal sample ID | **yes** |
 | 6 | GENE | TEXT | the gene this target allele belongs to | no |
 | 7 | GOAL | TEXT | the goal pursued for this target allele (novel, extend or confirm) | no |

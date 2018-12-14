@@ -1,7 +1,7 @@
 # ![Icon](images/TypeLoader_32.png) Adding a new allele 
 TypeLoader organizes its sequences in projects, which are a set of sequences with a common trait, e.g., a sample pool. This is neccessary, both to keep organized and also because ENA only accepts projects, not single sequences. 
 
-To add a new target allele (A.K.A. sequence) to TypeLoader,  choose the option "New Sequence" in the menu or task bar. This will open the New Allele dialog:
+To add a new target allele (a.k.a. sequence) to TypeLoader, choose the option "New Sequence" in the menu or task bar. This will open the New Allele dialog:
 
 ![Pic](images/new_allele0.png)
 
@@ -15,7 +15,7 @@ Once you have entered a sequence file and a project, you can click the now green
 Once the file has been uploaded, TypeLoader will take you to the next step.
 
 ###  (1a) Specifying the sample 
-If TypeLoader does not find the sample's ID in the raw file (it can be provided via a fasta sequence's header or in the XML file), it will generate a popup dialog requesting you to enter the sample's ID:
+If TypeLoader does not find the sample's ID in the raw file (it can be provided via a fasta sequence's header, see [=> Input Files](input_files.md)), it will generate a popup dialog requesting you to enter the sample's ID:
 
 ![Pic](images/new_allele1.png)
 
@@ -28,16 +28,9 @@ If the uploaded file is a GenDX NGSEngine file, it contains multiple alleles of 
 
 Select one of the alleles by using the checkboxes.
 
-If one allele is marked by NSGEngine as "novel", it is auto-selected. 
+Any allele marked by NSGEngine as "novel" is auto-selected. 
 
-Check the data entered and provide a cell line in the appropriate box. 
-
-![Pic](images/icon_important.png) The cell line must be formatted **lab-locus-nr** (or at least like "[something]-[something]-[something]" if it's just a test upload) and be unique.
-
-![Pic](images/icon_important.png) TypeLoader will check the cell line's uniqueness _for this account_ before saving the allele, and complain if it's not unique. However, since ENA requires this field to be absolutely unique, you have to make sure yourself you're not using a cell line of another user!
-</WRAP>
-
-Once you have selected an allele and entered a cell line, you can click "Proceed" and TypeLoader will take you to the next step.
+Select exactly one allele and check the data entered. Now you can click "Proceed" and TypeLoader will take you to the next step.
 
 ##  (3) Check ENA-text and save results 
 ###  (3a) Check ENA text 
@@ -47,15 +40,12 @@ Once TypeLoader knows which allele you want to upload, it will automatically ann
 
 You can edit the text and use the "Discard changes!" / "Save changes!" buttons on the bottom to decide whether to discard or save your changes.
 
-###  (3b) Changing the cell line 
-![Pic](images/icon_important.png) **If you want to change the cell line, DO NOT change it in the ENA text!**
+![Pic](images/icon_important.png) **Do NOT change the identifier listed as cell line! This is the unique ID for your target allele and will be used to identify this allele in correspondence with ENA and IPD.**
 
-Instead, change it in the field labelled "Cell line" over the ENA text field and click "Change cell line". TypeLoader will then adjust the ENA text for you. This makes sure all changes are consistent.
+###  (3b) Saving the target allele 
+Once you're satisfied with the ENA text, click "Save new target allele".
 
-###  (3c) Saving the target allele 
-Once you're satisfied with the ENA text and the cell line, click "Save new target allele".
-
-TypeLoader will then save the ENA text as a file and all the details you have entered plus those inferred from the raw file to its database. 
+TypeLoader will then save the ENA text as a file and all the details you have entered plus those inferred from the raw file to your user database. 
 
 #### Default values
 By default, the following values are set:
@@ -85,4 +75,6 @@ These can be entered from the same raw XML file by uploading one allele, then up
 For more details see [=> Multiple alleles of one sample](multiple_alleles.md).
 
 ##  Alternative 
-If you have several new fasta files you want to upload, you can use the [=> Bulk Fasta Upload](new_allele_bulk.md) instead.
+If you have several new fasta files you want to upload, you can use the [=> Bulk Fasta Upload](new_allele_bulk.md) instead. 
+
+![Pic](images/icon_important.png) **We recommend not using this feature until you have gotten familiar with adding individual alleles.**

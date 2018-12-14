@@ -40,7 +40,7 @@ Click ``OK`` to save the results to TypeLoader. All alleles will then have their
 
 If even one sample of the submission fails ENA's tests, ENA will refuse the whole submission.
 
-As a reply, you get a list of what problem was found for each problematic sample. (For your convenience, TypeLoader will automatically insert the appropriate cell-line and sample ID into these messages.)
+As a reply, you get a list of what problem was found for each problematic sample. (For your convenience, TypeLoader will automatically insert the appropriate allele name into these messages.)
 
 ![Pic](images/icon_important.png) **Best save these messages to a text document so you can work on correcting the problems later.**
 

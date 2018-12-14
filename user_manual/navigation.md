@@ -23,13 +23,12 @@ All items that have sub-items (= categories that have projects and projects that
 To select a sample or project as your current item of interest, simply click it.
 
 ##  Viewing an item 
-To view and/or edit details about a **project**, rightclick on it and select ``Open Project View``. This will open the [=> Project View](view_project.md) on this project. 
+To view and/or edit details about a **project**, doubleclick it or rightclick on it and select ``Open Project View``. This will open the [=> Project View](view_project.md) on this project. 
 
 If the Project View is already open, you can switch between projects by just clicking them in the Navigation Area, and the Project View will be refiltered to the newly selected project.
 
-To view and/or edit details about a **target allele** or its sample, rightclick on it and select ``Open Sample View``. This will open the [=> Sample View](view_sample.md) on this project. 
+To view and/or edit details about a **target allele** or its sample, doubleclick it or rightclick on it and select ``Open Sample View``. This will open the [=> Sample View](view_sample.md) on this project. 
 
 If the Sample View is already open, you can switch between target alleles by just clicking them in the Navigation Area, and the Sample View will be refiltered to the newly selected target allele.
 
 (The additional option ``Delete Sample`` is meant for administrators only and requires a password to avoid data corruption.)
-

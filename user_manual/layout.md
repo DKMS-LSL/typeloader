@@ -1,6 +1,6 @@
 # ![Icon](images/TypeLoader_32.png) What is where in TypeLoader?
 
-![layout](images/layout.png)
+![layout](images/main.png)
 
 TypeLoader's GUI is diveded into different parts. 
 
