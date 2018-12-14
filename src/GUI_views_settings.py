@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (QDialog, QFormLayout, QLineEdit,
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QIcon
 
-import sys, os
+import sys, os, re
 from configparser import ConfigParser
 
 from authuser import user
@@ -171,7 +171,10 @@ class SettingTab(QTabWidget):
                                         "hint": "Your or your lab's IPD contact's IPD submittor ID"},
                       "ipd_shortname" : {"section" : "Company",
                                     "lbl_text" : "Company Shortname (for IPD files)",
-                                    "hint": "used in IPD submission filenames"},
+                                    "hint": "used in IPD submission filenames. Use only letters or hyphens."},
+                      "cell_line_token" : {"section" : "Company",
+                                           "lbl_text" : "Cell line identifier",
+                                        "hint": "A short identifier for your company to use for cell line naming. An acronym etc. is ideal. Use only letters or hyphens."},
                       "ftp_user" : {"section" : "Company",
                                     "lbl_text" : "FTP user",
                                     "hint": "user for FTP submission to ENA"},
@@ -361,6 +364,23 @@ class UserSettingsDialog(QDialog):
         self.unconfirmed_changes = False
         self.btns.confirm_btn.normalize()
         self.btns.reset_btn.normalize()
+    
+    def value_ok(self, field, value):
+        """checks if format restrictions have been met 
+        """
+        mydic = {"cell_line_token" : "Cell line identifier",
+                 "ipd_shortname" : "IPD Shortname"}
+        if field in ["cell_line_token", "ipd_shortname"]:
+            pattern = "[^a-zA-Z0-9\-]+"
+            if re.search(pattern, value):
+                QMessageBox.warning(self, "{} rejected".format(mydic[field]), 
+                                    "Please use only letters, numbers or '-' in the {}!".format(mydic[field]))
+                return False
+            if len(value) > 10:
+                QMessageBox.warning(self, "{} rejected".format(mydic[field]), 
+                                    "Your {} is too long.\nPlease restrict yourself to max. 10 characters!".format(mydic[field]))
+                return False
+        return True
             
     @pyqtSlot()
     def save_changes(self):
@@ -377,13 +397,18 @@ class UserSettingsDialog(QDialog):
                     mydic[setting]["value"] = field.currentIndex()
                 else:
                     value = field.text()
+                    if not self.value_ok(setting, value):
+                        self.log.warning("Value for {} is not ok! Rejecting...".format(setting))
+                        return
                     mydic[setting]["value"] = value
+                        
                 self.cf.set(section, setting, value)
                 self.settings[setting] = value
                 
             with open(self.settings["user_cf"], "w") as g:
                 self.cf.write(g)
             self.on_data_confirm_reset()
+            self.log.info("\t=> All changes saved.")
         else:
             self.log.info("No unconfirmed changes found.")
                 
