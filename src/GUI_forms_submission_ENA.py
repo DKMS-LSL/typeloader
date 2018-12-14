@@ -166,7 +166,7 @@ class ENASubmissionForm(CollapsibleDialog):
         if not ok:
             QMessageBox.warning(self, "Missing ENA settings", msg)
             self.close()
-        
+    
     def define_sections(self):
         """defining the dialog's sections
         """
@@ -247,10 +247,44 @@ class ENASubmissionForm(CollapsibleDialog):
         """
         self.title = title
         self.description = description
+ 
+    def check_first_time_proceed(self):
+        """checks if this is this user's first ENA submission;
+        if yes, asks for confirmation before proceeding
+        """
+        if self.settings["embl_submission"] == self.settings["embl_submission_prod"]:
+            self.log.debug("Checking if this is your first ENA submission...")
+            query = "select submission_id from ena_submissions where success = 'yes' LIMIT 1"
+            success, data = db_internal.execute_query(query, 1, self.log, "Checking for previous ENA submissions", "Database error", self)
+            if not success:
+                return False
+            if data:
+                return True
+            else: # first productive submission
+                self.log.info("First submission to ENA's productive server. Proceed?")
+                msg = "This user has never before submitted to ENA's productive server.\n"
+                msg += "If you have not tried this out using a test user, you really should.\n"
+                msg += "(See user manual under 'Test Users' for details.)\n\n"
+                msg += "Do you want to proceed?"
+                reply = QMessageBox.question(self, "First real ENA submission",
+                                        msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if reply == QMessageBox.Yes:
+                    self.log.info("\t=> Proceed!")
+                    return True
+                else:
+                    self.log.info("\t=> I'd rather not.")
+                    return False
+        else: # if connected to TEST server, proceed
+            self.log.debug("Sending to ENA's test server...")
+            return True
     
     def submit_to_ENA(self, _):
         """submit the selected alleles to ENA & proceed to next section
         """
+        proceed = self.check_first_time_proceed()
+        if not proceed:
+            self.submit_btn.setChecked(False)
+            return
         self.log.info("Submitting alleles to ENA...")
         self.accepted = False
         try:
@@ -523,11 +557,11 @@ if __name__ == '__main__':
     sys.excepthook = log_uncaught_exceptions
     log = general.start_log(level="DEBUG")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
-    settings_dic = GUI_login.get_settings("admin", log)
+    settings_dic = GUI_login.get_settings("test8", log)
     mydb = create_connection(log, settings_dic["db_file"])
     
     app = QApplication(sys.argv)
-    ex = ENASubmissionForm(log, mydb, "20180711_ADMIN_HLA-B_NEB1", settings_dic)
+    ex = ENASubmissionForm(log, mydb, "20181214_TT_mixed_NEB1", settings_dic)
     ex.show()
     
     result = app.exec_()

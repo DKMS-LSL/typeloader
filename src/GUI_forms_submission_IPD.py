@@ -159,14 +159,46 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.ok_btn1.proceed.connect(self.proceed_to2)
         self.sections.append(("(1) Choose project:", mywidget))
     
+    def check_first_time_proceed(self):
+        """checks if this is this user's first IPD submission;
+        if yes, asks for confirmation before proceeding
+        """
+        self.log.debug("Checking if this is your first IPD submission...")
+        query = "select submission_id from ipd_submissions where success = 'yes' LIMIT 1"
+        success, data = db_internal.execute_query(query, 1, self.log, "Checking for previous IPD submissions", "Database error", self)
+        if not success:
+            return False
+        if data:
+            return True
+        else: # first productive submission
+            self.log.info("First submission to IPD. Are you sure your settings are ok?")
+            msg = "This user has never before created IPD submission files.\n"
+            msg += "Before continuing, please check the 'methods' part of your settings:\n"
+            msg += "Do these accurately reflect the workflow applied to generate your samples?\n"
+            msg += "(See user manual under 'submission_ipd' for details.)\n\n"
+            msg += "Are you really sure your settings are ok?"
+            reply = QMessageBox.question(self, "First IPD submission",
+                                    msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                self.log.info("\t=> Proceed!")
+                return True
+            else:
+                self.log.info("\t=> I'll go check, wait here.")
+                return False
+            
     @pyqtSlot(int)
     def proceed_to2(self, _):
         """proceed to next section
         """
         self.log.debug("proceed_to_2")
+        proceed = self.check_first_time_proceed()
+        if not proceed:
+            self.ok_btn1.setChecked(False)
+            return
+    
         self.project = self.proj_widget.field.text()
         self.proceed_sections(0, 1)
-    
+        
     def define_section2(self):
         """defining section 1: choose project & ENA file
         """
@@ -308,7 +340,7 @@ class IPDSubmissionForm(CollapsibleDialog):
                 cell_line_old = old_cell_lines[local_name]
                 self.ENA_id_map[local_name] = self.ENA_id_map[cell_line_old]
                 self.ENA_gene_map[local_name] = self.ENA_gene_map[cell_line_old]
-                   
+    
     @pyqtSlot()
     def make_IPD_files(self):
         """tell typeloader to create the IPD file
@@ -518,10 +550,10 @@ if __name__ == '__main__':
     sys.excepthook = log_uncaught_exceptions
     log = general.start_log(level="DEBUG")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
-    settings_dic = GUI_login.get_settings("admin", log)
+    settings_dic = GUI_login.get_settings("test8", log)
     mydb = create_connection(log, settings_dic["db_file"])
     
-    project = "20181204_ADMIN_mixed_IPD"
+    project = "20181214_TT_mixed_NEB1"
     app = QApplication(sys.argv)
     ex = IPDSubmissionForm(log, mydb, project, settings_dic)
     ex.show()
