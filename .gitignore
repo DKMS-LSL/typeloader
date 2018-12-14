@@ -11,3 +11,4 @@ build*
 log.txt
 blastn*
 reference_data*
+src\TypeLoader_Setup.exe
