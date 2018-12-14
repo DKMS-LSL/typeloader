@@ -442,6 +442,9 @@ def get_settings(user, log, cf = None):
             settings_dic[key] = value   
     if settings_dic["modus"] in ["testing", "debugging"]:
         settings_dic["embl_submission"] = settings_dic["embl_submission_test"]
+    for key in ["ipd_shortname", "cell_line_token"]: # if these were not set during install
+        if settings_dic[key] == "a short acronym of your company; use only letters or hyphens!":
+            settings_dic[key] = ""
     settings_dic["TL_version"] = __version__
     log.info("\t=>Success")
     return settings_dic
