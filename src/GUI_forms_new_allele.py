@@ -12,20 +12,18 @@ widgits for adding new sequences or new projects to TypeLoader
 
 # import modules:
 
-import sys, os, string
+import sys, os
 
 from PyQt5.QtWidgets import (QApplication, QGroupBox, QMessageBox, QGridLayout, QFormLayout, QTextEdit,
                              QLabel, QLineEdit, QCheckBox, QHBoxLayout, QFrame)
 from PyQt5.Qt import QWidget, pyqtSlot, pyqtSignal, QDialog, QPushButton
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt
 
 import general, typeloader_functions as typeloader
-# from typeloader_core import (EMBLfunctions as EF, coordinates as COO, backend_make_ena as BME, 
-#                              backend_enaformat as BE, getAlleleSeqsAndBlast as GASB,
-#                              closestallele as CA)
+
 from GUI_forms import (CollapsibleDialog, ChoiceSection, 
                        FileButton, ProceedButton, QueryButton, NewProjectButton)
+from GUI_misc import settings_ok
 
 #===========================================================
 # parameters:
@@ -219,6 +217,11 @@ class NewAlleleForm(CollapsibleDialog):
         self.sample_id_ext = sample_ID_ext
         self.unsaved_changes = False
         self.upload_btn.check_ready()
+        
+        ok, msg = settings_ok("new", self.settings, self.log)
+        if not ok:
+            QMessageBox.warning(self, "Missing settings", msg)
+            self.close()
         
     def define_sections(self):
         """defining the dialog's sections

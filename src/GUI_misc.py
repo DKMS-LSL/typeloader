@@ -178,13 +178,17 @@ def settings_ok(category, all_settings, log):
     """checks whether necessary settings have been defined
     """
     log.debug("Checking if {} settings are configured...".format(category))
-    if category == "ENA":
+    if category == "new":
+        relevant_settings = {"cell_line_token" : "Cell line identifier"}
+    
+    elif category == "ENA":
         relevant_settings = {"xml_center_name" : "Company Name (for ENA)",
                              "ftp_user" : "FTP user",
                              "ftp_pwd" : "FTP Password"
                              }
     elif category == "IPD":
         relevant_settings = {"submittor_id" : "IPD Submittor ID",
+                             "email" : "Your email address",
                              "lab_contact_address" : "Lab Contact's Form of Address",
                              "lab_contact" : "Lab Contact for IPD",
                              "lab_contact_email": "Lab Contact Email",

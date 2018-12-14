@@ -23,6 +23,7 @@ import general, typeloader_functions as typeloader
 
 from GUI_forms import (CollapsibleDialog, ChoiceSection, 
                        FileButton, ProceedButton, QueryButton, NewProjectButton)
+from GUI_misc import settings_ok
 
 #===========================================================
 # parameters:
@@ -61,7 +62,12 @@ class NewAlleleBulkForm(CollapsibleDialog):
         self.resize(800,300)
         self.setWindowTitle("Add new target alleles (bulk fasta upload)")
         self.setWindowIcon(QIcon(general.favicon))
+        
         self.show()
+        ok, msg = settings_ok("new", self.settings, self.log)
+        if not ok:
+            QMessageBox.warning(self, "Missing settings", msg)
+            self.close()
         
     def define_sections(self):
         """defining the dialog's sections
@@ -182,7 +188,7 @@ if __name__ == '__main__':
     log = general.start_log(level="DEBUG")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
     sys.excepthook = log_uncaught_exceptions
-    mysettings = GUI_login.get_settings("admin", log)
+    mysettings = GUI_login.get_settings("test8", log)
     mydb = create_connection(log, mysettings["db_file"])
     
     app = QApplication(sys.argv)
