@@ -30,7 +30,7 @@ import GUI_forms_new_project, GUI_forms_new_allele, GUI_forms_new_allele_bulk
 import GUI_forms_submission_ENA, GUI_forms_submission_IPD
 import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample
 import GUI_views_settings
-import GUI_download_files
+import GUI_download_files, GUI_user_manual
 from GUI_misc import UnderConstruction
 import patches
 
@@ -300,8 +300,14 @@ class MainGUI(QMainWindow):
         dld_ex_act = QAction("&Download example files", self.options_menu)
         dld_ex_act.setShortcut('Ctrl+D')
         dld_ex_act.triggered.connect(self.open_ExampleFileDialog)
-        settings_act.setStatusTip('Download example files')
+        dld_ex_act.setStatusTip('Download example files')
         self.options_menu.addAction(dld_ex_act)
+        
+        man_act = QAction("View User &Manual", self.options_menu)
+        man_act.setShortcut('F1')
+        man_act.triggered.connect(self.open_UserManualDialog)
+        man_act.setStatusTip("View TypeLoader's User Manual (online)")
+        self.options_menu.addAction(man_act)
         
 #         # generate status report:
 #         report_status_act = QAction('Generate status report', self)
@@ -373,6 +379,11 @@ class MainGUI(QMainWindow):
         """opens the 'ExampleFiles' dialog
         """
         GUI_download_files.ExampleFileDialog(self.settings, self.log, self)
+        
+    def open_UserManualDialog(self):
+        """opens the 'ExampleFiles' dialog
+        """
+        GUI_user_manual.UserManualDialog(self.log, self)
         
     def on_projects_changed(self):
         """when a new project has been created or a project been deleted,
