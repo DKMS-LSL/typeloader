@@ -34,7 +34,7 @@ We are making TypeLoader available to others, to get all those full-length allel
 Here are some useful entry points
 
 * [=> Installation / Setup](setup.md)
-* [=> First Start after setup](first_start.md)
+* [=> Getting started](first_start.md)
 * [=> User Accounts](users.md)
 * [=> Layout: What is where in TypeLoader?](layout.md)
 * [=> Adding new alleles](new_allele.md)
