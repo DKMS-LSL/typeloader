@@ -29,3 +29,5 @@ If you have not ever submitted novel alleles to IPD, open your first submission 
 Once you have a submittor ID, [=> contact IPD to let them know you want to submit TypeLoader files](ipd.md). They will probably ask you to type in a few more alleles by hand, so they can get a feeling for the kind of data you will be submitting, before giving you a way to upload future files directly.
 
 Once IPD has accepted and assigned names to your alleles, they will notify you by email. 
+
+![important](images/icon_important.png) **If you encounter any problems along the way, please do not hesitate to contact us, ideally by  [=> creating a GitHub issue](https://github.com/DKMS-LSL/typeloader/issues)!**
