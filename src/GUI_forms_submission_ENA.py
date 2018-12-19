@@ -557,11 +557,11 @@ if __name__ == '__main__':
     sys.excepthook = log_uncaught_exceptions
     log = general.start_log(level="DEBUG")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
-    settings_dic = GUI_login.get_settings("test8", log)
+    settings_dic = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, settings_dic["db_file"])
     
     app = QApplication(sys.argv)
-    ex = ENASubmissionForm(log, mydb, "20181214_TT_mixed_NEB1", settings_dic)
+    ex = ENASubmissionForm(log, mydb, "20181218_ADMIN_mixed_test", settings_dic)
     ex.show()
     
     result = app.exec_()

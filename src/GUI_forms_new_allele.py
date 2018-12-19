@@ -89,9 +89,10 @@ class QueryBox(QDialog):
     def fill_with_random_values(self):
         """for debugging & development: generate random IDs & put them in QueryBox fields
         """
-        sample_ID = "ID78880090" #"ID1" + typeloader.id_generator(7, string.digits)
+        import string
+        sample_ID = "ID1" + typeloader.id_generator(7, string.digits)
         self.sample_int_field.setText(sample_ID)
-        spender  = "DEDKM3376183" #"DEDKM" + typeloader.id_generator(7, string.digits)
+        spender  = "DEDKM" + typeloader.id_generator(7, string.digits)
         self.sample_ext_field.setText(spender)
     
 
