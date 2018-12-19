@@ -280,7 +280,7 @@ class AlleleView(QTabWidget):
         """
         #columns: sample_id_int, allele_nr, project_name, nr_in_project, cell_line, local_name, gene, goal, allele_status, lab_status, int. allele name, official allele name
         hidden_rows = list(range(9,14)) + list(range(15, 33)) + list(range(35,46))
-        mytab = TabTableSimple(self.log, self.db, 0, "alleles", hidden_rows, protected_columns = [0, 1, 2, 3, 4], headers =alleles_header_dic, add_color_proxy=(8,14))
+        mytab = TabTableSimple(self.log, self.db, 0, "alleles", hidden_rows, protected_columns = [0, 1, 2, 3, 5], headers =alleles_header_dic, add_color_proxy=(8,14))
         mytab.table.setItemDelegateForRow(7, ComboDelegate(self, general.field_options["goal"]))
         mytab.table.setItemDelegateForRow(8, ComboDelegate(self, general.field_options["allele_status"]))
         mytab.table.setItemDelegateForRow(14, ComboDelegate(self, general.field_options["lab_status"]))

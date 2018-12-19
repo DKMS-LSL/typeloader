@@ -417,8 +417,8 @@ class IPDSubmissionForm(CollapsibleDialog):
         """proceed to next section
         """
         text = "Successfully created IPD files for {} alleles:\n".format(len(self.samples))
-        for (sample, cell_line, _) in self.samples:
-            text += "\t- {} ({})\n".format(cell_line, sample)
+        for (_, local_name, _) in self.samples:
+            text += "\t- {}\n".format(local_name)
         self.textbox.setText(text)
         self.download_btn.setEnabled(True)
         self.proceed_sections(2, 3)
