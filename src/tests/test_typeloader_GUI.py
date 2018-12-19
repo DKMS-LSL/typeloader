@@ -30,13 +30,13 @@ from xml.etree import ElementTree
 shutil.copyfile(os.path.join(mypath_inner, "typeloader_GUI.pyw"), os.path.join(mypath_inner, "typeloader_GUI.py"))
 
 import typeloader_GUI
-from typeloader_core import EMBLfunctions as EF
-from typeloader_core import make_imgt_files as MIF
+from typeloader_core import errors, EMBLfunctions as EF, make_imgt_files as MIF, backend_make_ena as BME
 import GUI_forms_new_project as PROJECT
 import GUI_forms_new_allele as ALLELE
 import GUI_forms_submission_ENA as ENA
 import GUI_forms_submission_IPD as IPD
 import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample
+import typeloader_functions
 from GUI_login import base_config_file
 
 from PyQt5.QtWidgets import (QApplication) 
@@ -49,13 +49,14 @@ from PyQt5.QtCore import Qt
 samples_dic =  {# samples to test 
                 "sample_1" : { "input" : "1395777_A.fa",
                                "input_dir_origin" : "KIR_3DP1",
-                               "base_name" : "DKMS-LSL-KIR3DP1-15",
+                               "local_name" : "DKMS-LSL_ID000001_3DP1_1",
+                               "cell_line" : "DKMS-LSL_ID000001",
                                "gene" : "KIR3DP1",
                                "target_allele" : "KIR3DP1*0030102:new",
                                "data_unittest_dir" : "new_allele_fasta",
-                               "curr_ena_file" : "DKMS-LSL-KIR3DP1-15.ena.txt",
-                               "curr_fasta_file" : "DKMS-LSL-KIR3DP1-15.fa",
-                               "curr_blast_file" : "DKMS-LSL-KIR3DP1-15.blast.xml",
+                               "curr_ena_file" : "DKMS-LSL_ID000001_3DP1_1.ena.txt",
+                               "curr_fasta_file" : "DKMS-LSL_ID000001_3DP1_1.fa",
+                               "curr_blast_file" : "DKMS-LSL_ID000001_3DP1_1.blast.xml",
                                "curr_ipd_befund_file" : "Befunde_neu_1.csv",
                                "curr_ipd_ena_acc_file" : "ENA_Accession_3DP1",
                                "id_int" : "ID000001",
@@ -63,29 +64,31 @@ samples_dic =  {# samples to test
                                "submission_id" : "1111"},
                 "sample_2" : { "input" : "ID14278154.xml",
                                "input_dir_origin" : "C_MM",
-                               "base_name" : "DKMS-LSL-C-2399",
+                               "local_name" : "DKMS-LSL_ID14278154_C_1",
+                               "cell_line" : "DKMS-LSL_ID14278154",
                                "gene" : "HLA-C",
                                "target_allele" : "HLA-C*16:new",
                                "partner_allele" : 'HLA-C*06:new',
                                "data_unittest_dir" : "new_allele_xml",
-                               "curr_ena_file" : "DKMS-LSL-C-2399.ena.txt",
-                               "curr_fasta_file" : "DKMS-LSL-C-2399.fa",
-                               "curr_blast_file" : "DKMS-LSL-C-2399.blast.xml",
-                               "curr_gendx_file" : "DKMS-LSL-C-2399.xml",
+                               "curr_ena_file" : "DKMS-LSL_ID14278154_C_1.ena.txt",
+                               "curr_fasta_file" : "DKMS-LSL_ID14278154_C_1.fa",
+                               "curr_blast_file" : "DKMS-LSL_ID14278154_C_1.blast.xml",
+                               "curr_gendx_file" : "DKMS-LSL_ID14278154_C_1.xml",
                                "curr_ipd_befund_file" : "Befunde_C12_1.csv",
                                "curr_ipd_ena_acc_file" : "AccessionNumbers_C12_LT989974-LT990037_1",                               
                                "id_int" : "ID14278154",
                                "id_ext" : "1348480",
                                "submission_id" : "2222"},
                 "sample_3" : { "input_dir_origin" : "confirmation_file",
-                               "base_name" : "DKMS-LSL-KIR3DP1-1",
+                               "local_name" : "DKMS-LSL_ID15390636_KIR3DP1_1",
+                               "cell_line" : "DKMS-LSL_ID15390636",
                                "curr_ipd_befund_file" : "Befunde_3DP1_1.csv",
                                "curr_ipd_ena_acc_file" : "ENA_Accession_3DP1_1",
-                               "blast_file_name" : "DKMS-LSL-KIR3DP1-1.blast.xml",
-                               "ena_file_name" : "DKMS-LSL-KIR3DP1-1.ena.txt",
+                               "blast_file_name" : "DKMS-LSL_ID15390636_KIR3DP1_1.blast.xml",
+                               "ena_file_name" : "DKMS-LSL_ID15390636_KIR3DP1_1.ena.txt",
                                "id_int" : "ID15390636",
                                "id_ext" : "1370324_A",
-                               "submission_id" : "3333"}                
+                               "submission_id" : "3333"}                              
                 }
 
 settings_both = {"reference_dir" : "reference_data_unittest",
@@ -111,6 +114,10 @@ embl_test_server = curr_settings["embl_submission"]
 center_name = curr_settings["xml_center_name"]
 mydb = typeloader_GUI.create_connection(log, curr_settings["db_file"])
 
+# ipd_counter_lock_file = os.path.join(curr_settings["root_path"], "_general", "ipd_nr.lock")
+# counter_config_file = os.path.join(curr_settings["root_path"], "_general", "counter_config.ini")
+# _, (IPD_counter, _) = MIF.get_IPD_counter(counter_config_file, ipd_counter_lock_file, curr_settings, log)
+
 project_gene = "A"
 project_pool = str(randint(1,999999))
 project_user = "Staging Account"
@@ -121,6 +128,7 @@ project_accession = "" ## this will be set in create project
 
 app = QApplication(sys.argv)
 
+today = datetime.datetime.now()
 
 #===========================================================
 # test cases:
@@ -295,16 +303,12 @@ class Test_Create_New_Allele(unittest.TestCase):
         self.form.upload_btn.setEnabled(True)
         self.form.upload_btn.click()
 
-        base_name_int = self.form.cell_field2.text() 
-        
         self.form.save_btn.click()
        
-        self.assertEqual(base_name_int, samples_dic["sample_1"]["base_name"]) 
         self.assertEqual(self.form.name_lbl.text(), samples_dic["sample_1"]["target_allele"]) 
         
         new_ena_file_path = os.path.join(curr_settings["projects_dir"], self.project_name, samples_dic["sample_1"]["id_int"], samples_dic["sample_1"]["curr_ena_file"])
         reference_file_path = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], samples_dic["sample_1"]["data_unittest_dir"], samples_dic["sample_1"]["curr_ena_file"])
-        
         diff_ena_files = compare_2_files(new_ena_file_path, reference_file_path)
         
         self.assertEqual(len(diff_ena_files["added_sings"]), 0)
@@ -325,12 +329,9 @@ class Test_Create_New_Allele(unittest.TestCase):
         self.form.upload_btn.setEnabled(True)
         self.form.upload_btn.click()
         
-        self.form.allele2_sec.cell_field.setText(samples_dic["sample_2"]["base_name"])
-        
         self.assertEqual(self.form.allele2_sec.gene_field.text(), "HLA-C")
         self.assertEqual(self.form.allele2_sec.GenDX_result, "C*16:02:01-Novel-2")
         self.assertEqual(self.form.allele2_sec.name_field.text(), samples_dic["sample_2"]["target_allele"])
-        self.assertEqual(self.form.allele2_sec.cell_field.text(), samples_dic["sample_2"]["base_name"])
         self.assertEqual(self.form.allele2_sec.product_field.text(), "MHC class I antigen")
         self.assertEqual(int(self.form.allele2_sec.exon1_field.text()), 0)
         self.assertEqual(int(self.form.allele2_sec.exon2_field.text()), 0)
@@ -380,8 +381,9 @@ class Test_Create_New_Allele(unittest.TestCase):
         self.assertEqual(data_content[0][1], 1) # allele_nr
         self.assertEqual(data_content[0][2], self.project_name) # project_name
         self.assertEqual(data_content[0][3], 1) # project_nr
-        self.assertEqual(data_content[0][4], samples_dic["sample_1"]["base_name"]) # cell_line
-        self.assertEqual(data_content[0][5], samples_dic["sample_1"]["id_int"] + "_3DP1_1") # local_name
+        self.assertEqual(data_content[0][4], "") # old cell_line
+        self.assertEqual(data_content[0][5], "{}_{}_{}".format(curr_settings["cell_line_token"],
+                                                                  samples_dic["sample_1"]["id_int"], "3DP1_1")) # local_name
         self.assertEqual(data_content[0][6], "KIR3DP1") # gene
         self.assertEqual(data_content[0][7], "novel") # goal
         self.assertEqual(data_content[0][8], "ENA-ready") # allele_status
@@ -393,8 +395,10 @@ class Test_Create_New_Allele(unittest.TestCase):
         self.assertEqual(data_content[1][1], 1) # allele_nr
         self.assertEqual(data_content[1][2], self.project_name) # project_name
         self.assertEqual(data_content[1][3], 2) # project_nr
-        self.assertEqual(data_content[1][4], samples_dic["sample_2"]["base_name"]) # cell_line
-        self.assertEqual(data_content[1][5], samples_dic["sample_2"]["id_int"] + "_C_1") # local_name
+        self.assertEqual(data_content[1][4], "") # old cell_line
+        self.assertEqual(data_content[1][5], "{}_{}_{}".format(curr_settings["cell_line_token"],
+                                                                  samples_dic["sample_2"]["id_int"], "C_1")) # local_name
+        
         self.assertEqual(data_content[1][6], "HLA-C") # gene
         self.assertEqual(data_content[1][7], "novel") # goal
         self.assertEqual(data_content[1][8], "ENA-ready") # allele_status
@@ -635,8 +639,25 @@ class Test_Send_To_IMGT(unittest.TestCase):
         if skip_other_tests:
             self.skipTest(self, "Skipping Submission to IPD because skip_other_tests is set to True")
         else:
-            self.project_name = project_name # "20180710_SA_A_1292" 
+            query = "SELECT project_name from projects"
+            success, data_content = execute_db_query(query, 
+                                         1, 
+                                         log, 
+                                         "Get data from {}", 
+                                         "Successful select * from {}", 
+                                         "Can't get rows from {}", 
+                                         "PROJECTS")  
+            self.assertTrue(success, "Could not retrieve project name from table PROJECTS")
+            self.project_name = data_content[0][0]
             self.form = IPD.IPDSubmissionForm(log, mydb, self.project_name, curr_settings, parent = None)
+            query = """update ALLELES set IPD_submission_nr = 'DKMS1000{}' 
+            where Sample_ID_int = '{}'and allele_nr = 1""".format(samples_dic["sample_1"]["submission_id"],
+                                                                  samples_dic["sample_1"]["id_int"])
+            execute_db_query(query, 0, log, 
+                            "updating {}.IPD_submission_nr", 
+                            "Successfully updated {}.IPD_submission_nr", 
+                            "Can't update {}.IPD_submission_nr", 
+                            "ALLELES")    
         
     @classmethod
     def tearDownClass(self):
@@ -650,18 +671,27 @@ class Test_Send_To_IMGT(unittest.TestCase):
         # click to proceed to section 2
         self.form.ok_btn1.click()
         
-        self.form.ENA_file_widget.field.setText(os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], samples_dic["sample_1"]["input_dir_origin"], samples_dic["sample_1"]["curr_ipd_ena_acc_file"]))
-        self.form.befund_widget.field.setText(os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], samples_dic["sample_1"]["input_dir_origin"], samples_dic["sample_1"]["curr_ipd_befund_file"]))
-        self.form.submission_id_widget.field.setText(samples_dic["sample_1"]["submission_id"])
+        ENA_file = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], 
+                                samples_dic["sample_1"]["input_dir_origin"], 
+                                samples_dic["sample_1"]["curr_ipd_ena_acc_file"])
+        log.debug("ENA-file: {}".format(ENA_file))
+        self.form.ENA_file_widget.field.setText(ENA_file)
+        befund_file = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], 
+                                   samples_dic["sample_1"]["input_dir_origin"], 
+                                   samples_dic["sample_1"]["curr_ipd_befund_file"])
+        log.debug("befund-file: {}".format(befund_file))
+        self.form.befund_widget.field.setText(befund_file)
         
+        log.debug("Clicking ok_btn2...")
+        self.form.ok_btn2.check_ready()
         self.form.ok_btn2.click()
-        
+
         # they are activated by initialisation, but to be sure...
-        self.form.project_files.check_dic[0].setChecked(True)
+        self.form.project_files.check_dic[0].setChecked(True) # if this fails, the alleles in the ENA reply file are probably not recognized correctly
         
         self.assertEqual(self.form.project_files.item(0,1).text(), "1")
         self.assertEqual(self.form.project_files.item(0,2).text(), samples_dic["sample_1"]["id_int"])
-        self.assertEqual(self.form.project_files.item(0,3).text(), samples_dic["sample_1"]["base_name"])
+        self.assertEqual(self.form.project_files.item(0,3).text(), samples_dic["sample_1"]["local_name"])
         self.assertEqual(self.form.project_files.item(0,4).text(), "ENA submitted")
         
         query = "SELECT * from ENA_SUBMISSIONS"
@@ -677,9 +707,7 @@ class Test_Send_To_IMGT(unittest.TestCase):
         
         self.form.submit_btn.click()
         self.form.ok_btn.click()
-        
     
-    #@unittest.skip("demonstrating skipping")        
     def test_updated_alleles_entries(self):
         """
         Test if ALLELES have been updated correctly
@@ -727,8 +755,9 @@ class Test_Send_To_IMGT(unittest.TestCase):
         self.assertEqual(data_content[0][1], 1) # allele_nr
         self.assertEqual(data_content[0][2], self.project_name) # project_name
         self.assertEqual(data_content[0][3], 1) # project_nr
-        self.assertEqual(data_content[0][4], samples_dic["sample_1"]["base_name"]) # cell_line
-        self.assertEqual(data_content[0][5], samples_dic["sample_1"]["id_int"] + "_3DP1_1") # local_name
+        self.assertEqual(data_content[0][4], "") # old cell_line
+        self.assertEqual(data_content[0][5], "{}_{}_{}".format(curr_settings["cell_line_token"],
+                                                                  samples_dic["sample_1"]["id_int"], "3DP1_1")) # local_name
         self.assertEqual(data_content[0][6], "KIR3DP1") # gene
         self.assertEqual(data_content[0][7], "novel") # goal
         self.assertEqual(data_content[0][8], "IPD submitted") # allele_status
@@ -777,6 +806,8 @@ class Test_Send_To_IMGT(unittest.TestCase):
                                          "Can't get rows from {}", 
                                          "IPD_SUBMISSIONS")    
         
+        self.assertTrue(success, "Could not select data from IPD_SUBMISSIONS")
+        
         new_ipd_file_path = os.path.join(curr_settings["projects_dir"], self.project_name, curr_settings["ipd_submissions"], data_content_ipd[0][0], "DKMS1000" + samples_dic["sample_1"]["submission_id"] + ".txt")
         reference_file_path = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], samples_dic["sample_1"]["input_dir_origin"], "DKMS1000" + samples_dic["sample_1"]["submission_id"] + ".txt")
         log.debug("Reference IPD file: {}".format(reference_file_path))
@@ -802,8 +833,6 @@ class Test_Views(unittest.TestCase):
                           "OValleles" : GUI_views_OValleles.AllelesOverview(log, mydb),
                           "projectView" : GUI_views_project.ProjectView(log, mydb, self.proj_name, parent = self),
                           "sampleView" : GUI_views_sample.SampleView(log, mydb, samples_dic["sample_1"]["id_int"], self.proj_name, parent = self)}
-            samples_dic["sample_1"]["local_name"] = "{}_{}_1".format(samples_dic["sample_1"]["id_int"], samples_dic["sample_1"]["gene"].replace("KIR","").replace("HLA-",""))
-            samples_dic["sample_2"]["local_name"] = "{}_{}_1".format(samples_dic["sample_2"]["id_int"], samples_dic["sample_2"]["gene"].replace("KIR","").replace("HLA-",""))
         
     @classmethod
     def tearDownClass(self):
@@ -856,10 +885,10 @@ class Test_Views(unittest.TestCase):
         self.assertEqual(model.headerData(3, Qt.Horizontal, Qt.DisplayRole), "Nr. in Project")
         self.assertEqual(model.data(model.index(0, 3)), 1)
         self.assertEqual(model.data(model.index(1, 3)), 2)
-        self.assertEqual(model.headerData(4, Qt.Horizontal, Qt.DisplayRole), "Cell Line")
-        self.assertEqual(model.data(model.index(0, 4)), samples_dic["sample_1"]["base_name"])
-        self.assertEqual(model.data(model.index(1, 4)), samples_dic["sample_2"]["base_name"])
-        self.assertEqual(model.headerData(5, Qt.Horizontal, Qt.DisplayRole), "Local Name")
+        self.assertEqual(model.headerData(4, Qt.Horizontal, Qt.DisplayRole), "Cell Line (Old)")
+        self.assertEqual(model.data(model.index(0, 4)), "")
+        self.assertEqual(model.data(model.index(1, 4)), "")
+        self.assertEqual(model.headerData(5, Qt.Horizontal, Qt.DisplayRole), "Allele Name")
         self.assertEqual(model.data(model.index(0, 5)), samples_dic["sample_1"]["local_name"])
         self.assertEqual(model.data(model.index(1, 5)), samples_dic["sample_2"]["local_name"])
         self.assertEqual(model.headerData(6, Qt.Horizontal, Qt.DisplayRole), "Gene")
@@ -903,6 +932,7 @@ class Test_Views(unittest.TestCase):
         self.assertEqual(model.data(model.index(1, 25)), samples_dic["sample_2"]["partner_allele"])
         self.assertEqual(model.headerData(26, Qt.Horizontal, Qt.DisplayRole), "Mismatch Position")
         self.assertEqual(model.headerData(27, Qt.Horizontal, Qt.DisplayRole), "Null Allele?")
+        self.assertEqual(model.data(model.index(0, 27)), "no")
         self.assertEqual(model.headerData(28, Qt.Horizontal, Qt.DisplayRole), "Software (new)")
         self.assertEqual(model.data(model.index(0, 28)), "")
         self.assertEqual(model.data(model.index(1, 28)), "NGSengine")
@@ -941,23 +971,25 @@ class Test_Views(unittest.TestCase):
         
         self.assertEqual(model.headerData(46, Qt.Horizontal, Qt.DisplayRole), "SAMPLE_ID_INT")
         self.assertEqual(model.headerData(47, Qt.Horizontal, Qt.DisplayRole), "External Sample ID")
-        self.assertEqual(model.headerData(48, Qt.Horizontal, Qt.DisplayRole), "Customer")
-        self.assertEqual(model.headerData(50, Qt.Horizontal, Qt.DisplayRole), "ENA Submission ID")
-        self.assertEqual(model.headerData(51, Qt.Horizontal, Qt.DisplayRole), "Alleles in ENA Submission")
-        self.assertEqual(model.headerData(52, Qt.Horizontal, Qt.DisplayRole), "Timestamp Sent (ENA Submission)")
-        self.assertEqual(model.headerData(53, Qt.Horizontal, Qt.DisplayRole), "Timestamp Confirmed (ENA Submission)")
-        self.assertEqual(model.headerData(54, Qt.Horizontal, Qt.DisplayRole), "Analysis Accession Nr")
-        self.assertEqual(model.headerData(55, Qt.Horizontal, Qt.DisplayRole), "Submission Accession Nr")
-        self.assertEqual(model.headerData(56, Qt.Horizontal, Qt.DisplayRole), "ENA Submission successful?")
-        self.assertEqual(model.headerData(57, Qt.Horizontal, Qt.DisplayRole), "IPD Submission ID")
-        self.assertEqual(model.headerData(58, Qt.Horizontal, Qt.DisplayRole), "Alleles in IPD Submission")
-        self.assertEqual(model.headerData(59, Qt.Horizontal, Qt.DisplayRole), "Timestamp Ready (IPD Submission)")
-        self.assertEqual(model.headerData(60, Qt.Horizontal, Qt.DisplayRole), "Timestamp Confirmed (IPD Submission)")
-        self.assertEqual(model.headerData(61, Qt.Horizontal, Qt.DisplayRole), "IPD Submission successful?")
+        self.assertEqual(model.headerData(48, Qt.Horizontal, Qt.DisplayRole), "Cell Line")
+        self.assertEqual(model.headerData(49, Qt.Horizontal, Qt.DisplayRole), "Customer")
+        self.assertEqual(model.headerData(50, Qt.Horizontal, Qt.DisplayRole), "Project Name")
+        self.assertEqual(model.headerData(51, Qt.Horizontal, Qt.DisplayRole), "ENA Submission ID")
+        self.assertEqual(model.headerData(52, Qt.Horizontal, Qt.DisplayRole), "Alleles in ENA Submission")
+        self.assertEqual(model.headerData(53, Qt.Horizontal, Qt.DisplayRole), "Timestamp Sent (ENA Submission)")
+        self.assertEqual(model.headerData(54, Qt.Horizontal, Qt.DisplayRole), "Timestamp Confirmed (ENA Submission)")
+        self.assertEqual(model.headerData(55, Qt.Horizontal, Qt.DisplayRole), "Analysis Accession Nr")
+        self.assertEqual(model.headerData(56, Qt.Horizontal, Qt.DisplayRole), "Submission Accession Nr")
+        self.assertEqual(model.headerData(57, Qt.Horizontal, Qt.DisplayRole), "ENA Submission successful?")
+        self.assertEqual(model.headerData(58, Qt.Horizontal, Qt.DisplayRole), "IPD Submission ID")
+        self.assertEqual(model.headerData(59, Qt.Horizontal, Qt.DisplayRole), "Alleles in IPD Submission")
+        self.assertEqual(model.headerData(60, Qt.Horizontal, Qt.DisplayRole), "Timestamp Ready (IPD Submission)")
+        self.assertEqual(model.headerData(61, Qt.Horizontal, Qt.DisplayRole), "Timestamp Confirmed (IPD Submission)")
+        self.assertEqual(model.headerData(62, Qt.Horizontal, Qt.DisplayRole), "IPD Submission successful?")
 
         # check expected empty columns:
-        empty_columns = [9, 10, 11, 12, 13, 15, 17, 18, 19, 22, 23, 26, 27, 
-                         33, 34, 35, 41, 42, 43, 60]
+        empty_columns = [9, 10, 11, 12, 13, 15, 17, 18, 19, 22, 23, 26, 
+                         33, 34, 35, 41, 42, 43, 61]
         for col in empty_columns:
             for row in [0, 1]:
                 self.assertEqual(model.data(model.index(row, col)), "", 
@@ -1034,9 +1066,9 @@ class Test_Views(unittest.TestCase):
                                                                                              samples_dic["sample_1"]["gene"]))
         self.assertEqual(model.data(model.index(1, 2), Qt.DisplayRole), "{} #{} ({})".format(samples_dic["sample_2"]["id_int"], 1,
                                                                                              samples_dic["sample_2"]["gene"]))
-        self.assertEqual(model.headerData(3, Qt.Horizontal, Qt.DisplayRole), "Cell Line")
-        self.assertEqual(model.data(model.index(0, 3), Qt.DisplayRole), samples_dic["sample_1"]["base_name"])
-        self.assertEqual(model.data(model.index(1, 3), Qt.DisplayRole), samples_dic["sample_2"]["base_name"])
+        self.assertEqual(model.headerData(3, Qt.Horizontal, Qt.DisplayRole), "Allele Name")
+        self.assertEqual(model.data(model.index(0, 3), Qt.DisplayRole), samples_dic["sample_1"]["local_name"])
+        self.assertEqual(model.data(model.index(1, 3), Qt.DisplayRole), samples_dic["sample_2"]["local_name"])
         self.assertEqual(model.headerData(4, Qt.Horizontal, Qt.DisplayRole), "Allele Status")
         self.assertEqual(model.data(model.index(0, 4), Qt.DisplayRole), "IPD submitted")
         self.assertEqual(model.data(model.index(1, 4), Qt.DisplayRole), "ENA submitted")
@@ -1054,8 +1086,10 @@ class Test_Views(unittest.TestCase):
         self.assertEqual(model.data(model.index(0, 0), Qt.DisplayRole), samples_dic["sample_1"]["id_int"])
         self.assertEqual(model.headerData(1, Qt.Vertical, Qt.DisplayRole), "External Donor-ID")
         self.assertEqual(model.data(model.index(1, 0), Qt.DisplayRole), samples_dic["sample_1"]["id_ext"])
-        self.assertEqual(model.headerData(2, Qt.Vertical, Qt.DisplayRole), "Customer")
-        self.assertEqual(model.data(model.index(2, 0), Qt.DisplayRole), "DKMSUS")
+        self.assertEqual(model.headerData(2, Qt.Vertical, Qt.DisplayRole), "Cell Line")
+        self.assertEqual(model.data(model.index(2, 0), Qt.DisplayRole), samples_dic["sample_1"]["cell_line"])
+        self.assertEqual(model.headerData(3, Qt.Vertical, Qt.DisplayRole), "Customer")
+        self.assertEqual(model.data(model.index(3, 0), Qt.DisplayRole), "DKMSUS")
 
     def test_view_sample2_alleles(self):
         """tests whether content of SampleView table 'Alleles' is correct
@@ -1065,8 +1099,8 @@ class Test_Views(unittest.TestCase):
         
         self.assertEqual(model.headerData(2, Qt.Horizontal, Qt.DisplayRole), "Target Allele")
         self.assertEqual(model.data(model.index(0, 2), Qt.DisplayRole), "#{} ({})".format(1, samples_dic["sample_1"]["gene"]))
-        self.assertEqual(model.headerData(3, Qt.Horizontal, Qt.DisplayRole), "Cell Line")
-        self.assertEqual(model.data(model.index(0, 3), Qt.DisplayRole), samples_dic["sample_1"]["base_name"])
+        self.assertEqual(model.headerData(3, Qt.Horizontal, Qt.DisplayRole), "Allele Name")
+        self.assertEqual(model.data(model.index(0, 3), Qt.DisplayRole), samples_dic["sample_1"]["local_name"])
         self.assertEqual(model.headerData(4, Qt.Horizontal, Qt.DisplayRole), "Allele Status")
         self.assertEqual(model.data(model.index(0, 4), Qt.DisplayRole), "IPD submitted")
         self.assertEqual(model.headerData(5, Qt.Horizontal, Qt.DisplayRole), "Lab Status")
@@ -1102,9 +1136,9 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.data(model.index(2, 0), Qt.DisplayRole), self.proj_name)
             self.assertEqual(model.headerData(3, Qt.Vertical, Qt.DisplayRole), "Nr. in Project")
             self.assertEqual(model.data(model.index(3, 0), Qt.DisplayRole), 1)
-            self.assertEqual(model.headerData(4, Qt.Vertical, Qt.DisplayRole), "Cell Line")
-            self.assertEqual(model.data(model.index(4, 0), Qt.DisplayRole), samples_dic["sample_1"]["base_name"])
-            self.assertEqual(model.headerData(5, Qt.Vertical, Qt.DisplayRole), "Local Name")
+            self.assertEqual(model.headerData(4, Qt.Vertical, Qt.DisplayRole), "Cell Line (Old)")
+            self.assertEqual(model.data(model.index(4, 0), Qt.DisplayRole), "")
+            self.assertEqual(model.headerData(5, Qt.Vertical, Qt.DisplayRole), "Allele Name")
             self.assertEqual(model.data(model.index(5, 0), Qt.DisplayRole), samples_dic["sample_1"]["local_name"])
             self.assertEqual(model.headerData(6, Qt.Vertical, Qt.DisplayRole), "Gene")
             self.assertEqual(model.data(model.index(6, 0), Qt.DisplayRole), samples_dic["sample_1"]["gene"])
@@ -1141,7 +1175,11 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.headerData(13, Qt.Vertical, Qt.DisplayRole), "Genotyping Date")
             
             for col in shown_columns:
-                self.assertEqual(model.data(model.index(col, 0), Qt.DisplayRole), "")
+                value = model.data(model.index(col, 0), Qt.DisplayRole)
+                msg = "Col {} ({}) should be empty, but contains {}!".format(col, 
+                                                                             model.headerData(col, Qt.Vertical, Qt.DisplayRole),
+                                                                             value)
+                self.assertEqual(value, "", msg)
             
         def test_tab3_lab(self):
             """tests whether content of SampleView widget 'Details about Allele' tab 'Lab Processing' is correct
@@ -1171,7 +1209,11 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.headerData(23, Qt.Vertical, Qt.DisplayRole), "Comment")
             
             for col in [15, 16, 17, 18, 19, 20, 21, 22, 23]:
-                self.assertEqual(model.data(model.index(col, 0), Qt.DisplayRole), "")
+                value = model.data(model.index(col, 0), Qt.DisplayRole)
+                msg = "Col {} ({}) should be empty, but contains {}!".format(col, 
+                                                                             model.headerData(col, Qt.Vertical, Qt.DisplayRole),
+                                                                             value)
+                self.assertEqual(value, "", msg)
         
         def test_tab4_typing_new(self):
             """tests whether content of SampleView widget 'Details about Allele' tab 'New Genotyping' is correct
@@ -1187,6 +1229,7 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.headerData(25, Qt.Vertical, Qt.DisplayRole), "Partner Allele")
             self.assertEqual(model.headerData(26, Qt.Vertical, Qt.DisplayRole), "Mismatch Position")
             self.assertEqual(model.headerData(27, Qt.Vertical, Qt.DisplayRole), "Null Allele?")
+            self.assertEqual(model.data(model.index(27, 0), Qt.DisplayRole), "no")
             self.assertEqual(model.headerData(28, Qt.Vertical, Qt.DisplayRole), "Software (new)")
             self.assertEqual(model.headerData(29, Qt.Vertical, Qt.DisplayRole), "Software Version")
             self.assertEqual(model.headerData(30, Qt.Vertical, Qt.DisplayRole), "Genotyping Date")
@@ -1197,8 +1240,12 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.headerData(34, Qt.Vertical, Qt.DisplayRole), "Official Allele Name")
             self.assertEqual(model.headerData(35, Qt.Vertical, Qt.DisplayRole), "New or confirmed?")
             
-            for col in [25, 26, 27, 28, 29, 30, 33, 34, 35]:
-                self.assertEqual(model.data(model.index(col, 0), Qt.DisplayRole), "")
+            for col in [25, 26, 28, 29, 30, 33, 34, 35]:
+                value = model.data(model.index(col, 0), Qt.DisplayRole)
+                msg = "Col {} ({}) should be empty, but contains {}!".format(col, 
+                                                                             model.headerData(col, Qt.Vertical, Qt.DisplayRole),
+                                                                             value)
+                self.assertEqual(value, "", msg)
    
         def test_tab5_ena(self):
             """tests whether content of SampleView widget 'Details about Allele' tab 'ENA submission' is correct
@@ -1327,14 +1374,41 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.headerData(46, Qt.Vertical, Qt.DisplayRole), "IPD_RELEASE")
             
             for col in [41, 44, 45, 46]:
-                self.assertEqual(model.data(model.index(col, 0), Qt.DisplayRole), "")
+                value = model.data(model.index(col, 0), Qt.DisplayRole)
+                msg = "Col {} ({}) should be empty, but contains {}!".format(col, 
+                                                                             model.headerData(col, Qt.Vertical, Qt.DisplayRole),
+                                                                             value)
+                self.assertEqual(value, "", msg)
+        
+        def test_tab7_history(self):
+            """tests whether content of SampleView widget 'Details about Allele' tab 'allele history' is correct
+            """
+            view = widget.tabs[6]
+            model = view.flipped_model
+            curr_date = today.strftime("%Y-%m-%d")
+            
+            # test content and headers of columns:
+            self.assertEqual(model.headerData(0, Qt.Vertical, Qt.DisplayRole), "Original genotyping")
+            self.assertEqual(model.headerData(1, Qt.Vertical, Qt.DisplayRole), "Novel allele detection")
+            self.assertEqual(model.headerData(2, Qt.Vertical, Qt.DisplayRole), "New genotyping")
+            self.assertEqual(model.headerData(3, Qt.Vertical, Qt.DisplayRole), "Upload of sequence")
+            self.assertEqual(model.data(model.index(3, 0), Qt.DisplayRole), curr_date)
+            self.assertEqual(model.headerData(4, Qt.Vertical, Qt.DisplayRole), "Submitted to ENA")
+            self.assertEqual(model.data(model.index(4, 0), Qt.DisplayRole), curr_date)
+            self.assertEqual(model.headerData(5, Qt.Vertical, Qt.DisplayRole), "Accepted by ENA")
+#             self.assertEqual(model.data(model.index(5, 0), Qt.DisplayRole), "2018-07-10") # compare to get_file_creation_date(ENA_reply_file), if necessary
+            self.assertEqual(model.headerData(6, Qt.Vertical, Qt.DisplayRole), "Submitted to IPD")
+            self.assertEqual(model.data(model.index(6, 0), Qt.DisplayRole), curr_date)
+            self.assertEqual(model.headerData(7, Qt.Vertical, Qt.DisplayRole), "Accepted by IPD")
+            self.assertEqual(model.data(model.index(7, 0), Qt.DisplayRole), "")
             
         test_tab1_general(self)
         test_tab2_typing_old(self)
         test_tab3_lab(self)
         test_tab4_typing_new(self)
         test_tab5_ena(self)
-#         test_tab6_IPD(self) # #TODO: re-enable as soon as final state of IPD tab is decided upon
+        test_tab6_IPD(self) # #TODO: re-enable as soon as final state of IPD tab is decided upon
+        test_tab7_history(self)
         
         
 class Test_Make_IMGT_Files_py(unittest.TestCase):
@@ -1347,15 +1421,16 @@ class Test_Make_IMGT_Files_py(unittest.TestCase):
             self.skipTest(self, "Skipping Test_Make_IMGT_Files because skip_other_tests is set to True")
         else:
             self.data_dir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], samples_dic["sample_3"]["input_dir_origin"])
-            self.samples = [(samples_dic["sample_3"]["id_int"], samples_dic["sample_3"]["base_name"])] 
-            self.file_dic = {samples_dic["sample_3"]["base_name"] : {"blast_xml" : samples_dic["sample_3"]["blast_file_name"],
+            self.start_num = samples_dic["sample_3"]["submission_id"]
+            self.IPD_filename = "DKMS1000" + self.start_num
+            self.samples = [(samples_dic["sample_3"]["id_int"], samples_dic["sample_3"]["local_name"], self.IPD_filename)] 
+            self.file_dic = {samples_dic["sample_3"]["local_name"] : {"blast_xml" : samples_dic["sample_3"]["blast_file_name"],
                                                                      "ena_file" : samples_dic["sample_3"]["ena_file_name"]}}
             self.ENA_id_map, self.ENA_gene_map = MIF.parse_email(os.path.join(self.data_dir, samples_dic["sample_3"]["curr_ipd_ena_acc_file"]))
             self.pretypings = os.path.join(self.data_dir, samples_dic["sample_3"]["curr_ipd_befund_file"])
             self.curr_time = time.strftime("%Y%m%d%H%M%S")
             self.subm_id = "IPD_{}".format(self.curr_time)        
-            self.start_num = samples_dic["sample_3"]["submission_id"]        
-        
+            
     @classmethod
     def tearDownClass(self):
         pass
@@ -1368,11 +1443,13 @@ class Test_Make_IMGT_Files_py(unittest.TestCase):
         """
         MIF.write_imgt_files(self.data_dir, self.samples, self.file_dic, self.ENA_id_map, 
                              self.ENA_gene_map, self.pretypings, self.subm_id, 
-                             self.data_dir, self.start_num, curr_settings, log)
+                             self.data_dir, curr_settings, log)
         
-        self.ipd_submission_file = os.path.join(self.data_dir, "DKMS1000" + self.start_num + "_confirmation.txt")
+        self.ipd_submission_file = os.path.join(self.data_dir, self.IPD_filename + "_confirmation.txt")
         self.ipd_submission_zipfile = os.path.join(self.data_dir, self.subm_id + ".zip")
         
+        log.debug(self.ipd_submission_file)
+        log.debug(self.ipd_submission_zipfile)
         self.assertTrue(os.path.exists(self.ipd_submission_file))
         self.assertTrue(os.path.exists(self.ipd_submission_zipfile))        
         
@@ -1517,6 +1594,141 @@ class Test_EMBL_functions(unittest.TestCase):
         self.assertEqual(analysis_submission_dict['source'], self.xml_filename)
 
 
+class Test_rejection_short_UTR3(unittest.TestCase):
+    """ 
+    test if TypeLoader correctly rejects sequences with incomplete UTR3
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping Test_rejection_short_UTR3 because skip_other_tests is set to True")
+        else:
+            self.mydir = os.path.join(curr_settings["login_dir"], "data_unittest", "rejection")
+            self.testfile_fa = os.path.join(self.mydir, "UTR3_short.fa")
+            self.missing_bp_fa = "53"
+            self.testfile_xml = os.path.join(self.mydir, "UTR3_short.xml")
+            self.missing_bp_xml = "1"
+            self.project_name = project_name
+        
+    @classmethod
+    def tearDownClass(self):
+        pass
+    
+    def test_reject_fasta(self):
+        """test if FASTA file with incomplete UTR3 is correctly rejected
+        """
+        myfile = self.testfile_fa
+        missing_bp = self.missing_bp_fa
+        
+        # upload and parse file:
+        results = typeloader_functions.upload_parse_sequence_file(myfile, curr_settings, log)
+        (success_upload, _, filetype, _, 
+         blastXmlFile, targetFamily, fasta_filename, allelesFilename, 
+         header_data) = results
+        
+        self.assertTrue(success_upload) # uploading and parsing should work
+        
+        # try to create ENA file: (should fail)
+        results2 = typeloader_functions.process_sequence_file(self.project_name, 
+                                                filetype, blastXmlFile, targetFamily, 
+                                                fasta_filename, allelesFilename, header_data, 
+                                                curr_settings, log)
+        
+        (success, err_type, msg) = results2
+        err = "File {} should have been rejected!".format(myfile)
+        self.assertFalse(success, err)
+        self.assertEqual(err_type, 'Incomplete sequence', "Should have thrown an 'Incomplete sequence' error")
+        ref_error = errors.IncompleteSequenceError(missing_bp)
+        self.assertEqual(msg, ref_error.msg)
+        
+        
+    def test_reject_XML(self):
+        """test if XML file with incomplete UTR3 is correctly rejected
+        """
+        myfile = self.testfile_xml
+        missing_bp = self.missing_bp_xml
+        
+        # upload and parse file:
+        results = typeloader_functions.upload_parse_sequence_file(myfile, curr_settings, log)
+        (success_upload, _, filetype, _, 
+         blastXmlFile, targetFamily, fasta_filename, allelesFilename, 
+         header_data) = results
+        
+        self.assertTrue(success_upload) # uploading and parsing should work
+        
+        # try to create ENA file: (should fail)
+        results2 = typeloader_functions.process_sequence_file(self.project_name, 
+                                                filetype, blastXmlFile, targetFamily, 
+                                                fasta_filename, allelesFilename, header_data, 
+                                                curr_settings, log)
+        
+        (success, err_type, msg) = results2
+        err = "File {} should have been rejected!".format(myfile)
+        self.assertFalse(success, err)
+        self.assertEqual(err_type, 'Incomplete sequence', "Should have thrown an 'Incomplete sequence' error")
+        ref_error = errors.IncompleteSequenceError(missing_bp)
+        self.assertEqual(msg, ref_error.msg)
+        
+class Test_null_alleles(unittest.TestCase):
+    """ 
+    test if TypeLoader correctly annotates null alleles
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping Test_null_alleles because skip_other_tests is set to True")
+        else:
+            self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "null_allele")
+            self.file_dic = {"C_no_na" : ("DKMS-LSL-C-2910.fa", "DKMS-LSL-C-2910.ena.txt"),
+                                          "C_na" : ("DKMS-LSL-C-2952.fa", "DKMS-LSL-C-2952.ena.txt"),                               
+                                          "DBP1_no_na" : ("DKMS-LSL-DPB1-2887.pacbio.minimap.fa", "DKMS-LSL-DPB1-2887.ena.txt"),
+                                          "KIR2DL5_no_na" : ("DKMS-LSL-KIR2DL5-39.fa", "DKMS-LSL-KIR2DL5-39.ena.txt"),
+                                          "KIR2DL5_na" : ("DKMS-LSL-KIR2DL5-39_corrupt.fa", "DKMS-LSL-KIR2DL5-39_corrupt.ena.txt"),                               
+                                          "KIR3DP1_na" : ("DKMS-LSL-KIR3DP1-15.fa", "DKMS-LSL-KIR3DP1-15.ena.txt")
+                                          }            
+        
+    @classmethod
+    def tearDownClass(self):
+        pass
+    
+    def test_null_allele_algorithm(self):
+        """test if null allele algorithm works
+        """        
+        custom_seq_not_null = "ACCGTTTGGTGGTGA"
+        custom_seq_stop_codon_1 = "ACCGTTTGGTAATGA" # TAA
+        custom_seq_stop_codon_2 = "ACCGTTTGGTGATGA" # TGA
+        custom_seq_stop_codon_3 = "ACCGTTTGGTAGTGA" # TAG
+        custom_seq_not_divisable = "ACCGTTTGGTGTGA" # 14 bases
+        
+        self.assertFalse(BME.is_null_allele(custom_seq_not_null, {"cds": {1: (1, 15)}})[0])
+        self.assertTrue(BME.is_null_allele(custom_seq_stop_codon_1, {"cds": {1: (1, 15)}})[0])
+        self.assertTrue(BME.is_null_allele(custom_seq_stop_codon_2, {"cds": {1: (1, 15)}})[0])
+        self.assertTrue(BME.is_null_allele(custom_seq_stop_codon_3, {"cds": {1: (1, 15)}})[0])
+        self.assertTrue(BME.is_null_allele(custom_seq_not_divisable, {"cds": {1: (1, 14)}})[0])
+    
+    def test_fasta_null_allele(self):
+        """test different fasta files, 
+        """
+        
+        for key, value in self.file_dic.items():
+            
+            raw_path = os.path.join(self.mydir, value[0])
+            reference_path = os.path.join(self.mydir, value[1])
+            
+            log.info("Processing:" + key)
+            log.info("raw_path:" + raw_path)
+            log.info("reference_path:" + reference_path)
+                             
+            results = typeloader_functions.upload_parse_sequence_file(raw_path, curr_settings, log)
+            success_upload, sample_name, filetype, temp_raw_file, blastXmlFile, targetFamily, fasta_filename, allelesFilename, header_data = results
+            self.assertTrue(success_upload, "Sequence file was not uploaded successfully")
+            
+            success, myalleles, ENA_text = typeloader_functions.process_sequence_file("PROJECT_NAME", filetype, blastXmlFile, targetFamily, fasta_filename, allelesFilename, header_data, curr_settings, log)        
+            self.assertTrue(success, "Sequence file was not processed successfully")
+            result = compare_2_files(reference_path = reference_path, query_var = ENA_text)
+            self.assertEqual(len(result["added_sings"]), 0)
+            self.assertEqual(len(result["deleted_sings"]), 0)              
+        
 class Test_Clean_Stuff(unittest.TestCase):
     """ 
     Remove all directories and files written by  all unit tests
@@ -1572,28 +1784,38 @@ def delete_written_samples(clear_every_row, table, log, column = "", value = "")
                               "deleting samples with {} {} in table {}".format(column, value, table), 
                               "cant delete sample with {} {} in table {}".format(column, value, table))
 
-def compare_2_files(query_path, reference_path, filetype = ""):
+def compare_2_files(query_path = "", reference_path = "", filetype = "", query_var = "", reference_var = ""):
+    
     result = {}
     
-    with open(query_path , 'r') as myfile: query_file = myfile.read()
-    with open(reference_path , 'r') as myfile: reference_file = myfile.read()            
+    if query_path == "":
+        query_text = query_var
+    else:
+        with open(query_path , 'r') as myfile: 
+            query_text = myfile.read()
+        
+    if reference_path == "":
+        reference_text = reference_var
+    else:
+        with open(reference_path , 'r') as myfile: reference_text = myfile.read()            
     
     if filetype == "IPD":
         # change the date in order to compare both ipd files
-        now = f"{datetime.datetime.now():%d/%m/%Y}" 
-        reference_file = re.sub('DT.*Submitted\)\n.*Release\)', 'DT   {} (Submitted)\nDT   {} (Release)'.format(now, now), reference_file)
-        reference_file = reference_file.replace("{TL-VERSION}", __version__) # replace TL-version part of reference file with current version
+        now = today.strftime("%d/%m/%Y") 
+        reference_text = re.sub('DT.*Submitted\)\n.*Release\)', 'DT   {} (Submitted)\nDT   {} (Release)'.format(now, now), reference_text)
+        reference_text = reference_text.replace("{TL-VERSION}", __version__) # replace TL-version part of reference file with current version
 
     diffInstance = difflib.Differ()
-    diffList = list(diffInstance.compare(query_file.strip(), reference_file.strip()))
+    diffList = list(diffInstance.compare(query_text.strip(), reference_text.strip()))
     
-    result["added_sings"] = ''.join(x[2:] for x in diffList if x.startswith('+ '))
-    result["deleted_sings"]= ''.join(x[2:] for x in diffList if x.startswith('- '))    
-    if result:
+    result["added_sings"] = ' '.join(x[2:] for x in diffList if x.startswith('+ '))
+    result["deleted_sings"]= ' '.join(x[2:] for x in diffList if x.startswith('- '))    
+    if result["added_sings"] != "" or result["deleted_sings"] != "":
         log.error("Differences found!")
         log.debug("New file: {}".format(query_path))
         log.debug("Reference file: {}".format(reference_path))
-        log.debug("Differences:" + ";".join(diffList))
+        log.warning("Differences (added): " + result["added_sings"])
+        log.warning("Differences (deleted): " + result["deleted_sings"])
     return result
 
 # functions to order Tests:
@@ -1655,7 +1877,7 @@ def caseFactory(
 
 if __name__ == "__main__": 
     cases = suiteFactory(*caseFactory())
-    runner = unittest.TextTestRunner(verbosity=2)
+    runner = unittest.TextTestRunner(verbosity=2, failfast=True)
     runner.run(cases)    
     
 

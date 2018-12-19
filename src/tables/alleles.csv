@@ -3,8 +3,8 @@ Sample_ID_int,TEXT,
 Allele_nr,INT,
 Project_name,TEXT,
 Project_nr,INT,
-Cell_line,TEXT,PK
-Local_name,TEXT,
+Cell_line_old,TEXT,
+Local_name,TEXT,PK
 Gene,TEXT,
 Goal,TEXT,
 Allele_status,TEXT,

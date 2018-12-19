@@ -38,13 +38,16 @@ class IPDFileChoiceTable(FileChoiceTable):
     """displays all alleles of a project
     so user can choose which to submit to IPD
     """
+    old_cell_lines = pyqtSignal(dict)
+    
     def __init__(self, project, log, parent = None):
-        query = """select project_nr, alleles.sample_id_int, alleles.cell_line, allele_status, ENA_submission_id
+        query = """select project_nr, alleles.sample_id_int, alleles.Local_name, allele_status, 
+        ENA_submission_id, IPD_submission_nr, cell_line_old
         from alleles
          join files on alleles.sample_id_int = files.sample_id_int and alleles.allele_nr = files.allele_nr
         """.format(project)
-        num_columns = 5
-        header = ["Submit?", "Nr", "Sample", "Cell Line", "Allele Status", "ENA submission ID"]
+        num_columns = 7
+        header = ["Submit?", "Nr", "Sample", "Allele", "Allele Status", "ENA submission ID", "IPD submission ID"]
         if parent:
             self.settings = parent.settings
         else:
@@ -55,8 +58,44 @@ class IPDFileChoiceTable(FileChoiceTable):
                          myfilter = "", allele_status_column = 3, 
                          instant_accept_status = "ENA submitted", parent = self)
     
-    def refresh(self, project, addfilter):
+    def get_data(self):
+        """get alleles from database
+        """
+        success, data = db_internal.execute_query(self.query + self.myfilter, self.num_columns, 
+                                                  self.log, "retrieving data for FileChoiceTable from database", 
+                                                  "Database error", self)
+        if success:
+            self.data1 = data
+        # add data based on cell_line_old:
+        success, data2 = db_internal.execute_query(self.query + self.myfilter2, self.num_columns, 
+                                          self.log, "retrieving data for FileChoiceTable from database", 
+                                          "Database error", self)
+        if success:
+            self.data2 = data2
+        
+        #assemble data from both queries into one dict:
+        self.cell_line_dic = {}
+        self.data = []
+        if self.data1:
+            self.log.debug("\t{} matching alleles found based on local_name".format(len(self.data1)))
+            for row in self.data1:
+                self.data.append(row[:-1])
+        if self.data2:
+            self.log.debug("\t{} matching alleles found based on cell_line_old".format(len(self.data2)))
+            for row in self.data2:
+                self.data.append(row[:-1])
+                local_name = row[2]
+                cell_line_old = row[6]
+                self.cell_line_dic[local_name] = cell_line_old
+        
+        self.log.debug("Emitting 'files = {}'".format(len(self.data)))
+        self.files.emit(len(self.data))
+        self.old_cell_lines.emit(self.cell_line_dic)
+    
+    def refresh(self, project, addfilter, addfilter2):
+        self.log.debug("refreshing IPDFileChoiceTable...")
         self.myfilter = " where alleles.project_name = '{}' {} order by ENA_submission_id, project_nr".format(project, addfilter)
+        self.myfilter2 = " where alleles.project_name = '{}' {} order by ENA_submission_id, project_nr".format(project, addfilter2)
         self.fill_UI()
         
         
@@ -67,14 +106,14 @@ class IPDSubmissionForm(CollapsibleDialog):
     
     def __init__(self, log, mydb, project, settings, parent = None):
         self.log = log
-        self.log.info("Opening 'IPD Sumbission' Dialog...")
+        self.log.info("Opening 'IPD Submission' Dialog...")
         self.mydb = mydb
         self.project = project
         self.settings = settings
         self.label_width = 150
         super().__init__(parent)
         
-        self.resize(1100,500)
+        self.resize(1150,500)
         self.setWindowTitle("Submit alleles to IPD")
         self.setWindowIcon(QIcon(general.favicon))
         self.samples = []
@@ -120,14 +159,49 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.ok_btn1.proceed.connect(self.proceed_to2)
         self.sections.append(("(1) Choose project:", mywidget))
     
+    def check_first_time_proceed(self):
+        """checks if this is this user's first IPD submission;
+        if yes, asks for confirmation before proceeding
+        """
+        if self.settings["modus"] == "staging":
+            return True
+        
+        self.log.debug("Checking if this is your first IPD submission...")
+        query = "select submission_id from ipd_submissions where success = 'yes' LIMIT 1"
+        success, data = db_internal.execute_query(query, 1, self.log, "Checking for previous IPD submissions", "Database error", self)
+        if not success:
+            return False
+        if data:
+            return True
+        else: # first productive submission
+            self.log.info("First submission to IPD. Are you sure your settings are ok?")
+            msg = "This user has never before created IPD submission files.\n"
+            msg += "Before continuing, please check the 'methods' part of your settings:\n"
+            msg += "Do these accurately reflect the workflow applied to generate your samples?\n"
+            msg += "(See user manual under 'submission_ipd' for details.)\n\n"
+            msg += "Are you really sure your settings are ok?"
+            reply = QMessageBox.question(self, "First IPD submission",
+                                    msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                self.log.info("\t=> Proceed!")
+                return True
+            else:
+                self.log.info("\t=> I'll go check, wait here.")
+                return False
+            
     @pyqtSlot(int)
     def proceed_to2(self, _):
         """proceed to next section
         """
-        self.project = self.proj_widget.field.text()
-        self.refresh_section3()
-        self.proceed_sections(0, 1)
+        self.log.debug("proceed_to_2")
+        proceed = self.check_first_time_proceed()
+        if not proceed:
+            self.ok_btn1.setChecked(False)
+            return
     
+        self.project = self.proj_widget.field.text()
+        self.proceed_sections(0, 1)
+        
     def define_section2(self):
         """defining section 1: choose project & ENA file
         """
@@ -139,7 +213,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         ENA_file_btn = FileButton("Upload email attachment from ENA reply", mypath, parent=self)
         self.ENA_file_widget = ChoiceSection("ENA reply file:", [ENA_file_btn], self, label_width=self.label_width)
         if self.settings["modus"] == "debugging":
-            self.ENA_file_widget.field.setText(r"\\nasdd12\daten\data\Typeloader\admin\projects\20180716_ADMIN_KIR3DP1_PB4\IPD-submissions\IPD_20180716102641\ENA_Accession_3DP1")
+            self.ENA_file_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\IPD_Test\ENA_Accession_3DP1")
             ENA_file_btn.change_to_normal()
             
         layout.addWidget(self.ENA_file_widget, 0, 0)
@@ -148,21 +222,13 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.befund_widget = ChoiceSection("Pretyping file:", [befund_file_btn], self, label_width=self.label_width)
         self.befund_widget.setWhatsThis("Choose a file containing a list of previously identified alleles for all loci for each sample")
         if self.settings["modus"] == "debugging":
-            self.befund_widget.field.setText(r"\\nasdd12\daten\data\Typeloader\admin\projects\20180716_ADMIN_KIR3DP1_PB4\IPD-submissions\IPD_20180716102641\Befunde_neu.csv")
+            self.befund_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\IPD_Test\Befunde_neu.csv")
             befund_file_btn.change_to_normal()
         layout.addWidget(self.befund_widget, 1, 0)
         
-        self.submission_id_widget = ChoiceSection("IPD Submission Nr Start:", [], self, label_width=self.label_width)
-        self.submission_id_widget.field.setReadOnly(False)
-        if self.settings["modus"] == "debugging":
-            self.submission_id_widget.field.setText("222")
-        layout.addWidget(self.submission_id_widget, 2, 0)
-            
-        self.ok_btn2 = ProceedButton("Proceed", [self.proj_widget.field, self.befund_widget.field, 
-                                                 self.submission_id_widget.field], self.log, 0)
+        self.ok_btn2 = ProceedButton("Proceed", [self.ENA_file_widget.field, self.befund_widget.field], self.log, 0)
         self.proj_widget.choice.connect(self.ok_btn2.check_ready)
         self.befund_widget.choice.connect(self.ok_btn2.check_ready)
-        self.submission_id_widget.field.textChanged.connect(self.ok_btn2.check_ready)
         layout.addWidget(self.ok_btn2, 0, 1,3,1)
         self.ok_btn2.proceed.connect(self.proceed_to3)
         self.sections.append(("(2) Upload ENA reply file:", mywidget))
@@ -174,12 +240,15 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.ENA_reply_file = self.ENA_file_widget.field.text().strip()
         self.ENA_timestamp = general.get_file_creation_date(self.ENA_reply_file, self.settings, self.log)
         self.ENA_id_map, self.ENA_gene_map = MIF.parse_email(self.ENA_reply_file)
-        self.add_filter = "and alleles.cell_line in ('{}')".format("', '".join(sorted(self.ENA_id_map.keys())))
+        key = "', '".join(sorted(self.ENA_id_map.keys()))
+        self.add_filter = " and alleles.local_name in ('{}')".format(key)
+        self.add_filter2 = " and alleles.cell_line_old in ('{}')".format(key)
                                   
     @pyqtSlot(int)
     def proceed_to3(self, _):
         """proceed to next section
         """
+        self.log.debug("proceed_to_3")
         self.parse_ENA_file()
         self.refresh_section3()
         self.proceed_sections(1, 2)
@@ -189,7 +258,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         """
         self.log.debug("Refreshing section 3...")
         self.project_info.fill_UI(self.project)
-        self.project_files.refresh(self.project, self.add_filter)
+        self.project_files.refresh(self.project, self.add_filter, self.add_filter2)
         
     @pyqtSlot(str, str)
     def catch_project_info(self, title, description):
@@ -216,9 +285,10 @@ class IPDSubmissionForm(CollapsibleDialog):
         layout.addWidget(self.project_files)
         self.project_files.files_chosen.connect(self.project_info.update_files_chosen)
         self.project_files.files.connect(self.project_info.update_files)
+        self.project_files.old_cell_lines.connect(self.catch_cell_line)
         
         items = [self.project_info.item(3,0)]
-        self.submit_btn = ProceedButton("Generate IPD file", items, self.log, 1, self)
+        self.submit_btn = ProceedButton("Generate IPD files", items, self.log, 1, self)
         self.submit_btn.proceed.connect(self.make_IPD_files)
         self.submit_btn.setMinimumWidth(100)
         layout.addWidget(self.submit_btn)
@@ -235,43 +305,45 @@ class IPDSubmissionForm(CollapsibleDialog):
             box = self.project_files.check_dic[i]
             if box.checkState():
                 sample = self.project_files.item(i, 2).text()
-                cell_line = self.project_files.item(i, 3).text()
-                self.samples.append((sample, cell_line))
-
+                local_name = self.project_files.item(i, 3).text()
+                IPD_nr = self.project_files.item(i, 6).text()
+                self.samples.append((sample, local_name, IPD_nr))
+                
     def get_values(self):
         """retrieves values for IPD file generation from GUI
         """
         self.pretypings = self.befund_widget.field.text().strip()
         self.project = self.proj_widget.field.text().strip()
-        self.start_num = self.submission_id_widget.field.text().strip()
         self.curr_time = time.strftime("%Y%m%d%H%M%S")
         self.subm_id = "IPD_{}".format(self.curr_time)
-        
-        # check data integrity:
-        try:
-            self.start_num = int(self.start_num)
-        except ValueError:
-            self.log.warning("'{}' (IPD Submission Number) is not a valid number!".format(self.start_num))
-            QMessageBox.warning(self, "Invalid IPD Submission Number", "'IPD Submission Nr Start' must be a number!")
-            self.submit_btn.setChecked(False)
-            return False
-        
         return True
     
     def get_files(self):
         """retrieves ena_file and blast_xml for each chosen sample
         """
         self.file_dic = {}
-        for (sample_id_int, cell_line) in self.samples:
-            self.file_dic[cell_line] = {}
+        for (sample_id_int, local_name, _) in self.samples:
+            self.file_dic[local_name] = {}
             query = """select blast_xml, ena_file from files 
-            where sample_id_int = '{}' and cell_line = '{}'""".format(sample_id_int, cell_line)
+            where sample_id_int = '{}' and local_name = '{}'""".format(sample_id_int, local_name)
             success, data = db_internal.execute_query(query, 2, self.log, 
                                 "retrieving sample files", "Database error", self)
             if success:
-                self.file_dic[cell_line]["blast_xml"] = data[0][0]
-                self.file_dic[cell_line]["ena_file"] = data[0][1]
-                    
+                self.file_dic[local_name]["blast_xml"] = data[0][0]
+                self.file_dic[local_name]["ena_file"] = data[0][1]
+    
+    @pyqtSlot(dict)
+    def catch_cell_line(self, old_cell_lines):
+        """catches mapping between cell_line_old and loca_name 
+         for files submitted to ENA under the old cell_line identifier
+        """
+        if old_cell_lines:
+            self.log.debug("Caught mapping between {} old cell_line identifiers and allele names".format(len(old_cell_lines)))
+            for local_name in old_cell_lines:
+                cell_line_old = old_cell_lines[local_name]
+                self.ENA_id_map[local_name] = self.ENA_id_map[cell_line_old]
+                self.ENA_gene_map[local_name] = self.ENA_gene_map[cell_line_old]
+    
     @pyqtSlot()
     def make_IPD_files(self):
         """tell typeloader to create the IPD file
@@ -296,7 +368,7 @@ class IPDSubmissionForm(CollapsibleDialog):
             
             results = MIF.write_imgt_files(project_dir, self.samples, self.file_dic, self.ENA_id_map, 
                                            self.ENA_gene_map, self.pretypings, self.subm_id, 
-                                           mydir, self.start_num, self.settings, self.log)
+                                           mydir, self.settings, self.log)
             if not results[0]:
                 QMessageBox.warning(self, "IPD file creation error", results[1])
                 return
@@ -345,8 +417,8 @@ class IPDSubmissionForm(CollapsibleDialog):
         """proceed to next section
         """
         text = "Successfully created IPD files for {} alleles:\n".format(len(self.samples))
-        for (sample, cell_line) in self.samples:
-            text += "\t- {} ({})\n".format(cell_line, sample)
+        for (_, local_name, _) in self.samples:
+            text += "\t- {}\n".format(local_name)
         self.textbox.setText(text)
         self.download_btn.setEnabled(True)
         self.proceed_sections(2, 3)
@@ -372,20 +444,20 @@ class IPDSubmissionForm(CollapsibleDialog):
             try:
                 self.log.info("Saving changes to db...")
                 update_queries = []
-                for (sample, cell_line) in self.samples:
+                for (sample, local_name, _) in self.samples:
                     # update allele_status for individual alleles:    
-                    IPD_submission_nr = self.cell_lines[cell_line]
+                    IPD_submission_nr = self.cell_lines[local_name]
                     update_query = """update alleles set allele_status = 'IPD submitted',
                         ENA_accession_nr = '{}', ENA_acception_date = '{}',
                         IPD_SUBMISSION_ID = '{}', IPD_SUBMISSION_NR = '{}' 
-                        where cell_line = '{}'""".format(self.ENA_id_map[cell_line], self.ENA_timestamp,
-                                                         self.subm_id, IPD_submission_nr, cell_line)
+                        where local_name = '{}'""".format(self.ENA_id_map[local_name], self.ENA_timestamp,
+                                                         self.subm_id, IPD_submission_nr, local_name)
                     update_queries.append(update_query)
                     
                     # update files table:
                     subm_file = self.imgt_files[IPD_submission_nr]
-                    update_files_query = """update files set IPD_submission_file = '{}' where cell_line = '{}'
-                    """.format(subm_file, cell_line)
+                    update_files_query = """update files set IPD_submission_file = '{}' where local_name = '{}'
+                    """.format(subm_file, local_name)
                     update_queries.append(update_files_query)
                     
                     # update samples table with customer:
@@ -481,11 +553,10 @@ if __name__ == '__main__':
     sys.excepthook = log_uncaught_exceptions
     log = general.start_log(level="DEBUG")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
-    settings_dic = GUI_login.get_settings("admin", log)
-    print(settings_dic["modus"])
+    settings_dic = GUI_login.get_settings("test8", log)
     mydb = create_connection(log, settings_dic["db_file"])
     
-    project = "20180716_ADMIN_KIR3DP1_PB4"
+    project = "20181214_TT_mixed_NEB1"
     app = QApplication(sys.argv)
     ex = IPDSubmissionForm(log, mydb, project, settings_dic)
     ex.show()

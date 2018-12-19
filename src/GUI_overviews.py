@@ -439,7 +439,7 @@ class TabTableSimple(InvertedTable):
             self.model = QSqlRelationalTableModel()
         else:
             self.model = SqlTableModel_protected(self.protected_columns)
-        self.model.setEditStrategy(edit_on_manual_submit)
+            self.model.setEditStrategy(edit_on_manual_submit)
         self.model.setTable(self.table_name)
         self.model.select()
         
@@ -513,6 +513,43 @@ class TabTableRelational(InvertedTable):
         for i in range(self.model.columnCount()):
             print(i, self.model.headerData(i, Qt.Horizontal, Qt.DisplayRole))
             
+            
+class TabTableNonEditable(InvertedTable):
+    """an inverted table presenting a QSqlQueryModel
+    """
+    def __init__(self, log, db, tab_nr, query, headers = None, myfilter = ""):
+        super().__init__(log, db)
+        self.nr = tab_nr
+        self.filter = myfilter
+        self.headers = headers
+        self.query = query
+        self.create_model()
+        self.invert_model()
+        self.add_headers()
+        
+    def create_model(self):
+        """creates the table model
+        """
+        q = QSqlQuery(self.query + " " + self.filter)
+        self.model = QSqlQueryModel()
+        q.exec_(self.query)
+        self.model.setQuery(q)
+        
+    def add_headers(self):
+        """adds headers
+        """
+        if self.headers:
+            for i in self.headers:
+                column = self.headers[i]
+                self.model.setHeaderData(i, Qt.Horizontal, column, Qt.DisplayRole)
+                    
+    def refresh(self, myfilter = ""):
+        """refreshes the displayed data after data changes in the model
+        """
+        if myfilter:
+            self.filter = myfilter
+        self.model.setQuery(self.query + " where " + self.filter)
+        
 
 class EditFilesButton(ChoiceButton):
     """opens an EditFileDialog

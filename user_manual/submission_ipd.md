@@ -1,7 +1,7 @@
 # ![Icon](images/TypeLoader_32.png) Submit alleles to IPD 
-![Important](images/icon_important.png) **Your IPD user settings will be incorporated into the IPD files you generate. So make sure yours are ok before you start (using the [=> Settings Dialog](settings.md)). If this is your first IPD submission, create just one file, edit it manually and submit it via  [IPD's Submission Page](https://www.ebi.ac.uk/ipd/imgt/hla/subs/submit.html) to receive your submittor ID for future submissions.**
+![Important](images/icon_important.png) **Your IPD user settings will be incorporated into the IPD files you generate. So make sure yours are ok before you start (using the [=> Settings Dialog](settings.md)). If this is your first IPD submission, create just one file and manually copy the data into [IPD's Submission Page](https://www.ebi.ac.uk/ipd/imgt/hla/subs/submit.html) to receive your submittor ID for future submissions. Then follow the instructions for [=> Registering as a bulk submittor with IPD](ipd.md).**
 
-To submit (one or multiple) alleles to IPG (IMGT/HLA or KIR), click ``Submit to IPD`` in the menu or toolbar, or choose ``Submit project to IPD`` in the [=> Projects Overview](overview_project.md).
+To submit (one or multiple) alleles to IPD (IMGT/HLA or KIR), click ``Submit to IPD`` in the menu or toolbar, or choose ``Submit project to IPD`` in the [=> Project Overview](overview_project.md).
 This will open the IPD Submission Dialog:
 
 ![IPDSubmission](images/ipd_submission1.png)
@@ -26,18 +26,20 @@ TypeLoader needs it to find the ENA accession number of each allele, which is re
 Save this file to anywhere on your computer and click ``upload email attachment from ENA reply`` to choose and upload it to TypeLoader.
 
 ###  Pretyping file 
-For each target allele, IPD requires the genotyping results for all other loci known for this sample. These can be provided to TypeLoader in a .csv file with the following columns and one line per target allele to be submitted:
+For each target allele, IPD requires the genotyping results for all other loci known for this sample, which must be at least HLA-A, HLA-B and HLA-DQB1 plus the locus you are submitting. These can be provided to TypeLoader in a .csv file with the following columns and one line per target allele to be submitted:
 
   * **Internal donor ID**: **this column is used identify the sample!** 
   * **Cell line**: optional, can also be left blank (but **NOT** deleted!)
   * **Customer**: the customer who sent this sample; this information is saved in TypeLoader
 This is followed by several columns per locus:
   * **HLA loci:** 2 columns per locus (one per allele), "A1", "A2" etc. (genotyping results should be at maximal resolution and contain no locus)
-  * **KIR loci:** 4 columns per locus (one per possible allele), "KIR2DL1-1", "KIR2DL1-2" etc. (genotyping results should be shortened to 3 field resolution or be given as POS/NEG for absence/presence. Not needed cells should be left blank).
+  * **KIR loci:** 4 columns per locus (one per possible allele), "KIR2DL1-1", "KIR2DL1-2" etc. (genotyping results should be shortened to 3 field resolution or be given as POS/NEG for absence/presence. Cells that are not needed should be left blank).
 
 Example file:
 
 ![IPDSubmission2b](images/ipd_submission2a.png)
+
+![Important](images/icon_important.png) **You can download an example file with the right format and headers from TypeLoader's menu: ``Options`` => ``Download example files`` => ``Pretypings File``. You can use this as a template to fill in your data, either manually or from your LIMS etc.**
 
 Click ``Choose file with pretypings for each sample`` to choose and upload this file to TypeLoader.
 
@@ -63,10 +65,10 @@ This section will tell you whether TypeLoader was successful in creating the IPD
 
 From here, you can download a zipped version of all IPD files generated in this submission session, by clicking the green ``Download zipped IPD files`` button. These files can now be submitted to IPD per email.
 
-![Important](images/icon_important.png) **If you don't download this now, you can still get the individual files for each target allele by going to the allele's [=> SampleView](view_sample.md) and clicking ``Save files``. But you will have to do that for each allele individually, which might be laborious (depending on the number of alleles submitted). So downloading it now is probably a very good idea. ;-).**
+![Important](images/icon_important.png) **If you don't download this now, you can still get the individual files for each target allele by going to each allele's [=> SampleView](view_sample.md) and clicking ``Save files``. But you will have to do that for each allele individually, which might be laborious (depending on the number of alleles submitted). So downloading it now is probably a very good idea. ;-).**
 
 Now you can close the dialog by clicking ``Close`` or the X button.
 
 TypeLoader will now update the allele status of each target allele to ``IPD submitted`` (as it assumes you will send the files to IPD within the day or so).
 
-Now you just have to submit the downloaded files to IPD by email.
+Now you just have to submit the downloaded files to IPD by the method they have given you (either email or upload to a shared folder).

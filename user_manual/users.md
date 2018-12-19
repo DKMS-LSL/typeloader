@@ -24,7 +24,7 @@ Here, you can create a user account.
 
 ### Optional settings:
  * **Initials:** if not given, these are created from the full name. These are used in project names. 
- * **Email:** you can also specify this later. It is needed for the IPD files, where you will be listed as submittor.
+ * **Email:** you can also specify this later. It is needed for the IPD files, where you will be listed as submitter.
 
 After successfully creating a user account, TypeLoader will create everything needed for this account and log into it.
 

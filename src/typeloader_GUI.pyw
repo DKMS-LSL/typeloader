@@ -24,13 +24,15 @@ from PyQt5 import QtSql
 from PyQt5.QtCore import pyqtSlot, Qt
 from configparser import NoSectionError
 
-import general, db_internal
+import general
 import GUI_navigation, GUI_login, GUI_stylesheet
 import GUI_forms_new_project, GUI_forms_new_allele, GUI_forms_new_allele_bulk 
 import GUI_forms_submission_ENA, GUI_forms_submission_IPD
 import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample
 import GUI_views_settings
+import GUI_download_files, GUI_user_manual
 from GUI_misc import UnderConstruction
+import patches
 
 #===========================================================
 # parameters:
@@ -101,19 +103,19 @@ class MainGUI(QMainWindow):
         self.view_under_construction = self.make_stack_widget("Under construction", mywidget)
         
         self.log.debug("\tCreating stack item 1: Alleles overview")
-        self.stacked_widgits[1] = "Alleles Overview"
+        self.stacked_widgits[1] = "Allele Overview"
         mywidget = GUI_views_OValleles.AllelesOverview(self.log, self.mydb)
         self.log.debug("=> Making stack widget...")
-        self.view_ov_alleles = self.make_stack_widget("Alleles overview", mywidget)
+        self.view_ov_alleles = self.make_stack_widget("Allele Overview", mywidget)
         self.log.debug("=> Stack item created")
         self.view_ov_alleles.widget.changed_projects.connect(self.change_project)
         self.view_ov_alleles.widget.change_view.connect(self.display)
         self.view_ov_alleles.widget.changed_allele.connect(self.change_allele)
-        self.log.debug("\t=> Alleles Overview done")
-        self.log.debug("\tCreating stack item 2: Projects overview")
-        self.stacked_widgits[2] = "Projects Overview"
+        self.log.debug("\t=> Allele Overview done")
+        self.log.debug("\tCreating stack item 2: Project overview")
+        self.stacked_widgits[2] = "Project Overview"
         mywidget = GUI_views_OVprojects.ProjectsOverview(self.log, self.mydb, self)
-        self.view_ov_projects = self.make_stack_widget("Projects overview", mywidget)
+        self.view_ov_projects = self.make_stack_widget("Project Overview", mywidget)
         self.view_ov_projects.widget.changed_projects.connect(self.change_project)
         self.view_ov_projects.widget.change_view.connect(self.display)
         self.view_ov_projects.widget.deleted_project.connect(self.on_projects_changed)
@@ -255,16 +257,16 @@ class MainGUI(QMainWindow):
         # See overviews (ov):
         self.ov_menu = self.menubar.addMenu('&Overviews')
         
-        ov_samples_act = QAction('&Alleles overview', self.ov_menu)
+        ov_samples_act = QAction('&Allele Overview', self.ov_menu)
         ov_samples_act.setShortcut('Ctrl+Alt+A')
-        ov_samples_act.setStatusTip('View overview of all samples')
+        ov_samples_act.setStatusTip('View an overview of all samples')
         ov_samples_act.triggered.connect(partial(self.display, 1))
         self.ov_menu.addAction(ov_samples_act)
         self.toolbar.addAction(ov_samples_act)
         
-        ov_projects_act = QAction('&Projects overview', self.ov_menu)
+        ov_projects_act = QAction('&Project Overview', self.ov_menu)
         ov_projects_act.setShortcut('Ctrl+Alt+P')
-        ov_projects_act.setStatusTip('View overview of all projects')
+        ov_projects_act.setStatusTip('View an overview of all projects')
         ov_projects_act.triggered.connect(partial(self.display, 2))
         self.ov_menu.addAction(ov_projects_act)
         self.toolbar.addAction(ov_projects_act)
@@ -281,7 +283,7 @@ class MainGUI(QMainWindow):
         
         IPD_act = QAction('Submit to &IPD', self.submit_menu)
         IPD_act.setShortcut('Ctrl+I')
-        IPD_act.setStatusTip('Submit alleles to IPD')
+        IPD_act.setStatusTip('Submit alleles of a project to IPD')
         IPD_act.triggered.connect(self.open_IPD_submission_dialog)
         self.submit_menu.addAction(IPD_act)
         self.toolbar.addAction(IPD_act)
@@ -294,6 +296,18 @@ class MainGUI(QMainWindow):
         settings_act.setStatusTip('View or edit your TypeLoader settings')
         self.options_menu.addAction(settings_act)
         self.toolbar.addAction(settings_act)
+        
+        dld_ex_act = QAction("&Download example files", self.options_menu)
+        dld_ex_act.setShortcut('Ctrl+D')
+        dld_ex_act.triggered.connect(self.open_ExampleFileDialog)
+        dld_ex_act.setStatusTip('Download example files')
+        self.options_menu.addAction(dld_ex_act)
+        
+        man_act = QAction("View User &Manual", self.options_menu)
+        man_act.setShortcut('F1')
+        man_act.triggered.connect(self.open_UserManualDialog)
+        man_act.setStatusTip("View TypeLoader's User Manual (online)")
+        self.options_menu.addAction(man_act)
         
 #         # generate status report:
 #         report_status_act = QAction('Generate status report', self)
@@ -357,9 +371,19 @@ class MainGUI(QMainWindow):
             self.log.exception(E)
         
     def open_user_settings_dialog(self):
-        """opens the 'UserSettings' dialog & connects its signals to the rest-GUI
+        """opens the 'UserSettings' dialog
         """
         GUI_views_settings.UserSettingsDialog(self.settings, self.log, self)
+        
+    def open_ExampleFileDialog(self):
+        """opens the 'ExampleFiles' dialog
+        """
+        GUI_download_files.ExampleFileDialog(self.settings, self.log, self)
+        
+    def open_UserManualDialog(self):
+        """opens the 'ExampleFiles' dialog
+        """
+        GUI_user_manual.UserManualDialog(self.log, self)
         
     def on_projects_changed(self):
         """when a new project has been created or a project been deleted,
@@ -517,7 +541,7 @@ if __name__ == '__main__':
     
     curr_time = time.strftime("%Y%m%d_%H%M%S")
     
-    if platform.system() ==  "Windows":
+    if platform.system() == "Windows":
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(__version__) # use favicon as TaskBar icon in Windows
     
     app = QApplication(sys.argv)
@@ -538,6 +562,11 @@ if __name__ == '__main__':
     
     sys.excepthook = log_uncaught_exceptions
     
+    patchme = patches.check_patching_necessary(log)
+    if patchme:
+        patches.request_user_input(root_path, app, log)
+        patches.execute_patches(root_path, log)
+    
     login = GUI_login.LoginForm(log)
     result = None
     mydb = None
@@ -556,7 +585,7 @@ if __name__ == '__main__':
             db_file = settings_dic["db_file"]
             
             # implement db bugfixes:
-            db_internal.cleanup_missing_cell_lines_in_files_table(settings_dic, log) #149
+            patches.patch_database(settings_dic, __version__, log)
             
             mydb = create_connection(log, db_file) 
     

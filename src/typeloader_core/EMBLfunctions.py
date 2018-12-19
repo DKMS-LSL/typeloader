@@ -225,8 +225,8 @@ def parse_register_EMBL_xml(filename, filetype, samples = None):
                                     found = match.group()
                                     nr = int(found.split()[1])
                                     problem_samples.append(nr - 1)
-                                    [_, _, sample, cell_line] = samples[nr - 1]
-                                    mytext = mytext.replace(found, "{} ({} in sample {})".format(found, cell_line, sample))
+                                    [_, _, _, local_name] = samples[nr - 1]
+                                    mytext = mytext.replace(found, "{} ({})".format(found, local_name))
                                     
                                 except Exception as E:
                                     errors.append(repr(E))

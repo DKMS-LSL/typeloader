@@ -35,6 +35,8 @@ def blastSequences(inputFastaFile, parsedFasta, settings, log,
     blastXmlOutputFile = inputFastaFile.replace(".fasta",".blast.xml").replace(".fa",".blast.xml")
     blast_command = '"%s" -query %s -parse_deflines -db %s -dust no -soft_masking false -outfmt %s -out %s' % (blast, inputFastaFile, database, blastOutputFormat, blastXmlOutputFile)
     _ = system(blast_command)
+    log.debug("Blast command:")
+    log.debug(blast_command)
     if not os.path.isfile(blastXmlOutputFile):
         log.error("BlastXMLFile not generated!")
         log.debug(blast_command)

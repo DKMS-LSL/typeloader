@@ -67,7 +67,7 @@ class ProjectsOverview(FilterableTable):
         self.query_open = """
             SELECT projects.project_name, project_status, creation_date, 
                 username, projects.gene, pool, title, description,
-                count(alleles.cell_line) as nr_alleles
+                count(alleles.local_name) as nr_alleles
             FROM projects
                 LEFT OUTER JOIN alleles 
                     ON projects.project_name = alleles.project_name
@@ -79,7 +79,7 @@ class ProjectsOverview(FilterableTable):
         self.query_all = """
             SELECT projects.project_name, project_status, creation_date, 
                 username, projects.gene, pool, title, description,
-                count(alleles.cell_line) as nr_alleles
+                count(alleles.local_name) as nr_alleles
             FROM projects
                 LEFT OUTER JOIN alleles 
                     ON projects.project_name = alleles.project_name

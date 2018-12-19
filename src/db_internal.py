@@ -39,8 +39,8 @@ alleles_header_dic = {
     1 : "Allele Nr. in Sample",
     2 : "Project Name",
     3 : "Nr. in Project",
-    4 : "Cell Line",
-    5 : "Local Name",
+    4 : "Cell Line (Old)",
+    5 : "Allele Name",
     6 : "Gene",
     7 : 'Goal',
     8 : "Allele Status",
@@ -82,19 +82,21 @@ alleles_header_dic = {
     44 : 'Upload Date',
     45 : 'Detection Date',
     47 : "External Sample ID",
-    48 : "Customer",
-    50 : "ENA Submission ID",
-    51 : "Alleles in ENA Submission",
-    52 : "Timestamp Sent (ENA Submission)",
-    53 : "Timestamp Confirmed (ENA Submission)",
-    54 : "Analysis Accession Nr",
-    55 : "Submission Accession Nr",
-    56 : "ENA Submission successful?",
-    57 : "IPD Submission ID",
-    58 : "Alleles in IPD Submission",
-    59 : "Timestamp Ready (IPD Submission)",
-    60 : "Timestamp Confirmed (IPD Submission)",
-    61 : "IPD Submission successful?"
+    48 : "Cell Line",
+    49 : "Customer",
+    50 : "Project Name",
+    51 : "ENA Submission ID",
+    52 : "Alleles in ENA Submission",
+    53 : "Timestamp Sent (ENA Submission)",
+    54 : "Timestamp Confirmed (ENA Submission)",
+    55 : "Analysis Accession Nr",
+    56 : "Submission Accession Nr",
+    57 : "ENA Submission successful?",
+    58 : "IPD Submission ID",
+    59 : "Alleles in IPD Submission",
+    60 : "Timestamp Ready (IPD Submission)",
+    61 : "Timestamp Confirmed (IPD Submission)",
+    62 : "IPD Submission successful?"
 }
 
 from __init__ import __version__
@@ -417,22 +419,7 @@ def show_table_content(table, cursor, log):
         log.info(row)
 
 
-def cleanup_missing_cell_lines_in_files_table(settings, log):
-    """adds missing cell_lines to table FILES (fixes #149)
-    """
-    log.info("Fixing database (issue #149)...")
-    log.info("\tGetting cell_lines from table ALLELES...")
-    conn, cursor = open_connection(settings["db_file"], log)
-    query = "select cell_line, sample_id_int, allele_nr from ALLELES"
-    items = query_database(query, None, log, cursor)
-    
-    log.info("\tWriting cell_lines into table FILES...")
-    update_query = "update or ignore FILES set cell_line = :1 where sample_id_int = :2 and allele_nr = :3"
-    cursor.executemany(update_query, items)
-    conn.commit()
-    cursor.close()
-    conn.close()
-    log.info("\t=> Done")
+
 
 
 pass
@@ -472,7 +459,7 @@ def main(log):
 
         
 if __name__ == '__main__':
-    log = general.start_log(level="DEBUG", info_to_file=log_file)
+    log = general.start_log(level="DEBUG")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
     main(log)
     log.info("<End>")

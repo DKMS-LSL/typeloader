@@ -112,7 +112,6 @@ def parse_embl_response(path):
             # Needed, because different genes could be in one Flatfile
             gene_dict[cell_line[0].strip()] = gene
 
-    #print(info_dict, gene_dict)
     return (info_dict, gene_dict)
 
 if __name__ == "__main__":

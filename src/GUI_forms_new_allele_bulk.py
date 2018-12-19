@@ -19,13 +19,15 @@ from PyQt5.QtWidgets import (QApplication, QMessageBox, QTextEdit,
 from PyQt5.Qt import QWidget, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QIcon
 
-import general, typeloader_functions as typeloader
+import general, typeloader_functions as typeloader, db_internal
 
 from GUI_forms import (CollapsibleDialog, ChoiceSection, 
                        FileButton, ProceedButton, QueryButton, NewProjectButton)
+from GUI_misc import settings_ok
 
 #===========================================================
 # parameters:
+min_num_prev_alleles = 5 # this many alleles have to be added manually before using bulk upload
 
 from __init__ import __version__
 #===========================================================
@@ -61,7 +63,16 @@ class NewAlleleBulkForm(CollapsibleDialog):
         self.resize(800,300)
         self.setWindowTitle("Add new target alleles (bulk fasta upload)")
         self.setWindowIcon(QIcon(general.favicon))
+        
         self.show()
+        ok, msg = settings_ok("new", self.settings, self.log)
+        if not ok:
+            QMessageBox.warning(self, "Missing settings", msg)
+            self.close()
+            
+        proceed = self.check_newbie_proceed()
+        if not proceed:
+            self.close()
         
     def define_sections(self):
         """defining the dialog's sections
@@ -81,7 +92,7 @@ class NewAlleleBulkForm(CollapsibleDialog):
         self.file_widget = ChoiceSection("Raw File:", [file_btn], self.tree)
         self.file_widget.choice.connect(self.get_file)
         if self.settings["modus"] == "debugging":
-            self.file_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\bulk_upload2.csv")
+            self.file_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\bulk_upload3.csv")
         layout.addWidget(self.file_widget)
         
         proj_btn = QueryButton("Choose a (different) existing project", "SELECT project_name FROM projects where project_status = 'Open' order by project_name desc") 
@@ -172,6 +183,33 @@ class NewAlleleBulkForm(CollapsibleDialog):
         self.sections.append(("(2) Check results:", mywidget))
 
 
+    def check_newbie_proceed(self):
+        """checks if this user has already uploaded enough single alleles to count as experienced;
+        if not, a popup warning is generated and bulk upload denied
+        """
+        if self.settings["modus"] == "staging":
+            return True
+        
+        self.log.debug("Checking if this user is experienced enough...")
+        query = "select count(local_name) from alleles"
+        success, data = db_internal.execute_query(query, 1, self.log, "Checking for previous uploads", "Database error", self)
+        if not success:
+            return False
+        if data:
+            num = data[0][0]
+        else:
+            num = 0
+        if num < min_num_prev_alleles:
+            self.log.info("=> User is not experienced enough, yet!")
+            msg = "Bulk Fasta upload is for experienced TypeLoader users.\n\n"
+            msg += "Please upload at least {} alleles using single Fasta or XML files,\n".format(min_num_prev_alleles)
+            msg += "to make sure you are sufficiently familiar with TypeLoader."
+            QMessageBox.warning(self, "Hello new user", msg)
+            return False
+        self.log.info("=> Experienced user")
+        return True
+        
+
 pass
 #===========================================================
 # main:
@@ -182,7 +220,7 @@ if __name__ == '__main__':
     log = general.start_log(level="DEBUG")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
     sys.excepthook = log_uncaught_exceptions
-    mysettings = GUI_login.get_settings("admin", log)
+    mysettings = GUI_login.get_settings("test8", log)
     mydb = create_connection(log, mysettings["db_file"])
     
     app = QApplication(sys.argv)

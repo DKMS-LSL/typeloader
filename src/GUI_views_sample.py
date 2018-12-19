@@ -17,8 +17,8 @@ from db_internal import alleles_header_dic
 from GUI_overviews import (InvertedTable, FilterableTable, edit_on_manual_submit,
                            SqlQueryModel_filterable, SqlQueryModel_editable,
                            SqlTableModel_protected, 
-                           TabTableSimple, TabTableRelational, ComboDelegate,
-                           EditFilesButton, DownloadFilesButton,
+                           TabTableSimple, TabTableRelational, TabTableNonEditable,
+                           ComboDelegate, EditFilesButton, DownloadFilesButton,
                            EditFileDialog, DownloadFilesDialog)
 from __init__ import __version__
 
@@ -88,7 +88,8 @@ class SampleTable(InvertedTable):
         self.header_lbl.setText("General Information:")
         self.model.setHeaderData(0, Qt.Horizontal, "Internal Donor-ID")
         self.model.setHeaderData(1, Qt.Horizontal, "External Donor-ID")
-        self.model.setHeaderData(2, Qt.Horizontal, "Customer")
+        self.model.setHeaderData(2, Qt.Horizontal, "Cell Line")
+        self.model.setHeaderData(3, Qt.Horizontal, "Customer")
         self.setMaximumHeight(170)
         self.setMaximumWidth(300)
         v_header = self.table.verticalHeader()
@@ -168,7 +169,7 @@ class SampleAlleles(FilterableTable):
         self.log.debug("Creating the table model...")
         q = QSqlQuery()
         query = """SELECT sample_id_int, allele_nr, 
-            ('#' || allele_nr || ' (' || gene || ')') as Target_allele, cell_line,
+            ('#' || allele_nr || ' (' || gene || ')') as Target_allele, local_name,
             Allele_Status, Lab_Status, project_name
         FROM alleles
          """
@@ -178,7 +179,7 @@ class SampleAlleles(FilterableTable):
         self.model.setQuery(q)
         
         self.model.setHeaderData(2, Qt.Horizontal, "Target Allele")
-        self.model.setHeaderData(3, Qt.Horizontal, "Cell Line")
+        self.model.setHeaderData(3, Qt.Horizontal, "Allele Name")
         self.model.setHeaderData(4, Qt.Horizontal, "Allele Status")
         self.model.setHeaderData(5, Qt.Horizontal, "Lab Status")
         self.model.setHeaderData(6, Qt.Horizontal, "Project")
@@ -267,6 +268,7 @@ class AlleleView(QTabWidget):
         self.add_tab_typing_new()
         self.add_tab_ENA()
         self.add_tab_IPD()
+        self.add_tab_history()
         self.resize(500,500)
 
         for tab in self.tabs:
@@ -278,7 +280,7 @@ class AlleleView(QTabWidget):
         """
         #columns: sample_id_int, allele_nr, project_name, nr_in_project, cell_line, local_name, gene, goal, allele_status, lab_status, int. allele name, official allele name
         hidden_rows = list(range(9,14)) + list(range(15, 33)) + list(range(35,46))
-        mytab = TabTableSimple(self.log, self.db, 0, "alleles", hidden_rows, protected_columns = [0, 1, 2, 3, 4], headers =alleles_header_dic, add_color_proxy=(8,14))
+        mytab = TabTableSimple(self.log, self.db, 0, "alleles", hidden_rows, protected_columns = [0, 1, 2, 3, 5], headers =alleles_header_dic, add_color_proxy=(8,14))
         mytab.table.setItemDelegateForRow(7, ComboDelegate(self, general.field_options["goal"]))
         mytab.table.setItemDelegateForRow(8, ComboDelegate(self, general.field_options["allele_status"]))
         mytab.table.setItemDelegateForRow(14, ComboDelegate(self, general.field_options["lab_status"]))
@@ -319,10 +321,10 @@ class AlleleView(QTabWidget):
         #columns: goal, target_allele, partner_allele, MM-pos, null_allele, software, version, date, ref_db, db version, int. allele name, off. allele name, new/confirmed
         hidden_rows = list(range(7)) + list(range(8, 24)) + list(range(36, 46))
         mytab = TabTableSimple(self.log, self.db, 0, "alleles", hidden_rows, headers = alleles_header_dic)
-        mytab.table.setItemDelegateForRow(7, ComboDelegate(self, general.field_options["goal"]))
+        mytab.table.setItemDelegateForRow(7, ComboDelegate(self, general.field_options["goal"], editable = True))
         mytab.table.setItemDelegateForRow(27, ComboDelegate(self, general.field_options["yesno"])) # Null allele
         if self.settings["xml_center_name"] == "DKMS LIFE SCIENCE LAB":
-            mytab.table.setItemDelegateForRow(28, ComboDelegate(self, general.field_options["software_new"]))
+            mytab.table.setItemDelegateForRow(28, ComboDelegate(self, general.field_options["software_new"], editable = True))
         mytab.table.setItemDelegateForRow(31, ComboDelegate(self, general.field_options["ref_db"]))
         mytab.table.setItemDelegateForRow(35, ComboDelegate(self, general.field_options["new_confirmed"]))
         self.addTab(mytab, "New Genotyping")
@@ -381,23 +383,58 @@ class AlleleView(QTabWidget):
         self.addTab(mytab, "IPD Submission")
         self.tabs.append(mytab)
 
+    def add_tab_history(self):
+        """creates the "history" tab
+        """
+        header_dic = {0 : 'Original genotyping',
+                      1 : 'Novel allele detection',
+                      2 : 'New genotyping',
+                      3 : 'Upload of sequence',
+                      4 : 'Submitted to ENA',
+                      5 : 'Accepted by ENA',
+                      6 : 'Submitted to IPD',
+                      7 : 'Accepted by IPD'
+                      }        
+        query = """select alleles.orig_genotyping_date, 
+          alleles.detection_date,
+          alleles.new_genotyping_date,
+          alleles.upload_date,
+          (substr(ENA.Timestamp_sent, 1, 4) || "-" || substr(ENA.Timestamp_sent, 5, 2) || "-" || substr(ENA.Timestamp_sent, 7, 2)) as submitted_to_ENA,
+          alleles.ENA_acception_date,
+          IPD.Timestamp_sent as Submitted_to_IPD,
+          alleles.IPD_acception_date
+        
+        from alleles
+          left join ena_submissions ENA
+            on alleles.ENA_submission_id = ENA.Submission_id
+          left join IPD_submissions IPD
+            on alleles.IPD_submission_id = IPD.Submission_id
+        """
+        mytab = TabTableNonEditable(self.log, self.db, 6, query, headers = header_dic)
+        self.addTab(mytab, "Allele history")
+        self.tabs.append(mytab)
+
     def filter_allele_view(self, sample, nr, project):
         """filters all tabs to selected allele
         """
         self.log.debug("Filtering to allele #{} of {}...".format(nr, sample))
+        myfilter = "alleles.sample_id_int = '{}' and alleles.allele_nr = {} and alleles.project_name = '{}'".format(sample, nr, project)
         for mytab in self.tabs:
-            mytab.model.layoutAboutToBeChanged.emit()
-            mytab.model.setFilter("alleles.sample_id_int = '{}' and alleles.allele_nr = {} and alleles.project_name = '{}'".format(sample, nr, project))
-#             print("header_dic = '{'")
-            for i in range(mytab.model.columnCount()):
-                if i in mytab.hidden_rows:
-                    mytab.table.hideRow(i)
-#                 else:
-#                     if mytab.nr == 4:
-#                         print ("\t{} : '{}',".format(i, mytab.model.headerData(i, Qt.Horizontal, Qt.DisplayRole)))
-#             print("\t\t}")
-#         
-
+            if mytab.nr == 6: # history tab has QSqlQueryModel
+                mytab.refresh(myfilter)
+            else:
+                mytab.model.layoutAboutToBeChanged.emit()
+                mytab.model.setFilter(myfilter)
+    #             print("header_dic = '{'")
+                for i in range(mytab.model.columnCount()):
+                    if i in mytab.hidden_rows:
+                        mytab.table.hideRow(i)
+    #                 else:
+    #                     if mytab.nr == 4:
+    #                         print ("\t{} : '{}',".format(i, mytab.model.headerData(i, Qt.Horizontal, Qt.DisplayRole)))
+    #             print("\t\t}")
+    #         
+#                 mytab.model.layoutChanged.emit()
             
 class SampleView(QWidget):
     """a widget to display a complete overview over 
@@ -453,12 +490,12 @@ class SampleView(QWidget):
         self.allele_view = AlleleView(self.log, self.mydb, self)
         self.grid.addWidget(self.allele_view, 3, 0, 10, 2)
         
-        widgets = self.allele_view.tabs + [self.sample_table]
+        widgets = self.allele_view.tabs[:-1] + [self.sample_table] # omit history tab: allows no edits
         self.confirmReset = GUI_misc.ConfirmResetWidget(widgets, self.log, Qt.Vertical, self, stretch=200)
         self.grid.addWidget(self.confirmReset, 3, 2)
         self.confirmReset.confirm_btn.clicked.connect(self.sample_alleles.model.refresh)
         self.confirmReset.data_changed.connect(self.on_data_changed)
-        
+        self.confirmReset.confirm_btn.clicked.connect(self.allele_view.tabs[-1].refresh)
         #set stretch:
         for i in range(self.grid.columnCount()-1):
             self.grid.setColumnStretch(i, 3)
@@ -549,8 +586,8 @@ def main():
     app = QApplication(sys.argv)
     sys.excepthook = log_uncaught_exceptions
     
-    project_name = "20180716_ADMIN_KIR3DP1_PB4"
-    sample_id_int = "ID908158"
+    project_name = "20181207_ADMIN_HLA-B_NEB1"
+    sample_id_int = "ID64798343"
     ex = SampleView(log, mydb, sample_id_int, project_name)
     ex.show()#Maximized()
     result = app.exec_()

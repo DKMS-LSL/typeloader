@@ -118,7 +118,7 @@ class ProjectAlleles(FilterableTable):
         q = QSqlQuery()
         query = """SELECT project_name, project_nr, 
           (sample_id_int || ' #' || allele_nr || ' (' || gene || ')'),
-          cell_line,
+          local_name,
           allele_status, lab_status,
           sample_id_int, allele_nr
         FROM alleles
@@ -130,7 +130,7 @@ class ProjectAlleles(FilterableTable):
         
         self.model.setHeaderData(1, Qt.Horizontal, "Nr")
         self.model.setHeaderData(2, Qt.Horizontal, "Target Allele")
-        self.model.setHeaderData(3, Qt.Horizontal, "Cell Line")
+        self.model.setHeaderData(3, Qt.Horizontal, "Allele Name")
         self.model.setHeaderData(4, Qt.Horizontal, "Allele Status")
         self.model.setHeaderData(5, Qt.Horizontal, "Lab Status")
         

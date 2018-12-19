@@ -12,20 +12,18 @@ widgits for adding new sequences or new projects to TypeLoader
 
 # import modules:
 
-import sys, os, string
+import sys, os
 
 from PyQt5.QtWidgets import (QApplication, QGroupBox, QMessageBox, QGridLayout, QFormLayout, QTextEdit,
                              QLabel, QLineEdit, QCheckBox, QHBoxLayout, QFrame)
 from PyQt5.Qt import QWidget, pyqtSlot, pyqtSignal, QDialog, QPushButton
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt
 
 import general, typeloader_functions as typeloader
-# from typeloader_core import (EMBLfunctions as EF, coordinates as COO, backend_make_ena as BME, 
-#                              backend_enaformat as BE, getAlleleSeqsAndBlast as GASB,
-#                              closestallele as CA)
+
 from GUI_forms import (CollapsibleDialog, ChoiceSection, 
                        FileButton, ProceedButton, QueryButton, NewProjectButton)
+from GUI_misc import settings_ok
 
 #===========================================================
 # parameters:
@@ -91,11 +89,10 @@ class QueryBox(QDialog):
     def fill_with_random_values(self):
         """for debugging & development: generate random IDs & put them in QueryBox fields
         """
-        sample_ID = "ID" + typeloader.id_generator(6, string.digits)
-        self.sample_int_field.setText('ID216388')
+        import string
+        sample_ID = "ID1" + typeloader.id_generator(7, string.digits)
         self.sample_int_field.setText(sample_ID)
         spender  = "DEDKM" + typeloader.id_generator(7, string.digits)
-        self.sample_ext_field.setText('DEDKM9926024')
         self.sample_ext_field.setText(spender)
     
 
@@ -126,8 +123,6 @@ class AlleleSection(QGroupBox):
         self.checkbox = QCheckBox(self)
         layout.addWidget(self.lbl1,0,0,1,2)
         layout.addWidget(self.checkbox, 0,2)
-#         self.gendx_lbl = QLabel()
-#         layout.addRow(self.gendx_lbl)
         
         lbl2 = QLabel("Allele details:")
         lbl2.setStyleSheet(general.label_style_2nd)
@@ -145,14 +140,6 @@ class AlleleSection(QGroupBox):
         self.name_field.setWhatsThis("Suggested internal name for this allele")
         layout.addWidget(QLabel("\tAllele name:"),3,0)
         layout.addWidget(self.name_field, 3,1,1,2)
-        
-        self.cell_field = QLineEdit(self)
-        self.fields.append(self.cell_field)
-        self.cell_field.setWhatsThis("Cell-Line for this allele")
-        layout.addWidget(QLabel("\tCell line:"),4,0)
-        layout.addWidget(self.cell_field, 4,1,1,2)
-        if self.settings["xml_center_name"] == "DKMS LIFE SCIENCE LAB":
-            self.cell_field.setText("DKMS-LSL-")
         
         self.product_field = QLineEdit(self)
         self.fields.append(self.product_field)
@@ -174,7 +161,6 @@ class AlleleSection(QGroupBox):
         self.exon2_field.setWhatsThis("Ignore everything after this exon")
         layout.addWidget(QLabel("\tTo exon:"),8,0)
         layout.addWidget(self.exon2_field, 8,1,1,2)
-        
         
     def select(self):
         """select the whole section of this allele
@@ -227,14 +213,16 @@ class NewAlleleForm(CollapsibleDialog):
         self.setWindowIcon(QIcon(general.favicon))
         self.show()
         self.blastXmlFilename = None
-#         self.myalleles = []
         self.myallele = None
         self.sample_name = sample_ID_int
         self.sample_id_ext = sample_ID_ext
-        self.cell_line = None
         self.unsaved_changes = False
-        self.cell_line_unsaved = False
         self.upload_btn.check_ready()
+        
+        ok, msg = settings_ok("new", self.settings, self.log)
+        if not ok:
+            QMessageBox.warning(self, "Missing settings", msg)
+            self.close()
         
     def define_sections(self):
         """defining the dialog's sections
@@ -323,6 +311,7 @@ class NewAlleleForm(CollapsibleDialog):
                 typeloader.reformat_header_data(self.header_data, self.sample_id_ext, self.log)
                 if not self.sample_name:
                     self.sample_name = sample_name
+                self.header_data["sample_id_int"] = self.sample_name
                 
                 if not self.sample_name:
                     self.log.debug("Asking for sample info...")
@@ -334,12 +323,13 @@ class NewAlleleForm(CollapsibleDialog):
                 return
             
             # process file & create Allele objects:
+            self.header_data["sample_id_int"] = self.sample_name
             results = typeloader.process_sequence_file(self.project, self.filetype, self.blastXmlFile, self.targetFamily, self.fasta_filename, self.allelesFilename, self.header_data, self.settings, self.log)
             if results[0] == False: # something went wrong
                 QMessageBox.warning(self, results[1], results[2])
                 return
             else:
-                self.success_parsing, self.myalleles, self.ENA_text, _ = results
+                self.success_parsing, self.myalleles, self.ENA_text = results
                 if self.filetype == "XML":
                     self.allele1 = self.myalleles[0]
                     self.allele2 = self.myalleles[1]
@@ -350,8 +340,6 @@ class NewAlleleForm(CollapsibleDialog):
                     self.myallele = self.myalleles[0]
                     self.ENA_widget.setText(self.ENA_text)
                     self.name_lbl.setText(self.myallele.newAlleleName)
-                    self.cell_line = self.myallele.cellLine
-                    self.cell_field2.setText(self.cell_line)
                     self.proceed_sections(0, 2)
             
         except Exception as E:
@@ -401,11 +389,10 @@ class NewAlleleForm(CollapsibleDialog):
         self.allele2_sec.checkbox.clicked.connect(self.unselect_other_box)
 #         self.allele2_sec.checkbox.clicked.connect(self.unselect_both_cbx)
         
-        self.ok_btn = ProceedButton("Proceed", [self.allele1_sec.cell_field, self.allele2_sec.cell_field], self.log)
+        self.ok_btn = ProceedButton("Proceed", [self.allele1_sec.checkbox, self.allele2_sec.checkbox], self.log,
+                                    only1 = True)
         self.ok_btn.check_ready()
         self.ok_btn.clicked.connect(self.make_ENA_file)
-        self.allele1_sec.cell_field.textChanged.connect(self.ok_btn.check_ready)
-        self.allele2_sec.cell_field.textChanged.connect(self.ok_btn.check_ready)
         self.allele1_sec.selection_changed.connect(self.ok_btn.check_ready)
         self.allele2_sec.selection_changed.connect(self.ok_btn.check_ready)
         
@@ -492,7 +479,6 @@ class NewAlleleForm(CollapsibleDialog):
             self.allele1.newAlleleName = self.allele1_sec.name_field.text().strip()
             self.allele1.productName_DE = self.allele1_sec.product_field.text().strip()
             self.allele1.productName_FT = self.allele1.productName_DE
-            self.allele1.cellLine = self.allele1_sec.cell_field.text().strip()
             self.allele1.fromExon = int(self.allele1_sec.exon1_field.text().strip())
             self.allele1.toExon = int(self.allele1_sec.exon2_field.text().strip())
             self.allele1.partner_allele = self.allele2_sec.name_field.text().strip()
@@ -502,27 +488,14 @@ class NewAlleleForm(CollapsibleDialog):
             self.allele2.newAlleleName = self.allele2_sec.name_field.text().strip()
             self.allele2.productName_DE = self.allele2_sec.product_field.text().strip()
             self.allele2.productName_FT = self.allele2.productName_DE
-            self.allele2.cellLine = self.allele2_sec.cell_field.text().strip().strip()
             self.allele2.fromExon = int(self.allele2_sec.exon1_field.text().strip())
             self.allele2.toExon = int(self.allele2_sec.exon2_field.text().strip())
             self.allele2.partner_allele = self.allele1_sec.name_field.text().strip()
             if self.allele1_sec.checkbox.checkState():
                 self.myallele = self.allele1
-                (ok, err_type, msg) = typeloader.cell_line_looks_ok(self.allele1.cellLine)
-                if not ok:
-                    QMessageBox.warning(self, err_type, msg)
-                    self.change_cell_line_btn.change_to_normal()
-                    self.ok_btn.setChecked(False)
-                    return
                 self.log.debug("Choosing allele 1...")
             elif self.allele2_sec.checkbox.checkState():
                 self.myallele = self.allele2
-                (ok, err_type, msg) = typeloader.cell_line_looks_ok(self.allele2.cellLine)
-                if not ok:
-                    QMessageBox.warning(self, err_type, msg)
-                    self.change_cell_line_btn.change_to_normal()
-                    self.ok_btn.setChecked(False)
-                    return
                 self.log.debug("Choosing allele 2...")
                 #TODO: (future) implement possibility to add both alleles
             else:
@@ -531,8 +504,6 @@ class NewAlleleForm(CollapsibleDialog):
             self.ENA_text = typeloader.make_ENA_file(self.blastXmlFile, self.targetFamily, self.myallele, self.settings, self.log)
             self.ENA_widget.setText(self.ENA_text)
             self.name_lbl.setText(self.myallele.newAlleleName)
-            self.cell_line = self.myallele.cellLine
-            self.cell_field2.setText(self.cell_line)
             self.proceed_sections(1, 2)
             
         except Exception as E:
@@ -551,20 +522,6 @@ class NewAlleleForm(CollapsibleDialog):
         self.name_lbl = QLabel()
         self.name_lbl.setStyleSheet(general.label_style_2nd)
         layout.addWidget(self.name_lbl, 0, 0)
-        
-        cell_lbl = QLabel("Cell line:")
-        cell_lbl.setAlignment(Qt.AlignCenter)
-        layout.addWidget(cell_lbl, 0, 2)
-        
-        self.cell_field2 = QLineEdit(self)
-        self.cell_field2.setMaximumWidth(200)
-        self.cell_field2.textChanged.connect(self.on_cellline_text_changed)
-        layout.addWidget(self.cell_field2, 0, 3)
-        
-        self.change_cell_line_btn = ProceedButton("Change cell line", [self.cell_field2], self.log, 2, self)
-        layout.addWidget(self.change_cell_line_btn, 0, 4)
-        self.change_cell_line_btn.change_to_normal()
-        self.change_cell_line_btn.clicked.connect(self.change_cell_line)
         
         self.ENA_widget = QTextEdit(self)
         self.ENA_widget.textChanged.connect(self.on_text_changed)
@@ -601,20 +558,6 @@ class NewAlleleForm(CollapsibleDialog):
             self.log.exception(E)
     
     @pyqtSlot()
-    def on_cellline_text_changed(self):
-        """handle text edits in cell line field
-        """
-        try:
-            if self.cell_field2.text() != self.cell_line:
-                self.change_cell_line_btn.setEnabled(True)
-                self.change_cell_line_btn.setStyleSheet(general.btn_style_clickme)
-                self.cell_line_unsaved = True
-                self.save_btn.setEnabled(False)
-                self.save_btn.setStyleSheet(general.btn_style_normal)
-        except Exception as E:
-            self.log.exception(E)
-            
-    @pyqtSlot()
     def save_changes(self):
         """saves the edited file
         """
@@ -624,7 +567,7 @@ class NewAlleleForm(CollapsibleDialog):
             if txt:
                 self.log.debug("Saving changes?")
                 reply = QMessageBox.question(self, 'Message',
-                                             "Save changes to ENA-file for {}?".format(self.cell_line), 
+                                             "Save changes to ENA-file for {}?".format(self.allele_name), 
                                              QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         
                 if reply == QMessageBox.Yes:
@@ -657,32 +600,6 @@ class NewAlleleForm(CollapsibleDialog):
         except Exception as E:
             self.log.exception(E)
     
-    @pyqtSlot()
-    def change_cell_line(self):
-        """changes the cell-line to the content of self.cell_field2
-        """
-        try:
-            new_cell_line = self.cell_field2.text()
-            (ok, err_type, msg) = typeloader.cell_line_looks_ok(new_cell_line)
-            if not ok:
-                QMessageBox.warning(self, err_type, msg)
-                self.change_cell_line_btn.change_to_normal()
-                self.ok_btn.setChecked(False)
-                return
-            
-            else:
-                self.log.debug("Changing cell line from {} to {}...".format(self.cell_line, new_cell_line))
-                self.ENA_text = self.ENA_text.replace(self.cell_line, new_cell_line)
-                self.ENA_widget.setText(self.ENA_text)
-                self.cell_line = new_cell_line
-                self.cell_line_unsaved = False
-                self.change_cell_line_btn.change_to_normal()
-                self.cell_field2.setStyleSheet(general.line_style_normal)
-                self.save_btn.check_ready()
-                self.log.debug("\t=> Success")
-        except Exception as E:
-            self.log.exception(E)
-            
     @pyqtSlot(int)
     def save_allele(self, _):
         """saves the allele & closes the dialog
@@ -690,33 +607,16 @@ class NewAlleleForm(CollapsibleDialog):
         try:
             self.log.debug("Asking for confirmation before saving...")
             self.project = self.proj_widget.field.text()
-            self.myallele.cellLine = self.cell_field2.text().strip()
-            (ok, err_type, msg) = typeloader.cell_line_looks_ok(self.cell_line)
-            if not ok:
-                QMessageBox.warning(self, err_type, msg)
-                self.change_cell_line_btn.change_to_normal()
-                self.ok_btn.setChecked(False)
-                return False
             if self.project:
                 if self.settings["modus"] == "staging":
                     reply = QMessageBox.Yes # for automatic runthrough
                 else:
                     reply = QMessageBox.question(self, 'Message',
-                    "Save allele {} of {} to project {}?".format(self.cell_line, self.sample_name, self.project), QMessageBox.Yes | 
+                    "Save allele {} to project {}?".format(self.myallele.local_name, self.project), QMessageBox.Yes | 
                                                                     QMessageBox.No, QMessageBox.No)
                 if reply == QMessageBox.Yes:
-                    # check uniqueness of cell-line:
-                    (unique, err_type, msg) = typeloader.check_cellLine_unique(self.cell_line, self.settings, self.log) 
-                    if not unique:
-                        self.log.debug("Cell line is not unique, please change!")
-                        QMessageBox.warning(self, err_type, msg)
-                        self.save_btn.setStyleSheet(general.btn_style_normal)
-                        self.cell_field2.setStyleSheet(general.line_style_changeme)
-                        self.save_btn.setChecked(False)
-                        return False
-                    
                     # save sample files:
-                    results = typeloader.save_new_allele(self.project, self.sample_name, self.cell_line, 
+                    results = typeloader.save_new_allele(self.project, self.sample_name, self.myallele.local_name, 
                                                          self.ENA_text, self.filetype, self.temp_raw_file, 
                                                          self.blastXmlFile, self.fasta_filename,
                                                          self.settings, self.log)
@@ -729,8 +629,8 @@ class NewAlleleForm(CollapsibleDialog):
                     
                     # save to db & emit signals:
                     [self.raw_file, self.fasta_filename, self.blastXmlFile, self.ena_path] = files
-                    (success, err_type, msg) = typeloader.save_new_allele_to_db(self.myallele, self.project, self.sample_name, 
-                                                                                self.cell_line, self.filetype, self.raw_file, 
+                    (success, err_type, msg) = typeloader.save_new_allele_to_db(self.myallele, self.project, 
+                                                                                self.filetype, self.raw_file, 
                                                                                 self.fasta_filename, self.blastXmlFile,
                                                                                 self.header_data, self.targetFamily,
                                                                                 self.ena_path, self.settings, self.mydb, self.log)
@@ -739,12 +639,10 @@ class NewAlleleForm(CollapsibleDialog):
                         self.refresh_alleles.emit(self.project, self.sample_name)
                         self.close()
                     else:
-                        log.info("Not successful!")
-                        log.warning(err_type)
-                        log.info(msg)
+                        self.log.info("Not successful!")
+                        self.log.warning(err_type)
+                        self.log.info(msg)
                         if err_type: # if QMessageBox has already been shown, err_type is false => do nothing
-                            if err_type == "Cell line not unique!":
-                                self.cell_field2.setStyleSheet(general.line_style_changeme)
                             self.save_btn.setStyleSheet(general.btn_style_normal)
                             self.save_btn.setChecked(False)
                             QMessageBox.warning(self, err_type, msg)
@@ -774,7 +672,7 @@ if __name__ == '__main__':
     mydb = create_connection(log, mysettings["db_file"])
     
     app = QApplication(sys.argv)
-    ex = NewAlleleForm(log, mydb, "20180705_ADMIN_IPD_NEB1", mysettings)
+    ex = NewAlleleForm(log, mydb, "20181207_ADMIN_HLA-B_NEB1", mysettings)
 #     ex = QueryBox(log, mysettings)
     ex.show()
     

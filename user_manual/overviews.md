@@ -2,11 +2,11 @@
 
 TypeLoader offers two general overviews over its elements:
 
-  * **[=> Projects Overview](overview_project.md)**: all projects handled by this account
-  * **[=> Alleles Overview](overview_alleles.md)**: all target alleles handled by this account
+  * **[=> Project Overview](overview_project.md)**: all projects handled by this account
+  * **[=> Allele Overview](overview_alleles.md)**: all target alleles handled by this account
 
-These overview tables can be sorted by any column using the filter over the tables. You can either search for full words or parts of them. Using regular expressions is also supported.
+These overview tables can be sorted by any column using the filter over the respective table. You can either search for full words or parts of them. Using regular expressions is also supported.
 
-The overview tables do not allow editing. To change data, you have to open the element you want to change in it's [=> Detailled Views](detailed_views.md).
+The overview tables do not allow editing. To change data, you have to open the element you want to change in it's [=> Detailed Views](detailed_views.md).
 
-To open a detailled view of an element (a target allele or project), right click the row you want and choose ``Open Allele View`` or ``Open Project View``.
+To open a Detailed View of an element (a target allele or a project), rightclick the row you want and choose ``Open Allele View`` or ``Open Project View``.

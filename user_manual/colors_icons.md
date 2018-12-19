@@ -75,13 +75,13 @@ The status ``Open`` should be used for projects with contain non-finished allele
 
 Only for open projects can you
 
-  * add new alleles (using the [=> New Allele Dialog](new_allele.md)
+  * add new alleles (using the [=> New Allele Dialog](new_allele.md))
   * submit alleles to ENA
   * submit alleles to IPD
 
 Open projects are listed first in the [=> Navigation Area](navigation.md) (this section is always extended on startup). 
 
-The [=> Projects Overview](overview_project.md) by default only shows open projects.
+The [=> Project Overview](overview_project.md) by default only shows open projects.
 
 ####  Closed projects 
 The status ``Closed`` should be used for projects on which all work has been finished. All their target alleles should have a ``green`` allele status (see above).
@@ -90,7 +90,7 @@ The status ``Closed`` should be used for projects on which all work has been fin
 
 Closed projects are listed separately on the bottom of the [=> Navigation Area](navigation.md). By default, this section is colapsed on startup.
 
-The [=> Projects Overview](overview_project.md) by default hides all closed projects. They can be shown using a toggle-button.
+The [=> Project Overview](overview_project.md) by default hides all closed projects. They can be shown using a toggle-button.
 
 ###  Changing the project status 
 To change a project's status, open its [=> Project View](view_project.md) and click the ``Close Project`` or ``Open Project`` button (whichever applies; the button will change its text accordingly) in the center top area. 

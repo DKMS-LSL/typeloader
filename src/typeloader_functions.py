@@ -20,17 +20,21 @@ from collections import defaultdict
 
 from typeloader_core import (EMBLfunctions as EF, coordinates as COO, backend_make_ena as BME, 
                              backend_enaformat as BE, getAlleleSeqsAndBlast as GASB,
-                             closestallele as CA)
+                             closestallele as CA, errors)
 import general, db_internal
 #===========================================================
 # parameters:
 
 from __init__ import __version__
+#from src.typeloader_core.errors import IncompleteSequenceError
+from typeloader_core.errors import IncompleteSequenceError
 
 flatfile_dic = {"function_hla" : "antigen presenting molecule",
                 "function_kir" : "killer-immunoglobulin receptor",
                 "productname_hla_i" : "MHC class I antigen",
                 "productname_hla_ii" : "MHC class II antigen",
+                "productname_hla_i_null" : "MHC class I antigen null allele",
+                "productname_hla_ii_null" : "MHC class II antigen null allele",
                 "productname_kir_long" : "Human Killer-cell Immunoglobulin-like Receptor",
                 "productname_kir_short" : "Killer-cell Immunoglobulin-like Receptor",
                 "species" : "Homo sapiens"}
@@ -38,21 +42,55 @@ flatfile_dic = {"function_hla" : "antigen presenting molecule",
 #===========================================================
 # classes:
 
-class Allele():
-    def __init__(self, gendx_result, gene, name, product, targetFamily,
-                 cellLine = "", newAlleleName = "", partner_allele = ""):
+class Allele:
+    def __init__(self, gendx_result, gene, name, product, targetFamily, sample_id_int, settings, log,
+                 newAlleleName = "", partner_allele = "", parent = None):
         self.gendx_result = gendx_result
         self.targetFamily = targetFamily
+        self.gene = gene
         if targetFamily == "HLA":
-            self.gene = "HLA-" + gene
-        else:
-            self.gene = gene
+            if "HLA-" not in gene:
+                self.gene = "HLA-" + gene
         self.name = name
         self.product = product
-        self.cellLine = cellLine
+        self.sample_id_int = sample_id_int
+        self.settings = settings
+        self.log = log
         self.newAlleleName = newAlleleName
         self.partner_allele = partner_allele
-        self.dldfilename = ""
+        self.parent = None
+        self.make_local_name()
+        
+    def make_local_name(self):
+        """creates the local name, cell_line and allele_nr of an allele
+        """
+        self.log.info("Generating local_name and cell_line...")
+        query = "select local_name, gene from alleles where sample_id_int = '{}'".format(self.sample_id_int)
+        success, data = db_internal.execute_query(query, 2, self.log, 
+                                                  "retrieving number of alleles for this sample from the database", 
+                                                  err_type = "Database Error", parent = self.parent)
+        if success:
+            self.allele_nr = len(data) + 1 # number of this allele within this sample
+            if self.allele_nr > 1:
+                self.log.info("\tThis is allele #{} for this sample!".format(self.allele_nr))
+            
+            self.allele_nr_locus = 1
+            if data:
+                for [_, mygene] in data:
+                    if mygene == self.gene:
+                        self.allele_nr_locus += 1
+                
+            locus = self.gene.replace("HLA-","").replace("KIR","")
+            self.cell_line = "_".join([self.settings["cell_line_token"], self.sample_id_int])
+            self.local_name = "_".join([self.cell_line, locus, str(self.allele_nr_locus)])
+            self.log.debug("\tcell_line: {}".format(self.cell_line))
+            self.log.debug("\tlocal_name: {}".format(self.local_name))
+            self.log.debug("\tallele_nr: {}".format(self.allele_nr))
+             
+        else:
+            msg = "Could not retrieve existing alleles of sample {}!".format(self.sample_id_int)
+            self.log.warning(msg)
+            
         
 #===========================================================
 # functions:
@@ -128,13 +166,17 @@ def reformat_header_data(header_data, sample_id_ext, log):
     # store external sample number if given by parameter (needed for testing):
     if sample_id_ext:
         header_data["Spendernummer"] = sample_id_ext
-        
-            
-def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_filename, allelesFilename, header_data, settings, log):
+
+def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_filename, allelesFilename, 
+                          header_data, settings, log):
     log.debug("Processing sequence file...")
     try:
         if filetype == "XML":
-            closestAlleles = CA.getClosestKnownAlleles(blastXmlFile, targetFamily, settings, log)
+            try:
+                closestAlleles = CA.getClosestKnownAlleles(blastXmlFile, targetFamily, settings, log)
+            except errors.IncompleteSequenceError as E:
+                return False, "Incomplete sequence", E.msg
+        
             genDxAlleleNames = list(closestAlleles.keys())
             if closestAlleles[genDxAlleleNames[0]] == 0 or closestAlleles[genDxAlleleNames[1]] == 0:
                 # No BLAST hit at position 1
@@ -154,17 +196,19 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                     products.append(flatfile_dic["productname_hla_i"])
             
             (gendx_result, gene, name, product) = (genDxAlleleNames[0], geneNames[0], alleleNames[0], products[0])
-            allele1 = Allele(gendx_result, gene, name, product, targetFamily)
+            allele1 = Allele(gendx_result, gene, name, product, targetFamily, header_data["sample_id_int"], settings, log)
                  
             (gendx_result, gene, name, product) = (genDxAlleleNames[1], geneNames[1], alleleNames[1], products[1])
-            allele2 = Allele(gendx_result, gene, name, product, targetFamily)
+            allele2 = Allele(gendx_result, gene, name, product, targetFamily, header_data["sample_id_int"], settings, log)
             
             myalleles = [allele1, allele2]
             ENA_text = ""
-            cellLine = ""
          
         else: # Fasta-File:
-            annotations = COO.getCoordinates(blastXmlFile, allelesFilename, targetFamily, settings, log)
+            try:
+                annotations = COO.getCoordinates(blastXmlFile, allelesFilename, targetFamily, settings, log)
+            except errors.IncompleteSequenceError as E:
+                return False, "Incomplete sequence", E.msg
             alleles = [allele for allele in annotations.keys()]
             # take the first sequence in fasta file
             alleleName = alleles[0]
@@ -176,8 +220,17 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
             else:
                 extraInformation = annotations[alleleName]["extraInformation"]
                 closestAlleleName = annotations[alleleName]["closestAllele"]
+                #ToDo: store closest allele in db
                 geneName = closestAlleleName.split("*")[0]
                 newAlleleName = "%s:new" % closestAlleleName.split(":")[0]
+                
+                posHash, sequences = EF.get_coordinates_from_annotation(annotations)
+            
+                currentPosHash = posHash[alleleName]
+                sequence = sequences[alleleName]
+                features = annotations[alleleName]["features"]
+                enaPosHash = BME.transform(currentPosHash)
+                null_allele, _ = BME.is_null_allele(sequence, enaPosHash)                
                  
                 # set productName and function
                 gene_tag = "gene"
@@ -187,39 +240,35 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                     function = flatfile_dic["function_kir"]
                     if geneName in settings["pseudogenes"].split("|"):
                         gene_tag = "pseudogene"
+                        null_allele = False
+                    else:
+                        productName_FT = productName_FT + " null allele" if null_allele else productName_FT
                 else:
                     function = flatfile_dic["function_hla"]
-                    geneName = geneName.split("-")[1]
+                    geneName_short = geneName.split("-")[1]
                     # D ...for DQB, DPB, DRB
-                    if geneName.startswith("D"):
-                        productName_FT = productName_DE = (flatfile_dic["productname_hla_ii"]) # class 2 gene
+                    if geneName_short.startswith("D"):
+                        productName_FT = productName_DE = (flatfile_dic["productname_hla_ii"]) \
+                            if null_allele == False else (flatfile_dic["productname_hla_ii_null"]) # class 2 gene
                     else:
-                        productName_FT = productName_DE = (flatfile_dic["productname_hla_i"]) # class 1 gene
+                        productName_FT = productName_DE = (flatfile_dic["productname_hla_i"]) \
+                            if null_allele == False else (flatfile_dic["productname_hla_i_null"]) # class 1 gene
                 
-                with open(fasta_filename, "rU") as f:
-                    parser = SeqIO.parse(f, "fasta")
-                    record = parser.__next__()
-                    cellLine = record.id.strip()
-                 
-                posHash, sequences = EF.get_coordinates_from_annotation(annotations)
-                 
-                currentPosHash = posHash[alleleName]
-                sequence = sequences[alleleName]
-                features = annotations[alleleName]["features"]
-                enaPosHash = BME.transform(currentPosHash)
-                 
+                myallele = Allele("", geneName, newAlleleName, productName_FT, targetFamily, header_data["sample_id_int"],
+                                  settings, log, newAlleleName)
+                myallele.null_allele = null_allele
+                myalleles = [myallele]
+                
                 generalData = BME.make_globaldata(gene_tag = gene_tag, gene = geneName, allele = newAlleleName, product_DE = productName_DE, product_FT = productName_FT, 
                                                   function = function, species = flatfile_dic["species"], 
-                                                  seqLen = str(len(sequence)), cellline = cellLine)
-                ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash) + BME.make_genemodel(BE.backend_dict, generalData, enaPosHash, extraInformation, features, 0, 0) + BME.make_footer(BE.backend_dict, sequence)
-                myallele = Allele("", geneName, newAlleleName, productName_FT, targetFamily, cellLine, newAlleleName)
-                myalleles = [myallele]
+                                                  seqLen = str(len(sequence)), cellline = myallele.local_name)
+                ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, null_allele) + BME.make_genemodel(BE.backend_dict, generalData, enaPosHash, extraInformation, features, 0, 0) + BME.make_footer(BE.backend_dict, sequence)
                 #TODO (future): accept multiple sequences from one fasta file
-        return True, myalleles, ENA_text, cellLine
+        return True, myalleles, ENA_text
     except Exception as E:
         log.error(E)
         log.exception(E)
-        return False, "Error while processing the sequence file", repr(E)
+        return False, "Error while processing the sequence file", repr(E), None
         
 
 
@@ -239,7 +288,13 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log):
     enaPosHash = BME.transform(currentPosHash)
     extraInformation = annotations[allele.alleleName]["extraInformation"]
     features = annotations[allele.alleleName]["features"]
-
+    
+    if allele.geneName in settings["pseudogenes"].split("|"):
+        allele.null_allele = False # whole locus is already pseudogene
+    else:
+        allele.null_allele, _ = BME.is_null_allele(sequence, enaPosHash)
+        allele.productName_FT = allele.productName_FT + " null allele" if allele.null_allele else allele.productName_FT
+    
     generalData = BME.make_globaldata(gene_tag = "gene",
                                       gene = allele.geneName, 
                                       allele = allele.newAlleleName, 
@@ -248,8 +303,8 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log):
                                       function = flatfile_dic["function_hla"], 
                                       species = flatfile_dic["species"], 
                                       seqLen = str(len(sequence)), 
-                                      cellline = allele.cellLine)
-    ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash) 
+                                      cellline = allele.local_name)
+    ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, allele.null_allele) 
     ENA_text += BME.make_genemodel(BE.backend_dict, generalData, enaPosHash, 
                                     extraInformation, features, allele.fromExon, allele.toExon) 
     ENA_text += BME.make_footer(BE.backend_dict, sequence)
@@ -257,94 +312,48 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log):
     
     return ENA_text
 
-def cell_line_looks_ok(cell_line):
-    """check cell_line for right pattern,
-    if ok return True,
-    else popup QMessageBox & return False
-    """
-    pattern = "^[a-zA-Z0-9_]+-[a-zA-Z0-9_]+-[a-zA-Z0-9-_]+$"
-    if re.match(pattern, cell_line):
-        return (True, None, None)
-    else:
-        return (False, "Bad cell_line pattern!", "Cell_lines must follow the pattern <lab>-<locus>-<nr>! All special characters except _ and - are forbidden.")
-    
         
-def check_cellLine_unique(cell_line, settings, log):
-    """checks whether this cell_line already exists in the database;
-    if yes, returns False (not unique), if not, returns True
-    """
-    #TODO: (future) potentially keep all existing cell_lines in a dict => faster?
-    query = "select allele_status from alleles where cell_line = '{}'".format(cell_line)
-    success, data = db_internal.execute_query(query, 1, log, 
-                                              "checking cell-line uniqueness", 
-                                              "Database error")
-    if not success:
-        msg = data
-        return (False, "Database error", msg)
-        
-    if data:
-        msg = "Cell line {} already exists! Please change!".format(cell_line)
-        return (False, "Cell line not unique!", msg)
-    else: # cell line new
-        return (True, None, None)
-
-
-def make_dldfilename(cellLine, filetype):
-    """creates download-filename
-    """
-    raw_filename = cellLine.replace("*","_").replace(":","-") # remove non-allowed characters
-    if filetype == "FASTA":
-        return raw_filename
-    
-    s = raw_filename.split("-")
-    dldfilename = "-".join(s[:2]) + "-"
-    cellLineAlpha = s[2]
-    cellLineNum = "-".join(s[3:])
-    dldfilename += cellLineAlpha + "-" + cellLineNum
-    return dldfilename
-
-       
-def move_files_to_sample_dir(project, sample_name, cellLine, filetype,
+def move_files_to_sample_dir(project, sample_name, local_name, filetype,
                              temp_raw_file, blastXmlFile, fasta_filename,
                              settings, log):
     """creates sample_dir and moves all sequence files there,
     renames them to cell line
     """
-    dldfilename = make_dldfilename(cellLine, filetype)
     project_dir = os.path.join(settings["projects_dir"], project)
     sample_dir = os.path.join(project_dir, sample_name)
     if not os.path.isdir(sample_dir):
         os.makedirs(sample_dir)
     log.debug("\tMoving files to sample_dir: {}".format(sample_dir))
-    raw_file = general.move_rename_file(temp_raw_file, sample_dir, dldfilename)
-    blastXmlFile = general.move_rename_file(blastXmlFile, sample_dir, dldfilename)
+    raw_file = general.move_rename_file(temp_raw_file, sample_dir, local_name)
+    blastXmlFile = general.move_rename_file(blastXmlFile, sample_dir, local_name)
     if filetype == "XML":
-        fasta_filename = general.move_rename_file(fasta_filename, sample_dir, dldfilename)
+        fasta_filename = general.move_rename_file(fasta_filename, sample_dir, local_name)
     else:
         fasta_filename = raw_file
-    return sample_dir, raw_file, fasta_filename, blastXmlFile, dldfilename
+    return sample_dir, raw_file, fasta_filename, blastXmlFile
 
 
-def save_new_allele(project, sample_name, cell_line, ENA_text,
+def save_new_allele(project, sample_name, local_name, ENA_text,
                     filetype, temp_raw_file, blastXmlFile, fasta_filename,
                     settings, log):
     """saves files of new target allele and writes ENA file
     """
+    log.debug("Saving files for allele {}...".format(local_name))
     try:
         # create sample folder & move files there:
-        results = move_files_to_sample_dir(project, sample_name, cell_line, 
+        results = move_files_to_sample_dir(project, sample_name, local_name, 
                                            filetype, temp_raw_file, blastXmlFile, fasta_filename,
                                            settings, log)
-        (sample_dir, raw_file, fasta_filename, blastXmlFile, dldfilename) = results
+        (sample_dir, raw_file, fasta_filename, blastXmlFile) = results
     except Exception as E:
         log.error(E)
         log.exception(E)
-        msg = "Could not save the sample's files under {}\n\n{}".format(sample_dir, repr(E))
+        msg = "Could not save the sample's files\n\n{}".format(repr(E))
         return (False, "ENA file creation error", msg, None)
     
     try:
         # write ENA file:
-        ena_path = os.path.join(sample_dir, dldfilename + ".ena.txt")
+        ena_path = os.path.join(sample_dir, local_name + ".ena.txt")
         log.info("\tSaving this allele of sample {} to {}".format(sample_name, ena_path))
         with open(ena_path, "w") as g:
             g.write(ENA_text.strip())
@@ -352,14 +361,14 @@ def save_new_allele(project, sample_name, cell_line, ENA_text,
     except Exception as E:
         log.error(E)
         log.exception(E)
-        msg = "Could not write the ENA file for {}\n\n{}".format(cell_line, repr(E))
+        msg = "Could not write the ENA file for {}\n\n{}".format(local_name, repr(E))
         return (False, "ENA file creation error", msg, None)
     
     files = [raw_file, fasta_filename, blastXmlFile, ena_path]
     return (True, None, None, files)
 
 
-def save_new_allele_to_db(allele, project, sample_name, cell_line,
+def save_new_allele_to_db(allele, project, 
                           filetype, raw_file, fasta_filename, blastXmlFile,
                           header_data, targetFamily,
                           ena_path, settings, mydb, log):
@@ -367,18 +376,6 @@ def save_new_allele_to_db(allele, project, sample_name, cell_line,
     """
     try:
         log.info("Saving allele {} to database...".format(allele.newAlleleName))
-        
-        # check if cell line unique:
-        query3 = "select count(*) from alleles where cell_line = '{}'".format(cell_line)
-        success, data = db_internal.execute_query(query3, 1, log, 
-                                                  "checking if cell line already used", 
-                                                  err_type = "Database Error", parent = None)
-        if success:
-            if data != [[0]]:
-                msg = "Cell line {} already exists! Please change!".format(cell_line)
-                return (False, "Cell line not unique!", msg)
-        else:
-            return (False, False, False)
         
         # get numbers to increment from database:
         query1 = "select count(*) from alleles where project_name = '{}'".format(project)
@@ -391,53 +388,42 @@ def save_new_allele_to_db(allele, project, sample_name, cell_line,
             except IndexError:
                 project_nr = 1
         else:
+            log.warning("Could not retrieve existing alleles of project {}!".format(project))
             return (False, False, False)
          
-        query2 = "select count(*) from alleles where sample_id_int = '{}'".format(sample_name)
-        success, data = db_internal.execute_query(query2, 1, log, 
-                                                  "retrieving number of alleles for this sample from the database", 
-                                                  err_type = "Database Error", parent = None)
-        if success:
-            try:
-                allele_nr = data[0][0] + 1
-            except IndexError:
-                allele_nr = 1
-            if allele_nr > 1:
-                log.info("\tThis is allele #{} for this sample!".format(allele_nr))
-        else:
-            return (False, False, False)
-        
         # prepare data:
-        if settings["local_name_basis"] == "internal":
-            local_name = "_".join([sample_name, allele.gene.replace("HLA-","").replace("KIR",""), str(allele_nr)])
-        else:
-            local_name = "_".join([header_data["Spendernummer"], allele.gene.replace("HLA-","").replace("KIR",""), str(allele_nr)])
         if targetFamily == "HLA":
             reference = "IPD-IMGT/HLA"
         else:
             reference = "IPD-KIR"
         if not allele.partner_allele:
             allele.partner_allele = header_data["partner_allele"]
-
+        if allele.null_allele:
+            null_allele = 'yes'
+        else:
+            null_allele = 'no'
         update_queries = []
         # update ALLELES table:
         update_alleles_query = """INSERT INTO alleles 
-        (sample_id_int, allele_nr, project_name, project_nr, cell_line, local_name, GENE, 
-        Goal, Allele_status, Lab_Status,
+        (sample_id_int, allele_nr, project_name, project_nr, local_name, GENE, 
+        Goal, Allele_status, Lab_Status, 
+        null_allele,
         target_allele, partner_allele, reference_database,
         long_read_data, long_read_phasing, long_read_technology,
         short_read_data, short_read_phasing, short_read_technology,
         New_genotyping_software, New_software_version, New_genotyping_date, 
         kommentar, Database_version, upload_date)
         VALUES 
-        ('{}', '{}', '{}', {}, '{}', '{}', '{}', 
-        'novel', 'ENA-ready', 'completed',
+        ('{}', '{}', '{}', {}, '{}', '{}', 
+        'novel', 'ENA-ready', 'completed', 
+        '{}',
         '{}', '{}', '{}',
         '{}', '{}', '{}',
         '{}', '{}', '{}',
         '{}', '{}', '{}', 
         '{}', '{}', '{}')
-        """.format(sample_name, allele_nr, project, project_nr, cell_line, local_name, allele.gene, 
+        """.format(allele.sample_id_int, allele.allele_nr, project, project_nr, allele.local_name, allele.gene,
+                   null_allele,
                    allele.newAlleleName, allele.partner_allele, reference,
                    header_data["lr_data"], header_data["lr_phasing"], header_data["lr_tech"], 
                    header_data["sr_data"], header_data["sr_phasing"], header_data["sr_tech"],
@@ -446,28 +432,28 @@ def save_new_allele_to_db(allele, project, sample_name, cell_line,
         update_queries.append(update_alleles_query)
         
         # update SAMPLES table:
-        query4 = "select count(*) from samples where SAMPLE_ID_INT = '{}'".format(sample_name)
+        query4 = "select count(*) from samples where SAMPLE_ID_INT = '{}'".format(allele.sample_id_int)
         success, data = db_internal.execute_query(query4, 1, log, 
                                                   "checking if sample already known", 
                                                   err_type = "Database Error", parent = None)
         if success:
-            if data != [[0]]:
+            if data != [[0]]: # if sample already known, don't re-enter it
                 pass
             else:
                 update_samples_query = """INSERT INTO samples
-                (SAMPLE_ID_INT, SAMPLE_ID_EXT) values ('{}', '{}')
-                """.format(sample_name, header_data["Spendernummer"])
+                (SAMPLE_ID_INT, SAMPLE_ID_EXT, CELL_LINE) values ('{}', '{}', '{}')
+                """.format(allele.sample_id_int, header_data["Spendernummer"], allele.cell_line)
                 update_queries.append(update_samples_query)
         else:
             return (False, False, False)
              
         # update FILES table:
         update_files_query =  """INSERT INTO files
-        (Sample_ID_int, cell_line, allele_nr, project, raw_file_type, raw_file, fasta, 
+        (Sample_ID_int, local_name, allele_nr, project, raw_file_type, raw_file, fasta, 
         blast_xml, ena_file) values 
         ('{}', '{}', {}, '{}', '{}', '{}', '{}', 
         '{}', '{}')
-        """.format(sample_name, cell_line, allele_nr, project, filetype, os.path.basename(raw_file), os.path.basename(fasta_filename), 
+        """.format(allele.sample_id_int, allele.local_name, allele.allele_nr, project, filetype, os.path.basename(raw_file), os.path.basename(fasta_filename), 
                    os.path.basename(blastXmlFile), os.path.basename(ena_path))
         update_queries.append(update_files_query)
         
@@ -523,9 +509,8 @@ def parse_bulk_csv(csv_file, settings, log):
                         sample_id_int = row[3].strip()
                         sample_id_ext = row[4].strip()
                         customer = row[5].strip()
-                        cell_line = row[6].strip()
                         if not err:
-                            myallele = [nr, sample_id_int, sample_id_ext, mypath, customer, cell_line]
+                            myallele = [nr, sample_id_int, sample_id_ext, mypath, customer]
                             alleles.append(myallele)
     log.info("\t=> {} processable alleles found in {} rows".format(len(alleles), i))
     return alleles, error_dic, i
@@ -539,70 +524,55 @@ def bulk_upload_new_alleles(csv_file, project, settings, mydb, log):
     alleles, error_dic, num_rows = parse_bulk_csv(csv_file, settings, log)
     successful = []
     for allele in alleles:
-        [nr, sample_id_int, sample_id_ext, raw_path, customer, cell_line] = allele
-        # check cell-line format:
-        (ok, err_type, msg) = cell_line_looks_ok(cell_line)
-        if settings["modus"] == "debugging":
-            try:
-                delete_sample(sample_id_int, 1, project, settings, log)
-            except:
-                pass
-        if not ok:
-            error_dic[nr].append(":".join([err_type, msg]))
+        [nr, sample_id_int, sample_id_ext, raw_path, customer] = allele
+        log.info("Uploading #{}: {}...".format(nr, sample_id_int))
+        # upload raw file:
+        results = upload_parse_sequence_file(raw_path, settings, log)
+        if results[0] == False: # something went wrong
+            error_dic[nr].append(":".join([results[1], results[2]]))
         else:
-            log.info("Uploading #{}: {} ({})...".format(nr, cell_line, sample_id_int))
-            # upload raw file:
-            results = upload_parse_sequence_file(raw_path, settings, log)
+            log.debug("\t=> success")
+            (_, _, filetype, temp_raw_file, blastXmlFile, 
+             targetFamily, fasta_filename, allelesFilename, header_data) = results
+            reformat_header_data(header_data, sample_id_ext, log)
+            if customer:
+                header_data["Customer"] = customer
+            # process raw file:
+            sample_name = sample_id_int
+            header_data["sample_id_int"] = sample_id_int
+            results = process_sequence_file(project, filetype, blastXmlFile, 
+                                            targetFamily, fasta_filename, allelesFilename, 
+                                            header_data, settings, log)
             if results[0] == False: # something went wrong
                 error_dic[nr].append(":".join([results[1], results[2]]))
+                
             else:
                 log.debug("\t=> success")
-                (_, _, filetype, temp_raw_file, blastXmlFile, 
-                 targetFamily, fasta_filename, allelesFilename, header_data) = results
-                reformat_header_data(header_data, sample_id_ext, log)
-                if customer:
-                    header_data["Spendernummer"] = customer
-                # process raw file:
-                sample_name = sample_id_int
-                results = process_sequence_file(project, filetype, blastXmlFile, 
-                                                targetFamily, fasta_filename, allelesFilename, 
-                                                header_data, settings, log)
-                if results[0] == False: # something went wrong
-                    error_dic[nr].append(":".join([results[1], results[2]]))
-                    
+                (_, myalleles, ENA_text) = results
+                myallele = myalleles[0]
+                myallele.sample_id_int = sample_id_int
+                myallele.make_local_name()
+                # save allele files:
+                results = save_new_allele(project, sample_name, myallele.local_name, ENA_text, 
+                                          filetype, temp_raw_file, blastXmlFile, fasta_filename,
+                                          settings, log)
+                (success, err_type, msg, files) = results
+                if not success:
+                    error_dic[nr].append(":".join([err_type, msg]))
                 else:
-                    log.debug("\t=> success")
-                    (_, myalleles, ENA_text, local_cell_line) = results
-                    myallele = myalleles[0]
-                    if cell_line:
-                        ENA_text = ENA_text.replace(local_cell_line, cell_line)
-                    
-                    # check uniqueness of cell line:
-                    (unique, err_type, msg) = check_cellLine_unique(cell_line, settings, log) 
-                    if not unique:
-                        error_dic[nr].append(":".join([err_type, msg]))
+                    [raw_file, fasta_filename, blastXmlFile, ena_path] = files
+                    # save to db & emit signals:
+                    (success, err_type, msg) = save_new_allele_to_db(myallele, project, 
+                                                                     filetype, raw_file, 
+                                                                     fasta_filename, blastXmlFile,
+                                                                     header_data, targetFamily,
+                                                                     ena_path, settings, mydb, log)
+                    if success:
+                        msg = "  - #{}: {}".format(nr, myallele.local_name)
+                        successful.append(msg)
                     else:
-                        # save allele files:
-                        results = save_new_allele(project, sample_name, cell_line, ENA_text, 
-                                                  filetype, temp_raw_file, blastXmlFile, fasta_filename,
-                                                  settings, log)
-                        (success, err_type, msg, files) = results
-                        if not success:
-                            error_dic[nr].append(":".join([err_type, msg]))
-                        else:
-                            [raw_file, fasta_filename, blastXmlFile, ena_path] = files
-                            # save to db & emit signals:
-                            (success, err_type, msg) = save_new_allele_to_db(myallele, project, sample_name, 
-                                                                            cell_line, filetype, raw_file, 
-                                                                            fasta_filename, blastXmlFile,
-                                                                            header_data, targetFamily,
-                                                                            ena_path, settings, mydb, log)
-                            if success:
-                                msg = "  - #{}: {}".format(nr, cell_line)
-                                successful.append(msg)
-                            else:
-                                error_dic[nr].append(":".join([err_type, msg]))
-        
+                        error_dic[nr].append(":".join([err_type, msg]))
+    
     # format report:
     report = ""
     if len(successful) > 0:
@@ -684,7 +654,7 @@ pass
 # main:
 
 def main(settings, log, mydb):
-    print (cell_line_looks_ok("t-e-s-t4"))
+    pass
     
     
 

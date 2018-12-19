@@ -7,14 +7,14 @@ There currently is no Linux installer (though we plan to create one eventually).
 ## Dependencies
 TypeLoader requires the following dependencies (all versions are minimum versions):
 
- * Python 3.6.1
+ * Python 3.6.6
  * PyQt5 5.9.2
  * pycurl 7.43.0.1
  * BioPython 1.72
  * xmltodict 0.11.0
  * blastn
 
-### Installing the Python modules:
+### Installing the Python modules
 Once Python3.6 is installed, use pip to install the non-standard modules.
 
 ![important](images/icon_important.png) **Do not update pip3 if you can avoid it, it seems to break.**
@@ -56,9 +56,7 @@ blast_path: <path to blastn>
 
 ```
 
-![important](images/icon_important.png) **Please note that you will have to manually create the directory given as root_path. (The Windows installer does this by itself.)**
-
-![important](images/icon_important.png) **All paths must be absolute paths (starting from /home/), not shortened path (starting with ~).**
+![important](images/icon_important.png) **All paths must be absolute paths (starting from /home/), not shortened paths (starting with ~).**
 
 #### config_company.ini
 This file contains your company-internal settings for communication with ENA and IPD.
@@ -76,10 +74,13 @@ lab_contact:
 lab_contact_address: 
 lab_contact_email: 
 submittor_id:
-
+ipd_shortname:
+ipd_submission_lenght: 7
+cell_line_token:
+last_tl_version: 2.2.0
 ```
 
-##### ENA Settings:
+##### ENA Settings
 
 To submit your alleles to IPD, you first have to submit them to ENA (or GenBank or DDBJ, but TypeLoader uses ENA). To get these data, you have to register with ENA as a sequence submitter (follow the instructions on [ENA's 'Register Submission Account' page](https://ena-docs.readthedocs.io/en/latest/reg_01.html)).
 
@@ -89,7 +90,7 @@ To submit your alleles to IPD, you first have to submit them to ENA (or GenBank 
  * **proxy:** You may need this to get past your firewall. If you know or think you have no proxy, leave this field empty. If in doubt, ask your friendly IT people.
  * **xml\_center_name:** This is the name by which ENA knows your lab.
 
-#### IPD Settings:
+#### IPD Settings
 You will have to submit your first IPD file by hand (you can let TypeLoader create it, but you will have to manually edit it before sending it out). Then submit it using [IPD's Submission Page](https://www.ebi.ac.uk/ipd/imgt/hla/subs/submit.html). Only then will you receive a submitter ID, which you can use to generate your future submission files with TypeLoader.
 
 **If you have never submitted alleles to IPD, yet, leave these fields empty!**
@@ -99,6 +100,15 @@ You will have to submit your first IPD file by hand (you can let TypeLoader crea
  * **lab\_contact_address:** Your lab contact's form of address (this is what you provided as "title". (Dr./Mr./Mrs./Ms. etc))
  * **lab\_contact_email:** This is the email adress you registered your IPD contact person with.
  * **submittor_id:** This is the submitter ID you received from IPD.
+ * **ipd_shortname:** A short identifier for your lab (ideally an acronym etc). The generated IPD submission file names will start with this. Use only letters or hyphens.
+ * **ipd\_submission\_length:** The number of digits used for the allele number in the file names of IPD submission files. We recommend setting this value to 7 as specified here.
+
+#### Other Settings
+
+The following additional settings are also needed:
+
+ * **cell\_line\_token:** A short identifier for your lab (ideally an acronym etc). The generated cell line and allele IDs will start with this. Use only letters or hyphens. (Can be identical to ipd_shortname, but doesn't have to.)
+ * **last_tl_version:** This should be the TypeLoader version you are currently installing. It is used internally to handle patches, if they should become necessary. 
 
 ## Running TypeLoader
 Once you have everything set up, rename the file ``src/typeloader_GUI.pyw`` to the extension .py. Then you should be able to execute this as a Python file to run TypeLoader.

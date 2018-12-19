@@ -442,6 +442,9 @@ def get_settings(user, log, cf = None):
             settings_dic[key] = value   
     if settings_dic["modus"] in ["testing", "debugging"]:
         settings_dic["embl_submission"] = settings_dic["embl_submission_test"]
+    for key in ["ipd_shortname", "cell_line_token"]: # if these were not set during install
+        if settings_dic[key] == "a short acronym of your company; use only letters or hyphens!":
+            settings_dic[key] = ""
     settings_dic["TL_version"] = __version__
     log.info("\t=>Success")
     return settings_dic
@@ -557,6 +560,7 @@ def get_latest_version(myurl, repo, log):
                 else:
                     log.debug("\t\t!Did not find a quote delimiter in the version line!")
     except Exception as E:
+        print(E)
         log.exception(E)   
              
     if version:
@@ -637,12 +641,22 @@ def check_root_path(root_path):
     """  
     import errno
     general_dir = os.path.join(root_path, "_general")
+    counter_config = os.path.join(general_dir, "counter_config.ini")
+        
     if os.path.isdir(general_dir):
-        return
+        if os.path.isfile(counter_config):
+            return
+        else:
+            with open(counter_config, "w") as g:
+                g.write("[Counter]\nipd_submissions = 0\n")
+                return
     else:
         try:
             os.makedirs(general_dir)
             print ("Created {}".format(general_dir))
+            with open(counter_config, "w") as g:
+                g.write("[Counter]\nipd_submissions = 0\n")
+            print ("Created counter config file")
         except OSError as e:
             if e.errno != errno.EEXIST: # if dir creation fails for any reason except "dir exists already" 
                 raise

@@ -1,3 +1,4 @@
+#from .backend_enaformat import *
 from .backend_enaformat import *
 from copy import copy
 import textwrap
@@ -10,7 +11,7 @@ def make_globaldata(species="Homo sapiens", gene_tag="", gene="", allele="", par
 def transform(posHash):
 
     utr, exons, introns, pseudoexons = posHash["utr"], posHash["exons"], posHash["introns"], posHash["pseudoexons"]
-    newPosHash = {"utr":[],"exons":{},"introns":{}, "pseudoexons":{}}
+    newPosHash = {"utr":[],"exons":{},"introns":{}, "pseudoexons":{}, "cds":{}}
     offset = 0
 
     min_exon = min(exons, key=int)
@@ -52,15 +53,41 @@ def transform(posHash):
             newPosHash["utr"] = [(),utr[-1]]
     else:
         newPosHash = copy(posHash)
-
-    newPosHash["cds"] = [(pos[0]+offset,pos[1]+offset) for (number, pos) in list(exons.items())]
+    
+    for number, pos in exons.items():
+        newPosHash["cds"][number] = (pos[0]+offset,pos[1]+offset)
 
     return newPosHash
 
-def make_header(backend_dict, general, enaPosHash):
+def is_null_allele(sequence, enaPosHash):
+    
+    # in cds pseudoexons are excluded yet
+    cds = enaPosHash["cds"]
+    cds_sequence = ""
+      
+    for key, value in cds.items():
+        cds_sequence += sequence[cds[key][0]-1:cds[key][1]]
+    
+    # cut the last (stop) codon
+    cds_sequence = cds_sequence[:-3]     
+    seq_len = len(cds_sequence)
+    if seq_len % 3 != 0:
+        return True, "Attention! Number of exon bases not divisible by 3  => null allele!"
+    stop_codons = ["TGA", "TAG", "TAA"]
+    for codon in range(1, seq_len, 3):
+        if cds_sequence[codon-1:codon+2] in stop_codons:
+            return True, "Attention! Preliminary stop codon found => null allele!"        
+      
+    return False, "No null allele!"
 
-    headerop = backend_dict["header"]
-    general["{exon_coord_list}"] = ",".join(["%s..%s" % (region[0],region[1]) for region in enaPosHash["cds"]])
+def make_header(backend_dict, general, enaPosHash, null_allele):
+    
+    if null_allele:
+        headerop = backend_dict["header_null_allele"]
+    else:
+        headerop = backend_dict["header"]
+        
+    general["{exon_coord_list}"] = ",".join(["%s..%s" % (region[0],region[1]) for key, region in enaPosHash["cds"].items()])
     for field in list(general.keys()):
         headerop = headerop.replace(field, general[field])
     return headerop
@@ -70,14 +97,11 @@ def make_genemodel(backend_dict,general,enaPosHash, extraInformation, features, 
     eText = backend_dict["exonString"]
     iText = backend_dict["intronString"]
     peText = backend_dict["pseudoExonString"]
-
+    
     pseudoExonsNums = extraInformation["pseudoexon"]
     exonNums = extraInformation["exon_number"]
     intronNums = extraInformation["intron_number"]
-
-    #print exonNums
-    #print intronNums
-
+    
     genemodelop = ""
 
     exons = enaPosHash["exons"]
@@ -113,19 +137,31 @@ def make_genemodel(backend_dict,general,enaPosHash, extraInformation, features, 
 def make_footer(backend_dict, sequence,seqwidth=80):
 
     fText = backend_dict["footer"]
-    return fText.replace("{sequence}","\n".join(textwrap.wrap(sequence,seqwidth)))
+    sequence_lines = textwrap.wrap(sequence,seqwidth)
+
+    # This is a workaround for ENA ignoring the last line of the sequence if there are only 2 bases on that line (#53)
+    # Once ENA fixes this bug, this if section can be removed
+    if len(sequence) % seqwidth == 2: 
+        new_sequence_lines = sequence_lines[:-2] 
+        new_sequence_lines.append(sequence_lines[-2] + sequence_lines[-1])
+        sequence_lines = new_sequence_lines
+    return fText.replace("{sequence}","\n".join(sequence_lines))
 
 
 if __name__ == '__main__':
 
-    xmlData = parseXML(open(argv[1]).read())
+    seq = "AGTTCACAATGA"
+    null_allele, msg = is_null_allele(seq)
+    print(null_allele, msg)
+    
+    #xmlData = parseXML(open(argv[1]).read())
 
-    alleleName = getAlleleName(xmlData)
-    haplotypes = getHaplotypeIds(xmlData, alleleName)
+    #alleleName = getAlleleName(xmlData)
+    #haplotypes = getHaplotypeIds(xmlData, alleleName)
     #sequence = sequenceFromHaplotype(xmlData, haplotypes)
 
-    print(alleleName)
-    print(haplotypes)
+    #print(alleleName)
+    #print(haplotypes)
 
     #posHash = getCoords(xmlData)
     #enaPosHash = transform(posHash)

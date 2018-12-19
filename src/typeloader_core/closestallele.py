@@ -13,6 +13,7 @@ from sys import argv
 import os
 
 from . import EMBLfunctions as EF
+from .errors import IncompleteSequenceError
 import ntpath
 
 ###################################################
@@ -66,16 +67,18 @@ def parseBlast(xmlRecords, targetFamily, query_fasta_file, settings, log):
 
         ref_sequence = SeqIO.to_dict(SeqIO.parse(output_db, "fasta"))[closestAlleleName].seq
         query_sequence = SeqIO.to_dict(SeqIO.parse(query_fasta_file, "fasta"))[queryId].seq
-        hsp_query, hsp_subject, hsp_match, concatHSPS = puzzleHspsFromFirstHit(hsps, ref_sequence, query_sequence, query_fasta_file)
+        hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start = puzzleHspsFromFirstHit(hsps, ref_sequence, query_sequence, query_fasta_file)
 
         if hsp_query == "" and hsp_subject == "" and hsp_match == "":
             closestAlleles[queryId] = None
         else:
-            closestAlleles[queryId] = closestAlleleItems(hsp_query, hsp_subject, hsp_match, closestAlleleName, concatHSPS)
+            closestAlleles[queryId] = closestAlleleItems(hsp_query, hsp_subject, hsp_match, closestAlleleName, concatHSPS, hsp_start)
 
+    if hsp_start != 1:
+        raise IncompleteSequenceError(hsp_start - 1)
     return closestAlleles
 
-def closestAlleleItems(hsp_query, hsp_subject, hsp_match, closestAlleleName, concatHSPS):
+def closestAlleleItems(hsp_query, hsp_subject, hsp_match, closestAlleleName, concatHSPS, hsp_start):
 
     # "-" in the query means a deletion, "-" in the hit means an insertion, a gap in the alignment is a mismatch
     deletionPositions = [pos + 1 for pos in range(len(hsp_query)) if hsp_query[pos] == "-"]
@@ -95,9 +98,11 @@ def closestAlleleItems(hsp_query, hsp_subject, hsp_match, closestAlleleName, con
     differences = {'deletionPositions':deletionPositions, 'insertionPositions':insertionPositions, 'mismatchPositions':mismatchPositions, \
                        'mismatches':mismatches, 'deletions':deletions, 'insertions':insertions}
 
-    closesAllele = {"name":closestAlleleName,"differences":differences, "exactMatch":exactMatch, "concatHSPS":concatHSPS}
+    closestAllele = {"name":closestAlleleName,"differences":differences, 
+                    "exactMatch":exactMatch, "concatHSPS":concatHSPS,
+                    "hitStart":hsp_start}
 
-    return closesAllele
+    return closestAllele
 
 def puzzleHspsFromFirstHit(hsps, ref_sequence, query_sequence, query_fasta_file):
 
@@ -107,6 +112,7 @@ def puzzleHspsFromFirstHit(hsps, ref_sequence, query_sequence, query_fasta_file)
     hsp_query = potentialClosestHSP.query
     hsp_subject = potentialClosestHSP.sbjct
     hsp_match = potentialClosestHSP.match
+    hsp_start = potentialClosestHSP.sbjct_start
     concatHSPS = False
 
     """
@@ -316,7 +322,7 @@ def puzzleHspsFromFirstHit(hsps, ref_sequence, query_sequence, query_fasta_file)
     filebuff.close()
     """
 
-    return (hsp_query, hsp_subject, hsp_match, concatHSPS)
+    return (hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start)
 
 if __name__ == "__main__":
 

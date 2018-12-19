@@ -27,6 +27,7 @@ label_style_normal = "QLabel {default}"
 label_style_main = "QLabel { font-weight: bold; font-size: 12pt }"
 label_style_2nd = "QLabel { font-weight: bold; font-size: 10pt }"
 label_style_entry = "QLabel {background: white; border: 1 px black}"
+label_style_italic = "QLabel {font: italic}"
 label_style_attention = "QLabel {background: DKMSyellow}".replace("DKMSyellow", stylesheet.color_dic["DKMSyellow"])
 
 btn_style_normal = "QPushButton {default}"
@@ -111,48 +112,6 @@ header_translation_dic = {"locus" : "GENE",
                           "version" : "new_version",
                           "date" : "new_timestamp"
                           }
-#===========================================================
-# typeloader core ini
-
-# ini_dict = {#"DIR" : {"projects" : "projects",
-# #                     "processed" : "processed",
-# #                     "fastafiles" : "fastafiles"},
-# #             "ERROR" : {"err_file" : "error.log"},
-#             "LOGIN_TEST" : {"ftp_user" : "ftpuser",
-#                        "ftp_pwd" : "ftpuser"},
-#             "LOGIN" : {"ftp_user" : "submission@dkms-lab.de",
-#                        "ftp_pwd" : "DKMS2805"},
-#             "GENES" : {"hla" : "HLA",
-#                        "kir" : "KIR"},
-#             "FLATFILE" : {"function_hla" : "antigen presenting molecule",
-#                        "function_kir" : "killer-immunoglobulin receptor",
-#                        "productname_hla_i" : "MHC class I antigen",
-#                        "productname_hla_ii" : "MHC class II antigen",
-#                        "productname_kir_long" : "Human Killer-cell Immunoglobulin-like Receptor",
-#                        "productname_kir_short" : "Killer-cell Immunoglobulin-like Receptor",
-#                        "species" : "Homo sapiens"},
-#             "REFERENCE_DATA" : {"reference_path" : "reference_data",
-#                                 "hla_dat" : "hla.dat",
-#                                 "kir_dat" : "KIR.dat",
-#                                 "parsed_hla" : "parsedhla.fa",
-#                                 "parsed_kir" : "parsedKIR.fa",
-#                                 "hla_version" : "curr_version_hla.txt",
-#                                 "kir_version" : "curr_version_kir.txt"},
-#             "SERVER_LOCAL" : {"embl_ftp" : "192.168.22.163", # local server on Markus' machine
-#                               "embl_submission" : "https://wwwdev.ebi.ac.uk/ena/submit/drop-box/submit/",
-#                               "proxy" : "srvddproxy02.labor.local:3128",
-#                               "userpwd" : "submission@dkms-lab.de:DKMS2805"},
-#             "SERVER_TEST" : {"embl_ftp" : "webin.ebi.ac.uk",
-#                              "embl_submission" : "https://wwwdev.ebi.ac.uk/ena/submit/drop-box/submit/", # ENA's test server
-#                              "proxy" : "srvddproxy02.labor.local:3128",
-#                              "userpwd" : "submission@dkms-lab.de:DKMS2805"},
-#             "SERVER" : {"embl_ftp" : "webin.ebi.ac.uk", # ENA's productive server
-#                        "embl_submission" : "https://www.ebi.ac.uk/ena/submit/drop-box/submit/",
-#                        "proxy" : "srvddproxy02.labor.local:3128",
-#                        "userpwd" : "submission@dkms-lab.de:DKMS2805"},
-#             }
-
-
 #===========================================================
 # classes:
 

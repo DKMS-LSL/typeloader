@@ -492,7 +492,7 @@ class Navigation(QWidget):
                     return
             else:
                 return
-        self.log.debug("Asking for confirmation before closing...")
+        self.log.debug("Asking for confirmation before deleting allele...")
         reply = QMessageBox.question(self, 'Message',
             "Are you really sure you want to delete sample {} allele #{} from project {}?".format(sample, nr, project), QMessageBox.Yes | 
             QMessageBox.No, QMessageBox.No)
