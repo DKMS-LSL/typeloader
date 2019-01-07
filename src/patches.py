@@ -18,6 +18,7 @@ from PyQt5.Qt import pyqtSignal
 from PyQt5.QtGui import QIcon
 
 import general, db_internal
+from __init__ import __version__
 from GUI_login import base_config_file, raw_config_file, company_config_file, user_config_file, get_settings
 from GUI_forms import ProceedButton
 
@@ -112,7 +113,7 @@ class GetPatchInput(QDialog):
             g.write("ipd_shortname = {}\n".format(ipd_short))
             g.write("ipd_submission_length = 7\n")
             g.write("cell_line_token = {}\n".format(token))
-            g.write("last_tl_version = 2.1.0\n")
+            g.write("last_tl_version = 2.2.0\n")
             
         self.log.debug("\tWriting submission counter file...")
         submission_counter_file = os.path.join(self.root_path, "_general", "counter_config.ini")
@@ -387,8 +388,8 @@ def patch_database(settings, version, log):
     log.info("Patching database if necessary...")
     
     last_patched_tl_version = settings["last_tl_version"]
-    if last_patched_tl_version > "2.1":
-        log.info("\t=> everything up to date")
+    if last_patched_tl_version > "2.1.0":
+        log.info("\t=> database up to date")
         return
     log.info("\t=> patching needed!")
     
@@ -438,7 +439,7 @@ def prepare_fresh_file_for_debugging(settings, log):
     shutil.copy(os.path.join(login_dir, "data_old.db"), os.path.join(login_dir, "data.db"))
     
     log.info("\tconfig.ini...")
-    update_last_tl_version(settings, "2.1.0", log)
+    update_last_tl_version(settings, __version__, log)
     log.info("\t=> Done")
     
     
