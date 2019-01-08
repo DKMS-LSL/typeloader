@@ -7,7 +7,6 @@ import os
 import re, subprocess, shutil
 import urllib.request
 import hashlib
-import getpass
 from time import time
 
 from . import hla_embl_parser
@@ -73,15 +72,15 @@ def make_blast_db(target, ref_dir, blast_path, log):
     """
     log.debug("\tCreating local blast database...")
     makeblastdb = os.path.join(blast_path, "makeblastdb")
-    cmd = "{} -dbtype nucl -in {}/parsed{}.fa".format(makeblastdb, ref_dir, target)
+    cmd_list = [makeblastdb, "-dbtype", "nucl", "-in", "{}".format(os.path.join(ref_dir, "parsed{}.fa".format(target)))]
     try:
-        #subprocess.run(cmd, check=True)
-        discard = os.system(cmd)
+        subprocess.run(cmd_list, check=True, shell=False)
         return True, None
     
     except Exception as E:
         log.exception(E)
         msg = "Could not create local blast database:\n{}\n".format(repr(E))
+        cmd = " ".join(cmd_list)
         msg += cmd
         log.debug(cmd)
         return False, msg
@@ -154,8 +153,7 @@ def update_database(db_name, reference_local_path, blast_path, log):
     local_db_file = os.path.join(ref_path_temp, "%s.dat" % use_dbname)
     with urllib.request.urlopen(remote_db_file, timeout = 10) as db_response, open(local_db_file, "wb") as db_local:
         shutil.copyfileobj(db_response, db_local)
-    
-    log.debug("\t => successfully downloaded new {} file".format(db_name))
+        log.debug("\t => successfully downloaded new {} file".format(db_name))
      
     log.debug("\tCreating parsed files...")
     version = hla_embl_parser.make_parsed_files(use_dbname, ref_path_temp, log)
@@ -252,7 +250,7 @@ def main():
     log.info("<Start>")
     db_list = ["hla", "kir"]
     blast_path = r"Y:\Projects\typeloader\blast-2.7.1+\bin"
-    reference_local_path = r"H:\Mitarbeiterordner\Bianca\Eclipse-Workspaces\Python3\Python3\src\typeloader2\src\reference_data2"
+    reference_local_path = r"Y:\Projects\typeloader\temp\_general\reference_data"
     
     for db_name in db_list:
         new_version, msg = check_database(db_name, reference_local_path, log, skip_if_updated_today = False)
