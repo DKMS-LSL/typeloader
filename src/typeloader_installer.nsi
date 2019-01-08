@@ -3167,6 +3167,7 @@ Section Uninstall
   Delete "$INSTDIR\lib\typeloader_core\hla_embl_parser.pyc"
   Delete "$INSTDIR\lib\typeloader_core\getAlleleSeqsAndBlast.pyc"
   Delete "$INSTDIR\lib\typeloader_core\enaemailparser.pyc"
+  Delete "$INSTDIR\lib\typeloader_core\errors.pyc"
   Delete "$INSTDIR\lib\typeloader_core\coordinates.pyc"
   Delete "$INSTDIR\lib\typeloader_core\closestallele.pyc"
   Delete "$INSTDIR\lib\typeloader_core\befundparser.pyc"
