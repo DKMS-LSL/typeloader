@@ -387,7 +387,10 @@ def patch_database(settings, version, log):
     """
     log.info("Patching database if necessary...")
     
-    last_patched_tl_version = settings["last_tl_version"]
+    try:
+        last_patched_tl_version = settings["last_tl_version"]
+    except KeyError:
+        last_patched_tl_version = ""
     if last_patched_tl_version > "2.1.0":
         log.info("\t=> database up to date")
         return

@@ -2957,7 +2957,6 @@ Section "MainSection" SEC01
   File "build\exe.win32-3.6\tables\ipd_submissions.csv"
   File "build\exe.win32-3.6\tables\samples.csv"
   File "build\exe.win32-3.6\tables\projects.csv"
-  File "build\exe.win32-3.6\tables\colors.csv"
   File "build\exe.win32-3.6\tables\files.csv"
   SetOutPath "$INSTDIR\blastn"
   File "build\exe.win32-3.6\blastn\blastn.exe"

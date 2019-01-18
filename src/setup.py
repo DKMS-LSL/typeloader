@@ -13,7 +13,7 @@ for myfile in os.listdir("tables"):
 
 
 build_exe_options = {"includes": ["authuser", "typeloader_core"],
-                     "include_files": ["config_raw.ini", 
+                     "include_files": ["config_raw.ini", "LICENSE.txt",
                                        'icons/', 'tables/', 'blastn/'],
                      "excludes": ["tkinter"]}
 
