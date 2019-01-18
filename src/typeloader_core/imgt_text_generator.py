@@ -146,7 +146,7 @@ def make_imgt_footer(sequence, sequencewidth=60):
     return footerop
 
 
-def make_imgt_text(submissionId, cellLine, enaId, befund, closestAllele, diffToClosest, 
+def make_imgt_text(submissionId, cellLine, local_name, enaId, befund, closestAllele, diffToClosest, 
                    imgtDiff, enafile, sequence, geneMap, settings):
 
     differencesText = refAlleleDiffString.replace("{text}",make_diff_line(diffToClosest, imgtDiff, closestAllele))
@@ -162,6 +162,7 @@ def make_imgt_text(submissionId, cellLine, enaId, befund, closestAllele, diffToC
                             ("{submission_date}", todaystr),
                             ("{release_date}", todaystr),
                             ("{cell_line}", cellLine),
+                            ("{local_name}", local_name),
                             ("{refallele_diffs}", differencesText),
                             ("{ena_id}", enaId),
                             ("{other_alleles}", otherAllelesText),

@@ -7,7 +7,7 @@ XX
 DT   {submission_date} (Submitted)
 DT   {release_date} (Release)
 XX
-DE   {cell_line}
+DE   {local_name}
 XX
 KW   INTERNAL SUBMISSION;
 XX

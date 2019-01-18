@@ -150,8 +150,8 @@ def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, bef
     fixedString = settings["ipd_shortname"]
     variablePartLength = settings["ipd_submission_length"]
     
-    for (sample, cell_line, IPD_ID) in samples:
-        enafile = path.join(project_dir, sample, file_dic[cell_line]["ena_file"])
+    for (sample, local_name, IPD_ID) in samples:
+        enafile = path.join(project_dir, sample, file_dic[local_name]["ena_file"])
         if not path.exists(enafile):
             msg = "Can't find ena file: {}".format(enafile)
             log.warning(msg)
@@ -159,7 +159,7 @@ def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, bef
                 os.remove(lock_file)
             return False, msg, None
         
-        blastOp = path.join(project_dir, sample, file_dic[cell_line]["blast_xml"])
+        blastOp = path.join(project_dir, sample, file_dic[local_name]["blast_xml"])
         if not path.exists(blastOp): 
             msg = "Can't find blast.xml file: {}".format(blastOp)
             log.warning(msg)
@@ -167,17 +167,17 @@ def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, bef
                 os.remove(lock_file)
             return False, msg, None
         try: 
-            enaId = cellEnaIdMap[cell_line]
+            enaId = cellEnaIdMap[local_name]
         except KeyError:
-            msg = "Can't find ENA ID for {}".format(cell_line)
+            msg = "Can't find ENA ID for {}".format(local_name)
             log.warning(msg)
             with contextlib.suppress(FileNotFoundError):
                 os.remove(lock_file)
             return False, msg, None
         try: 
-            gene = geneMapENA[cell_line]
+            gene = geneMapENA[local_name]
         except KeyError:
-            msg = "Can't find gene for {}".format(cell_line)
+            msg = "Can't find gene for {}".format(local_name)
             log.warning(msg)
             with contextlib.suppress(FileNotFoundError):
                 os.remove(lock_file)
@@ -209,7 +209,7 @@ def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, bef
         try: 
             annotations = getCoordinates(blastOp, allelesFilename, targetFamily, settings, log, isENA=False)
         except IncompleteSequenceError as E:
-            return False, (" {}:\n".format(cell_line)) + E.msg, None
+            return False, (" {}:\n".format(local_name)) + E.msg, None
         except Exception as E:
             print("Blast output : ", blastOp)
             print(allelesFilename, targetFamily)
@@ -241,8 +241,14 @@ def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, bef
         else:
             submissionCounter = submissionCounter + 1
             submissionId = format_submission_id(fixedString, variablePartLength, submissionCounter)
-        cell_lines[cell_line] = submissionId
-        imgt_data[submissionId] = make_imgt_text(submissionId, cell_line, enaId, befund,  
+        cell_lines[local_name] = submissionId
+        
+        if sample in local_name: # allele created with V2.2.0 or higher
+            cell_line = "_".join(local_name.split("_")[:-2])
+        else:
+            cell_line = local_name
+             
+        imgt_data[submissionId] = make_imgt_text(submissionId, cell_line, local_name, enaId, befund,  
                                                  closestAllele, diffToClosest, imgtDiff, 
                                                  enafile, sequence, geneMap, settings)
 
@@ -306,7 +312,7 @@ def write_imgt_files(project_dir, samples, file_dic, ENA_id_map, ENA_gene_map,
         log.exception(E)
         success = False
         error = E
-        return False, repr(Es)
+        return False, repr(E)
 
     return (zip_file, cell_lines, customer_dic, resultText, imgt_file_names, success, error)
 

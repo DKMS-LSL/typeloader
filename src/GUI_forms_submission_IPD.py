@@ -72,7 +72,8 @@ class IPDFileChoiceTable(FileChoiceTable):
                                           "Database error", self)
         if success:
             self.data2 = data2
-        
+        print (self.query + self.myfilter2)
+                
         #assemble data from both queries into one dict:
         self.cell_line_dic = {}
         self.data = []
@@ -553,10 +554,10 @@ if __name__ == '__main__':
     sys.excepthook = log_uncaught_exceptions
     log = general.start_log(level="DEBUG")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
-    settings_dic = GUI_login.get_settings("test8", log)
+    settings_dic = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, settings_dic["db_file"])
     
-    project = "20181214_TT_mixed_NEB1"
+    project = "20181204_ADMIN_mixed_IPD"
     app = QApplication(sys.argv)
     ex = IPDSubmissionForm(log, mydb, project, settings_dic)
     ex.show()
