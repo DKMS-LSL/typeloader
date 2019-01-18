@@ -247,7 +247,7 @@ def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, bef
             cell_line = "_".join(local_name.split("_")[:-2])
         else:
             cell_line = local_name
-             
+        
         imgt_data[submissionId] = make_imgt_text(submissionId, cell_line, local_name, enaId, befund,  
                                                  closestAllele, diffToClosest, imgtDiff, 
                                                  enafile, sequence, geneMap, settings)

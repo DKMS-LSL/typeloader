@@ -72,8 +72,7 @@ class IPDFileChoiceTable(FileChoiceTable):
                                           "Database error", self)
         if success:
             self.data2 = data2
-        print (self.query + self.myfilter2)
-                
+        
         #assemble data from both queries into one dict:
         self.cell_line_dic = {}
         self.data = []
