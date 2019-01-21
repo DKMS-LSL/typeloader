@@ -235,7 +235,6 @@ class NewProjectForm(QDialog):
                             QMessageBox.warning(self, "Error during ENA submission!", "Project submission to ENA did not work:\n\n{}!".format(study_err))
                         else:
                             self.log.info("=> Submission sent, awaiting response...")
-                        
                             successful_transmit, self.submission_ID, info_xml, error_xml, _ = EF.parse_register_EMBL_xml(output_filename, "SUBMISSION")
                             successful_transmit, self.accession_ID, info_xml, error_xml, _ = EF.parse_register_EMBL_xml(output_filename, "PROJECT")
                             #TODO: (future) cleanup: put all parsing into one function, add EXT_ID
@@ -247,8 +246,14 @@ class NewProjectForm(QDialog):
                                     error_msg = "{}: {}".format(type(error_xml), str(error_xml))
                                 self.log.error(error_xml)
                                 self.log.exception(error_xml)
-                                QMessageBox.warning(self, "Error during ENA submission!", "Cannot read ENA response file:\n\n{}".format(str(error_msg)))
+                                if "The object being added already exists in the submission account with accession" in error_xml:
+                                    msg = "The project" + error_xml.split("The object")[1]
+                                    msg += "\nPlease choose another pool name and try again!"
+                                    QMessageBox.warning(self, "Project name already in use", msg)
+                                else:
+                                    QMessageBox.warning(self, "Error during ENA submission!", "Cannot read ENA response file:\n\n{}".format(str(error_msg)))
                                 successful_transmit = False
+                                self.submit_btn.setEnabled(False)
                      
                     if successful_transmit == "true":
                         self.log.debug("\t=> transmission to ENA successful")
