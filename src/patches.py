@@ -19,13 +19,11 @@ from PyQt5.QtGui import QIcon
 
 import general, db_internal
 from __init__ import __version__
-from GUI_login import base_config_file, raw_config_file, company_config_file, user_config_file, get_settings
+from GUI_login import local_patchme_file, user_config_file, get_settings
 from GUI_forms import ProceedButton
 
 #===========================================================
 # global parameters:
-
-patch_config_file = "config_patchme.ini"
     
 #===========================================================
 # classes:
@@ -108,12 +106,16 @@ class GetPatchInput(QDialog):
         
         # write config files:
         self.log.debug("\tWriting patch config file...")
-        with open(patch_config_file, "w") as g:
-            g.write("[Company]\n")
-            g.write("ipd_shortname = {}\n".format(ipd_short))
-            g.write("ipd_submission_length = 7\n")
-            g.write("cell_line_token = {}\n".format(token))
-            g.write("last_tl_version = 2.2.0\n")
+        cf = ConfigParser()
+        my_local_patchme_file = os.path.join(self.root_path, local_patchme_file)
+        cf.read(my_local_patchme_file)
+        if not cf.has_section("Company"):
+            cf.add_section("Company")
+        cf.set("Company", "ipd_shortname", ipd_short)
+        cf.set("Company", "ipd_submission_length", "7")
+        cf.set("Company", "cell_line_token", token)
+        with open(my_local_patchme_file, "w") as g:
+            cf.write(g)
             
         self.log.debug("\tWriting submission counter file...")
         submission_counter_file = os.path.join(self.root_path, "_general", "counter_config.ini")
@@ -127,24 +129,27 @@ class GetPatchInput(QDialog):
 #===========================================================
 # functions for config patches:
 
-def check_patching_necessary(log):
+pass
+#===========================================================
+#
+def check_patching_necessary(root_path, log):
     """checks config files for missing values
     """
     log.debug("Checking if any config patches necessary...")
-    patchme_dic = {company_config_file : {"Company" : ["ipd_shortname", "ipd_submission_length", 
-                                                       "last_tl_version", "cell_line_token"]}
+    patchme_dic = {"Company" : ["ipd_shortname", "ipd_submission_length", 
+                                "cell_line_token"]
                    }
     needs_patching = False
-    for config_file in patchme_dic:
-        cf = ConfigParser()
-        cf.read(config_file)
-        for section in patchme_dic[config_file]:
-            for option in patchme_dic[config_file][section]:
-                if not cf.has_option(section, option):
-                    msg = "Config files outdated: option '{}' in section [{}] of {}".format(option, section, config_file)
-                    msg += " missing, please specify!"
-                    log.warning(msg)
-                    needs_patching = True
+    config_file = os.path.join(root_path, local_patchme_file)
+    cf = ConfigParser()
+    cf.read(config_file)
+    for section in patchme_dic:
+        for option in patchme_dic[section]:
+            if not cf.has_option(section, option):
+                msg = "Config file outdated: option '{}' in section [{}]".format(option, section)
+                msg += " missing, please specify!"
+                log.warning(msg)
+                needs_patching = True
     if not needs_patching:
         log.debug("\t=> everything up to date")
     return needs_patching
@@ -168,59 +173,28 @@ def get_users(root_path, log):
     log.debug("\t=> {} users found".format(len(users)))
     return users
 
-def patch_config(root_path, users, log):
-    """patches all existing config files if necessary
+def patch_user_configs(root_path, users, log):
+    """patches all existing user config files if necessary
     """
-    log.info("Patching config files if necessary...")
-    if not os.path.isfile(patch_config_file):
-        log.warning("No patch-config file found!")
+    log.info("Patching existing user config files...")
+    cf_patchme = ConfigParser() # local copy of new fields, to be incorporated into new users
+    my_local_patchme_file = os.path.join(root_path, local_patchme_file)
+    if os.path.isfile(my_local_patchme_file):
+        cf_patchme.read(my_local_patchme_file)
+    else: # nothing to patch
         return
     
-    cf_patch = ConfigParser()
-    cf_patch.read(patch_config_file) # contains new fields to add
-    
-    config_file_dic = {"Company": company_config_file # format: {section_name: which basic config file must be updated} # it is assumed that all existing user.ini files must always be updated
-                   } # only add sections once they need to be patched
-    
-    patch_for_users = [] # list of (section, key, value) tuples that need to be set in user config files 
-    
-    # patch basic config files as needed:
-    for section in cf_patch.sections():
-        my_cf_file = config_file_dic[section]
-        cf_to_patch = ConfigParser()
-        cf_to_patch.read(my_cf_file)
-        needs_editing = False
-        for (key, value) in cf_patch.items(section):
-            try:
-                myvalue = cf_to_patch.get(section, key)
-            except:
-                myvalue = None
-            if value == myvalue: # if not already set
-                log.debug("\t{} already up to date".format(key))
-            else:
-                log.debug("\tNew value in {}: [{}]: {} = {}".format(my_cf_file, section, key, value))
-                cf_to_patch.set(section, key, value)
-                patch_for_users.append((section, key, value))
-                needs_editing = True
-        if needs_editing:
-            log.debug("\t=> Updating file {}...".format(my_cf_file))
-            with open(my_cf_file, "w") as g:
-                cf_to_patch.write(g)
-        else:
-            log.debug("\t=> No patching necessary")
-            
     # patch existing user config files:
-    if patch_for_users:
-        log.debug("Patching individual user config files...")
-        for user in users:
-            log.debug("\t{}...".format(user))
-            user_config = os.path.join(root_path, user, user_config_file)
-            cf = ConfigParser()
-            cf.read(user_config)
-            for (section, key, value) in patch_for_users:
+    for user in users:
+        log.debug("\t{}...".format(user))
+        user_config = os.path.join(root_path, user, user_config_file)
+        cf = ConfigParser()
+        cf.read(user_config)
+        for section in cf_patchme.sections():
+            for (key, value) in cf_patchme.items(section):
                 cf.set(section, key, value)
-            with open(user_config, "w") as g:
-                cf.write(g)           
+        with open(user_config, "w") as g:
+            cf.write(g)           
 
 pass
 #===========================================================
@@ -403,10 +377,12 @@ def patch_database(settings, version, log):
         change_pk_of_ALLELES(conn, cursor, log)
         replace_cell_line_in_FILES(conn, cursor, log)
         add_missing_local_names_to_FILES(conn, cursor, log)
+        log.info("Everything patched successfully!")
         
         cursor.close()
         conn.close()
         success = True
+        log.info("Connection closed.")
     except Exception as E:
         log.exception(E)
         log.error(E)
@@ -424,7 +400,7 @@ def execute_patches(root_path, log):
     """executes all patching
     """
     users = get_users(root_path, log)
-    patch_config(root_path, users, log)
+    patch_user_configs(root_path, users, log)
     
 
 def prepare_fresh_file_for_debugging(settings, log):
@@ -454,17 +430,17 @@ if __name__ == '__main__':
     
     log = general.start_log(level="DEBUG")
     log.info("<Start patches.py>")
-#     app = QApplication(sys.argv)
-#     cf = GUI_login.get_basic_cf()
-#     root_path = cf.get("Paths", "root_path")
-#     patchme = check_patching_necessary(log)
-#     if patchme:
-#         request_user_input(root_path, app, log)
-#         execute_patches(root_path, log)
+    app = QApplication(sys.argv)
+    cf = GUI_login.get_basic_cf()
+    root_path = cf.get("Paths", "root_path")
+    patchme = check_patching_necessary(root_path, log)
+    if patchme:
+        request_user_input(root_path, app, log)
+        execute_patches(root_path, log)
 
-    settings = GUI_login.get_settings("admin", log)
-    prepare_fresh_file_for_debugging(settings, log)
-    patch_database(settings, __version__, log)
+#     settings = GUI_login.get_settings("admin", log)
+#     prepare_fresh_file_for_debugging(settings, log)
+#     patch_database(settings, __version__, log)
     
     log.info("<End patches.py>")
     
