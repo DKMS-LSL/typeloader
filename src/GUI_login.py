@@ -32,6 +32,7 @@ base_config_file = "config_base.ini"
 raw_config_file = "config_raw.ini"
 company_config_file = "config_company.ini"
 user_config_file = "config.ini"
+local_patchme_file = os.path.join("_general", "additional.ini")
 
 from __init__ import __version__
 #===========================================================
@@ -348,47 +349,64 @@ def make_new_settings(root_path, user, user_name, short_name, email, address,
     
     # concatenate raw user config with company config:
     with open(user_ini, "w") as g:
-        with open(raw_config_file, "r") as f:
-            for line in f:
-                g.write(line)
+        config = ConfigParser() # user config, to be created
+        
+        config_read = ConfigParser()
+        for myfile in [raw_config_file, company_config_file]:
+            print(os.path.abspath(myfile))
+            config_read.read(myfile)
+            for section in config_read.sections():
+                if not config.has_section(section):
+                    config.add_section(section)
+                for (key, value) in config_read.items(section):
+                    config.set(section, key, value)
         
         if user.lower().startswith("test") or user.lower() == "admin":
-            g.write("use_ena_server: TEST\n")
-            g.write("modus: testing\n\n")
+            log.info("This is a TEST user.")
+            config.set("Other", "use_ena_server", "TEST")
+            config.set("Other", "modus", "testing")
+            config.set("ENA", "embl_submission", config.get("ENA", "embl_submission_test"))
         else:
-            g.write("use_ena_server: PROD\n")
-            g.write("modus: productive\n\n")
+            log.info("This is a PRODUCTIVE user.")
+            config.set("Other", "use_ena_server", "PROD")
+            config.set("Other", "modus", "productive")
+            config.set("ENA", "embl_submission", config.get("ENA", "embl_submission_prod"))
             
-        with open(company_config_file, "r") as f:
-            for line in f:
-                g.write(line)
-                
-        g.write("[Paths]\n")
-        g.write("raw_files_path: {}\n".format(""))
-        g.write("default_saving_dir: {}\n".format(""))
+        config.add_section("Paths")
+        config.set("Paths", "raw_files_path", "")        
+        config.set("Paths", "default_saving_dir", "")
+        
         cf = get_basic_cf(log)
-        g.write("root_path: {}\n".format(cf.get("Paths", "root_path")))
-        g.write("blast_path: {}\n".format(cf.get("Paths", "blast_path")))
+        config.set("Paths", "root_path", root_path)
+        config.set("Paths", "blast_path", cf.get("Paths", "blast_path"))
         
         # add user paths:
         user_dir = os.path.join(root_path, user)
         log.debug("Preparing user dir under {}".format(user_dir))
-        g.write("login_dir: {}\n".format(user_dir))
+        config.set("Paths", "login_dir", user_dir) 
         projects_dir = os.path.join(user_dir, "projects")
-        g.write("projects_dir: {}\n".format(projects_dir))
-        g.write("temp_dir: {}\n".format(os.path.join(user_dir, "temp")))
-        g.write("recovery_dir: {}\n".format(os.path.join(user_dir, "recovery")))
-        g.write("db_file: {}\n".format(os.path.join(user_dir, "data.db")))
-        g.write("dat_path: {}\n".format(root_path))
+        config.set("Paths", "projects_dir", projects_dir) 
+        config.set("Paths", "temp_dir", os.path.join(user_dir, "temp_remove_user")) 
+        config.set("Paths", "recovery_dir", os.path.join(user_dir, "recovery")) 
+        config.set("Paths", "db_file", os.path.join(user_dir, "data.db")) 
+        config.set("Paths", "dat_path", root_path) 
         
         # add user section:
-        g.write("\n[User]\n")
-        g.write("login: {}\n".format(user))
-        g.write("user_name: {}\n".format(user_name))
-        g.write("short_name: {}\n".format(short_name))
-        g.write("email: {}\n".format(email))
-        g.write("address_form: {}\n".format(address))
-    
+        config.add_section("User")
+        config.set("User", "login", user) 
+        config.set("User", "user_name", user_name) 
+        config.set("User", "short_name", short_name) 
+        config.set("User", "email", email) 
+        config.set("User", "address_form", address) 
+
+        # add patchme values:
+        config_read.read(os.path.join(root_path, local_patchme_file))
+        for section in config_read.sections():
+            if not config.has_section(section):
+                config.add_section(section)
+            for (key, value) in config_read.items(section):
+                config.set(section, key, value)
+        config.write(g) 
     log.info("\t=> Done!")
     return user_ini
 
@@ -443,7 +461,9 @@ def get_settings(user, log, cf = None):
     if settings_dic["modus"] in ["testing", "debugging"]:
         settings_dic["embl_submission"] = settings_dic["embl_submission_test"]
     for key in ["ipd_shortname", "cell_line_token"]: # if these were not set during install
-        if settings_dic[key] == "a short acronym of your company; use only letters or hyphens!":
+        if not key in settings_dic:
+            settings_dic[key] = ""
+        elif settings_dic[key] == "a short acronym of your company; use only letters or hyphens!":
             settings_dic[key] = ""
     settings_dic["TL_version"] = __version__
     log.info("\t=>Success")
