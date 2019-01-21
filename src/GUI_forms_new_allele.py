@@ -297,8 +297,8 @@ class NewAlleleForm(CollapsibleDialog):
             raw_path = self.file_widget.field.text()
             self.upload_btn.setChecked(False)
         
-            # upload file to temp dir & parse it:
-            self.log.debug("Uploading '{}' to temp dir...".format(os.path.basename(raw_path)))
+            # upload file to temp_remove_user dir & parse it:
+            self.log.debug("Uploading '{}' to temp_remove_user dir...".format(os.path.basename(raw_path)))
             results = typeloader.upload_parse_sequence_file(raw_path, self.settings, self.log)
             if results[0] == False: # something went wrong
                 QMessageBox.warning(self, results[1], results[2])
