@@ -19,7 +19,7 @@ from PyQt5.QtGui import QIcon
 
 import general, db_internal
 from __init__ import __version__
-from GUI_login import local_patchme_file, user_config_file, get_settings
+from GUI_login import local_patchme_file, user_config_file, company_config_file
 from GUI_forms import ProceedButton
 
 #===========================================================
@@ -141,15 +141,19 @@ def check_patching_necessary(root_path, log):
                    }
     needs_patching = False
     config_file = os.path.join(root_path, local_patchme_file)
+    config_file2 = company_config_file
     cf = ConfigParser()
     cf.read(config_file)
+    cf2 = ConfigParser()
+    cf2.read(config_file2)
     for section in patchme_dic:
         for option in patchme_dic[section]:
             if not cf.has_option(section, option):
-                msg = "Config file outdated: option '{}' in section [{}]".format(option, section)
-                msg += " missing, please specify!"
-                log.warning(msg)
-                needs_patching = True
+                if not cf2.has_option(section, option):
+                    msg = "Config file outdated: option '{}' in section [{}]".format(option, section)
+                    msg += " missing, please specify!"
+                    log.warning(msg)
+                    needs_patching = True
     if not needs_patching:
         log.debug("\t=> everything up to date")
     return needs_patching
