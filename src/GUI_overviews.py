@@ -217,7 +217,9 @@ class SQLTable(QWidget):
         lasterr = q.lastError()
         if lasterr.isValid():
             print(lasterr.text())
-            self.mydb.close()
+            if self.mydb:
+                if (self.mydb.open()):
+                    self.mydb.close()
             exit(1)
 
 

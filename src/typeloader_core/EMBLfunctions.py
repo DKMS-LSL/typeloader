@@ -197,6 +197,7 @@ def get_study_info(search_dir, search_string, err_file):
 def parse_register_EMBL_xml(filename, filetype, samples = None):
     with open(filename, "r") as f:
         xml_data = f.read()
+    problem_samples = []
     try:
         curr_xml = minidom.parseString(xml_data)
         successful = curr_xml.getElementsByTagName('RECEIPT')[0].attributes['success'].value
@@ -206,7 +207,6 @@ def parse_register_EMBL_xml(filename, filetype, samples = None):
             accession_number = ""
         info = curr_xml.getElementsByTagName('INFO')
         error = curr_xml.getElementsByTagName('ERROR')
-        problem_samples = []
         pattern = "Sequence [0-9]+"
         if error:
             successful = False

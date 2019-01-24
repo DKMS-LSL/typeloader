@@ -1,2 +1,0 @@
-[Company]
-ipd_shortname = DKMS

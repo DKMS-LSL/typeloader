@@ -11,5 +11,5 @@ class IncompleteSequenceError(Exception):
     """
     def __init__(self, missing_bp):
         self.missing_bp = missing_bp
-        self.msg = "This sequence misses the first {} bp!\nTypeLoader requires the full 3' UTR to be included in the sequence.".format(missing_bp)
+        self.msg = "This sequence misses the first {} bp!\nTypeLoader requires the full 5' UTR to be included in the sequence.".format(missing_bp)
         

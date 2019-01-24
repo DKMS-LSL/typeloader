@@ -12,10 +12,8 @@ contains calls to TypeLoader_core and handling thereof
 '''
 
 # import modules:
-import sys, os, shutil, datetime, re
+import sys, os, shutil
 import string, random
-from Bio import SeqIO
-from sqlite3 import IntegrityError
 from collections import defaultdict
 
 from typeloader_core import (EMBLfunctions as EF, coordinates as COO, backend_make_ena as BME, 

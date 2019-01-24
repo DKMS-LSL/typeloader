@@ -1,9 +1,9 @@
 # ![Icon](images/TypeLoader_32.png) Registering with IPD as a bulk submitter
 
-Before you can submit TypeLoader-generated files directly to IPD, you must get in touch with them using [IPD's contact form](https://www.ebi.ac.uk/support/hla.php) and tell them you want to use TypeLoader to submit novel alleles. (At this point, you should already have submitted at least one allele manually using [IPD's Submission Page](https://www.ebi.ac.uk/ipd/imgt/hla/subs/submit.html), and have received a submitter ID).
+Prior to submitting any sequences to IPD-IMGT/HLA or IPD-KIR using TypeLoader, please email [ipdsubs@anthonynolan.org](mailto:ipdsubs@anthonynolan.org) for approval to use TypeLoader for direct submission of data to IPD. The direct submission of data requires prior arrangement with the IPD Submissions team and unsolicited submissions will not be accepted. 
 
-You should give them an idea about which loci you will be submitting and what numbers of alleles you expect to be submitting, and they will then guide you from there. 
+This process will allow the IPD Submissions team to assess the expected volume of submissions, and to confirm that the mandatory requirements for submissions will be met in any subsequent submissions. In addition, the IPD Submissions team will be able to provide a unique submitter ID for tracking submissions. 
 
-Note that before approving you as a bulk submitter or otherwise allowing you to send submissions as files, they will ask for several validation sequences to make sure you will be submitting data of good quality.
+To expedite this step, it is advisable that before reaching out to IPD, you submit a number of sequences to the appropriate IPD Database using [IPD's web-based submission tool](https://www.ebi.ac.uk/ipd/imgt/hla/subs/submit.html). This should included a number of confirmatory sequences to help confirm any methods used and expected accuracy of the sequences.
 
-(You will only have to do this once per lab. If you have multiple TypeLoader users in your lab, they can share the same submitter ID and thereby count as one submitter for IPD.)
+(You will only have to go through this process once per lab. If you have multiple TypeLoader users in your lab, they can share the same submitter ID and thereby count as one submitter for IPD.)

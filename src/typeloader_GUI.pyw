@@ -46,6 +46,7 @@ class MainGUI(QMainWindow):
         super().__init__()
         self.log = log
         self.mydb = db
+        self.check_connection()
         self.settings = settings_dic
         self.current_project = ""
         self.current_sample = ""
@@ -67,7 +68,6 @@ class MainGUI(QMainWindow):
         
         self.grid = QGridLayout()
         self.central_widget.setLayout(self.grid)
-        self.setLayout(self.grid)
         
         self.make_stack()
         self.make_leftlist()
@@ -75,6 +75,11 @@ class MainGUI(QMainWindow):
         
         self.add_menu()
         
+    def check_connection(self):
+        if not self.mydb:
+            QMessageBox.warning(self, "No connection", 
+                                "Cannot establish a database connection to this user's internal database!")
+            
     def make_leftlist(self):
         """sets up the navigation area
         """
@@ -466,7 +471,14 @@ def create_connection(log, mydb):
     db = QtSql.QSqlDatabase.addDatabase("QSQLITE")
     db.setDatabaseName(mydb)
     if not db.open():
+        lasterr = db.lastError()
+        if lasterr.isValid():
+            log.error("QSqlError No. {}: {}".format(lasterr.type(), lasterr.text()))
         log.error("Cannot establish a database connection to {}!".format(mydb))
+        drivers = QtSql.QSqlDatabase.drivers()
+        log.info("Drivers found: {}".format(len(drivers)))
+        for driver in drivers:
+            log.debug("\t" + str(driver))
         return False
     log.debug("\t=> Connection open")
     return db
@@ -562,7 +574,7 @@ if __name__ == '__main__':
     
     sys.excepthook = log_uncaught_exceptions
     
-    patchme = patches.check_patching_necessary(log)
+    patchme = patches.check_patching_necessary(root_path, log)
     if patchme:
         patches.request_user_input(root_path, app, log)
         patches.execute_patches(root_path, log)
@@ -587,8 +599,8 @@ if __name__ == '__main__':
             # implement db bugfixes:
             patches.patch_database(settings_dic, __version__, log)
             
-            mydb = create_connection(log, db_file) 
-    
+            mydb = create_connection(log, db_file)
+            
             ex = MainGUI(mydb, log, settings_dic)
             ex.showMaximized()
             splash.finish(ex)
