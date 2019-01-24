@@ -41,7 +41,7 @@ dnf install ncbi-blast+
 ```
 
 ## TypeLoader Setup
-Clone the repository to a suitable place on your machine.
+Clone the repository from [GitHub](https://github.com/DKMS-LSL/typeloader) to a suitable place on your machine.
 
 ### Creating the config files
 Typeloader needs two config files (under Windows, these are created through the installer). Under Linux, you must create them manually and save them in the ``src`` folder`of your TypeLoader repository:

@@ -4,7 +4,7 @@
 See the [=> Linux Setup page](setup_linux.md).
 
 ## Windows ##
-Download the file `Setup_TypeLoader.exe` under `installer` => `windows` and install it with admin privileges. The wizard will guide you through the installation process.
+Download the file `Setup_TypeLoader.exe` under [`installer` => `windows`](https://github.com/DKMS-LSL/typeloader/tree/master/installer/windows) and install it with admin privileges. The wizard will guide you through the installation process.
 
 ### Important:
 
