@@ -1,5 +1,5 @@
 # ![Icon](images/TypeLoader_32.png) Submit alleles to IPD 
-![Important](images/icon_important.png) **Your IPD user settings will be incorporated into the IPD files you generate. So make sure yours are ok before you start (using the [=> Settings Dialog](settings.md)). If this is your first IPD submission, create just one file and manually copy the data into [IPD's Submission Page](https://www.ebi.ac.uk/ipd/imgt/hla/subs/submit.html) to receive your submittor ID for future submissions. Then follow the instructions for [=> Registering as a bulk submittor with IPD](ipd.md).**
+![Important](images/icon_important.png) **Your IPD user settings will be incorporated into the IPD files you generate. So make sure yours are ok before you start (using the [=> Settings Dialog](settings.md)). If this is your first IPD submission, create just one file and manually copy the data into [IPD's Submission Page](https://www.ebi.ac.uk/ipd/imgt/hla/subs/submit.html) to receive your submittor ID for future submissions. ([=> How to feed TypeLoader's results into IPD's webform](ipd_webform.md)). Then follow the instructions for [=> Registering as a bulk submittor with IPD](ipd.md).**
 
 To submit (one or multiple) alleles to IPD (IMGT/HLA or KIR), click ``Submit to IPD`` in the menu or toolbar, or choose ``Submit project to IPD`` in the [=> Project Overview](overview_project.md).
 This will open the IPD Submission Dialog:
@@ -7,6 +7,8 @@ This will open the IPD Submission Dialog:
 ![IPDSubmission](images/ipd_submission1.png)
 
 ![Important](images/icon_important.png) **Submission to IPD can only be performed for alleles which have been submitted to ENA and have received an ENA submission number!**
+
+![Important](images/icon_important.png) **The first time you use this dialog, TypeLoader will remind you to make sure your [=> Settings](settings.md) accurately reflect your workflow and your IPD contact data are correct, as these will be incorporated into the generated IPD files.**
 
 ##  (1) Choose a project 
 Your currently selected project will be pre-selected. To choose a different project (or select one in the first place if there is no currently selected project, yet), click ``Choose a (different) existing project`` and you will get a list of all currently open projects to choose from.
