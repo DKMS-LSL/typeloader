@@ -265,14 +265,38 @@ class SettingTab(QTabWidget):
         mytab.layout = layout
         
         combobox_fields = {"address_form" : ["Dr.", "Ms.", "Mrs.", "Mr.", "Ass. Prof.", "Prof.", "Med. Prof."],
-                           "material_available" : ["DNA", "Cell line", "None"],
+                           "material_available" : ["No Material Available", "DNA", "Whole Blood Sample", 
+                                                   "Peripheral Blood Lymphocytes", 
+                                                   "Cell Line - B Lyphoblastoid Cell Line", "Cell Line - Burkitt's Line",
+                                                   "Cell Line - Choriocarcinoma", "Cell Line - Endometrial Cell Line",
+                                                   "Cell Line - Epithelial Cell Line", "Cell Line - Fibroblast Cell Line",
+                                                   "Cell Line - Histiocytic macrophage", "Cell Line - Hodgkins Disease Cell Line",
+                                                   "Cell Line - Human Hybridoma Partner", "Cell Line - Lyphocytes",
+                                                   "Cell Line - Melanoma Cell Line", "Cell Line - Myeloid Cell Line",
+                                                   "Cell Line - PBMC", "Cell Line - T Cell Line",
+                                                   "Cell Line - Teratoma Cell Line", "Cell Line - unknown"],
                            "sequencing_direction" : ["OneSided", "Both"],
                            "sequenced_in_isolation" : ["yes", "no"],
                            "primary_sequencing" : ["NGS - Illumina Sequencing Technology", "NGS - Pacific Biosciences SMRT Technology",
-                                                   "NGS - Oxford Nanopore Technology", "Sanger Sequencing"],
+                                                   "NGS - Oxford Nanopore Technology", "NGS - Ion Torrent Sequencing Technology",
+                                                   "NGS - 454 Sequencing Technology",
+                                                   "Direct sequencing of PCR product from DNA (SBT)",
+                                                   "Direct sequencing of PCR product from RNA (SBT)",
+                                                   "Cloning of PCR product & sequencing", "cDNA cloning and sequencing",
+                                                   "cDNA amplification, cloning and sequencing", "Genomic Clones",
+                                                   "Cosmids", "YAC Cloning and sequencing", "Protein Biochemistry"],
                            "secondary_sequencing" : ["NGS - Illumina Sequencing Technology", "NGS - Pacific Biosciences SMRT Technology",
-                                                   "NGS - Oxford Nanopore Technology", "Sanger Sequencing"],
-                           "type_of_primer" : ["Both allele and locus specific", "Locus specific", "Allele specific", "Allele group specific"]}
+                                                   "NGS - Oxford Nanopore Technology", "NGS - Ion Torrent Sequencing Technology",
+                                                   "NGS - 454 Sequencing Technology",
+                                                   "Direct sequencing of PCR product from DNA (SBT)",
+                                                   "Direct sequencing of PCR product from RNA (SBT)",
+                                                   "Cloning of PCR product & sequencing", "cDNA cloning and sequencing",
+                                                   "cDNA amplification, cloning and sequencing", "Genomic Clones",
+                                                   "Cosmids", "YAC Cloning and sequencing", "Protein Biochemistry",
+                                                   "No Secondary methods used"],
+                           "type_of_primer" : ["Locus specific", "Allele specific", "Generic Specific", 
+                                               "Both allele and locus specific", "Both allele and generic specific", 
+                                               "Both locus and generic specific", "None used"]}
         for section in sections:
             for (key, value) in self.cf.items(section):
                 key = key.lower()
