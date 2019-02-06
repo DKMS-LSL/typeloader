@@ -28,7 +28,8 @@ class AllelesOverview(FilterableTable):
         super().__init__(log, mydb, header_dic = alleles_header_dic, 
                          add_color_proxy=(8,14))
         self.table.customContextMenuRequested.connect(self.open_menu)
-        self.add_headers()
+#         self.add_headers()
+        self.header_fixed = False
         log.debug("Alleles Overview created")
         
     def create_model(self):
@@ -65,7 +66,8 @@ class AllelesOverview(FilterableTable):
         self.log.debug("\tHiding duplicate columns in Alleles Overview...")
         for i in [46, 49]:
             self.table.setColumnHidden(i, True)
-            
+        self.header_fixed = True # this takes long as db grows => only called on demand, and only once per session
+        
     @pyqtSlot(QPoint)
     def open_menu(self, pos):
         """provides a context menu
