@@ -9,7 +9,7 @@ from .befundparser import getOtherAlleles
 from .coordinates import getCoordinates
 from .enaemailparser import parse_embl_response
 from .imgt_text_generator import make_imgt_text
-from .errors import IncompleteSequenceError
+from .errors import IncompleteSequenceError, BothAllelesNovelError
 from os import path
 from functools import reduce
 
@@ -101,7 +101,6 @@ def get_IPD_counter(config_file, lock_file, settings, log):
 def format_submission_id(fixedString, variablePartLength, submissionCounter):
     """creates name of IPD file
     """
-    print((fixedString, variablePartLength, submissionCounter))
     fixedString += "1"
     numberStringLength = len(str(submissionCounter))
     numberOfZeroes = int(variablePartLength) - numberStringLength
@@ -123,12 +122,12 @@ def update_IPD_counter(new_value, cf, config_file, lock_file, log):
     return True
 
 
-def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, befund_csv_file,
+def make_imgt_data(project_dir, samples, file_dic, gene_dic, cellEnaIdMap, geneMapENA, befund_csv_file,
                    settings, log):
     log.debug("Making IPD data...")
+        
     geneMap = {"gene":[settings["gene_hla"], settings["gene_kir"]]}
     (patientBefundMap, customer_dic) = getPatientBefund(befund_csv_file)
-    
     if not patientBefundMap:
         msg = customer_dic
         log.warning(msg)
@@ -149,9 +148,11 @@ def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, bef
     (submissionCounter, counter_cf) = result
     fixedString = settings["ipd_shortname"]
     variablePartLength = settings["ipd_submission_length"]
+    problem_dic = {}
     
     for (sample, local_name, IPD_ID) in samples:
         enafile = path.join(project_dir, sample, file_dic[local_name]["ena_file"])
+        mygene = gene_dic[local_name]
         if not path.exists(enafile):
             msg = "Can't find ena file: {}".format(enafile)
             log.warning(msg)
@@ -248,15 +249,22 @@ def make_imgt_data(project_dir, samples, file_dic, cellEnaIdMap, geneMapENA, bef
         else:
             cell_line = local_name
         
-        imgt_data[submissionId] = make_imgt_text(submissionId, cell_line, local_name, enaId, befund,  
-                                                 closestAllele, diffToClosest, imgtDiff, 
-                                                 enafile, sequence, geneMap, settings)
-
+        try:
+            imgt_data[submissionId] = make_imgt_text(submissionId, cell_line, local_name, mygene, enaId, befund,  
+                                                     closestAllele, diffToClosest, imgtDiff, 
+                                                     enafile, sequence, geneMap, settings, log)
+        except BothAllelesNovelError as E:
+            problem_dic[submissionId] = [sample, local_name, E.locus, E.alleles]
+    
     if settings["modus"] == "productive":
         update_IPD_counter(submissionCounter, counter_cf, config_file, lock_file, log)
     
-    log.debug("\t=> successfully made IPD data")
-    return imgt_data, cell_lines, customer_dic
+    if problem_dic:
+        log.debug("\t=> encountered a problem in {} samples: please fix".format(len(problem_dic)))
+        return False, "Multiple novel alleles in target locus", problem_dic
+    else:
+        log.debug("\t=> successfully made IPD data")
+        return imgt_data, cell_lines, customer_dic
 
 def zip_imgt_files(folderpath, submission_id, imgt_files, log):
     """zips all generated IPD files in folderpath 
@@ -271,7 +279,7 @@ def zip_imgt_files(folderpath, submission_id, imgt_files, log):
             z.write(myfile, os.path.basename(myfile))
     return myzip
 
-def write_imgt_files(project_dir, samples, file_dic, ENA_id_map, ENA_gene_map,
+def write_imgt_files(project_dir, samples, file_dic, gene_dic, ENA_id_map, ENA_gene_map,
                      befund_csv_file, submission_name, 
                      folderpath, settings, log):
     success = True
@@ -284,9 +292,11 @@ def write_imgt_files(project_dir, samples, file_dic, ENA_id_map, ENA_gene_map,
     imgt_file_names = None
     try:
         log.debug("\tMaking IPD data...")
-        results = make_imgt_data(project_dir, samples, file_dic, ENA_id_map, ENA_gene_map, 
+        results = make_imgt_data(project_dir, samples, file_dic, gene_dic, ENA_id_map, ENA_gene_map, 
                                  befund_csv_file, settings, log)
         if not results[0]:
+            print("make_imgt_data() results:")
+            print(results)
             return results
         else:
             (imgt_data, cell_lines, customer_dic) = results

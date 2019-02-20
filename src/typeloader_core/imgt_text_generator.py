@@ -3,6 +3,7 @@ import datetime
 import re
 from copy import copy
 import textwrap
+from .errors import BothAllelesNovelError
 
 def make_genemodel_text(enaFile, sequence):
 
@@ -56,15 +57,20 @@ def make_genemodel_text(enaFile, sequence):
     return imgtGeneModelText
 
 
-def make_befund_text(befund, closestAllele, geneMap):
-
+def make_befund_text(befund, closestAllele, mygene, geneMap, log):
     befundText = ""
-
     for gene in list(befund.keys()):
         if (re.search(geneMap["gene"][0], gene) and geneMap["targetFamily"] == geneMap["gene"][0] or geneMap["targetFamily"] == geneMap["gene"][1]):
-            alleles = ",".join([allele for allele in befund[gene] if allele.find("XXX") == -1])
+            alleles = ",".join([allele for allele in befund[gene]])
+            if gene == mygene:
+                mystring = alleles.lower()
+                i = mystring.count(":new") + mystring.count(":xxx")
+                if i > 1:
+                    log.warning("Target locus {} has {} novel alleles; please indicate self!".format(mygene, i))
+                    raise BothAllelesNovelError(mygene, befund[gene])
+                    
             befundText += otherAllelesString.replace("{gene}", gene).replace("{alleleNames}",alleles)
-    return befundText
+    return True, befundText
 
 
 def make_diff_line(differences, imgtDiff, closestAllele):
@@ -87,7 +93,6 @@ def make_diff_line(differences, imgtDiff, closestAllele):
         mismatchPos, codonStatus = mmPos[mmIndex]
         if not codonStatus: mismatchText += "pos %s (%s -> %s);" % (mmPos[mmIndex][0], mm[mmIndex][1], mm[mmIndex][0])
         else:
-
             mismatchText += "pos %s in codon %s (%s -> %s);" % \
                             (mmPos[mmIndex][0], codonDiff[mmIndex][0], codonDiff[mmIndex][1][1], codonDiff[mmIndex][1][0])
 
@@ -146,11 +151,10 @@ def make_imgt_footer(sequence, sequencewidth=60):
     return footerop
 
 
-def make_imgt_text(submissionId, cellLine, local_name, enaId, befund, closestAllele, diffToClosest, 
-                   imgtDiff, enafile, sequence, geneMap, settings):
-
-    differencesText = refAlleleDiffString.replace("{text}",make_diff_line(diffToClosest, imgtDiff, closestAllele))
-    otherAllelesText = make_befund_text(befund, closestAllele, geneMap)
+def make_imgt_text(submissionId, cellLine, local_name, gene, enaId, befund, closestAllele, diffToClosest, 
+                   imgtDiff, enafile, sequence, geneMap, settings, log):
+    otherAllelesText = make_befund_text(befund, closestAllele, gene, geneMap, log)
+    differencesText = refAlleleDiffString.replace("{text}",make_diff_line(diffToClosest, imgtDiff, closestAllele))    
     genemodelText = make_genemodel_text(enafile, sequence)
     footerText = make_imgt_footer(sequence)
     todaystr = datetime.datetime.now().strftime('%d/%m/%Y')

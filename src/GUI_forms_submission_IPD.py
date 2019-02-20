@@ -33,20 +33,21 @@ from GUI_misc import settings_ok
 from __init__ import __version__
 #===========================================================
 # classes:
-    
+
 class IPDFileChoiceTable(FileChoiceTable):
     """displays all alleles of a project
     so user can choose which to submit to IPD
     """
     old_cell_lines = pyqtSignal(dict)
+    genes = pyqtSignal(dict)
     
     def __init__(self, project, log, parent = None):
         query = """select project_nr, alleles.sample_id_int, alleles.Local_name, allele_status, 
-        ENA_submission_id, IPD_submission_nr, cell_line_old
+        ENA_submission_id, IPD_submission_nr, cell_line_old, gene
         from alleles
          join files on alleles.sample_id_int = files.sample_id_int and alleles.allele_nr = files.allele_nr
         """.format(project)
-        num_columns = 7
+        num_columns = 8
         header = ["Submit?", "Nr", "Sample", "Allele", "Allele Status", "ENA submission ID", "IPD submission ID"]
         if parent:
             self.settings = parent.settings
@@ -75,22 +76,29 @@ class IPDFileChoiceTable(FileChoiceTable):
         
         #assemble data from both queries into one dict:
         self.cell_line_dic = {}
+        self.gene_dic = {}
         self.data = []
         if self.data1:
             self.log.debug("\t{} matching alleles found based on local_name".format(len(self.data1)))
             for row in self.data1:
-                self.data.append(row[:-1])
+                self.data.append(row[:-2])
+                local_name = row[2]
+                gene = row[7]
+                self.gene_dic[local_name] = gene
         if self.data2:
             self.log.debug("\t{} matching alleles found based on cell_line_old".format(len(self.data2)))
             for row in self.data2:
-                self.data.append(row[:-1])
+                self.data.append(row[:-2])
                 local_name = row[2]
                 cell_line_old = row[6]
                 self.cell_line_dic[local_name] = cell_line_old
+                gene = row[7]
+                self.gene_dic[local_name] = gene
         
         self.log.debug("Emitting 'files = {}'".format(len(self.data)))
         self.files.emit(len(self.data))
         self.old_cell_lines.emit(self.cell_line_dic)
+        self.genes.emit(self.gene_dic)
     
     def refresh(self, project, addfilter, addfilter2):
         self.log.debug("refreshing IPDFileChoiceTable...")
@@ -213,7 +221,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         ENA_file_btn = FileButton("Upload email attachment from ENA reply", mypath, parent=self)
         self.ENA_file_widget = ChoiceSection("ENA reply file:", [ENA_file_btn], self, label_width=self.label_width)
         if self.settings["modus"] == "debugging":
-            self.ENA_file_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\IPD_Test\ENA_Accession_3DP1")
+            self.ENA_file_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\both_new\ENA_reply.txt")
             ENA_file_btn.change_to_normal()
             
         layout.addWidget(self.ENA_file_widget, 0, 0)
@@ -222,7 +230,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.befund_widget = ChoiceSection("Pretyping file:", [befund_file_btn], self, label_width=self.label_width)
         self.befund_widget.setWhatsThis("Choose a file containing a list of previously identified alleles for all loci for each sample")
         if self.settings["modus"] == "debugging":
-            self.befund_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\IPD_Test\Befunde_neu.csv")
+            self.befund_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\both_new\Befunde_DP4.csv")
             befund_file_btn.change_to_normal()
         layout.addWidget(self.befund_widget, 1, 0)
         
@@ -286,6 +294,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.project_files.files_chosen.connect(self.project_info.update_files_chosen)
         self.project_files.files.connect(self.project_info.update_files)
         self.project_files.old_cell_lines.connect(self.catch_cell_line)
+        self.project_files.genes.connect(self.catch_genes)
         
         items = [self.project_info.item(3,0)]
         self.submit_btn = ProceedButton("Generate IPD files", items, self.log, 1, self)
@@ -344,6 +353,28 @@ class IPDSubmissionForm(CollapsibleDialog):
                 self.ENA_id_map[local_name] = self.ENA_id_map[cell_line_old]
                 self.ENA_gene_map[local_name] = self.ENA_gene_map[cell_line_old]
     
+    @pyqtSlot(dict)
+    def catch_genes(self, genes):
+        """catches mapping between local_name and gene, 
+        for use in befund-part of IPD file
+        """
+        self.log.debug("Caught mapping between {} genes and allele names".format(len(genes)))
+        self.gene_dic = genes
+        
+    def handle_multiple_novel_alleles(self, problem_dic):
+        """if multiple novel alleles were found for the target locus
+        """
+        self.log.info("Found multiple novel alleles for target locus in {} samples".format(len(problem_dic)))
+        for submissionID in problem_dic:
+            [locus, alleles, sample_id_int, local_name] = problem_dic[submissionID]
+            query = """select local_name, target_allele, partner_allele
+                    from alleles where sample_id_int = '{}' and gene = '{}'
+                    """.format(sample_id_int, locus)
+            success, data = db_internal.execute_query(query, 3, self.log, "querying database", 
+                                                      "Database error", self)
+            print(locus, alleles, sample_id_int, local_name)
+            print(data)
+                
     @pyqtSlot()
     def make_IPD_files(self):
         """tell typeloader to create the IPD file
@@ -366,12 +397,17 @@ class IPDSubmissionForm(CollapsibleDialog):
             self.get_chosen_samples()
             self.get_files()
             
-            results = MIF.write_imgt_files(project_dir, self.samples, self.file_dic, self.ENA_id_map, 
+            results = MIF.write_imgt_files(project_dir, self.samples, self.file_dic, self.gene_dic, self.ENA_id_map, 
                                            self.ENA_gene_map, self.pretypings, self.subm_id, 
                                            mydir, self.settings, self.log)
             if not results[0]:
-                QMessageBox.warning(self, "IPD file creation error", results[1])
-                return
+                print(results)
+                if results[1] == "Multiple novel alleles in target locus":
+                    self.handle_multiple_novel_alleles(results[2])
+                    return
+                else:
+                    QMessageBox.warning(self, "IPD file creation error", results[1])
+                    return
             else:
                 (self.IPD_file, self.cell_lines, self.customer_dic, resultText, self.imgt_files, success, error) = results
             if error:
@@ -556,7 +592,7 @@ if __name__ == '__main__':
     settings_dic = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, settings_dic["db_file"])
     
-    project = "20181204_ADMIN_mixed_IPD"
+    project = "20190211_ADMIN_mixed_both"
     app = QApplication(sys.argv)
     ex = IPDSubmissionForm(log, mydb, project, settings_dic)
     ex.show()
