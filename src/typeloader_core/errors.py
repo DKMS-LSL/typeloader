@@ -17,5 +17,6 @@ class BothAllelesNovelError(Exception):
     """raised when TypeLoader tries to create an IPD file for an allele where both alleles of this locus are novel
     but TypeLoader can't figure out which of the pretyping alleles is 'self' and which is 'other'
     """
-    def __init__(self, allele):
-        self.allele = allele
+    def __init__(self, allele, alleles):
+        self.allele = allele #TargetAllele object
+        self.alleles = alleles # list of both alleles from the pretypings csv

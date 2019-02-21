@@ -46,7 +46,7 @@ def get_cellLine_patient_map(cellLine_patient_file):
         cellPatientMap[parts[0]] = parts[1].split(".")[0]
     cellLinePatientHandle.close()
 
-    print(cellPatientMap)
+#     print(cellPatientMap)
     return cellPatientMap
 
 def getPatientBefund(befundFile):
@@ -152,7 +152,6 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
     
     for (sample, local_name, IPD_ID) in samples:
         enafile = path.join(project_dir, sample, file_dic[local_name]["ena_file"])
-        mygene = allele_dic[local_name].gene
         if not path.exists(enafile):
             msg = "Can't find ena file: {}".format(enafile)
             log.warning(msg)
@@ -256,7 +255,7 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
                                                      closestAllele, diffToClosest, imgtDiff, 
                                                      enafile, sequence, geneMap, settings, log)
         except BothAllelesNovelError as E:
-            problem_dic[submissionId] = [sample, local_name, E.locus, E.alleles]
+            problem_dic[local_name] = [sample, local_name, E.allele, E.alleles]
     
     if settings["modus"] == "productive":
         update_IPD_counter(submissionCounter, counter_cf, config_file, lock_file, log)
@@ -296,9 +295,7 @@ def write_imgt_files(project_dir, samples, file_dic, allele_dic, ENA_id_map, ENA
         log.debug("\tMaking IPD data...")
         results = make_imgt_data(project_dir, samples, file_dic, allele_dic, ENA_id_map, ENA_gene_map, 
                                  befund_csv_file, settings, log)
-        if not results[0]:
-            print("make_imgt_data() results:")
-            print(results)
+        if not results[0]: # encountered problem
             return results
         else:
             (imgt_data, cell_lines, customer_dic) = results

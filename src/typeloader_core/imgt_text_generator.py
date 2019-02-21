@@ -94,7 +94,7 @@ def make_befund_text(befund, closestAllele, myallele, geneMap, log):
                     success, alleles = reformat_partner_allele(myalleles, myallele, log)
                     if not success:
                         log.warning("Please indicate self!".format(myallele.gene, i))
-                        raise BothAllelesNovelError(myallele)
+                        raise BothAllelesNovelError(myallele, myalleles)
                     
             befundText += otherAllelesString.replace("{gene}", gene).replace("{alleleNames}",alleles)
     print(befundText)
