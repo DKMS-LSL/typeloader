@@ -14,6 +14,7 @@ components for forms and dialogs
 
 import sys, os, shutil, time
 from shutil import copyfile
+from collections import namedtuple
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QGridLayout,
                              QPushButton, QMessageBox, QTextEdit,
                              QWidget, QHBoxLayout)
@@ -39,15 +40,15 @@ class IPDFileChoiceTable(FileChoiceTable):
     so user can choose which to submit to IPD
     """
     old_cell_lines = pyqtSignal(dict)
-    genes = pyqtSignal(dict)
+    additional_info = pyqtSignal(dict)
     
     def __init__(self, project, log, parent = None):
         query = """select project_nr, alleles.sample_id_int, alleles.Local_name, allele_status, 
-        ENA_submission_id, IPD_submission_nr, cell_line_old, gene
+        ENA_submission_id, IPD_submission_nr, cell_line_old, gene, target_allele, partner_allele
         from alleles
          join files on alleles.sample_id_int = files.sample_id_int and alleles.allele_nr = files.allele_nr
         """.format(project)
-        num_columns = 8
+        num_columns = 10
         header = ["Submit?", "Nr", "Sample", "Allele", "Allele Status", "ENA submission ID", "IPD submission ID"]
         if parent:
             self.settings = parent.settings
@@ -62,9 +63,12 @@ class IPDFileChoiceTable(FileChoiceTable):
     def get_data(self):
         """get alleles from database
         """
+        TargetAllele = namedtuple("TargetAllele", "gene target_allele partner_allele")
+        
         success, data = db_internal.execute_query(self.query + self.myfilter, self.num_columns, 
                                                   self.log, "retrieving data for FileChoiceTable from database", 
                                                   "Database error", self)
+        
         if success:
             self.data1 = data
         # add data based on cell_line_old:
@@ -76,7 +80,7 @@ class IPDFileChoiceTable(FileChoiceTable):
         
         #assemble data from both queries into one dict:
         self.cell_line_dic = {}
-        self.gene_dic = {}
+        self.allele_dic = {} # contains additional info per local_name not displayed in the table
         self.data = []
         if self.data1:
             self.log.debug("\t{} matching alleles found based on local_name".format(len(self.data1)))
@@ -84,7 +88,10 @@ class IPDFileChoiceTable(FileChoiceTable):
                 self.data.append(row[:-2])
                 local_name = row[2]
                 gene = row[7]
-                self.gene_dic[local_name] = gene
+                target_allele = row[8]
+                partner_allele = row[9]
+                allele = TargetAllele(gene = gene, target_allele = target_allele, partner_allele = partner_allele)
+                self.allele_dic[local_name] = allele
         if self.data2:
             self.log.debug("\t{} matching alleles found based on cell_line_old".format(len(self.data2)))
             for row in self.data2:
@@ -93,12 +100,15 @@ class IPDFileChoiceTable(FileChoiceTable):
                 cell_line_old = row[6]
                 self.cell_line_dic[local_name] = cell_line_old
                 gene = row[7]
-                self.gene_dic[local_name] = gene
+                target_allele = row[8]
+                partner_allele = row[9]
+                allele = TargetAllele(gene = gene, target_allele = target_allele, partner_allele = partner_allele)
+                self.allele_dic[local_name] = allele
         
         self.log.debug("Emitting 'files = {}'".format(len(self.data)))
         self.files.emit(len(self.data))
         self.old_cell_lines.emit(self.cell_line_dic)
-        self.genes.emit(self.gene_dic)
+        self.additional_info.emit(self.allele_dic)
     
     def refresh(self, project, addfilter, addfilter2):
         self.log.debug("refreshing IPDFileChoiceTable...")
@@ -267,6 +277,9 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.log.debug("Refreshing section 3...")
         self.project_info.fill_UI(self.project)
         self.project_files.refresh(self.project, self.add_filter, self.add_filter2)
+        if self.settings["modus"] == "debugging":
+            if self.project_files.check_dic: # if debugging, auto-select first file
+                self.project_files.check_dic[0].click()
         
     @pyqtSlot(str, str)
     def catch_project_info(self, title, description):
@@ -294,7 +307,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.project_files.files_chosen.connect(self.project_info.update_files_chosen)
         self.project_files.files.connect(self.project_info.update_files)
         self.project_files.old_cell_lines.connect(self.catch_cell_line)
-        self.project_files.genes.connect(self.catch_genes)
+        self.project_files.additional_info.connect(self.catch_additional_info)
         
         items = [self.project_info.item(3,0)]
         self.submit_btn = ProceedButton("Generate IPD files", items, self.log, 1, self)
@@ -354,19 +367,19 @@ class IPDSubmissionForm(CollapsibleDialog):
                 self.ENA_gene_map[local_name] = self.ENA_gene_map[cell_line_old]
     
     @pyqtSlot(dict)
-    def catch_genes(self, genes):
-        """catches mapping between local_name and gene, 
+    def catch_additional_info(self, allele_dic):
+        """catches mapping between local_name and other info not displayed in the GUI
         for use in befund-part of IPD file
         """
-        self.log.debug("Caught mapping between {} genes and allele names".format(len(genes)))
-        self.gene_dic = genes
+        self.log.debug("Caught mapping between {} allele names and their addiditonal info".format(len(allele_dic)))
+        self.allele_dic = allele_dic # format: {local_name : TargetAllele}
         
     def handle_multiple_novel_alleles(self, problem_dic):
         """if multiple novel alleles were found for the target locus
         """
         self.log.info("Found multiple novel alleles for target locus in {} samples".format(len(problem_dic)))
         for submissionID in problem_dic:
-            [locus, alleles, sample_id_int, local_name] = problem_dic[submissionID]
+            [sample_id_int, local_name, locus, alleles] = problem_dic[submissionID]
             query = """select local_name, target_allele, partner_allele
                     from alleles where sample_id_int = '{}' and gene = '{}'
                     """.format(sample_id_int, locus)
@@ -374,6 +387,7 @@ class IPDSubmissionForm(CollapsibleDialog):
                                                       "Database error", self)
             print(locus, alleles, sample_id_int, local_name)
             print(data)
+            self.close()
                 
     @pyqtSlot()
     def make_IPD_files(self):
@@ -397,7 +411,7 @@ class IPDSubmissionForm(CollapsibleDialog):
             self.get_chosen_samples()
             self.get_files()
             
-            results = MIF.write_imgt_files(project_dir, self.samples, self.file_dic, self.gene_dic, self.ENA_id_map, 
+            results = MIF.write_imgt_files(project_dir, self.samples, self.file_dic, self.allele_dic, self.ENA_id_map, 
                                            self.ENA_gene_map, self.pretypings, self.subm_id, 
                                            mydir, self.settings, self.log)
             if not results[0]:

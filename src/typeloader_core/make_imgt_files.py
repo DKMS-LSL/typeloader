@@ -122,7 +122,7 @@ def update_IPD_counter(new_value, cf, config_file, lock_file, log):
     return True
 
 
-def make_imgt_data(project_dir, samples, file_dic, gene_dic, cellEnaIdMap, geneMapENA, befund_csv_file,
+def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, geneMapENA, befund_csv_file,
                    settings, log):
     log.debug("Making IPD data...")
         
@@ -152,7 +152,7 @@ def make_imgt_data(project_dir, samples, file_dic, gene_dic, cellEnaIdMap, geneM
     
     for (sample, local_name, IPD_ID) in samples:
         enafile = path.join(project_dir, sample, file_dic[local_name]["ena_file"])
-        mygene = gene_dic[local_name]
+        mygene = allele_dic[local_name].gene
         if not path.exists(enafile):
             msg = "Can't find ena file: {}".format(enafile)
             log.warning(msg)
@@ -219,7 +219,9 @@ def make_imgt_data(project_dir, samples, file_dic, gene_dic, cellEnaIdMap, geneM
             log.warning("Blast messed up?")
             with contextlib.suppress(FileNotFoundError):
                 os.remove(lock_file)
-            continue
+            msg = "Encountered a BLAST problem!\n"
+            msg += "Please restart TypeLoader to update the reference files."
+            return False, msg, None
         
         isSameGene = reduce(lambda x,y: x & y, [annotations[genDxAlleleName]["closestAllele"].startswith(newAlleleStub) \
             for genDxAlleleName in list(annotations.keys())])
@@ -250,7 +252,7 @@ def make_imgt_data(project_dir, samples, file_dic, gene_dic, cellEnaIdMap, geneM
             cell_line = local_name
         
         try:
-            imgt_data[submissionId] = make_imgt_text(submissionId, cell_line, local_name, mygene, enaId, befund,  
+            imgt_data[submissionId] = make_imgt_text(submissionId, cell_line, local_name, allele_dic[local_name], enaId, befund,  
                                                      closestAllele, diffToClosest, imgtDiff, 
                                                      enafile, sequence, geneMap, settings, log)
         except BothAllelesNovelError as E:
@@ -279,7 +281,7 @@ def zip_imgt_files(folderpath, submission_id, imgt_files, log):
             z.write(myfile, os.path.basename(myfile))
     return myzip
 
-def write_imgt_files(project_dir, samples, file_dic, gene_dic, ENA_id_map, ENA_gene_map,
+def write_imgt_files(project_dir, samples, file_dic, allele_dic, ENA_id_map, ENA_gene_map,
                      befund_csv_file, submission_name, 
                      folderpath, settings, log):
     success = True
@@ -292,7 +294,7 @@ def write_imgt_files(project_dir, samples, file_dic, gene_dic, ENA_id_map, ENA_g
     imgt_file_names = None
     try:
         log.debug("\tMaking IPD data...")
-        results = make_imgt_data(project_dir, samples, file_dic, gene_dic, ENA_id_map, ENA_gene_map, 
+        results = make_imgt_data(project_dir, samples, file_dic, allele_dic, ENA_id_map, ENA_gene_map, 
                                  befund_csv_file, settings, log)
         if not results[0]:
             print("make_imgt_data() results:")

@@ -1,8 +1,8 @@
-from .imgtformat import *
 import datetime
 import re
 from copy import copy
 import textwrap
+from .imgtformat import *
 from .errors import BothAllelesNovelError
 
 def make_genemodel_text(enaFile, sequence):
@@ -57,20 +57,48 @@ def make_genemodel_text(enaFile, sequence):
     return imgtGeneModelText
 
 
-def make_befund_text(befund, closestAllele, mygene, geneMap, log):
+def reformat_partner_allele(alleles, myallele, log):
+    """tries to figure out which of the two novel alleles of the target locus is itself
+    """
+    log.info("Figuring out which allele this is...")
+    if "*" in myallele.target_allele:
+        myself = myallele.target_allele.split("*")[1]
+    else:
+        myself = myallele.target_allele
+    success = False
+    if alleles[0] == myself and alleles[1].split(":")[0] in myallele.partner_allele:
+        log.info("\t => Success: {} is self, {} is partner allele!".format(alleles[0], alleles[1]))
+        alleles = [alleles[0], alleles[1].split(":")[0]]
+        success = True
+    elif alleles[1] == myself and alleles[0].split(":")[0] in myallele.partner_allele:
+        log.info("\t => Success: {} is self, {} is partner allele!".format(alleles[1], alleles[0]))
+        alleles = [alleles[0].split(":")[0], alleles[1]]
+        success = True
+    if not success:
+        log.info("\t => Could not figure it out, need user input!")
+    alleles = ",".join(alleles)
+    return success, alleles
+    
+
+def make_befund_text(befund, closestAllele, myallele, geneMap, log):
     befundText = ""
     for gene in list(befund.keys()):
         if (re.search(geneMap["gene"][0], gene) and geneMap["targetFamily"] == geneMap["gene"][0] or geneMap["targetFamily"] == geneMap["gene"][1]):
-            alleles = ",".join([allele for allele in befund[gene]])
-            if gene == mygene:
+            myalleles = [allele for allele in befund[gene]]
+            alleles = ",".join(myalleles)
+            if gene == myallele.gene:
                 mystring = alleles.lower()
                 i = mystring.count(":new") + mystring.count(":xxx")
                 if i > 1:
-                    log.warning("Target locus {} has {} novel alleles; please indicate self!".format(mygene, i))
-                    raise BothAllelesNovelError(mygene, befund[gene])
+                    log.info("Target locus {} has {} novel alleles".format(myallele.gene, i))
+                    success, alleles = reformat_partner_allele(myalleles, myallele, log)
+                    if not success:
+                        log.warning("Please indicate self!".format(myallele.gene, i))
+                        raise BothAllelesNovelError(myallele)
                     
             befundText += otherAllelesString.replace("{gene}", gene).replace("{alleleNames}",alleles)
-    return True, befundText
+    print(befundText)
+    return befundText
 
 
 def make_diff_line(differences, imgtDiff, closestAllele):
@@ -151,9 +179,9 @@ def make_imgt_footer(sequence, sequencewidth=60):
     return footerop
 
 
-def make_imgt_text(submissionId, cellLine, local_name, gene, enaId, befund, closestAllele, diffToClosest, 
+def make_imgt_text(submissionId, cellLine, local_name, myallele, enaId, befund, closestAllele, diffToClosest, 
                    imgtDiff, enafile, sequence, geneMap, settings, log):
-    otherAllelesText = make_befund_text(befund, closestAllele, gene, geneMap, log)
+    otherAllelesText = make_befund_text(befund, closestAllele, myallele, geneMap, log)
     differencesText = refAlleleDiffString.replace("{text}",make_diff_line(diffToClosest, imgtDiff, closestAllele))    
     genemodelText = make_genemodel_text(enafile, sequence)
     footerText = make_imgt_footer(sequence)
@@ -196,3 +224,20 @@ def make_imgt_text(submissionId, cellLine, local_name, gene, enaId, befund, clos
     imgtText += footerText
 
     return imgtText
+
+if __name__ == '__main__':
+    import logging
+    log = logging.getLogger(__name__)
+    log.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(levelname)s [%(asctime)s] - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    log.addHandler(stream_handler)
+    
+    from collections import namedtuple
+    befund =  {'HLA-A': ['30:01:01G', '68:02:01G'], 'HLA-B': ['49:01:01G', '49:01:01G'], 'HLA-C': ['07:01:01G', '07:01:01G'], 'HLA-DRB1': ['13:01:01', '01:02:01'], 'HLA-DQB1': ['06:03:01', '05:01:01'], 'HLA-DPB1': ['13:new', '04:new']}
+    closestAllele =  "HLA-DPB1*04:01:01:29"
+    TargetAllele = namedtuple("TargetAllele", "gene target_allele partner_allele")
+    myallele = TargetAllele(gene='HLA-DPB1', target_allele='HLA-DPB1*04:new', partner_allele='HLA-DPB1*13:01:01:01 or 02:01:02:01')
+    geneMap =  {'gene': ['HLA', 'KIR'], 'targetFamily': 'HLA'}
+    make_befund_text(befund, closestAllele, myallele, geneMap, log)
