@@ -9,7 +9,7 @@ from .befundparser import getOtherAlleles
 from .coordinates import getCoordinates
 from .enaemailparser import parse_embl_response
 from .imgt_text_generator import make_imgt_text
-from .errors import IncompleteSequenceError, BothAllelesNovelError
+from .errors import IncompleteSequenceError, BothAllelesNovelError, InvalidPretypingError
 from os import path
 from functools import reduce
 
@@ -148,7 +148,8 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
     (submissionCounter, counter_cf) = result
     fixedString = settings["ipd_shortname"]
     variablePartLength = settings["ipd_submission_length"]
-    problem_dic = {}
+    multi_dic = {} # contains alleles with multiple novel alleles
+    problem_dic = {} # contains alleles with invalid pretypings
     
     for (sample, local_name, IPD_ID) in samples:
         enafile = path.join(project_dir, sample, file_dic[local_name]["ena_file"])
@@ -255,14 +256,19 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
                                                      closestAllele, diffToClosest, imgtDiff, 
                                                      enafile, sequence, geneMap, settings, log)
         except BothAllelesNovelError as E:
-            problem_dic[local_name] = [sample, local_name, E.allele, E.alleles]
+            multi_dic[local_name] = [sample, local_name, E.allele, E.alleles]
+        except InvalidPretypingError as E:
+            problem_dic[local_name] = [sample, local_name, E.locus, E.allele_name, E.alleles, E.problem]
     
     if settings["modus"] == "productive":
         update_IPD_counter(submissionCounter, counter_cf, config_file, lock_file, log)
     
     if problem_dic:
         log.debug("\t=> encountered a problem in {} samples: please fix".format(len(problem_dic)))
-        return False, "Multiple novel alleles in target locus", problem_dic
+        return False, "Invalid pretypings", problem_dic
+    elif multi_dic:
+        log.debug("\t=> encountered multiple novel alleles in {} samples: please fix".format(len(multi_dic)))
+        return False, "Multiple novel alleles in target locus", multi_dic
     else:
         log.debug("\t=> successfully made IPD data")
         return imgt_data, cell_lines, customer_dic

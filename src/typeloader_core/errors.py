@@ -20,3 +20,18 @@ class BothAllelesNovelError(Exception):
     def __init__(self, allele, alleles):
         self.allele = allele #TargetAllele object
         self.alleles = alleles # list of both alleles from the pretypings csv
+        
+class InvalidPretypingError(Exception):
+    """raised when TypeLoader tries to create an IPD file for an allele with an invalid pretyping
+    """
+    def __init__(self, target_allele, alleles, allele_name, locus, problem):
+        self.allele = target_allele #TargetAllele object
+        self.allele_name = allele_name # name of closest allele, assigned by TypeLoader
+        self.locus = locus
+        if not "new" in allele_name:
+            if self.locus.startswith("KIR"):
+                self.allele_name = allele_name + "new"
+            else:
+                self.allele_name = allele_name + ":new"
+        self.alleles = "|".join(alleles) # list of both alleles from the pretypings csv
+        self.problem = problem

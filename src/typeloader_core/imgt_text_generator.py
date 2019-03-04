@@ -3,7 +3,7 @@ import re
 from copy import copy
 import textwrap
 from .imgtformat import *
-from .errors import BothAllelesNovelError
+from .errors import BothAllelesNovelError, InvalidPretypingError
 
 def make_genemodel_text(enaFile, sequence):
 
@@ -57,7 +57,7 @@ def make_genemodel_text(enaFile, sequence):
     return imgtGeneModelText
 
 
-def reformat_partner_allele(alleles, myallele, log):
+def reformat_partner_allele(alleles, myallele, length, log):
     """tries to figure out which of the two novel alleles of the target locus is itself
     """
     log.info("Figuring out which allele this is...")
@@ -68,11 +68,21 @@ def reformat_partner_allele(alleles, myallele, log):
     success = False
     if alleles[0] == myself and alleles[1].split(":")[0] in myallele.partner_allele:
         log.info("\t => Success: {} is self, {} is partner allele!".format(alleles[0], alleles[1]))
-        alleles = [alleles[0], alleles[1].split(":")[0]]
+        partner = alleles[1]
+        if ":" in partner:
+            partner = partner.split(":")[0]
+        else:
+            partner = partner[:length]
+        alleles = [alleles[0], partner]
         success = True
     elif alleles[1] == myself and alleles[0].split(":")[0] in myallele.partner_allele:
         log.info("\t => Success: {} is self, {} is partner allele!".format(alleles[1], alleles[0]))
-        alleles = [alleles[0].split(":")[0], alleles[1]]
+        partner = alleles[1]
+        if ":" in partner:
+            partner = partner.split(":")[0]
+        else:
+            partner = partner[:length]
+        alleles = [partner, alleles[1]]
         success = True
     if not success:
         log.info("\t => Could not figure it out, need user input!")
@@ -82,22 +92,43 @@ def reformat_partner_allele(alleles, myallele, log):
 
 def make_befund_text(befund, closestAllele, myallele, geneMap, log):
     befundText = ""
+    [locus, self_name] = closestAllele.split("*")
+    if locus.startswith("KIR"):
+        KIR = True
+        self_name = self_name[:3]
+    else:
+        KIR = False
+        self_name = self_name.split(":")[0]
     for gene in list(befund.keys()):
         if (re.search(geneMap["gene"][0], gene) and geneMap["targetFamily"] == geneMap["gene"][0] or geneMap["targetFamily"] == geneMap["gene"][1]):
-            myalleles = [allele for allele in befund[gene]]
+            length = 3 if KIR else 2
+            myalleles = [allele.zfill(length) for allele in befund[gene]]
             alleles = ",".join(myalleles)
             if gene == myallele.gene:
+                # check for consistency:
                 mystring = alleles.lower()
-                i = mystring.count(":new") + mystring.count(":xxx")
+                if "pos" in mystring:
+                    log.warning("Invalid Pretyping: pretyping for target locus should not contain POS. Please adjust pretyping file!")
+                    raise InvalidPretypingError(myallele, myalleles, self_name, gene, "POS is not acceptable pretyping for target locus")
+                    return
+                if self_name not in mystring:
+                    log.warning("Invalid Pretyping: allele_name '{}:new' not found in pretyping for target locus. Please adjust pretyping file!".format(self_name))
+                    raise InvalidPretypingError(myallele, myalleles, self_name, gene, "allele_name not found in pretyping")
+                    return
+                i = mystring.count("new") + mystring.count("xxx")
+                if i == 0:
+                    raise InvalidPretypingError(myallele, myalleles, self_name, gene, "no allele marked as new in pretyping")
+                    return
                 if i > 1:
                     log.info("Target locus {} has {} novel alleles".format(myallele.gene, i))
-                    success, alleles = reformat_partner_allele(myalleles, myallele, log)
+                    success, alleles = reformat_partner_allele(myalleles, myallele, length, log)
                     if not success:
                         log.warning("Please indicate self!".format(myallele.gene, i))
                         raise BothAllelesNovelError(myallele, myalleles)
+                        return
                     
             befundText += otherAllelesString.replace("{gene}", gene).replace("{alleleNames}",alleles)
-    print(befundText)
+#     print(befundText)
     return befundText
 
 
