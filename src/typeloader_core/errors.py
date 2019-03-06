@@ -33,5 +33,5 @@ class InvalidPretypingError(Exception):
                 self.allele_name = allele_name + "new"
             else:
                 self.allele_name = allele_name + ":new"
-        self.alleles = "|".join(alleles) # list of both alleles from the pretypings csv
+        self.alleles = ",".join(alleles) # list of both alleles from the pretypings csv
         self.problem = problem

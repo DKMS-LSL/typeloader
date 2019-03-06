@@ -66,25 +66,32 @@ def reformat_partner_allele(alleles, myallele, length, log):
     else:
         myself = myallele.target_allele
     success = False
-    if alleles[0] == myself and alleles[1].split(":")[0] in myallele.partner_allele:
-        log.info("\t => Success: {} is self, {} is partner allele!".format(alleles[0], alleles[1]))
-        partner = alleles[1]
-        if ":" in partner:
-            partner = partner.split(":")[0]
-        else:
-            partner = partner[:length]
-        alleles = [alleles[0], partner]
-        success = True
-    elif alleles[1] == myself and alleles[0].split(":")[0] in myallele.partner_allele:
-        log.info("\t => Success: {} is self, {} is partner allele!".format(alleles[1], alleles[0]))
-        partner = alleles[1]
-        if ":" in partner:
-            partner = partner.split(":")[0]
-        else:
-            partner = partner[:length]
-        alleles = [partner, alleles[1]]
-        success = True
-    if not success:
+    for i in range(len(alleles)):
+        if alleles[i] == myself:
+            match = True
+            for j in range(len(alleles)):
+                if i != j:
+                    if not alleles[j].split(":")[0] in myallele.partner_allele:
+                        match = False
+            if match: # if all remaining alleles are part of myallele.partner_allele
+                partners = []
+                for k, a in enumerate(alleles):
+                    if k != i:
+                        if ":" in a:
+                            partners.append(a.split(":")[0])
+                        else:
+                            partners.append(a[:length])
+                partner = ",".join(partners)
+                reformated_alleles = [alleles[i], partner]
+                appendix = "s are" if len(alleles) > 2 else " is"
+                log.info("\t => Success: {} is self, partner allele{} {}!".format(alleles[i], appendix, 
+                                                                                  partner))
+                success = True
+                continue
+                        
+    if success:
+        alleles = reformated_alleles
+    else:
         log.info("\t => Could not figure it out, need user input!")
     alleles = ",".join(alleles)
     return success, alleles
@@ -109,11 +116,11 @@ def make_befund_text(befund, closestAllele, myallele, geneMap, log):
                 mystring = alleles.lower()
                 if "pos" in mystring:
                     log.warning("Invalid Pretyping: pretyping for target locus should not contain POS. Please adjust pretyping file!")
-                    raise InvalidPretypingError(myallele, myalleles, self_name, gene, "POS is not acceptable pretyping for target locus")
+                    raise InvalidPretypingError(myallele, myalleles, self_name, gene, "POS is not acceptable pretyping for a target locus")
                     return
                 if self_name not in mystring:
                     log.warning("Invalid Pretyping: allele_name '{}:new' not found in pretyping for target locus. Please adjust pretyping file!".format(self_name))
-                    raise InvalidPretypingError(myallele, myalleles, self_name, gene, "allele_name not found in pretyping")
+                    raise InvalidPretypingError(myallele, myalleles, self_name, gene, "assigned allele name not found in pretyping")
                     return
                 i = mystring.count("new") + mystring.count("xxx")
                 if i == 0:
