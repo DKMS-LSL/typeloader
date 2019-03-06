@@ -132,7 +132,7 @@ class BothAllelesNovelDialog(QDialog):
         """
         (local_name, pretyping) = mysignal
         alleles = self.allele_dic[local_name][-1]
-        partner_allele = " or ".join([allele for allele in alleles if allele != pretyping])
+        partner_allele = " and ".join([allele for allele in alleles if allele != pretyping])
         self.choices_dic[local_name] = (pretyping, partner_allele)
         self.check_ready()
     
@@ -225,7 +225,7 @@ class InvalidPretypingsDialog(QDialog):
         self.table.setColumnCount(6)
         self.table.setRowCount(len(self.allele_dic))
         layout.addWidget(self.table)
-        self.table.setHorizontalHeaderLabels(["Sample", "Allele name", "Locus", "Closest allele", "Pretyping", "Problem"])
+        self.table.setHorizontalHeaderLabels(["Sample", "Allele Name", "Locus", "Assigned Allele", "Pretyping", "Problem"])
         for n, allele in enumerate(self.allele_dic):
             i = 0
             for item in self.allele_dic[allele]:
@@ -312,8 +312,9 @@ class IPDFileChoiceTable(FileChoiceTable):
         self.old_cell_lines.emit(self.cell_line_dic)
         self.additional_info.emit(self.allele_dic)
     
-    def refresh(self, project, addfilter, addfilter2):
+    def refresh(self, project, addfilter, addfilter2, keep_choices = False):
         self.log.debug("refreshing IPDFileChoiceTable...")
+        self.keep_choices = keep_choices
         self.myfilter = " where alleles.project_name = '{}' {} order by ENA_submission_id, project_nr".format(project, addfilter)
         self.myfilter2 = " where alleles.project_name = '{}' {} order by ENA_submission_id, project_nr".format(project, addfilter2)
         self.fill_UI()
@@ -473,15 +474,16 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.refresh_section3()
         self.proceed_sections(1, 2)
         
-    def refresh_section3(self):
+    def refresh_section3(self, keep_choices = False):
         """refreshes data in section3 after project has been changed
         """
         self.log.debug("Refreshing section 3...")
         self.project_info.fill_UI(self.project)
-        self.project_files.refresh(self.project, self.add_filter, self.add_filter2)
-        if self.settings["modus"] == "debugging":
-            if self.project_files.check_dic: # if debugging, auto-select first file
-                self.project_files.check_dic[0].click()
+        self.project_files.refresh(self.project, self.add_filter, self.add_filter2, keep_choices = keep_choices)
+        if not keep_choices:
+            if self.settings["modus"] == "debugging":
+                if self.project_files.check_dic: # if debugging, auto-select first file
+                    self.project_files.check_dic[0].click()
         
     @pyqtSlot(str, str)
     def catch_project_info(self, title, description):
@@ -594,7 +596,7 @@ class IPDSubmissionForm(CollapsibleDialog):
     
     def reattempt_make_IPD_files(self):
         self.log.info("Re-attempting IPD file creation...")
-        self.refresh_section3()
+        self.refresh_section3(keep_choices = True)
         self.make_IPD_files()
                 
     @pyqtSlot()

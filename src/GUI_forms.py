@@ -461,6 +461,7 @@ class FileChoiceTable(QTableWidget):
         self.query = query
         self.num_columns = num_columns
         self.filter = myfilter
+        self.keep_choices = False
         self.init_UI()
     
     def init_UI(self):
@@ -489,6 +490,10 @@ class FileChoiceTable(QTableWidget):
         """fills table with data
         """
         self.get_data()
+        
+        if self.keep_choices: # if table is refreshed just to update data before re-attempt, don't repopulate
+            self.count_chosen()
+            return
         
         rows = len(self.data) + 1
         self.setRowCount(rows)
