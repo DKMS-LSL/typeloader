@@ -24,6 +24,7 @@ sys.path.append(mypath_inner)
 import general, db_internal, GUI_login
 from __init__ import __version__
 from xml.etree import ElementTree
+from collections import namedtuple
 
 # no .pyw import possibile in linux
 # deletion in Test_Clean_Stuff
@@ -80,15 +81,18 @@ samples_dic =  {# samples to test
                                "id_ext" : "1348480",
                                "submission_id" : "2222"},
                 "sample_3" : { "input_dir_origin" : "confirmation_file",
-                               "local_name" : "DKMS-LSL_ID15390636_KIR3DP1_1",
+                               "local_name" : "DKMS-LSL_ID15390636_3DP1_1",
                                "cell_line" : "DKMS-LSL_ID15390636",
                                "curr_ipd_befund_file" : "Befunde_3DP1_1.csv",
                                "curr_ipd_ena_acc_file" : "ENA_Accession_3DP1_1",
-                               "blast_file_name" : "DKMS-LSL_ID15390636_KIR3DP1_1.blast.xml",
-                               "ena_file_name" : "DKMS-LSL_ID15390636_KIR3DP1_1.ena.txt",
+                               "blast_file_name" : "DKMS-LSL_ID15390636_3DP1_1.blast.xml",
+                               "ena_file_name" : "DKMS-LSL_ID15390636_3DP1_1.ena.txt",
                                "id_int" : "ID15390636",
                                "id_ext" : "1370324_A",
-                               "submission_id" : "3333"}                              
+                               "submission_id" : "3333",
+                               "gene" : "KIR3DP1",
+                               "target_allele" : 'KIR3DL3*006',
+                               "partner_allele" : 'KIR3DL3*003'}                              
                 }
 
 settings_both = {"reference_dir" : "reference_data_unittest",
@@ -129,6 +133,8 @@ project_accession = "" ## this will be set in create project
 app = QApplication(sys.argv)
 
 today = datetime.datetime.now()
+
+TargetAllele = namedtuple("TargetAllele", "gene target_allele partner_allele")
 
 #===========================================================
 # test cases:
@@ -1430,7 +1436,12 @@ class Test_Make_IMGT_Files_py(unittest.TestCase):
             self.ENA_id_map, self.ENA_gene_map = MIF.parse_email(os.path.join(self.data_dir, samples_dic["sample_3"]["curr_ipd_ena_acc_file"]))
             self.pretypings = os.path.join(self.data_dir, samples_dic["sample_3"]["curr_ipd_befund_file"])
             self.curr_time = time.strftime("%Y%m%d%H%M%S")
-            self.subm_id = "IPD_{}".format(self.curr_time)        
+            self.subm_id = "IPD_{}".format(self.curr_time)
+            self.allele_dic = {samples_dic["sample_3"]["local_name"]: 
+                               TargetAllele(gene=samples_dic["sample_3"]["gene"], 
+                                            target_allele=samples_dic["sample_3"]["target_allele"], 
+                                            partner_allele=samples_dic["sample_3"]["partner_allele"])
+                               }
             
     @classmethod
     def tearDownClass(self):
@@ -1442,7 +1453,7 @@ class Test_Make_IMGT_Files_py(unittest.TestCase):
         test it with sample 3 --> confirmation file
         delete the ipd and zip file
         """
-        MIF.write_imgt_files(self.data_dir, self.samples, self.file_dic, self.ENA_id_map, 
+        MIF.write_imgt_files(self.data_dir, self.samples, self.file_dic, self.allele_dic, self.ENA_id_map, 
                              self.ENA_gene_map, self.pretypings, self.subm_id, 
                              self.data_dir, curr_settings, log)
         
