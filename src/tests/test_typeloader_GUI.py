@@ -869,6 +869,7 @@ class Test_Views(unittest.TestCase):
         """tests whether content of alleles overview is correct
         """
         view = self.views["OValleles"]
+        view.add_headers()
         model = view.proxy
         num_rows = model.rowCount()
         self.assertEqual(num_rows, 2, "AllelesOverviews does not contain 2 rows!")
