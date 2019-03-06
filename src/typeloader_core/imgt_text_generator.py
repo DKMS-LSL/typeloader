@@ -97,7 +97,7 @@ def reformat_partner_allele(alleles, myallele, length, log):
     return success, alleles
     
 
-def make_befund_text(befund, closestAllele, myallele, geneMap, log):
+def make_befund_text(befund, closestAllele, myallele, geneMap, differencesText, log):
     befundText = ""
     [locus, self_name] = closestAllele.split("*")
     if locus.startswith("KIR"):
@@ -122,17 +122,18 @@ def make_befund_text(befund, closestAllele, myallele, geneMap, log):
                     log.warning("Invalid Pretyping: allele_name '{}:new' not found in pretyping for target locus. Please adjust pretyping file!".format(self_name))
                     raise InvalidPretypingError(myallele, myalleles, self_name, gene, "assigned allele name not found in pretyping")
                     return
-                i = mystring.count("new") + mystring.count("xxx")
-                if i == 0:
-                    raise InvalidPretypingError(myallele, myalleles, self_name, gene, "no allele marked as new in pretyping")
-                    return
-                if i > 1:
-                    log.info("Target locus {} has {} novel alleles".format(myallele.gene, i))
-                    success, alleles = reformat_partner_allele(myalleles, myallele, length, log)
-                    if not success:
-                        log.warning("Please indicate self!".format(myallele.gene, i))
-                        raise BothAllelesNovelError(myallele, myalleles)
+                if differencesText != "CC   Confirmation": # confirmations should not be labelled "new"!
+                    i = mystring.count("new") + mystring.count("xxx")
+                    if i == 0:
+                        raise InvalidPretypingError(myallele, myalleles, self_name, gene, "no allele marked as new in pretyping")
                         return
+                    if i > 1:
+                        log.info("Target locus {} has {} novel alleles".format(myallele.gene, i))
+                        success, alleles = reformat_partner_allele(myalleles, myallele, length, log)
+                        if not success:
+                            log.warning("Please indicate self!".format(myallele.gene, i))
+                            raise BothAllelesNovelError(myallele, myalleles)
+                            return
                     
             befundText += otherAllelesString.replace("{gene}", gene).replace("{alleleNames}",alleles)
 #     print(befundText)
@@ -219,8 +220,8 @@ def make_imgt_footer(sequence, sequencewidth=60):
 
 def make_imgt_text(submissionId, cellLine, local_name, myallele, enaId, befund, closestAllele, diffToClosest, 
                    imgtDiff, enafile, sequence, geneMap, settings, log):
-    otherAllelesText = make_befund_text(befund, closestAllele, myallele, geneMap, log)
     differencesText = refAlleleDiffString.replace("{text}",make_diff_line(diffToClosest, imgtDiff, closestAllele))    
+    otherAllelesText = make_befund_text(befund, closestAllele, myallele, geneMap, differencesText, log)
     genemodelText = make_genemodel_text(enafile, sequence)
     footerText = make_imgt_footer(sequence)
     todaystr = datetime.datetime.now().strftime('%d/%m/%Y')

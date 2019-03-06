@@ -252,7 +252,8 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
             cell_line = local_name
         
         try:
-            imgt_data[submissionId] = make_imgt_text(submissionId, cell_line, local_name, allele_dic[local_name], enaId, befund,  
+            imgt_data[submissionId] = make_imgt_text(submissionId, cell_line, local_name, allele_dic[local_name], 
+                                                     enaId, befund,  
                                                      closestAllele, diffToClosest, imgtDiff, 
                                                      enafile, sequence, geneMap, settings, log)
         except BothAllelesNovelError as E:
@@ -297,6 +298,7 @@ def write_imgt_files(project_dir, samples, file_dic, allele_dic, ENA_id_map, ENA
     imgt_files = []
     cell_lines = []
     imgt_file_names = None
+    
     try:
         log.debug("\tMaking IPD data...")
         results = make_imgt_data(project_dir, samples, file_dic, allele_dic, ENA_id_map, ENA_gene_map, 
