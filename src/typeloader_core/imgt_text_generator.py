@@ -95,8 +95,22 @@ def reformat_partner_allele(alleles, myallele, length, log):
         log.info("\t => Could not figure it out, need user input!")
     alleles = ",".join(alleles)
     return success, alleles
-    
 
+
+def check_all_required_loci(befund_text, gene, target_allele, alleles, allele_name, log):
+    """makes sure all loci required by IPD have a pretyping
+    """
+    required = ["HLA-A", "HLA-B", "HLA-DQB1", gene]
+    missing = []
+    for locus in required:
+        if not locus in befund_text:
+            missing.append(locus)
+    if missing:
+        log.warning("No pretyping found for {}. IPD requires at least HLA-A, -B, -DQB1 and the target gene of your novel allele!".format(",".join(missing)))
+        raise InvalidPretypingError(target_allele, "", allele_name, gene, 
+                                    "pretyping for {} missing".format(" and ".join(sorted(missing))))
+        
+    
 def make_befund_text(befund, closestAllele, myallele, geneMap, differencesText, log):
     befundText = ""
     [locus, self_name] = closestAllele.split("*")
@@ -136,7 +150,7 @@ def make_befund_text(befund, closestAllele, myallele, geneMap, differencesText, 
                             return
                     
             befundText += otherAllelesString.replace("{gene}", gene).replace("{alleleNames}",alleles)
-#     print(befundText)
+    check_all_required_loci(befundText, locus, myallele, alleles, self_name, log)
     return befundText
 
 
