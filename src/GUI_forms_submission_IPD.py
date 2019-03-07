@@ -539,6 +539,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         """retrieves values for IPD file generation from GUI
         """
         self.pretypings = self.befund_widget.field.text().strip()
+        self.log.debug("pretypings file: {}".format(self.pretypings))
         self.project = self.proj_widget.field.text().strip()
         self.curr_time = time.strftime("%Y%m%d%H%M%S")
         self.subm_id = "IPD_{}".format(self.curr_time)

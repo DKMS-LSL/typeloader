@@ -9,7 +9,7 @@ unit tests for typeloader_GUI
 '''
 
 import unittest
-import os, sys, re, time, platform, datetime
+import os, sys, re, time, platform, datetime, csv
 import difflib # compare strings
 import shutil
 from random import randint
@@ -31,7 +31,7 @@ from collections import namedtuple
 shutil.copyfile(os.path.join(mypath_inner, "typeloader_GUI.pyw"), os.path.join(mypath_inner, "typeloader_GUI.py"))
 
 import typeloader_GUI
-from typeloader_core import errors, EMBLfunctions as EF, make_imgt_files as MIF, backend_make_ena as BME
+from typeloader_core import errors, EMBLfunctions as EF, make_imgt_files as MIF, backend_make_ena as BME, imgt_text_generator as ITG
 import GUI_forms_new_project as PROJECT
 import GUI_forms_new_allele as ALLELE
 import GUI_forms_submission_ENA as ENA
@@ -663,7 +663,8 @@ class Test_Send_To_IMGT(unittest.TestCase):
                             "updating {}.IPD_submission_nr", 
                             "Successfully updated {}.IPD_submission_nr", 
                             "Can't update {}.IPD_submission_nr", 
-                            "ALLELES")    
+                            "ALLELES")
+
         
     @classmethod
     def tearDownClass(self):
@@ -676,7 +677,6 @@ class Test_Send_To_IMGT(unittest.TestCase):
         """                
         # click to proceed to section 2
         self.form.ok_btn1.click()
-        
         ENA_file = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], 
                                 samples_dic["sample_1"]["input_dir_origin"], 
                                 samples_dic["sample_1"]["curr_ipd_ena_acc_file"])
@@ -699,7 +699,6 @@ class Test_Send_To_IMGT(unittest.TestCase):
         self.assertEqual(self.form.project_files.item(0,2).text(), samples_dic["sample_1"]["id_int"])
         self.assertEqual(self.form.project_files.item(0,3).text(), samples_dic["sample_1"]["local_name"])
         self.assertEqual(self.form.project_files.item(0,4).text(), "ENA submitted")
-        
         query = "SELECT * from ENA_SUBMISSIONS"
         success, data_content = execute_db_query(query, 
                                          2, 
@@ -708,9 +707,8 @@ class Test_Send_To_IMGT(unittest.TestCase):
                                          "Successful select * from {}", 
                                          "Can't get rows from {}", 
                                          "ENA_SUBMISSIONS")    
-        
+        self.assertTrue(success, "Could not retrieve data from ENA_submissions")
         self.assertEqual(self.form.project_files.item(0,5).text(), data_content[0][1]) # submissionID
-        
         self.form.submit_btn.click()
         self.form.ok_btn.click()
     
@@ -1681,6 +1679,7 @@ class Test_rejection_short_UTR3(unittest.TestCase):
         ref_error = errors.IncompleteSequenceError(missing_bp)
         self.assertEqual(msg, ref_error.msg)
         
+
 class Test_null_alleles(unittest.TestCase):
     """ 
     test if TypeLoader correctly annotates null alleles
@@ -1740,7 +1739,91 @@ class Test_null_alleles(unittest.TestCase):
             result = compare_2_files(reference_path = reference_path, query_var = ENA_text)
             self.assertEqual(len(result["added_sings"]), 0)
             self.assertEqual(len(result["deleted_sings"]), 0)              
-        
+ 
+
+class Test_pretyping_valid(unittest.TestCase):
+    """ 
+    test if TypeLoader correctly handles valid and invalid pretypings
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping Test_pretyping_valid because skip_other_tests is set to True")
+        else:
+            self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "pretyping_check")
+            
+            # read samples from csv:
+            log.info("Reading files...")
+            log.debug("Reading samples.csv...")
+            SampleObject = namedtuple("SampleObject", """name description closest_allele gene 
+                                                        target_allele partner_allele 
+                                                        target_family diff_text final_result error_exp""")
+            self.samples = {}
+            with open(os.path.join(self.mydir, "samples.csv")) as f:
+                data = csv.reader(f, delimiter=",")
+                for i, row in enumerate(data):
+                    if i != 0:
+                        if row:
+                            s = SampleObject(name = row[0],
+                                             description = row[1],
+                                             closest_allele = row[2],
+                                             gene = row[3], 
+                                             target_allele = row[4],
+                                             partner_allele = row[5],
+                                             target_family = row[6],
+                                             diff_text = row[7],
+                                             final_result = row[8],
+                                             error_exp = row[9])
+                            self.samples[s.name] = s
+            
+            # read pretypings from csv:
+            log.debug("Reading pretypings.csv...")
+            (self.pretypings, self.topics) = MIF.getPatientBefund(os.path.join(self.mydir, "pretypings.csv"))
+
+            # pepare error_dic:
+            from typeloader_core import errors
+            self.error_dic = {"Cannot tell which novel allele from pretyping this is" : errors.BothAllelesNovelError,
+                              "no allele marked as new in pretyping" : errors.InvalidPretypingError,
+                              "assigned allele name not found in pretyping" : errors.InvalidPretypingError,
+                              "POS is not acceptable pretyping for a target locus": errors.InvalidPretypingError,
+                              "pretyping for HLA-B missing" : errors.InvalidPretypingError}
+                        
+    @classmethod
+    def tearDownClass(self):
+        pass
+     
+    def test_pretypings(self):
+        """test if pretypings and multiple alleles are handled correctly
+        """
+        for name in self.samples:
+            s = self.samples[name]
+            log.debug("testing {}: ({})".format(s.name, s.description))
+            target_allele = TargetAllele(gene = s.gene, target_allele = s.target_allele, partner_allele = s.partner_allele)
+            
+            if s.error_exp: # sad path testing (are correct errors raised?)
+                myerror = self.error_dic[s.error_exp]
+                # make sure right error type is raised:
+                self.assertRaises(myerror, ITG.make_befund_text, self.pretypings[name], s.closest_allele, target_allele, 
+                                           {'gene': ['HLA', 'KIR'], 'targetFamily': s.target_family},
+                                           s.diff_text, log)
+                # make sure error text is correct if an error is raised:
+                try:
+                    ITG.make_befund_text(self.pretypings[name], s.closest_allele, target_allele, 
+                                           {'gene': ['HLA', 'KIR'], 'targetFamily': s.target_family},
+                                           s.diff_text, log)
+                except Exception as E:
+                    self.assertEqual(E.problem, s.error_exp)
+                
+            else: # happy path testing (these should pass without errors)
+                txt = ITG.make_befund_text(self.pretypings[name], s.closest_allele, target_allele, 
+                                           {'gene': ['HLA', 'KIR'], 'targetFamily': s.target_family},
+                                           s.diff_text, log)
+                for line in txt.split("\n"):
+                    if s.gene in line:
+                        self.assertEqual(line, "FT                  /{}".format(s.final_result), 
+                                         "Error in {}: {}".format(s.name, s.description)) # check result correct
+            
+       
 class Test_Clean_Stuff(unittest.TestCase):
     """ 
     Remove all directories and files written by  all unit tests
@@ -1884,10 +1967,23 @@ def caseFactory(
         key=caseSorter
     )
 
+def log_uncaught_exceptions(cls, exception, tb):
+    """reimplementation of sys.excepthook;
+    catches uncaught exceptions, logs them and exits the app
+    """
+    import traceback
+    from PyQt5.QtCore import QCoreApplication
+    log.critical('{0}: {1}'.format(cls, exception))
+    log.exception(msg = "Uncaught Exception", exc_info = (cls, exception, tb))
+    #TODO: (future) maybe find a way to display the traceback only once, both in console and logfile?
+    sys.__excepthook__(cls, exception, traceback)
+    QCoreApplication.exit(1)
+pass
 #===========================================================
 # main:
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
+    sys.excepthook = log_uncaught_exceptions 
     cases = suiteFactory(*caseFactory())
     runner = unittest.TextTestRunner(verbosity=2, failfast=True)
     runner.run(cases)    

@@ -20,6 +20,7 @@ class BothAllelesNovelError(Exception):
     def __init__(self, allele, alleles):
         self.allele = allele #TargetAllele object
         self.alleles = alleles # list of both alleles from the pretypings csv
+        self.problem = "Cannot tell which novel allele from pretyping this is"
         
 class InvalidPretypingError(Exception):
     """raised when TypeLoader tries to create an IPD file for an allele with an invalid pretyping
