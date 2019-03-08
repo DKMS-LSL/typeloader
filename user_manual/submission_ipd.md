@@ -28,22 +28,9 @@ TypeLoader needs it to find the ENA accession number of each allele, which is re
 Save this file to anywhere on your computer and click ``upload email attachment from ENA reply`` to choose and upload it to TypeLoader.
 
 ###  Pretyping file 
-For each target allele, IPD requires the genotyping results for all other loci known for this sample, which must be at least HLA-A, HLA-B and HLA-DQB1 plus the locus you are submitting. These can be provided to TypeLoader in a .csv file with the following columns and one line per target allele to be submitted:
+For each target allele, IPD requires the genotyping results for all other loci known for this sample. See [=> Pretypings file](pretypings.csv) for detailed documentation of how to create this file.
 
-  * **Internal donor ID**: **this column is used identify the sample!** 
-  * **Cell line**: optional, can also be left blank (but **NOT** deleted!)
-  * **Customer**: the customer who sent this sample; this information is saved in TypeLoader
-This is followed by several columns per locus:
-  * **HLA loci:** 2 columns per locus (one per allele), "A1", "A2" etc. (genotyping results should be at maximal resolution and contain no locus)
-  * **KIR loci:** 4 columns per locus (one per possible allele), "KIR2DL1-1", "KIR2DL1-2" etc. (genotyping results should be shortened to 3 field resolution or be given as POS/NEG for absence/presence. Cells that are not needed should be left blank).
-
-Example file:
-
-![IPDSubmission2b](images/ipd_submission2a.png)
-
-![Important](images/icon_important.png) **You can download an example file with the right format and headers from TypeLoader's menu: ``Options`` => ``Download example files`` => ``Pretypings File``. You can use this as a template to fill in your data, either manually or from your LIMS etc.**
-
-Click ``Choose file with pretypings for each sample`` to choose and upload this file to TypeLoader.
+Once you have your pretypings file, click ``Choose file with pretypings for each sample`` to choose and upload this file to TypeLoader.
 
 ##  (3) Choose alleles to submit 
 ![IPDSubmission](images/ipd_submission3.png)

@@ -87,7 +87,7 @@ class BothAllelesNovelDialog(QDialog):
         self.allele_dic = allele_dic
         super().__init__()
         
-        self.setWindowTitle("Both alleles novel")
+        self.setWindowTitle("Multiple novel alleles")
         self.setWindowIcon(QIcon(general.favicon))
 #         self.resize(200,50)
         self.init_UI()
@@ -434,7 +434,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         ENA_file_btn = FileButton("Upload email attachment from ENA reply", mypath, parent=self)
         self.ENA_file_widget = ChoiceSection("ENA reply file:", [ENA_file_btn], self, label_width=self.label_width)
         if self.settings["modus"] == "debugging":
-            self.ENA_file_widget.field.setText(r"\\nasdd11\bioinf\Projects\typeloader\staging\data_unittest\confirmation_file\ENA_Accession_3DP1_1")
+            self.ENA_file_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\both_new\KIR\invalid_ENA.txt")
             ENA_file_btn.change_to_normal()
             
         layout.addWidget(self.ENA_file_widget, 0, 0)
@@ -443,7 +443,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.befund_widget = ChoiceSection("Pretyping file:", [befund_file_btn], self, label_width=self.label_width)
         self.befund_widget.setWhatsThis("Choose a file containing a list of previously identified alleles for all loci for each sample")
         if self.settings["modus"] == "debugging":
-            self.befund_widget.field.setText(r"\\nasdd11\bioinf\Projects\typeloader\staging\data_unittest\confirmation_file\Befunde_3DP1_1.csv")
+            self.befund_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\both_new\KIR\invalid_pretypings.csv")
             befund_file_btn.change_to_normal()
         layout.addWidget(self.befund_widget, 1, 0)
         
@@ -821,7 +821,7 @@ if __name__ == '__main__':
     settings_dic = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, settings_dic["db_file"])
     
-    project = "20190211_ADMIN_mixed_both"
+    project = "20190307_ADMIN_KIR3DL3_invalid"
     app = QApplication(sys.argv)
     
     problem_dic = {'DKMS10004135': ['ID13178800', 'DKMS-LSL_ID13178800_DPB1_1', TargetAllele(gene='HLA-DPB1', target_allele='HLA-DPB1*03:new', partner_allele='HLA-DPB1*13:01:01:01 or 02:01:02:01'), ['13:new', '04:new']]}
