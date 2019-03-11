@@ -101,7 +101,7 @@ settings_both = {"reference_dir" : "reference_data_unittest",
                 }
 
 # deletes database entries and project directory
-delete_all_stuff_at_the_end = True
+delete_all_stuff_at_the_end = False
 skip_other_tests = False # can be set to True to skip all tests except the one currently worked at (out-comment it there in setUpClass)
 
 log = general.start_log(level="DEBUG")
@@ -1740,6 +1740,77 @@ class Test_null_alleles(unittest.TestCase):
             self.assertEqual(len(result["added_sings"]), 0)
             self.assertEqual(len(result["deleted_sings"]), 0)              
  
+
+# class Test_multiple_novel_alleles(unittest.TestCase):
+#     """ 
+#     test if TypeLoader correctly handles multiple novel alleles in one locus
+#     """
+#     @classmethod
+#     def setUpClass(self):
+#         if True:#skip_other_tests:
+# #             self.skipTest(self, "Skipping Test_null_alleles because skip_other_tests is set to True")
+# #         else:
+#             self.project_name = "20190308_SA_A_128255" #project_name
+#             self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "multiple")
+#             self.sample_id_int = "ID000010"
+#             self.sample_id_ext = "test"
+#             self.local_name = 'DKMS-LSL_ID000010_3DP1_1'
+#             self.input_file = os.path.join(self.mydir, "ID000010.fa")
+#             self.pretypings = os.path.join(self.mydir, "Befunde.csv")
+#             self.ena_response_file = os.path.join(self.mydir, "ENA_reply")
+#             
+#             log.info("Check if allele already uploaded...")
+#             query = "select sample_id_int from alleles where local_name = '{}' and partner_allele is Null".format(self.local_name)
+#             _, data = execute_db_query(query, 1, log, "Allele already present?", 
+#                                          "Checking ALLELES for test allele {}".format(self.sample_id_int), 
+#                                          "Can't assess ALLELES whether {} is contained".format(self.sample_id_int), 
+#                                          "ALLELES")
+#             
+#             if not data:
+#                 log.info("Uploading allele...")
+#                 self.form1 = ALLELE.NewAlleleForm(log, mydb, self.project_name, curr_settings, None, self.sample_id_int, samples_dic["sample_1"]["id_ext"])
+#                 self.form1.file_widget.field.setText(os.path.join(self.mydir, "ID000010.fa"))
+#         
+#                 self.form1.upload_btn.setEnabled(True)
+#                 self.form1.upload_btn.click()
+#         
+#                 self.form1.save_btn.click()
+#                
+#             # prepare IPDSubmissionForm:
+#             self.form = IPD.IPDSubmissionForm(log, mydb, self.project_name, curr_settings, parent = None,
+#                                               TEST_auto_choose_first = False)
+#             
+#     @classmethod
+#     def tearDownClass(self):
+#         pass
+#     
+#     def test_multi_alleles_rejected(self):
+#         """test if target allele with multiple novel alleles according to pretyping 
+#         but unfitting target_allele/partner_allele correctly trigger the BothAllelesNovelDialog
+#         """
+#         # choose project:
+#         log.info("Choosing project...")
+#         self.form.proj_widget.field.setText(self.project_name)
+#         self.form.ok_btn1.check_ready()
+#         self.form.ok_btn1.click()
+#         # add files:
+#         log.info("Choosing files...")
+#         self.form.ENA_file_widget.field.setText(self.ena_response_file)
+#         self.form.befund_widget.field.setText(self.pretypings)
+#         self.form.ok_btn2.check_ready()
+#         self.form.ok_btn2.click()
+#         # select alleles:
+#         log.info("Selecting alleles...")
+#         if not self.form.project_files.check_dic[0].isChecked():
+#             self.form.project_files.check_dic[0].click() # if this fails, the alleles in the ENA reply file are probably not recognized correctly
+#         self.form.submit_btn.check_ready()
+#         self.form.submit_btn.click()
+#         
+#         # check if multi_dialog is raised:
+#         self.assertTrue(self.form.multis_handled, "BothAllelesNovelDialog was not raised!")
+#         #TODO: check
+#         log.info("Done")
+        
 
 class Test_pretyping_valid(unittest.TestCase):
     """ 
