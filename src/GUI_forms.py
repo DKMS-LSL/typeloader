@@ -135,7 +135,7 @@ class ProceedButton(QPushButton):
             self.setEnabled(True)
          
     @pyqtSlot()
-    def check_ready(self):
+    def check_ready(self, debugging = False):
         """checks all items: if all evaluate to True, enables proceeding 
         """
         self.log.debug("Ready for proceeding?")
@@ -152,9 +152,13 @@ class ProceedButton(QPushButton):
                     pass
                 if not text:
                     ready = False
+                if debugging:
+                    print("text:", text)
             elif "QCheckBox" in item_type:
                 if item.isChecked():
                     active_fields += 1
+                if debugging:
+                    print("checkbox:", item.isChecked())
             else:
                 if item.isEnabled():
                     active_fields += 1
@@ -164,6 +168,8 @@ class ProceedButton(QPushButton):
                         text = item.text()
                     if not text:
                         ready = False
+                    if debugging:
+                        print("text:", text)
         
         if active_fields == 0: # if nothing selected
             ready = False
@@ -462,6 +468,7 @@ class FileChoiceTable(QTableWidget):
         self.num_columns = num_columns
         self.filter = myfilter
         self.keep_choices = False
+        self.check_dic = {}
         self.init_UI()
     
     def init_UI(self):
@@ -498,7 +505,6 @@ class FileChoiceTable(QTableWidget):
         rows = len(self.data) + 1
         self.setRowCount(rows)
         
-        self.check_dic = {}
         all_checked = True
         for (i, row) in enumerate(self.data):
             cell_widget = QWidget()
