@@ -1,7 +1,17 @@
 # Version History
 
+## 2.2.1 (2019-03-11)
+### new features:
+- Recognize multiple novel alleles in target locus: this is now checked during IPD file creation amd the files are formatted accordingly. If necessary, user input is requested to clarify which of the given alleles is the target allele. (#72)
+- Pretyping checks: TypeLoader now checks whether the data given in the pretypings file fits the target alleles, and requests user changes where necessary to ensure consistent, sensible output. (#82)
+- Faster startup: the AlleleOverview, which is used rarely but time-intensive to build, is now only generated on demand. (#80)
+- Options for Workflow settings are now consistent with options available through IPD's web form (#78)
+
+### Updated user manual:
+- Description for pretypings file is much more elaborate now.
+
 ## 2.2.0 (2018-12-19)
-### new features
+### new features:
 - automatic detection of null alleles (#6)
 - policy change with major structural changes: the local_name is now the unique allele identifier, whereas cell_line is used for samples (#64)
 - IPD filenames, cell lines and local_names are now generated automatically (#57, #64)
@@ -14,9 +24,10 @@
 - sequences with incomplete UTR3 are now rejected (previously, they were accepted but produced buggy outcome) (#62)
 - workaround for ENA bug (certain sequences were unfairly rejected) (#53)
 	
-### Updated user manual
+### Updated user manual:
 - new: future features
 - new: elaborate first_start page to get new users started
+- new: elaborate instructions how to feed TypeLoader-generated data into IPD's web form
 - adjusted to all changes 
 
 ## 2.1.0 (2018-10-23)
