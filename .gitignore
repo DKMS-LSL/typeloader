@@ -10,6 +10,7 @@ blastn*
 reference_data*
 config_base.ini
 config_company.ini
+config_local.ini
 user.pickle
 log.txt
 src\TypeLoader_Setup.exe
