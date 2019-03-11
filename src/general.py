@@ -33,6 +33,7 @@ label_style_attention = "QLabel {background: DKMSyellow}".replace("DKMSyellow", 
 btn_style_normal = "QPushButton {default}"
 btn_style_clickme = "QPushButton {background: DKMSyellow; font-weight: bold}".replace("DKMSyellow", stylesheet.color_dic["DKMSyellow"])
 btn_style_ready = "QPushButton {background: DKMSgreen; font-weight: bold}".replace("DKMSgreen", stylesheet.color_dic["DKMSgreen"])
+btn_style_local = "QPushButton {background: DKMSlightpink; font-weight: bold}".replace("DKMSlightpink", stylesheet.color_dic["DKMSlightpink"])
 
 groupbox_style_normal = "QGroupBox {default}"
 groupbox_style_inactive = "QGroupBox {background: #F2F2F2}" # light grey background
