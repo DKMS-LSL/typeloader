@@ -26,11 +26,14 @@ local_config_file = "config_local.ini"
 #===========================================================
 # functions:
 
-def read_local_settings(log):
+def read_local_settings(settings, log):
     """reads settings from local config file,
     returns ConfigParser object
     """
-    log.info("Reading local settings...")
+    global local_config_file
+    if settings["modus"] == "staging":
+        local_config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), local_config_file)
+    log.info("Reading local settings from {}...".format(local_config_file))
     cf = ConfigParser()
     cf.read(local_config_file)
     return cf
@@ -41,7 +44,7 @@ def check_local(settings, log):
     else returns False 
     """
     permission = False
-    local_cf = read_local_settings(log)
+    local_cf = read_local_settings(settings, log)
     if settings["lab_of_origin"] == local_cf.get("Local", "company_name"):
         permission = True
     return permission
