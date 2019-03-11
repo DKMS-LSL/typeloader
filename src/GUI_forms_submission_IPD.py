@@ -29,6 +29,7 @@ from GUI_forms import (CollapsibleDialog, ChoiceSection, FileChoiceTable,
                        FileButton, ProceedButton, QueryButton)
 from GUI_forms_submission_ENA import ProjectInfoTable
 from GUI_misc import settings_ok
+from GUI_functions_local import check_local, check_nonproductive, make_fake_ENA_file
 
 #===========================================================
 # parameters:
@@ -451,7 +452,7 @@ class IPDSubmissionForm(CollapsibleDialog):
             self.ENA_file_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\both_new\KIR\invalid_ENA.txt")
             ENA_file_btn.change_to_normal()
             
-        layout.addWidget(self.ENA_file_widget, 0, 0)
+        layout.addWidget(self.ENA_file_widget, 1, 0)
         
         befund_file_btn = FileButton("Choose file with pretypings for each sample", mypath, parent=self)
         self.befund_widget = ChoiceSection("Pretyping file:", [befund_file_btn], self, label_width=self.label_width)
@@ -459,14 +460,43 @@ class IPDSubmissionForm(CollapsibleDialog):
         if self.settings["modus"] == "debugging":
             self.befund_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\both_new\KIR\invalid_pretypings.csv")
             befund_file_btn.change_to_normal()
-        layout.addWidget(self.befund_widget, 1, 0)
+        layout.addWidget(self.befund_widget, 2, 0)
         
         self.ok_btn2 = ProceedButton("Proceed", [self.ENA_file_widget.field, self.befund_widget.field], self.log, 0)
         self.proj_widget.choice.connect(self.ok_btn2.check_ready)
         self.befund_widget.choice.connect(self.ok_btn2.check_ready)
-        layout.addWidget(self.ok_btn2, 0, 1,3,1)
+        layout.addWidget(self.ok_btn2, 1, 1,3,1)
         self.ok_btn2.proceed.connect(self.proceed_to3)
         self.sections.append(("(2) Upload ENA reply file:", mywidget))
+        
+        # add hidden button to create fake ENA response & fake pretyping file:
+        if check_nonproductive(self.settings):
+            if check_local(self.settings, self.log): # only visible for non-productive LSL users 
+                self.fake_btn = QPushButton("Generate fake input files")
+                self.fake_btn.setStyleSheet(general.btn_style_local)
+                self.fake_btn.clicked.connect(self.create_fake_input_files)
+                layout.addWidget(self.fake_btn, 1,1) 
+    
+    @pyqtSlot()
+    def create_fake_input_files(self):
+        """creates a fake ENA reply file & pretypinsg file
+        which can be used to create fake IPD files of any alleles in this project;
+        this functionality can be used to create IPD formatted files for alleles 
+         that have not been submitted to ENA or have not received an ENA identifier, yet
+        """
+        self.log.info("Creating fake ENA response file & fake pretypings file...")
+        try:
+            success, ena_file, pretypings_file = make_fake_ENA_file(self.project, self.log, self.settings, "local_name", self)
+        except Exception as E:
+            self.log.exception(E)
+            QMessageBox.warning(self, "Problem", "Could not generate fake files:\n\n{}".format(repr(E)))
+            success = False
+            
+        if success:
+            self.ENA_file_widget.field.setText(ena_file)
+            self.befund_widget.field.setText(pretypings_file)
+            self.fake_btn.setStyleSheet(general.btn_style_normal)
+
     
     def parse_ENA_file(self):
         """parses the ENA reply file,
