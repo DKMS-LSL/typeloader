@@ -61,11 +61,12 @@ class AlleleChoiceBox(QWidget):
         box_layout = QHBoxLayout(box)
         box.setLayout(box_layout)
         layout.addWidget(box)
-        
+        self.options = []
         for a in self.alleles:
             btn = QRadioButton(a)
             box_layout.addWidget(btn)
             btn.clicked.connect(self.emit_choice)
+            self.options.append(btn)
             
     @pyqtSlot()
     def emit_choice(self):
@@ -81,15 +82,17 @@ class BothAllelesNovelDialog(QDialog):
     """
     updated = pyqtSignal()
     
-    def __init__(self, allele_dic, settings, log):
+    def __init__(self, allele_dic, settings, log, TEST_auto_choose_first = False):
+        """TEST_auto_choose_first = True means that the first allele is always chosen (use only for unit tests)
+        """
         self.log = log
         self.settings = settings
         self.allele_dic = allele_dic
+        self.auto_choose_first = TEST_auto_choose_first
         super().__init__()
         
         self.setWindowTitle("Multiple novel alleles")
         self.setWindowIcon(QIcon(general.favicon))
-#         self.resize(200,50)
         self.init_UI()
         self.show()
         
@@ -113,17 +116,22 @@ class BothAllelesNovelDialog(QDialog):
         layout.addWidget(lbl)
         
         self.choices_dic = {}
+        self.choice_boxes = {}
         for allele in self.allele_dic:
             allele_info = self.allele_dic[allele]
             mybox = AlleleChoiceBox(allele_info, self.log)
+            self.choice_boxes[allele] = mybox
             layout.addWidget(mybox)
             self.choices_dic[allele_info[1]] = False
             mybox.choice.connect(self.catch_choice)
-        
+            if self.auto_choose_first:
+                mybox.options[0].click()
         self.submit_btn = QPushButton("Save choices")
         self.submit_btn.setEnabled(False)
         self.submit_btn.clicked.connect(self.save_results)
         layout.addWidget(self.submit_btn)
+        if self.auto_choose_first:
+            self.submit_btn.click()
     
     @pyqtSlot(tuple)
     def catch_choice(self, mysignal):
@@ -325,13 +333,18 @@ class IPDSubmissionForm(CollapsibleDialog):
     """
     IPD_submitted = pyqtSignal()
     
-    def __init__(self, log, mydb, project, settings, parent = None):
+    def __init__(self, log, mydb, project, settings, parent = None,
+                 TEST_auto_choose_first = False):
+        """initiates the IPDSubmissionForm;
+        TEST_auto_choose_first = True means that if multiple novel alleles are found, the first allele is always chosen (use only for unit tests)
+        """
         self.log = log
         self.log.info("Opening 'IPD Submission' Dialog...")
         self.mydb = mydb
         self.project = project
         self.settings = settings
         self.label_width = 150
+        self.auto_choose_first = TEST_auto_choose_first
         super().__init__(parent)
         
         self.resize(1150,500)
@@ -345,6 +358,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.imgt_files = {}
         self.submission_successful = False
         self.accepted = False
+        self.multis_handled = False
         self.show()
         ok, msg = settings_ok("IPD", self.settings, self.log)
         if not ok:
@@ -483,7 +497,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         if not keep_choices:
             if self.settings["modus"] == "debugging":
                 if self.project_files.check_dic: # if debugging, auto-select first file
-                    self.project_files.check_dic[0].click()
+                    self.project_files.check_dic[0].setChecked(True)
         
     @pyqtSlot(str, str)
     def catch_project_info(self, title, description):
@@ -583,9 +597,10 @@ class IPDSubmissionForm(CollapsibleDialog):
         """if multiple novel alleles were found for the target locus
         """
         self.log.info("Found multiple novel alleles for target locus in {} samples".format(len(problem_dic)))
-        dialog = BothAllelesNovelDialog(problem_dic, self.settings, self.log)
-        dialog.updated.connect(self.reattempt_make_IPD_files)
-        dialog.exec_()
+        self.multi_dialog = BothAllelesNovelDialog(problem_dic, self.settings, self.log, self.auto_choose_first)
+        self.multi_dialog.updated.connect(self.reattempt_make_IPD_files)
+        self.multi_dialog.exec_()
+        self.multis_handled = True
     
     def handle_invalid_pretyings(self, problem_dic):
         """if invalid pretypings were found for the target locus
