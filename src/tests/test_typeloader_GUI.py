@@ -101,7 +101,7 @@ settings_both = {"reference_dir" : "reference_data_unittest",
                 }
 
 # deletes database entries and project directory
-delete_all_stuff_at_the_end = False
+delete_all_stuff_at_the_end = True
 skip_other_tests = False # can be set to True to skip all tests except the one currently worked at (out-comment it there in setUpClass)
 
 log = general.start_log(level="DEBUG")
