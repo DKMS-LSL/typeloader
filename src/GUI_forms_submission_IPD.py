@@ -83,13 +83,11 @@ class BothAllelesNovelDialog(QDialog):
     """
     updated = pyqtSignal()
     
-    def __init__(self, allele_dic, settings, log, TEST_auto_choose_first = False):
-        """TEST_auto_choose_first = True means that the first allele is always chosen (use only for unit tests)
-        """
+    def __init__(self, allele_dic, settings, log):
+        log.info("BothAllelesNovelDialog created...")
         self.log = log
         self.settings = settings
         self.allele_dic = allele_dic
-        self.auto_choose_first = TEST_auto_choose_first
         super().__init__()
         
         self.setWindowTitle("Multiple novel alleles")
@@ -125,14 +123,10 @@ class BothAllelesNovelDialog(QDialog):
             layout.addWidget(mybox)
             self.choices_dic[allele_info[1]] = False
             mybox.choice.connect(self.catch_choice)
-            if self.auto_choose_first:
-                mybox.options[0].click()
         self.submit_btn = QPushButton("Save choices")
         self.submit_btn.setEnabled(False)
         self.submit_btn.clicked.connect(self.save_results)
         layout.addWidget(self.submit_btn)
-        if self.auto_choose_first:
-            self.submit_btn.click()
     
     @pyqtSlot(tuple)
     def catch_choice(self, mysignal):
@@ -334,10 +328,8 @@ class IPDSubmissionForm(CollapsibleDialog):
     """
     IPD_submitted = pyqtSignal()
     
-    def __init__(self, log, mydb, project, settings, parent = None,
-                 TEST_auto_choose_first = False):
-        """initiates the IPDSubmissionForm;
-        TEST_auto_choose_first = True means that if multiple novel alleles are found, the first allele is always chosen (use only for unit tests)
+    def __init__(self, log, mydb, project, settings, parent = None):
+        """initiates the IPDSubmissionForm
         """
         self.log = log
         self.log.info("Opening 'IPD Submission' Dialog...")
@@ -345,7 +337,6 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.project = project
         self.settings = settings
         self.label_width = 150
-        self.auto_choose_first = TEST_auto_choose_first
         super().__init__(parent)
         
         self.resize(1150,500)
@@ -496,6 +487,7 @@ class IPDSubmissionForm(CollapsibleDialog):
             self.ENA_file_widget.field.setText(ena_file)
             self.befund_widget.field.setText(pretypings_file)
             self.fake_btn.setStyleSheet(general.btn_style_normal)
+            self.ok_btn2.check_ready()
 
     
     def parse_ENA_file(self):
@@ -627,7 +619,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         """if multiple novel alleles were found for the target locus
         """
         self.log.info("Found multiple novel alleles for target locus in {} samples".format(len(problem_dic)))
-        self.multi_dialog = BothAllelesNovelDialog(problem_dic, self.settings, self.log, self.auto_choose_first)
+        self.multi_dialog = BothAllelesNovelDialog(problem_dic, self.settings, self.log)
         self.multi_dialog.updated.connect(self.reattempt_make_IPD_files)
         self.multi_dialog.exec_()
         self.multis_handled = True
@@ -863,13 +855,14 @@ if __name__ == '__main__':
     sys.excepthook = log_uncaught_exceptions
     log = general.start_log(level="DEBUG")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
-    settings_dic = GUI_login.get_settings("admin", log)
+    settings_dic = GUI_login.get_settings("staging", log)
     mydb = create_connection(log, settings_dic["db_file"])
     
     project = "20190307_ADMIN_KIR3DL3_invalid"
+    project = "20190318_SA_A_847781"
     app = QApplication(sys.argv)
     
-    problem_dic = {'DKMS10004135': ['ID13178800', 'DKMS-LSL_ID13178800_DPB1_1', TargetAllele(gene='HLA-DPB1', target_allele='HLA-DPB1*03:new', partner_allele='HLA-DPB1*13:01:01:01 or 02:01:02:01'), ['13:new', '04:new']]}
+#     problem_dic = {'DKMS10004135': ['ID13178800', 'DKMS-LSL_ID13178800_DPB1_1', TargetAllele(gene='HLA-DPB1', target_allele='HLA-DPB1*03:new', partner_allele='HLA-DPB1*13:01:01:01 or 02:01:02:01'), ['13:new', '04:new']]}
 #     ex = BothAllelesNovelDialog(problem_dic, settings_dic, log)
     ex = IPDSubmissionForm(log, mydb, project, settings_dic)
     

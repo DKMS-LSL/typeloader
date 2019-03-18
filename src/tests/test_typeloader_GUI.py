@@ -9,6 +9,7 @@ unit tests for typeloader_GUI
 '''
 
 import unittest
+from unittest.mock import patch
 import os, sys, re, time, platform, datetime, csv
 import difflib # compare strings
 import shutil
@@ -1741,77 +1742,161 @@ class Test_null_alleles(unittest.TestCase):
             self.assertEqual(len(result["deleted_sings"]), 0)              
  
 
-# class Test_multiple_novel_alleles(unittest.TestCase):
-#     """ 
-#     test if TypeLoader correctly handles multiple novel alleles in one locus
-#     """
-#     @classmethod
-#     def setUpClass(self):
-#         if True:#skip_other_tests:
-# #             self.skipTest(self, "Skipping Test_null_alleles because skip_other_tests is set to True")
-# #         else:
-#             self.project_name = "20190308_SA_A_128255" #project_name
-#             self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "multiple")
-#             self.sample_id_int = "ID000010"
-#             self.sample_id_ext = "test"
-#             self.local_name = 'DKMS-LSL_ID000010_3DP1_1'
-#             self.input_file = os.path.join(self.mydir, "ID000010.fa")
-#             self.pretypings = os.path.join(self.mydir, "Befunde.csv")
-#             self.ena_response_file = os.path.join(self.mydir, "ENA_reply")
-#             
-#             log.info("Check if allele already uploaded...")
-#             query = "select sample_id_int from alleles where local_name = '{}' and partner_allele is Null".format(self.local_name)
-#             _, data = execute_db_query(query, 1, log, "Allele already present?", 
-#                                          "Checking ALLELES for test allele {}".format(self.sample_id_int), 
-#                                          "Can't assess ALLELES whether {} is contained".format(self.sample_id_int), 
-#                                          "ALLELES")
-#             
-#             if not data:
-#                 log.info("Uploading allele...")
-#                 self.form1 = ALLELE.NewAlleleForm(log, mydb, self.project_name, curr_settings, None, self.sample_id_int, samples_dic["sample_1"]["id_ext"])
-#                 self.form1.file_widget.field.setText(os.path.join(self.mydir, "ID000010.fa"))
-#         
-#                 self.form1.upload_btn.setEnabled(True)
-#                 self.form1.upload_btn.click()
-#         
-#                 self.form1.save_btn.click()
-#                
-#             # prepare IPDSubmissionForm:
-#             self.form = IPD.IPDSubmissionForm(log, mydb, self.project_name, curr_settings, parent = None,
-#                                               TEST_auto_choose_first = False)
-#             
-#     @classmethod
-#     def tearDownClass(self):
-#         pass
-#     
-#     def test_multi_alleles_rejected(self):
-#         """test if target allele with multiple novel alleles according to pretyping 
-#         but unfitting target_allele/partner_allele correctly trigger the BothAllelesNovelDialog
-#         """
-#         # choose project:
-#         log.info("Choosing project...")
-#         self.form.proj_widget.field.setText(self.project_name)
-#         self.form.ok_btn1.check_ready()
-#         self.form.ok_btn1.click()
-#         # add files:
-#         log.info("Choosing files...")
-#         self.form.ENA_file_widget.field.setText(self.ena_response_file)
-#         self.form.befund_widget.field.setText(self.pretypings)
-#         self.form.ok_btn2.check_ready()
-#         self.form.ok_btn2.click()
-#         # select alleles:
-#         log.info("Selecting alleles...")
-#         if not self.form.project_files.check_dic[0].isChecked():
-#             self.form.project_files.check_dic[0].click() # if this fails, the alleles in the ENA reply file are probably not recognized correctly
-#         self.form.submit_btn.check_ready()
-#         self.form.submit_btn.click()
-#         
-#         # check if multi_dialog is raised:
-#         self.assertTrue(self.form.multis_handled, "BothAllelesNovelDialog was not raised!")
-#         #TODO: check
-#         log.info("Done")
+class Test_multiple_novel_alleles_part1(unittest.TestCase):
+    """ 
+    test if TypeLoader correctly handles multiple novel alleles in one locus
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping Test_null_alleles because skip_other_tests is set to True")
+        else:
+            self.project_name = project_name
+            self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "multiple")
+            self.sample_id_int = "ID000010"
+            self.sample_id_ext = "test"
+            self.local_name = 'DKMS-LSL_ID000010_3DP1_1'
+            self.input_file = os.path.join(self.mydir, "ID000010.fa")
+            self.pretypings = os.path.join(self.mydir, "Befunde.csv")
+            self.ena_response_file = os.path.join(self.mydir, "ENA_reply")
+              
+            log.info("Check if allele already uploaded...")
+            query = "select sample_id_int from alleles where local_name = '{}'".format(self.local_name)
+            _, data = execute_db_query(query, 1, log, "Allele already present?", 
+                                         "Checking ALLELES for test allele {}".format(self.sample_id_int), 
+                                         "Can't assess ALLELES whether {} is contained".format(self.sample_id_int), 
+                                         "ALLELES")
+            
+            if data: # set partner allele back to None
+                query2 = "update alleles set partner_allele = Null where local_name = '{}'".format(self.local_name)
+                _, data = execute_db_query(query2, 0, log, "Return partner allele to empty", 
+                                         "Resetting ALLELES for test allele {}".format(self.sample_id_int), 
+                                         "Can't reset ALLELES.partner_allele for {}".format(self.sample_id_int), 
+                                         "ALLELES")
+            else:
+                log.info("Uploading allele...")
+                self.form1 = ALLELE.NewAlleleForm(log, mydb, self.project_name, curr_settings, None, self.sample_id_int, samples_dic["sample_1"]["id_ext"])
+                self.form1.file_widget.field.setText(os.path.join(self.mydir, "ID000010.fa"))
+          
+                self.form1.upload_btn.setEnabled(True)
+                self.form1.upload_btn.click()
+          
+                self.form1.save_btn.click()
+                 
+            # prepare IPDSubmissionForm:
+            self.form = IPD.IPDSubmissionForm(log, mydb, self.project_name, curr_settings, parent = None)
+              
+    @classmethod
+    def tearDownClass(self):
+        pass
+    
+    @patch("GUI_forms_submission_IPD.BothAllelesNovelDialog")
+    def test_multi_allelesDialogCreated(self, mock_dialog):
+        """test if target allele with multiple novel alleles according to pretyping 
+        but unfitting target_allele/partner_allele correctly trigger the BothAllelesNovelDialog
+        """
+        # choose project:
+        log.info("Choosing project...")
+        self.form.proj_widget.field.setText(self.project_name)
+        self.form.ok_btn1.check_ready()
+        self.form.ok_btn1.click()
+        # add files:
+        log.info("Choosing files...")
+        self.form.ENA_file_widget.field.setText(self.ena_response_file)
+        self.form.befund_widget.field.setText(self.pretypings)
+        self.form.ok_btn2.check_ready()
+        self.form.ok_btn2.click()
+        # select alleles:
+        log.info("Selecting alleles...")
+        if not self.form.project_files.check_dic[0].isChecked():
+            self.form.project_files.check_dic[0].click() # if this fails, the alleles in the ENA reply file are probably not recognized correctly
+        self.form.submit_btn.check_ready()
+        self.form.submit_btn.click()
+          
+        # check if multi_dialog is raised:
+        log.info("Checking that BothAllelesNovelDialog is created...")
+        mock_dialog.assert_called_once()
+        log.info("=> fine")
+        self.form.ok_btn.click()
         
+    def test_multi_alleles_dialog(self):
+        """test if BothAllelesNovelDialog input produces the intended behavior
+        """
+        # open MultiAlleleDialog with input data:
+        problem_dic = {'DKMS-LSL_ID000010_3DP1_1': ['ID000010', 'DKMS-LSL_ID000010_3DP1_1', 
+                                                    TargetAllele(gene='KIR3DP1', target_allele='KIR3DP1*0030102:new', 
+                                                                 partner_allele=''), 
+                                                    ['003new', '004new', '001']]}
+        mydialog = IPD.BothAllelesNovelDialog(problem_dic, curr_settings, log)
+        mybox = mydialog.choice_boxes[self.local_name]
+        mybox.options[0].click()
+        mydialog.submit_btn.click()
+        
+        # check correct results are now in the database:
+        query = "select partner_allele from alleles where local_name = '{}'".format(self.local_name)
+        _, data = execute_db_query(query, 1, log, "Partner_allele updated?", 
+                                     "Checking ALLELES for partner_allele  of {}".format(self.sample_id_int), 
+                                     "Can't assess ALLELES whether partner_allele for {} has been updated".format(self.sample_id_int), 
+                                     "ALLELES")
+        partner_allele = data[0][0]
+        log.info("Partner allele updated correctly?")
+        self.assertEqual(partner_allele, "KIR3DP1*004new and 001", "Partner_allele was not updated correctly!")
+        log.info("\t=> yes")
 
+
+class Test_multiple_novel_alleles_part2(unittest.TestCase):
+    """test if BothAllelesNovelDialog is not called if target_allele and partner_allele are fine
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping Test_null_alleles because skip_other_tests is set to True")
+        else:
+            self.project_name = project_name
+            self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "multiple")
+            self.sample_id_int = "ID000010"
+            self.sample_id_ext = "test"
+            self.local_name = 'DKMS-LSL_ID000010_3DP1_1'
+            self.input_file = os.path.join(self.mydir, "ID000010.fa")
+            self.pretypings = os.path.join(self.mydir, "Befunde.csv")
+            self.ena_response_file = os.path.join(self.mydir, "ENA_reply")
+            # prepare IPDSubmissionForm:
+            self.form = IPD.IPDSubmissionForm(log, mydb, self.project_name, curr_settings, parent = None)
+              
+    @classmethod
+    def tearDownClass(self):
+        pass
+ 
+    @patch("GUI_forms_submission_IPD.BothAllelesNovelDialog")
+    def test_multi_allelesDialogNotCreated(self, mock_dialog):
+        """test if target allele with multiple novel alleles according to pretyping 
+        but unfitting target_allele/partner_allele correctly trigger the BothAllelesNovelDialog
+        """
+        self.form = IPD.IPDSubmissionForm(log, mydb, self.project_name, curr_settings, parent = None)
+        # choose project:
+        log.info("Choosing project...")
+        self.form.proj_widget.field.setText(self.project_name)
+        self.form.ok_btn1.check_ready()
+        self.form.ok_btn1.click()
+        # add files:
+        log.info("Choosing files...")
+        self.form.ENA_file_widget.field.setText(self.ena_response_file)
+        self.form.befund_widget.field.setText(self.pretypings)
+        self.form.ok_btn2.check_ready()
+        self.form.ok_btn2.click()
+        # select alleles:
+        log.info("Selecting alleles...")
+        if not self.form.project_files.check_dic[0].isChecked():
+            self.form.project_files.check_dic[0].click() # if this fails, the alleles in the ENA reply file are probably not recognized correctly
+        self.form.submit_btn.check_ready()
+        self.form.submit_btn.click()
+          
+        # check if multi_dialog is raised:
+        log.info("Checking that BothAllelesNovelDialog is NOT created...")
+        mock_dialog.assert_not_called()
+        log.info("=> fine")
+ 
+ 
 class Test_pretyping_valid(unittest.TestCase):
     """ 
     test if TypeLoader correctly handles valid and invalid pretypings
@@ -1822,7 +1907,7 @@ class Test_pretyping_valid(unittest.TestCase):
             self.skipTest(self, "Skipping Test_pretyping_valid because skip_other_tests is set to True")
         else:
             self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "pretyping_check")
-            
+             
             # read samples from csv:
             log.info("Reading files...")
             log.debug("Reading samples.csv...")
@@ -1846,11 +1931,11 @@ class Test_pretyping_valid(unittest.TestCase):
                                              final_result = row[8],
                                              error_exp = row[9])
                             self.samples[s.name] = s
-            
+             
             # read pretypings from csv:
             log.debug("Reading pretypings.csv...")
             (self.pretypings, self.topics) = MIF.getPatientBefund(os.path.join(self.mydir, "pretypings.csv"))
-
+ 
             # pepare error_dic:
             from typeloader_core import errors
             self.error_dic = {"Cannot tell which novel allele from pretyping this is" : errors.BothAllelesNovelError,
@@ -1858,11 +1943,11 @@ class Test_pretyping_valid(unittest.TestCase):
                               "assigned allele name not found in pretyping" : errors.InvalidPretypingError,
                               "POS is not acceptable pretyping for a target locus": errors.InvalidPretypingError,
                               "pretyping for HLA-B missing" : errors.InvalidPretypingError}
-                        
+                         
     @classmethod
     def tearDownClass(self):
         pass
-     
+      
     def test_pretypings(self):
         """test if pretypings and multiple alleles are handled correctly
         """
@@ -1870,7 +1955,7 @@ class Test_pretyping_valid(unittest.TestCase):
             s = self.samples[name]
             log.debug("testing {}: ({})".format(s.name, s.description))
             target_allele = TargetAllele(gene = s.gene, target_allele = s.target_allele, partner_allele = s.partner_allele)
-            
+             
             if s.error_exp: # sad path testing (are correct errors raised?)
                 myerror = self.error_dic[s.error_exp]
                 # make sure right error type is raised:
@@ -1884,7 +1969,7 @@ class Test_pretyping_valid(unittest.TestCase):
                                            s.diff_text, log)
                 except Exception as E:
                     self.assertEqual(E.problem, s.error_exp)
-                
+                 
             else: # happy path testing (these should pass without errors)
                 txt = ITG.make_befund_text(self.pretypings[name], s.closest_allele, target_allele, 
                                            {'gene': ['HLA', 'KIR'], 'targetFamily': s.target_family},
