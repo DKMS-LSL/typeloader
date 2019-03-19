@@ -335,8 +335,8 @@ def write_imgt_files(project_dir, samples, file_dic, allele_dic, ENA_id_map, ENA
 
 
 if __name__ == '__main__':
-
+    pass
 #     ena_email_file, befund_file, cellLine_patient_file, submissionId, imgt_filepath, enaFileLoc = argv[1:]
 #     print(write_imgt_files(ena_email_file, befund_file, cellLine_patient_file, submissionId, imgt_filepath, enaFileLoc))
 #     
-    get_cellLine_patient_map(cellLine_patient_file)
+#     get_cellLine_patient_map(cellLine_patient_file)
