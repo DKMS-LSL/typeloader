@@ -138,6 +138,7 @@ def upload_parse_sequence_file(raw_path, settings, log):
     
     return True, sample_name, filetype, temp_raw_file, blastXmlFile, targetFamily, fasta_filename, allelesFilename, header_data 
 
+
 def reformat_header_data(header_data, sample_id_ext, log):
     """translates header data into columns
     """
@@ -164,6 +165,7 @@ def reformat_header_data(header_data, sample_id_ext, log):
     # store external sample number if given by parameter (needed for testing):
     if sample_id_ext:
         header_data["Spendernummer"] = sample_id_ext
+
 
 def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_filename, allelesFilename, 
                           header_data, settings, log):
@@ -267,7 +269,6 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
         log.error(E)
         log.exception(E)
         return False, "Error while processing the sequence file", repr(E), None
-        
 
 
 def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log):
@@ -514,6 +515,58 @@ def parse_bulk_csv(csv_file, settings, log):
     return alleles, error_dic, i
                         
 
+def upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_path, customer,
+                               settings, mydb, log):
+    """adds one new target sequence to TypeLoader
+    """
+    log.info("Uploading {} to project {}...".format(sample_id_int, project_name))
+    results = upload_parse_sequence_file(raw_path, settings, log)
+    if results[0] == False: # something went wrong
+        return False, "{}: {}".format(results[1], results[2])
+    log.debug("\t=> success")
+    
+    (_, _, filetype, temp_raw_file, blastXmlFile, 
+     targetFamily, fasta_filename, allelesFilename, header_data) = results
+    reformat_header_data(header_data, sample_id_ext, log)
+    if customer:
+        header_data["Customer"] = customer
+    
+    # process raw file:
+    sample_name = sample_id_int
+    header_data["sample_id_int"] = sample_id_int
+    results = process_sequence_file(project_name, filetype, blastXmlFile, 
+                                    targetFamily, fasta_filename, allelesFilename, 
+                                    header_data, settings, log)
+    if results[0] == False: # something went wrong
+        return False, "{}: {}".format(results[1], results[2])
+    log.debug("\t=> success")
+    
+    (_, myalleles, ENA_text) = results
+    myallele = myalleles[0]
+    myallele.sample_id_int = sample_id_int
+    myallele.make_local_name()
+    # save allele files:
+    results = save_new_allele(project_name, sample_name, myallele.local_name, ENA_text, 
+                              filetype, temp_raw_file, blastXmlFile, fasta_filename,
+                              settings, log)
+    (success, err_type, msg, files) = results
+    
+    if not success:
+        return False, "{}: {}".format(err_type, msg)
+
+    [raw_file, fasta_filename, blastXmlFile, ena_path] = files
+    # save to db & emit signals:
+    (success, err_type, msg) = save_new_allele_to_db(myallele, project_name, 
+                                                     filetype, raw_file, 
+                                                     fasta_filename, blastXmlFile,
+                                                     header_data, targetFamily,
+                                                     ena_path, settings, mydb, log)
+    if success:
+        return True, myallele.local_name
+    else:
+        return False, "{}: {}".format(err_type, msg)
+
+
 def bulk_upload_new_alleles(csv_file, project, settings, mydb, log):
     """performs bulk uploading, parsing and saving of new target alleles
     specified in a .csv file 
@@ -524,53 +577,12 @@ def bulk_upload_new_alleles(csv_file, project, settings, mydb, log):
     for allele in alleles:
         [nr, sample_id_int, sample_id_ext, raw_path, customer] = allele
         log.info("Uploading #{}: {}...".format(nr, sample_id_int))
-        # upload raw file:
-        results = upload_parse_sequence_file(raw_path, settings, log)
-        if results[0] == False: # something went wrong
-            error_dic[nr].append(":".join([results[1], results[2]]))
+        success, msg = upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, customer, settings, mydb, log)
+        if success:
+            successful.append("  - #{}: {}".format(nr, msg))
         else:
-            log.debug("\t=> success")
-            (_, _, filetype, temp_raw_file, blastXmlFile, 
-             targetFamily, fasta_filename, allelesFilename, header_data) = results
-            reformat_header_data(header_data, sample_id_ext, log)
-            if customer:
-                header_data["Customer"] = customer
-            # process raw file:
-            sample_name = sample_id_int
-            header_data["sample_id_int"] = sample_id_int
-            results = process_sequence_file(project, filetype, blastXmlFile, 
-                                            targetFamily, fasta_filename, allelesFilename, 
-                                            header_data, settings, log)
-            if results[0] == False: # something went wrong
-                error_dic[nr].append(":".join([results[1], results[2]]))
-                
-            else:
-                log.debug("\t=> success")
-                (_, myalleles, ENA_text) = results
-                myallele = myalleles[0]
-                myallele.sample_id_int = sample_id_int
-                myallele.make_local_name()
-                # save allele files:
-                results = save_new_allele(project, sample_name, myallele.local_name, ENA_text, 
-                                          filetype, temp_raw_file, blastXmlFile, fasta_filename,
-                                          settings, log)
-                (success, err_type, msg, files) = results
-                if not success:
-                    error_dic[nr].append(":".join([err_type, msg]))
-                else:
-                    [raw_file, fasta_filename, blastXmlFile, ena_path] = files
-                    # save to db & emit signals:
-                    (success, err_type, msg) = save_new_allele_to_db(myallele, project, 
-                                                                     filetype, raw_file, 
-                                                                     fasta_filename, blastXmlFile,
-                                                                     header_data, targetFamily,
-                                                                     ena_path, settings, mydb, log)
-                    if success:
-                        msg = "  - #{}: {}".format(nr, myallele.local_name)
-                        successful.append(msg)
-                    else:
-                        error_dic[nr].append(":".join([err_type, msg]))
-    
+            error_dic[nr].append(msg)
+        
     # format report:
     report = ""
     if len(successful) > 0:
@@ -582,13 +594,14 @@ def bulk_upload_new_alleles(csv_file, project, settings, mydb, log):
         errors_found = True
         errors = "Encountered problems in {} of {} alleles:\n".format(len(error_dic), num_rows)
         for nr in sorted(error_dic):
-            myerror = "  -#{}: {}\n".format(nr, " AND ".join(error_dic[nr]))
+            myerror = "  - #{}: {}\n".format(nr, " AND ".join(error_dic[nr]))
             errors += myerror
         errors += "\nThe problem-alleles were NOT added. Please fix them and try again!"
     else:
         errors = "\nNo problems encountered."
     report += errors
     
+    print(report, errors_found)
     return report, errors_found
                 
                 
@@ -652,8 +665,8 @@ pass
 # main:
 
 def main(settings, log, mydb):
-    pass
-    
+    project = "20190319_ADMIN_MIC_shortUTR3"
+    raw_path = r"Y:\Projects\typeloader\staging\data_unittest\rejection"
     
 
 if __name__ == "__main__":
