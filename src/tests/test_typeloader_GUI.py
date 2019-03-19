@@ -35,6 +35,7 @@ import typeloader_GUI
 from typeloader_core import errors, EMBLfunctions as EF, make_imgt_files as MIF, backend_make_ena as BME, imgt_text_generator as ITG
 import GUI_forms_new_project as PROJECT
 import GUI_forms_new_allele as ALLELE
+import GUI_forms_new_allele_bulk as BULK
 import GUI_forms_submission_ENA as ENA
 import GUI_forms_submission_IPD as IPD
 import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample
@@ -1605,6 +1606,48 @@ class Test_EMBL_functions(unittest.TestCase):
         self.assertEqual(analysis_submission_dict['source'], self.xml_filename)
 
 
+class Test_BulkUpload(unittest.TestCase):
+    """ 
+    test bulk uploading of fasta sequences
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping Test_BulkUpload because skip_other_tests is set to True")
+        else:
+            self.project_name = project_name  
+            self.bulk_file = os.path.join(curr_settings["login_dir"], "data_unittest", "bulk", "bulk_upload.csv")
+            self.form = BULK.NewAlleleBulkForm(log, mydb, self.project_name, curr_settings)
+            
+    @classmethod
+    def tearDownClass(self):
+        pass
+        
+    def test_bulk_upload(self):
+        """
+        upload sequences from test file
+        """ 
+        self.form.file_widget.field.setText(self.bulk_file)
+        self.form.upload_btn.check_ready()
+        done = self.form.perform_bulk_upload(auto_confirm=True)
+        self.assertTrue(done)
+    
+    def test_success(self):
+        """make sure expected results occur
+        """
+        expected_result = """Successfully uploaded 2 of 3 alleles:
+  - #1: DKMS-LSL_ID1_bulk_HLA_C_1
+  - #2: DKMS-LSL_ID2_bulk_KIR_2DL5B_1
+
+Encountered problems in 1 of 3 alleles:
+  - #3: Incomplete sequence: This sequence misses the first 53 bp!
+TypeLoader requires the full 5' UTR to be included in the sequence.
+
+The problem-alleles were NOT added. Please fix them and try again!"""
+        result = self.form.report_txt.toPlainText().strip()
+        self.assertEqual(result, expected_result)
+        
+        
 class Test_rejection_short_UTR3(unittest.TestCase):
     """ 
     test if TypeLoader correctly rejects sequences with incomplete UTR3
