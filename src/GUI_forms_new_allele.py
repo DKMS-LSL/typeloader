@@ -326,21 +326,31 @@ class NewAlleleForm(CollapsibleDialog):
             self.header_data["sample_id_int"] = self.sample_name
             results = typeloader.process_sequence_file(self.project, self.filetype, self.blastXmlFile, self.targetFamily, self.fasta_filename, self.allelesFilename, self.header_data, self.settings, self.log)
             if results[0] == False: # something went wrong
-                QMessageBox.warning(self, results[1], results[2])
-                return
-            else:
-                self.success_parsing, self.myalleles, self.ENA_text = results
-                if self.filetype == "XML":
-                    self.allele1 = self.myalleles[0]
-                    self.allele2 = self.myalleles[1]
-                    self.fill_section2()
-                    self.proceed_sections(0, 1)
-                    
-                else: # Fasta File: move instantly to section 3:
-                    self.myallele = self.myalleles[0]
-                    self.ENA_widget.setText(self.ENA_text)
-                    self.name_lbl.setText(self.myallele.newAlleleName)
-                    self.proceed_sections(0, 2)
+                if results[1] == "Incomplete sequence":
+                    reply = QMessageBox.question(self, results[1], results[2], QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                    if reply == QMessageBox.Yes:
+                        results = typeloader.process_sequence_file(self.project, self.filetype, self.blastXmlFile, self.targetFamily, self.fasta_filename, self.allelesFilename, self.header_data, self.settings, self.log, incomplete_ok=True)
+                        if results[0] == False:
+                            QMessageBox.warning(self, results[1], results[2])
+                            return
+                    else:
+                        return
+                else:
+                    QMessageBox.warning(self, results[1], results[2])
+                    return
+                
+            self.success_parsing, self.myalleles, self.ENA_text = results
+            if self.filetype == "XML":
+                self.allele1 = self.myalleles[0]
+                self.allele2 = self.myalleles[1]
+                self.fill_section2()
+                self.proceed_sections(0, 1)
+                
+            else: # Fasta File: move instantly to section 3:
+                self.myallele = self.myalleles[0]
+                self.ENA_widget.setText(self.ENA_text)
+                self.name_lbl.setText(self.myallele.newAlleleName)
+                self.proceed_sections(0, 2)
             
         except Exception as E:
             self.log.error(E)
@@ -672,7 +682,7 @@ if __name__ == '__main__':
     mydb = create_connection(log, mysettings["db_file"])
     
     app = QApplication(sys.argv)
-    ex = NewAlleleForm(log, mydb, "20181207_ADMIN_HLA-B_NEB1", mysettings)
+    ex = NewAlleleForm(log, mydb, "20190319_ADMIN_MIC_shortUTR3", mysettings)
 #     ex = QueryBox(log, mysettings)
     ex.show()
     
