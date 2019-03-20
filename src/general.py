@@ -254,7 +254,6 @@ def move_rename_file(old_path, new_dir, new_name):
     else:
         ext = os.path.splitext(old_path)[-1]
     new_path = os.path.join(new_dir, new_name + ext)
-    print (new_path)
     try:
         shutil.move(old_path, new_path)
     except:
