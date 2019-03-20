@@ -47,8 +47,10 @@ def changeToImgtCoords(features, coordinates, differences, utr5Length = 0):
                 imgtCoordinates.append((coordinates[featureIndex][0] - utr5Length, coordinates[featureIndex][1] - utr5Length))
 
         for deletion in differences["deletionPositions"]:
-            if (deletion >= utr5Start) and (deletion <= utr5End): imgtDifferences["deletionPositions"].append(deletion - (utr5Length + 1) + 1)
-            else: imgtDifferences["deletionPositions"].append(deletion - utr5Length + 1)
+            if (deletion >= utr5Start) and (deletion <= utr5End): 
+                imgtDifferences["deletionPositions"].append(deletion - (utr5Length + 1) + 1)
+            else: 
+                imgtDifferences["deletionPositions"].append(deletion - utr5Length + 1)
 
         for insertion in differences["insertionPositions"]:
             if (insertion >= utr5Start) and (insertion <= utr5End): imgtDifferences["insertionPositions"].append(insertion - (utr5Length + 1) + 1)

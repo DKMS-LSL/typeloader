@@ -9,20 +9,11 @@ from .befundparser import getOtherAlleles
 from .coordinates import getCoordinates
 from .enaemailparser import parse_embl_response
 from .imgt_text_generator import make_imgt_text
-from .errors import IncompleteSequenceError, BothAllelesNovelError, InvalidPretypingError
+from .errors import BothAllelesNovelError, InvalidPretypingError
 from os import path
 from functools import reduce
 
-# load .ini file
-# hla = EF.ConfigSectionMap('GENES')['hla']
-# kir = EF.ConfigSectionMap('GENES')['kir']
-# reference_path = EF.ConfigSectionMap('REFERENCE_DATA')['reference_path']
-# hla_dat = EF.ConfigSectionMap('REFERENCE_DATA')['hla_dat']
-# kir_dat = EF.ConfigSectionMap('REFERENCE_DATA')['kir_dat']
-##########################################################
 
-# blastFileLoc = "/downloads/xmlfiles"
-# blastFastaFileLoc = "/downloads/fastafiles"
 alleleFromEnaRegex = re.compile("(DE(.*?)allele(.*))")
 # geneMap = {"gene":[hla, kir]}
 
@@ -207,10 +198,8 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
             return False, msg, None
 
         newAlleleStub = getNewAlleleNameFromEna(enafile).split(":")[0]
-        try: 
-            annotations = getCoordinates(blastOp, allelesFilename, targetFamily, settings, log, isENA=False)
-        except IncompleteSequenceError as E:
-            return False, (" {}:\n".format(local_name)) + E.msg, None
+        try:
+            annotations = getCoordinates(blastOp, allelesFilename, targetFamily, settings, log, isENA=False, incomplete_ok=True)
         except Exception as E:
             print("Blast output : ", blastOp)
             print(allelesFilename, targetFamily)
@@ -232,6 +221,7 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
                 closestAllele = annotations[genDxAlleleName]["closestAllele"]
                 sequence = annotations[genDxAlleleName]["sequence"]
                 imgtDiff = annotations[genDxAlleleName]["imgtDifferences"]
+                missing_bp = annotations[genDxAlleleName]["missing_bp"]
 
                 if isSameGene:
                     if annotations[genDxAlleleName]["isExactMatch"]: continue
@@ -255,7 +245,7 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
             imgt_data[submissionId] = make_imgt_text(submissionId, cell_line, local_name, allele_dic[local_name], 
                                                      enaId, befund,  
                                                      closestAllele, diffToClosest, imgtDiff, 
-                                                     enafile, sequence, geneMap, settings, log)
+                                                     enafile, sequence, geneMap, missing_bp, settings, log)
         except BothAllelesNovelError as E:
             multi_dic[local_name] = [sample, local_name, E.allele, E.alleles]
         except InvalidPretypingError as E:
