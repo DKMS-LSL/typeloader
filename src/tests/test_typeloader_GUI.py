@@ -1635,93 +1635,93 @@ class Test_BulkUpload(unittest.TestCase):
     def test_success(self):
         """make sure expected results occur
         """
-        expected_result = """Successfully uploaded 2 of 3 alleles:
+        expected_result = """Successfully uploaded 3 of 4 alleles:
   - #1: DKMS-LSL_ID1_bulk_HLA_C_1
   - #2: DKMS-LSL_ID2_bulk_KIR_2DL5B_1
+  - #4: DKMS-LSL_ID3_bulk_HLAshort_2DL1_1
 
-Encountered problems in 1 of 3 alleles:
+Encountered problems in 1 of 4 alleles:
   - #3: Incomplete sequence: This sequence misses the first 53 bp!
-TypeLoader requires the full 5' UTR to be included in the sequence.
 
 The problem-alleles were NOT added. Please fix them and try again!"""
         result = self.form.report_txt.toPlainText().strip()
         self.assertEqual(result, expected_result)
         
-        
-class Test_rejection_short_UTR3(unittest.TestCase):
-    """ 
-    test if TypeLoader correctly rejects sequences with incomplete UTR3
-    """
-    @classmethod
-    def setUpClass(self):
-        if skip_other_tests:
-            self.skipTest(self, "Skipping Test_rejection_short_UTR3 because skip_other_tests is set to True")
-        else:
-            self.mydir = os.path.join(curr_settings["login_dir"], "data_unittest", "rejection")
-            self.testfile_fa = os.path.join(self.mydir, "UTR3_short.fa")
-            self.missing_bp_fa = "53"
-            self.testfile_xml = os.path.join(self.mydir, "UTR3_short.xml")
-            self.missing_bp_xml = "1"
-            self.project_name = project_name
-        
-    @classmethod
-    def tearDownClass(self):
-        pass
-    
-    def test_reject_fasta(self):
-        """test if FASTA file with incomplete UTR3 is correctly rejected
-        """
-        myfile = self.testfile_fa
-        missing_bp = self.missing_bp_fa
-        
-        # upload and parse file:
-        results = typeloader_functions.upload_parse_sequence_file(myfile, curr_settings, log)
-        (success_upload, _, filetype, _, 
-         blastXmlFile, targetFamily, fasta_filename, allelesFilename, 
-         header_data) = results
-        
-        self.assertTrue(success_upload) # uploading and parsing should work
-        
-        # try to create ENA file: (should fail)
-        results2 = typeloader_functions.process_sequence_file(self.project_name, 
-                                                filetype, blastXmlFile, targetFamily, 
-                                                fasta_filename, allelesFilename, header_data, 
-                                                curr_settings, log)
-        
-        (success, err_type, msg) = results2
-        err = "File {} should have been rejected!".format(myfile)
-        self.assertFalse(success, err)
-        self.assertEqual(err_type, 'Incomplete sequence', "Should have thrown an 'Incomplete sequence' error")
-        ref_error = errors.IncompleteSequenceError(missing_bp)
-        self.assertEqual(msg, ref_error.msg)
-        
-        
-    def test_reject_XML(self):
-        """test if XML file with incomplete UTR3 is correctly rejected
-        """
-        myfile = self.testfile_xml
-        missing_bp = self.missing_bp_xml
-        
-        # upload and parse file:
-        results = typeloader_functions.upload_parse_sequence_file(myfile, curr_settings, log)
-        (success_upload, _, filetype, _, 
-         blastXmlFile, targetFamily, fasta_filename, allelesFilename, 
-         header_data) = results
-        
-        self.assertTrue(success_upload) # uploading and parsing should work
-        
-        # try to create ENA file: (should fail)
-        results2 = typeloader_functions.process_sequence_file(self.project_name, 
-                                                filetype, blastXmlFile, targetFamily, 
-                                                fasta_filename, allelesFilename, header_data, 
-                                                curr_settings, log)
-        
-        (success, err_type, msg) = results2
-        err = "File {} should have been rejected!".format(myfile)
-        self.assertFalse(success, err)
-        self.assertEqual(err_type, 'Incomplete sequence', "Should have thrown an 'Incomplete sequence' error")
-        ref_error = errors.IncompleteSequenceError(missing_bp)
-        self.assertEqual(msg, ref_error.msg)
+
+#TODO: class Test_incomplete_sequences(unittest.TestCase):
+# class Test_rejection_short_UTR3(unittest.TestCase):
+#     """ 
+#     test if TypeLoader correctly rejects sequences with incomplete UTR3
+#     """
+#     @classmethod
+#     def setUpClass(self):
+#         if skip_other_tests:
+#             self.skipTest(self, "Skipping Test_rejection_short_UTR3 because skip_other_tests is set to True")
+#         else:
+#             self.mydir = os.path.join(curr_settings["login_dir"], "data_unittest", "rejection")
+#             self.testfile_fa = os.path.join(self.mydir, "UTR3_short.fa")
+#             self.missing_bp_fa = "53"
+#             self.testfile_xml = os.path.join(self.mydir, "UTR3_short.xml")
+#             self.missing_bp_xml = "1"
+#             self.project_name = project_name
+#         
+#     @classmethod
+#     def tearDownClass(self):
+#         pass
+#     
+#     def test_reject_fasta(self):
+#         """test if FASTA file with incomplete UTR3 is correctly rejected
+#         """
+#         myfile = self.testfile_fa
+#         missing_bp = self.missing_bp_fa
+#         
+#         # upload and parse file:
+#         results = typeloader_functions.upload_parse_sequence_file(myfile, curr_settings, log)
+#         (success_upload, _, filetype, _, 
+#          blastXmlFile, targetFamily, fasta_filename, allelesFilename, 
+#          header_data) = results
+#         
+#         self.assertTrue(success_upload) # uploading and parsing should work
+#         
+#         # try to create ENA file: (should fail)
+#         results2 = typeloader_functions.process_sequence_file(self.project_name, 
+#                                                 filetype, blastXmlFile, targetFamily, 
+#                                                 fasta_filename, allelesFilename, header_data, 
+#                                                 curr_settings, log)
+#         
+#         (success, err_type, msg) = results2
+#         err = "File {} should have been rejected!".format(myfile)
+#         self.assertFalse(success, err)
+#         self.assertEqual(err_type, 'Incomplete sequence', "Should have thrown an 'Incomplete sequence' error")
+#         ref_error = errors.IncompleteSequenceError(missing_bp)
+#         self.assertEqual(msg, ref_error.msg)
+#         
+#     def test_reject_XML(self):
+#         """test if XML file with incomplete UTR3 is correctly rejected
+#         """
+#         myfile = self.testfile_xml
+#         missing_bp = self.missing_bp_xml
+#         
+#         # upload and parse file:
+#         results = typeloader_functions.upload_parse_sequence_file(myfile, curr_settings, log)
+#         (success_upload, _, filetype, _, 
+#          blastXmlFile, targetFamily, fasta_filename, allelesFilename, 
+#          header_data) = results
+#         
+#         self.assertTrue(success_upload) # uploading and parsing should work
+#         
+#         # try to create ENA file: (should fail)
+#         results2 = typeloader_functions.process_sequence_file(self.project_name, 
+#                                                 filetype, blastXmlFile, targetFamily, 
+#                                                 fasta_filename, allelesFilename, header_data, 
+#                                                 curr_settings, log)
+#         
+#         (success, err_type, msg) = results2
+#         err = "File {} should have been rejected!".format(myfile)
+#         self.assertFalse(success, err)
+#         self.assertEqual(err_type, 'Incomplete sequence', "Should have thrown an 'Incomplete sequence' error")
+#         ref_error = errors.IncompleteSequenceError(missing_bp)
+#         self.assertEqual(msg, ref_error.msg)
         
 
 class Test_null_alleles(unittest.TestCase):
