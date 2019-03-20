@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (QGridLayout, QWidget, QMessageBox,
                              QLabel, QApplication, QMenu)
 from PyQt5.QtCore import (Qt, QAbstractItemModel, QObject, QPoint)
 from PyQt5.Qt import QModelIndex, QTreeView, pyqtSlot, pyqtSignal, QPixmap,\
-    QInputDialog, QLineEdit
+    QInputDialog, QLineEdit, QPushButton
 from PyQt5.QtGui import QIcon
 
 import general, db_internal
@@ -271,6 +271,10 @@ class Navigation(QWidget):
         self.grid.addWidget(self.tree, 1, 0)
         header = self.tree.header()
         header.hide()
+        
+        self.refresh_btn = QPushButton("Refresh Navigation")
+        self.grid.addWidget(self.refresh_btn, 2,0)
+        
         self.log.debug("\t=> Done!")
         
     def create_model(self):

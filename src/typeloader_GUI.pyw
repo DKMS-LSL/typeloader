@@ -92,6 +92,7 @@ class MainGUI(QMainWindow):
         self.navigation.changed_projects.connect(self.change_project)
         self.navigation.change_view.connect(self.display)
         self.navigation.refresh.connect(self.refresh_navigation)
+        self.navigation.refresh_btn.clicked.connect(self.refresh_navigation)
         
     def make_stack(self):
         """prepares stacked widgits (the actual main widgits) 
