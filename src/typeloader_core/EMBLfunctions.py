@@ -50,7 +50,8 @@ def get_coordinates_from_annotation(annotations):
                 posHash[dr2sAllele]["pseudoexons"][feature[0]] = coordinates[featureIndex]
             elif feature[1] == "i":
                 posHash[dr2sAllele]["introns"][feature[0]] = coordinates[featureIndex]
-            else: print("Should not go in here")
+            else: 
+                print("Should not go in here")
 
         sequences[dr2sAllele] = sequence
 

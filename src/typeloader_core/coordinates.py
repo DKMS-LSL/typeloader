@@ -2,11 +2,12 @@
 # The closest known allele is determined using getclosestKnownAllele from closestallele.py
 
 
-import re
+import re, sys
 from Bio import SeqIO
 from .closestallele import getClosestKnownAlleles
 from .hla_embl_parser import read_dat_file
 from .imgtTransform import changeToImgtCoords
+from .errors import MissingUTRError, IncompleteSequenceWarning
 
 from copy import copy
 from math import ceil, floor
@@ -112,7 +113,7 @@ def getMismatchData(annotations):
     return mmCodons
 
 
-def getCoordinates(blastXmlFilename, allelesFilename, targetFamily, settings, log, isENA=True):
+def getCoordinates(blastXmlFilename, allelesFilename, targetFamily, settings, log, isENA=True, incomplete_ok = False):
 
     allAlleles, _ = read_dat_file(allelesFilename, targetFamily, isENA)
     closestAlleles = getClosestKnownAlleles(blastXmlFilename, targetFamily, settings, log)
@@ -126,7 +127,20 @@ def getCoordinates(blastXmlFilename, allelesFilename, targetFamily, settings, lo
         seqsHandle = open(seqsFile)
 
     seqsHash = SeqIO.to_dict(SeqIO.parse(seqsHandle, "fasta"))
-    annotations = processAlleles(closestAlleles, allAlleles, seqsHash)
+    annotations = processAlleles(closestAlleles, allAlleles, seqsHash, incomplete_ok)
+#     for cell_line in annotations:
+#         for key in annotations[cell_line]:
+#             item = annotations[cell_line][key]
+#             if isinstance(item, dict):
+#                 print("'{}' : {}".format(key, "{"))
+#                 for key2 in item:
+#                     print("\t'{}' : {}".format(key2, item[key2]))
+#                 print("\t}")
+#             else:
+#                 if key == 'closestAlleleSequence':
+#                     print("'{}' : {}...".format(key, annotations[cell_line][key][:20]))
+#                 else:
+#                     print("'{}' : {}".format(key, annotations[cell_line][key]))
 
     for gendxAllele in list(annotations.keys()):
         if annotations[gendxAllele] == None: continue
@@ -138,25 +152,93 @@ def getCoordinates(blastXmlFilename, allelesFilename, targetFamily, settings, lo
 
     return annotations
 
-def processAlleles(closestAlleles, allAlleles, hashOfQuerySequences):
+
+def shift_annotations_for_missing_bp(missing_bp, coordinates, cdsMap, differences, imgtDifferences):
+    """if part of UTR5 is missing, shift annotations in 3' direction
+    """
+    # shift coordinates:
+    UTR5_start_old = coordinates[0][0]
+    UTR5_start_new = UTR5_start_old + missing_bp
+    if UTR5_start_new >= 0:
+#         raise IncompleteSequenceError(missing_bp)
+        raise MissingUTRError(5)
+    
+    coordinates_new = [(UTR5_start_new, -1)] + coordinates[1:-1]
+    coordinates_new += [(coordinates[-1][0], coordinates[-1][1] + missing_bp)] # shift last feature to its correct length
+    
+    # shift cdsMap:
+    cdsMap_new = {}
+    for key in cdsMap:
+        (start,end) = key
+        new_start = start - missing_bp
+        new_end = end - missing_bp
+        new_key = (new_start, new_end)
+        cdsMap_new[new_key] = cdsMap[key]
+    
+    # shift differences:
+    new_differences = {}
+    for key in differences:
+        data = differences[key]
+        new_differences[key] = []
+        if data:
+            if key.endswith("Positions"):
+                print(key, data)
+                for pos in data:
+                    new_differences[key].append(pos + missing_bp)
+            else:
+                new_differences[key] = differences[key]
+                
+    # shift imgtDifferences:
+    new_imgtDifferences = {}
+    for key in imgtDifferences:
+        data = imgtDifferences[key]
+        new_imgtDifferences[key] = []
+        if data:
+            if key.endswith("Positions"):
+                for (pos, value) in data:
+                    new_imgtDifferences[key].append((pos + missing_bp, value))
+            else:
+                new_imgtDifferences[key] = imgtDifferences[key]
+    return coordinates_new, cdsMap_new, new_differences, new_imgtDifferences
+
+
+def check_and_adjust_incomplete_seqs(missing_bp, coordinates, cdsMap, differences, imgtDifferences):
+    """checks whether both UTRs are given with at least 1 bp, else raises MissingUTRError;
+    if both UTRs are there but UTR5 is incomplete, adjusts positions of all features accordingly
+    """
+    if missing_bp > 0: # first few bases are missing
+        coordinates, cdsMap, differences, imgtDifferences = shift_annotations_for_missing_bp(missing_bp, coordinates, cdsMap, differences, imgtDifferences)
+    
+    (UTR3_start, UTR3_end) = coordinates[-1]
+    if UTR3_end - UTR3_start < 0:
+        raise MissingUTRError(3)
+            
+            
+def processAlleles(closestAlleles, allAlleles, hashOfQuerySequences, incomplete_ok = False):
 
     annotations = {}
     for alleleQuery in  list(closestAlleles.keys()):
         if not closestAlleles[alleleQuery]:
             annotations[alleleQuery] = None
             continue
-        closestAlleleName, differences, isExactMatch, concatHSPS = closestAlleles[alleleQuery]["name"], closestAlleles[alleleQuery]["differences"], \
-                                                                    closestAlleles[alleleQuery]["exactMatch"], closestAlleles[alleleQuery]["concatHSPS"]
-
+        closestAlleleName, differences, isExactMatch, concatHSPS, hitStart = closestAlleles[alleleQuery]["name"], closestAlleles[alleleQuery]["differences"], \
+                                                                    closestAlleles[alleleQuery]["exactMatch"], closestAlleles[alleleQuery]["concatHSPS"], closestAlleles[alleleQuery]["hitStart"]
+        missing_bp = hitStart - 1
+        if missing_bp > 0:
+            if not incomplete_ok:
+                raise IncompleteSequenceWarning(missing_bp)
+        
         features, coordinates, extraInformation, closestAlleleCdsSequence, closestAlleleSequence = calculateCoordinates(closestAlleleName, allAlleles, differences, len(hashOfQuerySequences[alleleQuery]))
         utr5Length = len(allAlleles[closestAlleleName].UTR5)
 
         features, coordinates, imgtDifferences, cdsMap = changeToImgtCoords(features, coordinates, differences, utr5Length)
 
+        check_and_adjust_incomplete_seqs(missing_bp, coordinates, cdsMap, differences, imgtDifferences)
+            
         annotations[alleleQuery] = {"features":features, "coordinates":coordinates, "imgtDifferences": imgtDifferences, "differences":differences, \
                                     "closestAllele":closestAlleleName, "cdsMap":cdsMap, "closestAlleleCdsSequence": closestAlleleCdsSequence, \
                                     "closestAlleleSequence":closestAlleleSequence, "isExactMatch":isExactMatch, "extraInformation":extraInformation, \
-                                    "concatHSPS": concatHSPS}
+                                    "concatHSPS": concatHSPS, "missing_bp": missing_bp}
 
     return annotations
 

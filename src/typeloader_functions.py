@@ -25,7 +25,7 @@ import general, db_internal
 
 from __init__ import __version__
 #from src.typeloader_core.errors import IncompleteSequenceError
-from typeloader_core.errors import IncompleteSequenceError
+from typeloader_core.errors import IncompleteSequenceWarning
 
 flatfile_dic = {"function_hla" : "antigen presenting molecule",
                 "function_kir" : "killer-immunoglobulin receptor",
@@ -168,14 +168,16 @@ def reformat_header_data(header_data, sample_id_ext, log):
 
 
 def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_filename, allelesFilename, 
-                          header_data, settings, log):
+                          header_data, settings, log, incomplete_ok = False):
     log.debug("Processing sequence file...")
     try:
         if filetype == "XML":
             try:
-                closestAlleles = CA.getClosestKnownAlleles(blastXmlFile, targetFamily, settings, log)
-            except errors.IncompleteSequenceError as E:
+                closestAlleles = CA.getClosestKnownAlleles(blastXmlFile, targetFamily, settings, log, incomplete_ok = incomplete_ok)
+            except errors.IncompleteSequenceWarning as E:
                 return False, "Incomplete sequence", E.msg
+            except errors.MissingUTRError as E:
+                return False, "Missing UTR", E.msg
         
             genDxAlleleNames = list(closestAlleles.keys())
             if closestAlleles[genDxAlleleNames[0]] == 0 or closestAlleles[genDxAlleleNames[1]] == 0:
@@ -206,9 +208,11 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
          
         else: # Fasta-File:
             try:
-                annotations = COO.getCoordinates(blastXmlFile, allelesFilename, targetFamily, settings, log)
-            except errors.IncompleteSequenceError as E:
+                annotations = COO.getCoordinates(blastXmlFile, allelesFilename, targetFamily, settings, log, incomplete_ok=incomplete_ok)
+            except errors.IncompleteSequenceWarning as E:
                 return False, "Incomplete sequence", E.msg
+            except errors.MissingUTRError as E:
+                return False, "Missing UTR", E.msg
             alleles = [allele for allele in annotations.keys()]
             # take the first sequence in fasta file
             alleleName = alleles[0]
@@ -225,7 +229,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 newAlleleName = "%s:new" % closestAlleleName.split(":")[0]
                 
                 posHash, sequences = EF.get_coordinates_from_annotation(annotations)
-            
+                
                 currentPosHash = posHash[alleleName]
                 sequence = sequences[alleleName]
                 features = annotations[alleleName]["features"]
@@ -271,7 +275,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
         return False, "Error while processing the sequence file", repr(E), None
 
 
-def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log):
+def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log, incomplete_ok = False):
     """creates ENA file for allele chosen from XML file
     """
     log.debug("Creating ENA text...")
@@ -279,7 +283,7 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log):
                                    settings["general_dir"],
                                    settings["reference_dir"],
                                    settings["hla_dat"])
-    annotations = COO.getCoordinates(blastXmlFile, allelesFilename, targetFamily, settings, log, isENA=True)
+    annotations = COO.getCoordinates(blastXmlFile, allelesFilename, targetFamily, settings, log, isENA=True, incomplete_ok=incomplete_ok)
     posHash, sequences = EF.get_coordinates_from_annotation(annotations)
     
     currentPosHash = posHash[allele.alleleName]
@@ -516,7 +520,7 @@ def parse_bulk_csv(csv_file, settings, log):
                         
 
 def upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_path, customer,
-                               settings, mydb, log):
+                               settings, mydb, log, incomplete_ok = False):
     """adds one new target sequence to TypeLoader
     """
     log.info("Uploading {} to project {}...".format(sample_id_int, project_name))
@@ -536,7 +540,7 @@ def upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_p
     header_data["sample_id_int"] = sample_id_int
     results = process_sequence_file(project_name, filetype, blastXmlFile, 
                                     targetFamily, fasta_filename, allelesFilename, 
-                                    header_data, settings, log)
+                                    header_data, settings, log, incomplete_ok = incomplete_ok)
     if results[0] == False: # something went wrong
         return False, "{}: {}".format(results[1], results[2])
     log.debug("\t=> success")
@@ -666,7 +670,18 @@ pass
 
 def main(settings, log, mydb):
     project = "20190319_ADMIN_MIC_shortUTR3"
-    raw_path = r"Y:\Projects\typeloader\staging\data_unittest\rejection"
+    mydir = r"Y:\Projects\typeloader\staging\data_unittest\incomplete_UTR3"
+    nr = 7
+    for item in ["incomplete_missing_UTR3"]:#, "complete", "ref"]:
+        sample_id_int = "{}-{}".format(nr, item)
+        raw_path = os.path.join(mydir, "{}.fa".format(item))
+        sample_id_ext = "DEDKM" + id_generator()
+        success, msg = upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, "DKMS", 
+                                                  settings, mydb, log, incomplete_ok = False)
+        if not success:
+            print("Not successful!", msg)
+        else:
+            delete_sample(sample_id_int, 1, project, settings, log)
     
 
 if __name__ == "__main__":
