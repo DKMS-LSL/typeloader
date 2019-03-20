@@ -173,7 +173,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
     try:
         if filetype == "XML":
             try:
-                closestAlleles = CA.getClosestKnownAlleles(blastXmlFile, targetFamily, settings, log, incomplete_ok = incomplete_ok)
+                closestAlleles = CA.getClosestKnownAlleles(blastXmlFile, targetFamily, settings, log)
             except errors.IncompleteSequenceWarning as E:
                 return False, "Incomplete sequence", E.msg
             except errors.MissingUTRError as E:
@@ -490,7 +490,7 @@ def parse_bulk_csv(csv_file, settings, log):
         data = csv.reader(f, delimiter=",")
         if data:
             for row in data:
-                if len(row) > 4:
+                if len(row) > 6:
                     if row[0] != "nr":
                         i += 1
                         err = False
@@ -512,8 +512,13 @@ def parse_bulk_csv(csv_file, settings, log):
                         sample_id_int = row[3].strip()
                         sample_id_ext = row[4].strip()
                         customer = row[5].strip()
+                        incomplete_ok = row[6].strip()
+                        if incomplete_ok.lower() in ["true", "wahr", "ok", "yes"]:
+                            incomplete_ok = True
+                        else:
+                            incomplete_ok = False
                         if not err:
-                            myallele = [nr, sample_id_int, sample_id_ext, mypath, customer]
+                            myallele = [nr, sample_id_int, sample_id_ext, mypath, customer, incomplete_ok]
                             alleles.append(myallele)
     log.info("\t=> {} processable alleles found in {} rows".format(len(alleles), i))
     return alleles, error_dic, i
@@ -579,12 +584,14 @@ def bulk_upload_new_alleles(csv_file, project, settings, mydb, log):
     alleles, error_dic, num_rows = parse_bulk_csv(csv_file, settings, log)
     successful = []
     for allele in alleles:
-        [nr, sample_id_int, sample_id_ext, raw_path, customer] = allele
+        [nr, sample_id_int, sample_id_ext, raw_path, customer, incomplete_ok] = allele
         log.info("Uploading #{}: {}...".format(nr, sample_id_int))
-        success, msg = upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, customer, settings, mydb, log)
+        success, msg = upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, customer, settings, mydb, log, incomplete_ok=incomplete_ok)
         if success:
             successful.append("  - #{}: {}".format(nr, msg))
         else:
+            if msg.startswith("Incomplete sequence"):
+                msg = msg.replace("\n", " ").split("!")[0] + "!"
             error_dic[nr].append(msg)
         
     # format report:
@@ -670,18 +677,21 @@ pass
 
 def main(settings, log, mydb):
     project = "20190319_ADMIN_MIC_shortUTR3"
-    mydir = r"Y:\Projects\typeloader\staging\data_unittest\incomplete_UTR3"
-    nr = 7
-    for item in ["incomplete_missing_UTR3"]:#, "complete", "ref"]:
-        sample_id_int = "{}-{}".format(nr, item)
-        raw_path = os.path.join(mydir, "{}.fa".format(item))
-        sample_id_ext = "DEDKM" + id_generator()
-        success, msg = upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, "DKMS", 
-                                                  settings, mydb, log, incomplete_ok = False)
-        if not success:
-            print("Not successful!", msg)
-        else:
-            delete_sample(sample_id_int, 1, project, settings, log)
+    csv_file = r"Y:\Projects\typeloader\staging\data_unittest\bulk\bulk_upload.csv"
+    report, errors_found = bulk_upload_new_alleles(csv_file, project, settings, mydb, log)
+    print(report)
+#     mydir = r"Y:\Projects\typeloader\staging\data_unittest\incomplete_UTR3"
+#     nr = 7
+#     for item in ["incomplete_missing_UTR3"]:#, "complete", "ref"]:
+#         sample_id_int = "{}-{}".format(nr, item)
+#         raw_path = os.path.join(mydir, "{}.fa".format(item))
+#         sample_id_ext = "DEDKM" + id_generator()
+#         success, msg = upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, "DKMS", 
+#                                                   settings, mydb, log, incomplete_ok = False)
+#         if not success:
+#             print("Not successful!", msg)
+#         else:
+#             delete_sample(sample_id_int, 1, project, settings, log)
     
 
 if __name__ == "__main__":

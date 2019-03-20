@@ -20,6 +20,7 @@ from PyQt5.Qt import QWidget, pyqtSlot, pyqtSignal, QDialog, QPushButton
 from PyQt5.QtGui import QIcon
 
 import general, typeloader_functions as typeloader
+from typeloader_core import errors
 
 from GUI_forms import (CollapsibleDialog, ChoiceSection, 
                        FileButton, ProceedButton, QueryButton, NewProjectButton)
@@ -511,7 +512,29 @@ class NewAlleleForm(CollapsibleDialog):
             else:
                 QMessageBox.warning(self, "No allele chosen", "Please choose an allele to continue")
                 return
-            self.ENA_text = typeloader.make_ENA_file(self.blastXmlFile, self.targetFamily, self.myallele, self.settings, self.log)
+            try:
+                self.ENA_text = typeloader.make_ENA_file(self.blastXmlFile, self.targetFamily, self.myallele, self.settings, self.log)
+            except errors.IncompleteSequenceWarning as E:
+                reply = QMessageBox.question(self, "Incomplete Sequence", E.msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if reply == QMessageBox.Yes:
+                    try:
+                        self.ENA_text = typeloader.make_ENA_file(self.blastXmlFile, self.targetFamily, self.myallele, self.settings, self.log, incomplete_ok = True)
+                    except errors.MissingUTRError as E:
+                        QMessageBox.warning(self, "Missing UTR", E.msg)
+                        return
+                    except Exception as E:
+                        QMessageBox.warning(self, "Error during ENA file creation", repr(E))
+                        return
+                else:
+                    return
+            
+            except errors.MissingUTRError as E:
+                QMessageBox.warning(self, "Missing UTR", E.msg)
+                return
+            except Exception as E:
+                QMessageBox.warning(self, "Error during ENA file creation", repr(E))
+                return
+                
             self.ENA_widget.setText(self.ENA_text)
             self.name_lbl.setText(self.myallele.newAlleleName)
             self.proceed_sections(1, 2)
