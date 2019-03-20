@@ -677,12 +677,12 @@ pass
 
 def main(settings, log, mydb):
     project = "20190319_ADMIN_MIC_shortUTR3"
-    csv_file = r"Y:\Projects\typeloader\staging\data_unittest\bulk\bulk_upload.csv"
+    csv_file = r"Y:\Projects\typeloader\staging\data_unittest\incomplete_UTR\bulk_upload_incompletes.csv"
     report, errors_found = bulk_upload_new_alleles(csv_file, project, settings, mydb, log)
     print(report)
-#     mydir = r"Y:\Projects\typeloader\staging\data_unittest\incomplete_UTR3"
-#     nr = 7
-#     for item in ["incomplete_missing_UTR3"]:#, "complete", "ref"]:
+#     mydir = r"Y:\Projects\typeloader\staging\data_unittest\incomplete_UTR"
+#     nr = 8
+#     for item in ["complete", "ref"]:
 #         sample_id_int = "{}-{}".format(nr, item)
 #         raw_path = os.path.join(mydir, "{}.fa".format(item))
 #         sample_id_ext = "DEDKM" + id_generator()
