@@ -5,8 +5,8 @@ import textwrap
 from .imgtformat import *
 from .errors import BothAllelesNovelError, InvalidPretypingError
 
-def make_genemodel_text(enaFile, sequence):
-
+def make_genemodel_text(enaFile, sequence, partial_UTR5, partial_UTR3):
+    print(enaFile, sequence)
     enaHandle = open(enaFile)
     enaText = enaHandle.read().replace("\r","\n").replace("\n\n","\n")
     enaHandle.close()
@@ -22,8 +22,12 @@ def make_genemodel_text(enaFile, sequence):
     cdsStart = int(cdsText.split("..")[0].split("(")[1])
     cdsEnd = int(cdsText.split("..")[-1].split(")")[0])
 
-    if cdsStart > 1: fiveUtrText = fiveUtrString.replace("{fiveUtrEnd}", str(cdsStart - 1))
-    else: fiveUtrText = ""
+    if cdsStart > 1: 
+        fiveUtrText = fiveUtrString.replace("{fiveUtrEnd}", str(cdsStart - 1))
+        if partial_UTR5:
+            fiveUtrText += "\nFT                  \partial"
+    else: 
+        fiveUtrText = ""
 
     if cdsEnd < sequenceLength: threeUtrText = threeUtrString.replace("{threeUtrStart}",str(cdsEnd + 1)).replace("{threeUtrEnd}",str(sequenceLength))
     else: threeUtrText = ""
@@ -52,7 +56,10 @@ def make_genemodel_text(enaFile, sequence):
     imgtGeneModelText += cdsText
     if len(fiveUtrText): imgtGeneModelText += "%s\n" % fiveUtrText
     imgtGeneModelText += "%s\n" % (imgtExonIntronText.replace("\\"," \\"))
-    if len(threeUtrText): imgtGeneModelText += "%s\n" % threeUtrText
+    if len(threeUtrText): 
+        imgtGeneModelText += "%s\n" % threeUtrText
+        if partial_UTR3:
+            imgtGeneModelText += "FT                  \partial\n"
 
     return imgtGeneModelText
 
@@ -233,10 +240,14 @@ def make_imgt_footer(sequence, sequencewidth=60):
 
 
 def make_imgt_text(submissionId, cellLine, local_name, myallele, enaId, befund, closestAllele, diffToClosest, 
-                   imgtDiff, enafile, sequence, geneMap, settings, log):
+                   imgtDiff, enafile, sequence, geneMap, missing_bp, settings, log):
     differencesText = refAlleleDiffString.replace("{text}",make_diff_line(diffToClosest, imgtDiff, closestAllele))    
     otherAllelesText = make_befund_text(befund, closestAllele, myallele, geneMap, differencesText, log)
-    genemodelText = make_genemodel_text(enafile, sequence)
+    
+    partial_UTR5 = False
+    if missing_bp:
+        partial_UTR5 = True
+    genemodelText = make_genemodel_text(enafile, sequence, partial_UTR5, partial_UTR3 = False)
     footerText = make_imgt_footer(sequence)
     todaystr = datetime.datetime.now().strftime('%d/%m/%Y')
 
