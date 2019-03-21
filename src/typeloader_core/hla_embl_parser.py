@@ -185,7 +185,7 @@ def read_dat_file(dat_file, target, log, isENA = False, verbose = False):
                 myAllele = Allele(allele_ID, locus, allele, seq, length, UTR5, UTR3, exon_dic, intron_dic, exonpos_dic, intronpos_dic, utrpos_dic, pseudo_exon_dic, exon_num_dic, intron_num_dic, target)
                 if target == "HLA": # HLA.dat contains other loci, too - MIC, TAP...
                     usable = False
-                    usable_loci = ["HLA-A*", "HLA-B*", "HLA-C*", "HLA-DPB1*", "HLA-DQB1*", "HLA-DRB"]
+                    usable_loci = ["HLA-A*", "HLA-B*", "HLA-C*", "HLA-DPB1*", "HLA-DQB1*", "HLA-DRB", "MICA", "MICB"]
                     for loc in usable_loci:
                         if allele.startswith(loc): # HLA.dat contains other loci, too - MIC, TAP...
                             usable = True
@@ -245,8 +245,13 @@ def make_parsed_files(target, ref_dir, log):
         for allele_name in list(alleles.keys()):
             allele_data = alleles[allele_name]
             if (target == "hla"):
-                fasta_file.write(">%s\n" % allele_name)
-                fasta_file.write("%s\n" % allele_data.seq)
+                if allele_name.startswith("MIC"): # take only full length MIC alleles
+                    if ((len(allele_data.UTR3) > 0) & (len(allele_data.UTR5) > 0)):
+                        fasta_file.write(">%s\n" % allele_name)
+                        fasta_file.write("%s\n" % allele_data.seq)
+                else:
+                    fasta_file.write(">%s\n" % allele_name)
+                    fasta_file.write("%s\n" % allele_data.seq)
             elif (target == "KIR"):
                 # take only full length KIR alleles
                 if ((len(allele_data.UTR3) > 0) & (len(allele_data.UTR5) > 0)):

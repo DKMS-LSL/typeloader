@@ -9,7 +9,10 @@ import urllib.request
 import hashlib
 from time import time
 
-from . import hla_embl_parser
+if __name__ == "__main__":
+    import hla_embl_parser
+else:
+    from . import hla_embl_parser
 
 remote_db_path = { \
             "hla_path" : "https://github.com/ANHIG/IMGTHLA/raw/Latest/hla.dat", \
@@ -262,7 +265,11 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    log = start_log(level="DEBUG")
+    log.info("<Start>")
+    blast_path = r"Y:\Projects\typeloader\blast-2.7.1+\bin"
+    reference_local_path = r"Y:\Projects\typeloader\temp\_general\reference_data"
+    update_msg = update_database("hla", reference_local_path, blast_path, log)
     
 
     

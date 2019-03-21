@@ -249,7 +249,10 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                         productName_FT = productName_FT + " null allele" if null_allele else productName_FT
                 else:
                     function = flatfile_dic["function_hla"]
-                    geneName_short = geneName.split("-")[1]
+                    if geneName.startswith("HLA"):
+                        geneName_short = geneName.split("-")[1]
+                    else: # MIC
+                        geneName_short = geneName
                     # D ...for DQB, DPB, DRB
                     if geneName_short.startswith("D"):
                         productName_FT = productName_DE = (flatfile_dic["productname_hla_ii"]) \
@@ -676,22 +679,21 @@ pass
 # main:
 
 def main(settings, log, mydb):
-    project = "20190319_ADMIN_MIC_shortUTR3"
-    csv_file = r"Y:\Projects\typeloader\staging\data_unittest\incomplete_UTR\bulk_upload_incompletes.csv"
-    report, errors_found = bulk_upload_new_alleles(csv_file, project, settings, mydb, log)
-    print(report)
-#     mydir = r"Y:\Projects\typeloader\staging\data_unittest\incomplete_UTR"
-#     nr = 8
-#     for item in ["complete", "ref"]:
+    project = "20190321_ADMIN_MIC_1"
+#     csv_file = r"Y:\Projects\typeloader\staging\data_unittest\incomplete_UTR\bulk_upload_incompletes.csv"
+#     report, errors_found = bulk_upload_new_alleles(csv_file, project, settings, mydb, log)
+#     print(report)
+    mydir = r"Y:\Projects\typeloader\staging\data_unittest\MIC"
+    for (sample_id_int, filename) in [("MIC1", "hapA.pacbio.minimap.fa")]:
 #         sample_id_int = "{}-{}".format(nr, item)
-#         raw_path = os.path.join(mydir, "{}.fa".format(item))
-#         sample_id_ext = "DEDKM" + id_generator()
-#         success, msg = upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, "DKMS", 
-#                                                   settings, mydb, log, incomplete_ok = False)
-#         if not success:
-#             print("Not successful!", msg)
-#         else:
-#             delete_sample(sample_id_int, 1, project, settings, log)
+        raw_path = os.path.join(mydir, filename)
+        sample_id_ext = "DEDKM" + id_generator()
+        success, msg = upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, "DKMS", 
+                                                  settings, mydb, log, incomplete_ok = True)
+        if not success:
+            print("Not successful!", msg)
+        else:
+            delete_sample(sample_id_int, 1, project, settings, log)
     
 
 if __name__ == "__main__":

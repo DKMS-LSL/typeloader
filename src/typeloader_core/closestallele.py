@@ -61,8 +61,11 @@ def parseBlast(xmlRecords, targetFamily, query_fasta_file, settings, log):
         hsps = potentialClosestAlleleAlignment.hsps
 
         closestAlleleName = potentialClosestAlleleAlignment.hit_def
-        if closestAlleleName.find(targetFamily) == -1: 
-            closestAlleleName = potentialClosestAlleleAlignment.hit_id
+        if closestAlleleName.find(targetFamily) == -1:
+            if closestAlleleName.startswith("MIC") and targetFamily == "HLA":
+                pass
+            else:
+                closestAlleleName = potentialClosestAlleleAlignment.hit_id
 
         ref_sequence = SeqIO.to_dict(SeqIO.parse(output_db, "fasta"))[closestAlleleName].seq
         query_sequence = SeqIO.to_dict(SeqIO.parse(query_fasta_file, "fasta"))[queryId].seq
