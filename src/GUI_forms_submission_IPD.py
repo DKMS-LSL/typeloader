@@ -520,6 +520,7 @@ class IPDSubmissionForm(CollapsibleDialog):
             if self.settings["modus"] == "debugging":
                 if self.project_files.check_dic: # if debugging, auto-select first file
                     self.project_files.check_dic[0].setChecked(True)
+                    self.project_files.files_chosen.emit(1)
         
     @pyqtSlot(str, str)
     def catch_project_info(self, title, description):
@@ -855,21 +856,35 @@ if __name__ == '__main__':
     sys.excepthook = log_uncaught_exceptions
     log = general.start_log(level="DEBUG")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
-    settings_dic = GUI_login.get_settings("staging", log)
+    settings_dic = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, settings_dic["db_file"])
     
-    project = "20190307_ADMIN_KIR3DL3_invalid"
-    project = "20190318_SA_A_847781"
+    project = "20190321_ADMIN_MIC_1"
     app = QApplication(sys.argv)
-    
+     
 #     problem_dic = {'DKMS10004135': ['ID13178800', 'DKMS-LSL_ID13178800_DPB1_1', TargetAllele(gene='HLA-DPB1', target_allele='HLA-DPB1*03:new', partner_allele='HLA-DPB1*13:01:01:01 or 02:01:02:01'), ['13:new', '04:new']]}
 #     ex = BothAllelesNovelDialog(problem_dic, settings_dic, log)
     ex = IPDSubmissionForm(log, mydb, project, settings_dic)
-    
+     
     ex.show()
-    
+     
     result = app.exec_()
     close_connection(log, mydb)
     log.info("<End>")
     sys.exit(result)
+
+#     project_dir = r"\\nasdd12\daten\data\Typeloader\admin\projects\20190321_ADMIN_MIC_1"
+#     samples = [('MIC1', 'DKMS-LSL_MIC1_MICA_1', '')]
+#     file_dic = {'DKMS-LSL_MIC1_MICA_1': {'blast_xml': 'DKMS-LSL_MIC1_MICA_1.blast.xml', 'ena_file': 'DKMS-LSL_MIC1_MICA_1.ena.txt'}}
+#     allele_dic = {'DKMS-LSL_MIC1_MICA_1': TargetAllele(gene='MICA', target_allele='MICA*008:new', partner_allele='')}
+#     ENA_id_map = {'DKMS-LSL_MIC1_MICA_1': 'O61O3NVO'}
+#     ENA_gene_map = {'DKMS-LSL_MIC1_MICA_1': 'MICA'}
+#     pretypings = r"\\nasdd12\daten\data\Typeloader\admin\temp\fake_befunde.csv"
+#     subm_id = "IPD_20190322102215"
+#     mydir = r"\\nasdd12\daten\data\Typeloader\admin\projects\20190321_ADMIN_MIC_1\IPD-submissions\IPD_20190322102215"
+# 
+#     results = MIF.write_imgt_files(project_dir, samples, file_dic, allele_dic, ENA_id_map, 
+#                                    ENA_gene_map, pretypings, subm_id, 
+#                                    mydir, settings_dic, log)
+            
 
