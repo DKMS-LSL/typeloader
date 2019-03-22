@@ -7,12 +7,24 @@ contains custom exception classes
 '''
 
 class IncompleteSequenceWarning(Exception):
-    """raised when TypeLoader encounters a sequence without a complete 3'UTR
+    """raised when TypeLoader encounters a sequence with an incomplete 5'UTR and/or 3'UTR
     """
-    def __init__(self, missing_bp):
-        self.missing_bp = missing_bp
-        self.msg = "This sequence misses the first {} bp!\nDo you want to upload it anyway?\n(Note that IPD requires at least 1 bp per UTR to be contained in genomic sequences.)\n\n".format(missing_bp)
-        self.msg += "Please consider carefully: this might lead to an incorrect closest allele being selected. Also, submitting incomplete sequences decreases the quality of the official IPD databases."
+    def __init__(self, missing_bp_front, missing_bp_end):
+        self.missing_bp_front = missing_bp_front
+        self.missing_bp_end = missing_bp_end
+        
+        missing = []
+        if self.missing_bp_front:
+            missing.append("the first {} bp (5' end)".format(self.missing_bp_front))
+        if self.missing_bp_end:
+            missing.append("the last {} bp (3' end)".format(self.missing_bp_end))
+        self.missing = " and ".join(missing)
+        
+        self.msg = "This sequence misses {}!\nDo you want to upload it anyway?\n".format(self.missing)
+        self.msg += "(Note that IPD requires at least 1 bp per UTR to be contained in genomic sequences.)\n\n"
+        self.msg += "Please consider carefully: this might lead to an incorrect closest allele being selected. "
+        self.msg += "Also, submitting incomplete sequences decreases the quality of the official IPD databases."
+        print(self.msg)
 
 
 class MissingUTRError(Exception):

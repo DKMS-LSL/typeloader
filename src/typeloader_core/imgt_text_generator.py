@@ -247,14 +247,17 @@ def make_imgt_footer(sequence, sequencewidth=60):
 
 
 def make_imgt_text(submissionId, cellLine, local_name, myallele, enaId, befund, closestAllele, diffToClosest, 
-                   imgtDiff, enafile, sequence, geneMap, missing_bp, settings, log):
+                   imgtDiff, enafile, sequence, geneMap, missing_bp_start, missing_bp_end, settings, log):
     differencesText = refAlleleDiffString.replace("{text}",make_diff_line(diffToClosest, imgtDiff, closestAllele))    
     otherAllelesText = make_befund_text(befund, closestAllele, myallele, geneMap, differencesText, log)
     
-    partial_UTR5 = False
-    if missing_bp:
+    partial_UTR5, partial_UTR3 = False, False
+    if missing_bp_start:
         partial_UTR5 = True
-    genemodelText = make_genemodel_text(enafile, sequence, partial_UTR5, partial_UTR3 = False)
+    if missing_bp_end:
+        partial_UTR3 = True
+        
+    genemodelText = make_genemodel_text(enafile, sequence, partial_UTR5, partial_UTR3)
     footerText = make_imgt_footer(sequence)
     todaystr = datetime.datetime.now().strftime('%d/%m/%Y')
 

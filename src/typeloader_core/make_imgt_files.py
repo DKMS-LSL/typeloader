@@ -221,7 +221,10 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
                 closestAllele = annotations[genDxAlleleName]["closestAllele"]
                 sequence = annotations[genDxAlleleName]["sequence"]
                 imgtDiff = annotations[genDxAlleleName]["imgtDifferences"]
-                missing_bp = annotations[genDxAlleleName]["missing_bp"]
+                missing_bp = annotations[genDxAlleleName]["missing_bp"] # start of sequence
+                missing_bp_end = annotations[genDxAlleleName]["missing_bp_end"]
+                if missing_bp_end:
+                    log.warning("Incomplete sequence found: last {} bp missing!".format(missing_bp_end))
 
                 if isSameGene:
                     if annotations[genDxAlleleName]["isExactMatch"]: continue
@@ -245,7 +248,7 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
             imgt_data[submissionId] = make_imgt_text(submissionId, cell_line, local_name, allele_dic[local_name], 
                                                      enaId, befund,  
                                                      closestAllele, diffToClosest, imgtDiff, 
-                                                     enafile, sequence, geneMap, missing_bp, settings, log)
+                                                     enafile, sequence, geneMap, missing_bp, missing_bp_end, settings, log)
         except BothAllelesNovelError as E:
             multi_dic[local_name] = [sample, local_name, E.allele, E.alleles]
         except InvalidPretypingError as E:
