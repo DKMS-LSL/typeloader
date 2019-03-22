@@ -93,17 +93,20 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
             g.write('FT                   /{}="{}"\nXX\n'.format(gene_type, mygene))
             g.write("SQ   Sequence 35 BP; 1267 A; 928 C; 1161 G; 880 T; 0 other;\n")
             g.write("     gtgacccact gcttgtttct gtcacaggtg aggaa                                35\n//\n")
-             
+    
     # write fake pretyping file:
     log.info("Writing fake pretyping-file...")
     fake_file_befunde = os.path.join(settings["login_dir"], "temp", "fake_befunde.csv")
-    columns = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'DR1', 'DR2', 'DQ1', 'DQ2', 'DP1', 'DP2', 'KIR2DL1-1', 'KIR2DL1-2', 'KIR2DL1-3', 'KIR2DL1-4', 'KIR2DL2-1', 'KIR2DL2-2', 'KIR2DL2-3', 'KIR2DL2-4', 'KIR2DL3-1', 'KIR2DL3-2', 'KIR2DL3-3', 'KIR2DL3-4', 'KIR2DL4-1', 'KIR2DL4-2', 'KIR2DL4-3', 'KIR2DL4-4', 'KIR2DL5-1', 'KIR2DL5-2', 'KIR2DL5-3', 'KIR2DL5-4', 'KIR2DP1-1', 'KIR2DP1-2', 'KIR2DP1-3', 'KIR2DP1-4', 'KIR2DS1-1', 'KIR2DS1-2', 'KIR2DS1-3', 'KIR2DS1-4', 'KIR2DS2-1', 'KIR2DS2-2', 'KIR2DS2-3', 'KIR2DS2-4', 'KIR2DS3-1', 'KIR2DS3-2', 'KIR2DS3-3', 'KIR2DS3-4', 'KIR2DS4-1', 'KIR2DS4-2', 'KIR2DS4-3', 'KIR2DS4-4', 'KIR2DS5-1', 'KIR2DS5-2', 'KIR2DS5-3', 'KIR2DS5-4', 'KIR3DL1-1', 'KIR3DL1-2', 'KIR3DL1-3', 'KIR3DL1-4', 'KIR3DL2-1', 'KIR3DL2-2', 'KIR3DL2-3', 'KIR3DL2-4', 'KIR3DL3-1', 'KIR3DL3-2', 'KIR3DL3-3', 'KIR3DL3-4', 'KIR3DP1-1', 'KIR3DP1-2', 'KIR3DP1-3', 'KIR3DP1-4', 'KIR3DS1-1', 'KIR3DS1-2', 'KIR3DS1-3', 'KIR3DS1-4']
+    columns = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'DR1', 'DR2', 'DQ1', 'DQ2', 'DP1', 'DP2', 'KIR2DL1-1', 'KIR2DL1-2', 'KIR2DL1-3', 'KIR2DL1-4', 'KIR2DL2-1', 'KIR2DL2-2', 'KIR2DL2-3', 'KIR2DL2-4', 'KIR2DL3-1', 'KIR2DL3-2', 'KIR2DL3-3', 'KIR2DL3-4', 'KIR2DL4-1', 'KIR2DL4-2', 'KIR2DL4-3', 'KIR2DL4-4', 'KIR2DL5-1', 'KIR2DL5-2', 'KIR2DL5-3', 'KIR2DL5-4', 'KIR2DP1-1', 'KIR2DP1-2', 'KIR2DP1-3', 'KIR2DP1-4', 'KIR2DS1-1', 'KIR2DS1-2', 'KIR2DS1-3', 'KIR2DS1-4', 'KIR2DS2-1', 'KIR2DS2-2', 'KIR2DS2-3', 'KIR2DS2-4', 'KIR2DS3-1', 'KIR2DS3-2', 'KIR2DS3-3', 'KIR2DS3-4', 'KIR2DS4-1', 'KIR2DS4-2', 'KIR2DS4-3', 'KIR2DS4-4', 'KIR2DS5-1', 'KIR2DS5-2', 'KIR2DS5-3', 'KIR2DS5-4', 'KIR3DL1-1', 'KIR3DL1-2', 'KIR3DL1-3', 'KIR3DL1-4', 'KIR3DL2-1', 'KIR3DL2-2', 'KIR3DL2-3', 'KIR3DL2-4', 'KIR3DL3-1', 'KIR3DL3-2', 'KIR3DL3-3', 'KIR3DL3-4', 'KIR3DP1-1', 'KIR3DP1-2', 'KIR3DP1-3', 'KIR3DP1-4', 'KIR3DS1-1', 'KIR3DS1-2', 'KIR3DS1-3', 'KIR3DS1-4', 'MICA-1', 'MICA-2', 'MICB-1', 'MICB-2']
+    
     gene_dic = {"HLA-A": ['A1', 'A2'], 
                 "HLA-B": ['B1', 'B2'],
                 "HLA-C": ['C1', 'C2'],
                 "HLA-DPB1": ['DP1', 'DP2'], 
                 "HLA-DQB1": ['DQ1', 'DQ2'],
-                "HLA-DRB1": ['DR1', 'DR2']}
+                "HLA-DRB1": ['DR1', 'DR2'],
+                "MICA": ['MICA-1', 'MICA-2'],
+                "MICB": ['MICB-1', 'MICB-2']}
     for g in ['KIR2DL1', 'KIR2DL2', 'KIR2DL3', 'KIR2DL4', 'KIR2DL5',
               'KIR2DP1',
               'KIR2DS1', 'KIR2DS2', 'KIR2DS3', 'KIR2DS4', 'KIR2DS5',
@@ -113,6 +116,7 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
         for i in range(1,5):
             l.append('{}-{}'.format(g, i))
         gene_dic[g] = l
+    
     default_dic = {}
     for col in columns:
         if col.startswith("KIR"):
@@ -132,14 +136,13 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
                 elif i == 1:
                     if partner_allele:
                         befunde[col] = partner_allele.split("*")[1]
-                    else:
-                        befunde[col] = ""
                 else:
                     befunde[col] = ""
             myline = "{},{},DKMS,".format(sample_id_int, cell_line)
             pretypings = [befunde[col] for col in columns]
             myline += ",".join(pretypings) + "\n"
             g.write(myline)
+            print(myline)
             
      
 #     # check generated ENA file: (This will set the alleles' status to "IPD submitted"!)
@@ -161,7 +164,7 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
 
 def main(log):
     user = "admin"
-    project = "20190122_ADMIN_HLA-B_2"
+    project = "20190321_ADMIN_MIC_1"
     
     settings = GUI_login.get_settings(user, log)
     

@@ -6,7 +6,6 @@ from .imgtformat import *
 from .errors import BothAllelesNovelError, InvalidPretypingError
 
 def make_genemodel_text(enaFile, sequence, partial_UTR5, partial_UTR3):
-    print(enaFile, sequence)
     enaHandle = open(enaFile)
     enaText = enaHandle.read().replace("\r","\n").replace("\n\n","\n")
     enaHandle.close()
@@ -127,8 +126,16 @@ def make_befund_text(befund, closestAllele, myallele, geneMap, differencesText, 
     else:
         KIR = False
         self_name = self_name.split(":")[0]
+
     for gene in list(befund.keys()):
-        if (re.search(geneMap["gene"][0], gene) and geneMap["targetFamily"] == geneMap["gene"][0] or geneMap["targetFamily"] == geneMap["gene"][1]):
+        useme = False
+        if geneMap["targetFamily"] == "HLA":
+            if gene.startswith("HLA") or gene.startswith("MIC"):
+                useme = True
+        elif geneMap["targetFamily"] == "KIR":
+            useme = True
+                
+        if useme:    
             length = 3 if KIR else 2
             myalleles = [allele.zfill(length) for allele in befund[gene]]
             alleles = ",".join(myalleles)

@@ -47,8 +47,9 @@ class Allele:
         self.targetFamily = targetFamily
         self.gene = gene
         if targetFamily == "HLA":
-            if "HLA-" not in gene:
-                self.gene = "HLA-" + gene
+            if not gene.startswith("MIC"):
+                if "HLA-" not in gene:
+                    self.gene = "HLA-" + gene
         self.name = name
         self.product = product
         self.sample_id_int = sample_id_int
@@ -153,7 +154,7 @@ def reformat_header_data(header_data, sample_id_ext, log):
     for key in ["ref", "second", "third", "fourth"]:
         if key in header_data:
             allele = header_data[key]
-            if allele and allele != "NA":
+            if allele and allele not in ["NA", "another"] and not ".fa" in allele: # adjustment for DR2S MIC output
                 partners.append(allele)
     header_data["partner_allele"] = " or ".join(partners)
     
@@ -680,20 +681,26 @@ pass
 
 def main(settings, log, mydb):
     project = "20190321_ADMIN_MIC_1"
-#     csv_file = r"Y:\Projects\typeloader\staging\data_unittest\incomplete_UTR\bulk_upload_incompletes.csv"
+#     csv_file = r"Y:\Projects\typeloader\staging\data_unittest\incomplete_UTR\bulk_upload_incompletes_short.csv"
 #     report, errors_found = bulk_upload_new_alleles(csv_file, project, settings, mydb, log)
 #     print(report)
+
     mydir = r"Y:\Projects\typeloader\staging\data_unittest\MIC"
     for (sample_id_int, filename) in [("MIC1", "hapA.pacbio.minimap.fa")]:
 #         sample_id_int = "{}-{}".format(nr, item)
+        try:
+            delete_sample(sample_id_int, 1, project, settings, log)
+        except:
+            log.info("Could not delete")
+            
         raw_path = os.path.join(mydir, filename)
         sample_id_ext = "DEDKM" + id_generator()
         success, msg = upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, "DKMS", 
                                                   settings, mydb, log, incomplete_ok = True)
         if not success:
             print("Not successful!", msg)
-        else:
-            delete_sample(sample_id_int, 1, project, settings, log)
+#         else:
+#             delete_sample(sample_id_int, 1, project, settings, log)
     
 
 if __name__ == "__main__":
