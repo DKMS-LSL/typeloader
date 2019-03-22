@@ -21,7 +21,6 @@ def transformPos(position, cdsMap):
             newRegion = cdsMap[region]
             newPosition = newRegion[0] + (position - region[0])
             codonIndex = newPosition / 3 # codon length = 3
-            #print position, newPosition
             return (newPosition, codonIndex)
 
     return (position, None)
@@ -31,47 +30,39 @@ def changeToImgtCoords(features, coordinates, differences, utr5Length = 0):
     imgtDifferences = {}
 
     imgtCoordinates = []
-    imgtDifferences["deletionPositions"] = []
-    imgtDifferences["insertionPositions"] = []
-    imgtDifferences["mismatchPositions"] = []
+    for key in ["deletionPositions", "insertionPositions", "mismatchPositions"]:
+        imgtDifferences[key] = []
 
-    if utr5Length:
-        utr5Index = features.index("utr5")
-        utr5Start, utr5End = coordinates[utr5Index][0], coordinates[utr5Index][1]
+    utr5Index = features.index("utr5")
+    utr5Start, utr5End = coordinates[utr5Index][0], coordinates[utr5Index][1]
+    utr5Length = utr5End - utr5Start + 1
+        
+    for featureIndex in range(len(features)):
+        feature = features[featureIndex]
+        if feature == "utr5":
+            ft_start = coordinates[featureIndex][0] - (utr5Length + 1)
+            ft_end = coordinates[featureIndex][1] - (utr5Length + 1)
+        else:
+            ft_start = coordinates[featureIndex][0] - utr5Length
+            ft_end = coordinates[featureIndex][1] - utr5Length
+        
+        imgtCoordinates.append((ft_start, ft_end))
 
-        for featureIndex in range(len(features)):
-            feature = features[featureIndex]
-            if feature == "utr5":
-                imgtCoordinates.append((coordinates[featureIndex][0] - (utr5Length + 1), coordinates[featureIndex][1] - (utr5Length + 1)))
+    for key in ["deletionPositions", "insertionPositions", "mismatchPositions"]:
+        for pos in differences[key]:
+            if (pos >= utr5Start) and (pos <= utr5End):
+                imgt_pos = pos - utr5Length + 1 # removed 1 => no effect on tests???
             else:
-                imgtCoordinates.append((coordinates[featureIndex][0] - utr5Length, coordinates[featureIndex][1] - utr5Length))
+                imgt_pos = pos - utr5Length # removed 1 => no effect on tests???
+            imgtDifferences[key].append(imgt_pos)
 
-        for deletion in differences["deletionPositions"]:
-            if (deletion >= utr5Start) and (deletion <= utr5End): 
-                imgtDifferences["deletionPositions"].append(deletion - (utr5Length + 1) + 1)
-            else: 
-                imgtDifferences["deletionPositions"].append(deletion - utr5Length + 1)
-
-        for insertion in differences["insertionPositions"]:
-            if (insertion >= utr5Start) and (insertion <= utr5End): imgtDifferences["insertionPositions"].append(insertion - (utr5Length + 1) + 1)
-            else: imgtDifferences["insertionPositions"].append(insertion - utr5Length + 1)
-
-        for mismatchPos in differences["mismatchPositions"]:
-            if (mismatchPos >= utr5Start) and (mismatchPos <= utr5End): imgtDifferences["mismatchPositions"].append(mismatchPos - (utr5Length + 1) + 1)
-            else: imgtDifferences["mismatchPositions"].append(mismatchPos - utr5Length + 1)
-
-        imgtDifferences["mismatches"] = differences["mismatches"]
-        imgtDifferences["insertions"] = differences["insertions"]
-        imgtDifferences["deletions"] = differences["deletions"]
-
-    else:
-        imgtCoordinates = coordinates
-        imgtDifferences = differences
+    for key in ["mismatches", "insertions", "deletions"]:
+        imgtDifferences[key] = differences[key]
 
     cdsMap = constructCDS(features, coordinates)
 
-    imgtDifferences["deletionPositions"] = [transformPos(deletionPos, cdsMap) for deletionPos in differences["deletionPositions"]]
-    imgtDifferences["insertionPositions"] = [transformPos(insertionPos, cdsMap) for insertionPos in differences["insertionPositions"]]
-    imgtDifferences["mismatchPositions"] = [transformPos(mismatchPos, cdsMap) for mismatchPos in differences["mismatchPositions"]]
-
-    return (features, imgtCoordinates, imgtDifferences, cdsMap)
+    for key in ["deletionPositions", "insertionPositions", "mismatchPositions"]:
+        for pos in imgtDifferences[key]:
+            imgtDifferences[key] = [transformPos(pos, cdsMap) for pos in differences[key]]
+    
+    return (imgtCoordinates, imgtDifferences, cdsMap)

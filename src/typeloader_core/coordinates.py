@@ -31,11 +31,11 @@ def getMismatchData(annotations):
     cdsMap = annotations["cdsMap"]
     alleleSeq = annotations["sequence"]
     closestallele = annotations["closestAllele"]
-
+    
     # changed old statement to generate closestAlleleCdsSeq,
     # because pseudoexons could be in KIR
     closestAlleleCdsSeq = annotations["closestAlleleCdsSequence"]
-
+    
     genomicExonCoords = list(cdsMap.keys())
     genomicExonCoords.sort()
 
@@ -49,15 +49,15 @@ def getMismatchData(annotations):
     numExon1Coords = getSpecificCodonChords(closestallele, exon1Length)
 
     for mmIndex in range(len(annotations["differences"]["mismatches"])):
-        genomicPos, cdsPos = annotations["differences"]["mismatchPositions"][mmIndex], \
-                             annotations["imgtDifferences"]["mismatchPositions"][mmIndex][0]
-
+        genomicPos = annotations["differences"]["mismatchPositions"][mmIndex]
+        cdsPos = annotations["imgtDifferences"]["mismatchPositions"][mmIndex][0]
+        
         if genomicPos == cdsPos:
             mmCodons.append(())
             continue
 
         canonicalMMCodonNum = int(ceil(float(cdsPos)/3))
-
+        
         """
         # older version which was got class I codon assignments correct, and class II assignments wrong
         # IMGT assigns the first codon in exon 2 as codon 1, and the codons in exon 1 with a -1 backwards
@@ -70,10 +70,13 @@ def getMismatchData(annotations):
         For class I, this is exon 2, and for class II, this is exon 1
         """
  
-        if closestallele.find("DPB1") != -1: imgtMMCodonNum = canonicalMMCodonNum
+        if closestallele.find("DPB1") != -1: 
+            imgtMMCodonNum = canonicalMMCodonNum
         else:
-            if canonicalMMCodonNum > numExon1Coords: imgtMMCodonNum = canonicalMMCodonNum - numExon1Coords
-            else: imgtMMCodonNum = canonicalMMCodonNum - (numExon1Coords + 1)
+            if canonicalMMCodonNum > numExon1Coords: 
+                imgtMMCodonNum = canonicalMMCodonNum - numExon1Coords
+            else: 
+                imgtMMCodonNum = canonicalMMCodonNum - (numExon1Coords + 1)
 
         """
         Getting rid of the codon sequence madness, sort of bruting it
@@ -114,7 +117,6 @@ def getMismatchData(annotations):
 
 
 def getCoordinates(blastXmlFilename, allelesFilename, targetFamily, settings, log, isENA=True, incomplete_ok = False):
-
     allAlleles, _ = read_dat_file(allelesFilename, targetFamily, isENA)
     closestAlleles = getClosestKnownAlleles(blastXmlFilename, targetFamily, settings, log)
 
@@ -153,28 +155,48 @@ def getCoordinates(blastXmlFilename, allelesFilename, targetFamily, settings, lo
     return annotations
 
 
-def shift_annotations_for_missing_bp(missing_bp, coordinates, cdsMap, differences, imgtDifferences):
-    """if part of UTR5 is missing, shift annotations in 3' direction
+def shift_coordinates_for_missing_bp(missing_bp, coordinates):
+    """if part of UTR5 is missing, shift coordinates in 5' direction 
     """
-    # shift coordinates:
-    UTR5_start_old = coordinates[0][0]
-    UTR5_start_new = UTR5_start_old + missing_bp
-    if UTR5_start_new >= 0:
-#         raise IncompleteSequenceError(missing_bp)
+    #check for missing UTRs:
+    UTR5_start_old = coordinates[0][1]
+    UTR5_start_new = UTR5_start_old - missing_bp
+    if UTR5_start_new <= 0:
         raise MissingUTRError(5)
     
-    coordinates_new = [(UTR5_start_new, -1)] + coordinates[1:-1]
-    coordinates_new += [(coordinates[-1][0], coordinates[-1][1] + missing_bp)] # shift last feature to its correct length
+    # shift coordinates:
+    coordinates_new = []
+    for i, (start, end) in enumerate(coordinates):
+        if i == 0: # UTR5
+            new = (1, UTR5_start_new)
+        elif i == len(coordinates) - 1: #UTR3
+            new = (start - missing_bp, end)
+            (UTR3_start, UTR3_end) = new
+            UTR3_length = UTR3_end - UTR3_start + 1
+            if UTR3_length < 0:
+                raise MissingUTRError(3)
+        else:
+            new = (start - missing_bp, end - missing_bp)
+        coordinates_new.append(new)
+
+    return coordinates_new, UTR3_length
     
-    # shift cdsMap:
-    cdsMap_new = {}
-    for key in cdsMap:
-        (start,end) = key
-        new_start = start - missing_bp
-        new_end = end - missing_bp
-        new_key = (new_start, new_end)
-        cdsMap_new[new_key] = cdsMap[key]
-    
+
+def check_incomplete_utrs(missing_bp, utr3Length_orig, utr3_length_new, incomplete_ok):
+    """checks whether either UTR is incomplete and issues a warning if that is the case
+    (unless incomplete_ok is already set to True)
+    """ 
+    missing_bp_end = utr3Length_orig - utr3_length_new
+    if not incomplete_ok:
+        if missing_bp > 0 or missing_bp_end > 0:
+            raise IncompleteSequenceWarning(missing_bp, missing_bp_end)
+    return missing_bp_end
+            
+            
+def shift_differences_for_missing_bp(missing_bp, differences, imgtDifferences):
+    """if part of UTR5 is missing, shift differences in 3' direction 
+    so they mark positions in the alignment, no the target sequence 
+    """
     # shift differences:
     new_differences = {}
     for key in differences:
@@ -182,7 +204,6 @@ def shift_annotations_for_missing_bp(missing_bp, coordinates, cdsMap, difference
         new_differences[key] = []
         if data:
             if key.endswith("Positions"):
-                print(key, data)
                 for pos in data:
                     new_differences[key].append(pos + missing_bp)
             else:
@@ -199,21 +220,22 @@ def shift_annotations_for_missing_bp(missing_bp, coordinates, cdsMap, difference
                     new_imgtDifferences[key].append((pos + missing_bp, value))
             else:
                 new_imgtDifferences[key] = imgtDifferences[key]
-    return coordinates_new, cdsMap_new, new_differences, new_imgtDifferences
+    return new_differences, new_imgtDifferences
 
 
-def check_and_adjust_incomplete_seqs(missing_bp, coordinates, cdsMap, differences, imgtDifferences):
-    """checks whether both UTRs are given with at least 1 bp, else raises MissingUTRError;
-    if both UTRs are there but UTR5 is incomplete, adjusts positions of all features accordingly
-    """
-    if missing_bp > 0: # first few bases are missing
-        coordinates, cdsMap, differences, imgtDifferences = shift_annotations_for_missing_bp(missing_bp, coordinates, cdsMap, differences, imgtDifferences)
-    
-    (UTR3_start, UTR3_end) = coordinates[-1]
-    if UTR3_end - UTR3_start < 0:
-        raise MissingUTRError(3)
-            
-            
+# def shift_cdsMap_for_missing_bp(missing_bp, cdsMap):
+#     """shifts positions of cdsMap
+#     (needs to happen after changeToImgtCoords)
+#     """
+#     cdsMap_new = {}
+#     for key in cdsMap:
+#         (start,end) = key
+#         new_start = start - missing_bp
+#         new_end = end - missing_bp
+#         new_key = (new_start, new_end)
+#         cdsMap_new[new_key] = cdsMap[key]
+#     return cdsMap_new
+
 def processAlleles(closestAlleles, allAlleles, hashOfQuerySequences, incomplete_ok = False):
 
     annotations = {}
@@ -224,21 +246,37 @@ def processAlleles(closestAlleles, allAlleles, hashOfQuerySequences, incomplete_
         closestAlleleName, differences, isExactMatch, concatHSPS, hitStart = closestAlleles[alleleQuery]["name"], closestAlleles[alleleQuery]["differences"], \
                                                                     closestAlleles[alleleQuery]["exactMatch"], closestAlleles[alleleQuery]["concatHSPS"], closestAlleles[alleleQuery]["hitStart"]
         missing_bp = hitStart - 1
-        if missing_bp > 0:
-            if not incomplete_ok:
-                raise IncompleteSequenceWarning(missing_bp)
         
         features, coordinates, extraInformation, closestAlleleCdsSequence, closestAlleleSequence = calculateCoordinates(closestAlleleName, allAlleles, differences, len(hashOfQuerySequences[alleleQuery]))
-        utr5Length = len(allAlleles[closestAlleleName].UTR5)
+        
+#         print("After calculateCoordinates:")
+#         print("features =", features)
+#         print("coordinates =", coordinates)
+#         print("differences =", differences)
+        
+        coordinates, utr3_length_new = shift_coordinates_for_missing_bp(missing_bp, coordinates)
+        
+        utr3Length_orig = len(allAlleles[closestAlleleName].UTR3)
+        missing_bp_end = check_incomplete_utrs(missing_bp, utr3Length_orig, utr3_length_new, incomplete_ok)
 
-        features, coordinates, imgtDifferences, cdsMap = changeToImgtCoords(features, coordinates, differences, utr5Length)
-
-        check_and_adjust_incomplete_seqs(missing_bp, coordinates, cdsMap, differences, imgtDifferences)
-            
+#         print("\nAfter shift_coordinates:")
+#         print("coordinates =", coordinates)
+        
+        coordinates, imgtDifferences, cdsMap = changeToImgtCoords(features, coordinates, differences)
+#         print("\nAfter changeToImgtCoords:")
+#         print("coordinates =", coordinates)
+#         print("imgtDifferences =", imgtDifferences)
+#         print("cdsMap =", cdsMap)
+        
+        differences, imgtDifferences = shift_differences_for_missing_bp(missing_bp, differences, imgtDifferences)
+#         print("\nAfter shift_differences:")
+#         print("differences =", differences)
+#         print("imgtDifferences =", imgtDifferences)
+        
         annotations[alleleQuery] = {"features":features, "coordinates":coordinates, "imgtDifferences": imgtDifferences, "differences":differences, \
                                     "closestAllele":closestAlleleName, "cdsMap":cdsMap, "closestAlleleCdsSequence": closestAlleleCdsSequence, \
                                     "closestAlleleSequence":closestAlleleSequence, "isExactMatch":isExactMatch, "extraInformation":extraInformation, \
-                                    "concatHSPS": concatHSPS, "missing_bp": missing_bp}
+                                    "concatHSPS": concatHSPS, "missing_bp": missing_bp, "missing_bp_end": missing_bp_end}
 
     return annotations
 
