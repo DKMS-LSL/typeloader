@@ -1635,13 +1635,13 @@ class Test_BulkUpload(unittest.TestCase):
     def test_success(self):
         """make sure expected results occur
         """
-        expected_result = """Successfully uploaded 3 of 4 alleles:
-  - #1: DKMS-LSL_ID1_bulk_HLA_C_1
+        expected_result = """Successfully uploaded 2 of 4 alleles:
   - #2: DKMS-LSL_ID2_bulk_KIR_2DL5B_1
   - #4: DKMS-LSL_ID3_bulk_HLAshort_2DL1_1
 
-Encountered problems in 1 of 4 alleles:
-  - #3: Incomplete sequence: This sequence misses the first 53 bp!
+Encountered problems in 2 of 4 alleles:
+  - #1: Incomplete sequence: This sequence misses the last 400 bp (3' end)!
+  - #3: Incomplete sequence: This sequence misses the first 53 bp (5' end) and the last 471 bp (3' end)!
 
 The problem-alleles were NOT added. Please fix them and try again!"""
         result = self.form.report_txt.toPlainText().strip()
@@ -1778,7 +1778,7 @@ class Test_null_alleles(unittest.TestCase):
             success_upload, sample_name, filetype, temp_raw_file, blastXmlFile, targetFamily, fasta_filename, allelesFilename, header_data = results
             self.assertTrue(success_upload, "Sequence file was not uploaded successfully")
             
-            success, myalleles, ENA_text = typeloader_functions.process_sequence_file("PROJECT_NAME", filetype, blastXmlFile, targetFamily, fasta_filename, allelesFilename, header_data, curr_settings, log)        
+            success, myalleles, ENA_text = typeloader_functions.process_sequence_file("PROJECT_NAME", filetype, blastXmlFile, targetFamily, fasta_filename, allelesFilename, header_data, curr_settings, log, incomplete_ok=True)        
             self.assertTrue(success, "Sequence file was not processed successfully")
             result = compare_2_files(reference_path = reference_path, query_var = ENA_text)
             self.assertEqual(len(result["added_sings"]), 0)
