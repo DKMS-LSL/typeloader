@@ -70,7 +70,7 @@ def getMismatchData(annotations):
         For class I, this is exon 2, and for class II, this is exon 1
         """
  
-        if closestallele.find("DPB1") != -1: 
+        if "HLA-D" in closestallele: # class II 
             imgtMMCodonNum = canonicalMMCodonNum
         else:
             if canonicalMMCodonNum > numExon1Coords: 
