@@ -142,7 +142,6 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
             pretypings = [befunde[col] for col in columns]
             myline += ",".join(pretypings) + "\n"
             g.write(myline)
-            print(myline)
             
      
 #     # check generated ENA file: (This will set the alleles' status to "IPD submitted"!)
