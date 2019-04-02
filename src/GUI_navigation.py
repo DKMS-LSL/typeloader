@@ -9,6 +9,7 @@ from PyQt5.QtGui import QIcon
 
 import general, db_internal
 from __init__ import __version__
+import typeloader_functions
 
 class Node(QObject):
     """source: https://www.youtube.com/watch?v=1WWp71fTdTQ&index=12&list=PLJewNuO700GfElihmE9R8zManDym4S13m
@@ -395,6 +396,8 @@ class Navigation(QWidget):
         if nodetype == "Project":
             menu = QMenu()
             open_project_act = menu.addAction("Open Project View")
+            if self.settings["modus"] == "debugging":
+                delete_all_samples_act = menu.addAction("Delete all alleles (admin-only!)")
             action = menu.exec_(self.tree.mapToGlobal(pos))
             
             if action == open_project_act:
@@ -403,6 +406,9 @@ class Navigation(QWidget):
                 self.changed_projects.emit(project, status)
                 self.change_view.emit(3)
                 self.log.debug("Navigation emitted changed_projects & change_view to ProjectView")
+            elif action == delete_all_samples_act:
+                self.log.info("Deleting all alleles of project {}".format(project))
+                self.delete_all_samples(project, status)
             
         elif nodetype == "Sample":
             menu = QMenu()
@@ -543,10 +549,41 @@ class Navigation(QWidget):
             
             if single_allele:
                 self.log.debug("\tDeleting sample dir {}...".format(sample_dir))
-                os.removedirs(sample_dir)
+                try:
+                    os.removedirs(sample_dir)
+                except Exception as E:
+                    self.log.warning("\tcould not delete sample dir!")
+                    self.log.exception(E)
+                
             self.log.debug("=> Sample {} #{} of project {} successfully deleted from database and file system".format(sample, nr, project))
             self.refresh.emit(project)
             self.changed_projects.emit(project, status)
+            
+    def delete_all_samples(self, project, status):
+        """delete all sample of a project from the database & file system
+        """
+        self.log.debug("Attempting to delete all alleles of project '{}' from database...".format(project))
+        if self.settings["login"] == "admin":
+            pass
+        else:
+            pwd, ok = QInputDialog.getText(self, "Enter Password", "Please provide password:", QLineEdit.Password)
+            if ok:
+                if pwd == "ichdarfdas":
+                    pass
+                else:
+                    return
+            else:
+                return
+        self.log.debug("Asking for confirmation before deleting allele...")
+        reply = QMessageBox.question(self, 'Message',
+            "Are you really sure you want to delete ALL SAMPLES from project {}?".format(project), QMessageBox.Yes | 
+            QMessageBox.No, QMessageBox.No)
+        
+        if reply == QMessageBox.Yes:
+            typeloader_functions.delete_all_samples_from_project(project, self.settings, self.log, self)
+            self.refresh.emit(project)
+            self.changed_projects.emit(project, status)    
+            
 
 #===========================================================
 # main:
