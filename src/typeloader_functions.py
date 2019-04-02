@@ -235,7 +235,9 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 sequence = sequences[alleleName]
                 features = annotations[alleleName]["features"]
                 enaPosHash = BME.transform(currentPosHash)
-                null_allele, _ = BME.is_null_allele(sequence, enaPosHash)                
+                null_allele, msg = BME.is_null_allele(sequence, enaPosHash)
+                if null_allele:
+                    log.info(msg)                
                  
                 # set productName and function
                 gene_tag = "gene"
@@ -299,7 +301,9 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log, incomplete_
     if allele.geneName in settings["pseudogenes"].split("|"):
         allele.null_allele = False # whole locus is already pseudogene
     else:
-        allele.null_allele, _ = BME.is_null_allele(sequence, enaPosHash)
+        allele.null_allele, msg = BME.is_null_allele(sequence, enaPosHash)
+        if allele.null_allele:
+            log.info(msg)
         allele.productName_FT = allele.productName_FT + " null allele" if allele.null_allele else allele.productName_FT
     
     generalData = BME.make_globaldata(gene_tag = "gene",
@@ -616,7 +620,6 @@ def bulk_upload_new_alleles(csv_file, project, settings, mydb, log):
         errors = "\nNo problems encountered."
     report += errors
     
-    print(report, errors_found)
     return report, errors_found
                 
                 
@@ -664,9 +667,20 @@ def delete_sample(sample, nr, project, settings, log, parent = None):
     
     if single_allele:
         log.debug("\tDeleting sample dir {}...".format(sample_dir))
-        os.removedirs(sample_dir)
+        try:
+            os.removedirs(sample_dir)
+        except Exception as E:
+            log.exception(E)
     log.debug("=> Sample {} #{} of project {} successfully deleted from database and file system".format(sample, nr, project))
 
+
+def delete_all_samples_from_project(project_name, settings, log, parent = None):
+    log.info("Deleting all samples from project {}...".format(project_name))
+    query = "select sample_id_int, allele_nr from ALLELES where project_name = '{}'".format(project_name)
+    success, data = db_internal.execute_query(query, 2, log, "Getting samples from ALLELES table", "Sample Deletion Error", parent)
+    for [sample_id_int, nr] in data:
+        delete_sample(sample_id_int, nr, project_name, settings, log)
+    
 
 def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
     """generates a random string of length {size},
@@ -675,32 +689,35 @@ def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choices(chars, k = size))    
 
 
+
 pass
 #===========================================================
 # main:
 
 def main(settings, log, mydb):
     project = "20190321_ADMIN_MIC_1"
-#     csv_file = r"Y:\Projects\typeloader\staging\data_unittest\incomplete_UTR\bulk_upload_incompletes_short.csv"
-#     report, errors_found = bulk_upload_new_alleles(csv_file, project, settings, mydb, log)
-#     print(report)
+#     delete_all_samples_from_project(project, settings, log)
+#     csv_file = r"Y:\Projects\typeloader\staging\data_unittest\MIC\bulk_upload_MIC_ok.csv"
+    csv_file = r"Y:\Projects\typeloader\staging\data_unittest\annotation_positions\bulk_upload_annotations.csv"
+    report, errors_found = bulk_upload_new_alleles(csv_file, project, settings, mydb, log)
+    print(report)
 
-    mydir = r"Y:\Projects\typeloader\staging\data_unittest\MIC"
-    for (sample_id_int, filename) in [("MIC1", "hapA.pacbio.minimap.fa")]:
-#         sample_id_int = "{}-{}".format(nr, item)
-        try:
-            delete_sample(sample_id_int, 1, project, settings, log)
-        except:
-            log.info("Could not delete")
-            
-        raw_path = os.path.join(mydir, filename)
-        sample_id_ext = "DEDKM" + id_generator()
-        success, msg = upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, "DKMS", 
-                                                  settings, mydb, log, incomplete_ok = True)
-        if not success:
-            print("Not successful!", msg)
-#         else:
+#     mydir = r"Y:\Projects\typeloader\staging\data_unittest\annotation_positions"
+#     for (sample_id_int, filename) in [("HLA-A-6", "HLA-A_01-6.fa")]:
+# #         sample_id_int = "{}-{}".format(nr, item)
+#         try:
 #             delete_sample(sample_id_int, 1, project, settings, log)
+#         except:
+#             log.info("Could not delete")
+#               
+#         raw_path = os.path.join(mydir, filename)
+#         sample_id_ext = "DEDKM" + id_generator()
+#         success, msg = upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, "DKMS", 
+#                                                   settings, mydb, log, incomplete_ok = True)
+#         if not success:
+#             print("Not successful!", msg)
+# #         else:
+# #             delete_sample(sample_id_int, 1, project, settings, log)
     
 
 if __name__ == "__main__":
