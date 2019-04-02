@@ -62,7 +62,7 @@ def get_remote_md5checksum(db_name, log):
 def get_local_md5checksum(local_reference_file, log):
     """gets the MD5 checksum of the current local database version
     """
-    log.debug("\tGetting checksum of local file...")
+    log.debug("\tGetting checksum of local file {}...".format(local_reference_file))
     
     md5 = hashlib.md5(open(local_reference_file, "rb").read()).hexdigest()
     log.debug("\t=> {}".format(md5))
