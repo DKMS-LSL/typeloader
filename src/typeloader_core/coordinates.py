@@ -45,23 +45,13 @@ def getMismatchData(annotations):
     cdsSeq = "".join([alleleSeq[(start-1):end] for (start,end) in genomicExonCoords])
 
     mmCodons = []
-
-#     print(cdsSeq)
-#     print(cdsExonCoords)
-#     print(genomicExonCoords)
-#     print(annotations["differences"]["mismatches"])
-#     print(annotations["differences"]["mismatchPositions"])
-#     print(annotations["imgtDifferences"]["mismatchPositions"])
-#     print(annotations["imgtDifferences_orig"]["mismatchPositions"])
         
     exon1Length = cdsExonCoords[0][1]
     numExon1Coords = getSpecificCodonChords(closestallele, exon1Length)
 
     for mmIndex in range(len(annotations["differences"]["mismatches"])):
         genomicPos = annotations["differences"]["mismatchPositions"][mmIndex]
-#         cdsPos = annotations["imgtDifferences"]["mismatchPositions"][mmIndex][0]
         cdsPos = annotations["imgtDifferences_orig"]["mismatchPositions"][mmIndex][0]
-#         print(cdsPos, genomicPos)
         if genomicPos == cdsPos + missing_bp:
             mmCodons.append(())
             continue
@@ -122,7 +112,6 @@ def getMismatchData(annotations):
         else:
             mmCodons.append((imgtMMCodonNum,  (cdsCodonHash[canonicalMMCodonNum + 1], closestAlleleCodonHash[canonicalMMCodonNum + 1])))
 
-#     print(mmCodons)
     return mmCodons
 
 
@@ -159,9 +148,6 @@ def getCoordinates(blastXmlFilename, allelesFilename, targetFamily, settings, lo
         alleleSeq = str(seqsHash[gendxAllele].seq)
         annotations[gendxAllele]["sequence"] = alleleSeq
         annotations[gendxAllele]["imgtDifferences"]["mmCodons"] = getMismatchData(annotations[gendxAllele])
-
-        
-        
         
     seqsHandle.close()
 
@@ -235,22 +221,10 @@ def shift_differences_for_missing_bp(missing_bp, differences, imgtDifferences):
     return new_differences, new_imgtDifferences
 
 
-# def shift_cdsMap_back_for_missing_bp(missing_bp, cdsMap):
-#     """shifts positions of cdsMap to what they would have been without missing_bp
-#     """
-#     cdsMap_new = {}
-#     for key in cdsMap:
-#         (start,end) = key
-#         new_start = start + missing_bp
-#         new_end = end + missing_bp
-#         new_key = (new_start, new_end)
-#         cdsMap_new[new_key] = cdsMap[key]
-#     return cdsMap_new
-
 def processAlleles(closestAlleles, allAlleles, hashOfQuerySequences, incomplete_ok = False):
 
     annotations = {}
-    for alleleQuery in  list(closestAlleles.keys()):
+    for alleleQuery in list(closestAlleles.keys()):
         if not closestAlleles[alleleQuery]:
             annotations[alleleQuery] = None
             continue
@@ -258,15 +232,7 @@ def processAlleles(closestAlleles, allAlleles, hashOfQuerySequences, incomplete_
                                                                     closestAlleles[alleleQuery]["exactMatch"], closestAlleles[alleleQuery]["concatHSPS"], closestAlleles[alleleQuery]["hitStart"]
         missing_bp = hitStart - 1
         
-#         for key in differences:
-#             print("\t", key, differences[key])
         features, coordinates, extraInformation, closestAlleleCdsSequence, closestAlleleSequence = calculateCoordinates(closestAlleleName, allAlleles, differences, len(hashOfQuerySequences[alleleQuery]), missing_bp)
-        
-#         print("After calculateCoordinates:")
-#         for key in differences:
-#             print("\t", key, differences[key])
-#         print("features =", features)
-#         print("coordinates =", coordinates)
         
         coordinates = shift_coordinates_for_missing_bp(missing_bp, coordinates)
         
@@ -278,25 +244,9 @@ def processAlleles(closestAlleles, allAlleles, hashOfQuerySequences, incomplete_
         UTR3length_orig = len(allAlleles[closestAlleleName].UTR3)
         missing_bp_end = check_incomplete_utrs(missing_bp, UTR3length_orig, UTR3length, incomplete_ok)
 
-#         print("\nAfter shift_coordinates:")
-#         print("coordinates =", coordinates)
-         
         coordinates, imgtDifferences_orig, cdsMap = changeToImgtCoords(features, coordinates, differences)
-#         print("\nAfter changeToImgtCoords:")
-#         print("coordinates =", coordinates)
-#         print("imgtDifferences_orig =")
-#         for key in imgtDifferences_orig:
-#             print("\t", key, imgtDifferences_orig[key])
-#         print("cdsMap =", cdsMap)
         
         differences, imgtDifferences = shift_differences_for_missing_bp(missing_bp, differences, imgtDifferences_orig)
-#         print("\nAfter shift_differences:")
-#         print("differences =")
-#         for key in differences:
-#             print("\t", key, differences[key])
-#         print("imgtDifferences =")
-#         for key in imgtDifferences:
-#             print("\t", key, imgtDifferences[key])
         
         annotations[alleleQuery] = {"features":features, "coordinates":coordinates, "imgtDifferences": imgtDifferences, "differences":differences, \
                                     "closestAllele":closestAlleleName, "cdsMap":cdsMap, "closestAlleleCdsSequence": closestAlleleCdsSequence, \
@@ -329,7 +279,6 @@ def getClosestAlleleCoordinates(alleleData, queryLength):
 
     #exonIds = [(exonNumber,"e") for exonNumber in alleleData.exonpos_dic.keys()]
     for exonNumber in list(alleleData.exonpos_dic.keys()):
-        #print extraInformation["pseudoexon"][exonNumber]
         if extraInformation["pseudoexon"][exonNumber]:
             exonIds.append((exonNumber, "epseudo"))
         else:
