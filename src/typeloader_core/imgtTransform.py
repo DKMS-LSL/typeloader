@@ -20,16 +20,15 @@ def transformPos(pos_orig, cdsMap, sum_deletes_before, sum_inserts_before, sum_c
     for region in cdsRegions:
         if (pos >= region[0]) and (pos <= region[1]):
             newRegion = cdsMap[region]
-            newPosition = newRegion[0] + (pos - region[0])
+            newPosition = newRegion[0] + (pos - region[0]) - sum_cds_inserts_before + sum_cds_deletes_before
             codonIndex = newPosition / 3 # codon length = 3
-            return (newPosition - sum_cds_inserts_before + sum_cds_deletes_before, codonIndex)
+            return (newPosition, codonIndex)
 
     return (pos_orig - sum_inserts_before, None)
 
 def changeToImgtCoords(features, coordinates, differences, utr5Length = 0):
 
     cdsMap = constructCDS(features, coordinates)
-#     print("cdsMap", cdsMap, "\n")
     
     imgtDifferences = {}
 
@@ -53,19 +52,19 @@ def changeToImgtCoords(features, coordinates, differences, utr5Length = 0):
         imgtCoordinates.append((ft_start, ft_end))
 
     # shift positions for preceding inDels:
+    ins_in_cds = []
+    del_in_cds = []
     for key in ["deletionPositions", "insertionPositions", "mismatchPositions"]:
         imgtDifferences[key] = []
         new_diff = []
-        ins_in_cds = []
-        del_in_cds = []
         for pos in differences[key]:
             sum_deletes_before = sum([1 for posx in differences["deletionPositions"] if posx < pos])
-            sum_cds_deletes_before = sum([1 for posx in differences["deletionPositions"] if posx < pos and pos in del_in_cds])
+            sum_cds_deletes_before = sum([1 for posx in differences["deletionPositions"] if posx < pos and posx in del_in_cds])
             sum_inserts_before = sum([1 for posx in differences["insertionPositions"] if posx < pos])
-            sum_cds_inserts_before = sum([1 for posx in differences["insertionPositions"] if posx < pos and pos in ins_in_cds])
+            sum_cds_inserts_before = sum([1 for posx in differences["insertionPositions"] if posx < pos and posx in ins_in_cds])
             newpos = transformPos(pos, cdsMap, sum_deletes_before, sum_inserts_before, sum_cds_deletes_before, sum_cds_inserts_before)
             imgtDifferences[key].append(newpos)
-            print(key, pos, sum_inserts_before, sum_deletes_before, sum_cds_deletes_before, sum_cds_inserts_before, newpos)
+#             print(key, pos, sum_inserts_before, sum_deletes_before, sum_cds_deletes_before, sum_cds_inserts_before, newpos)
             # adjust differences[key] for preceding insertions:
             if newpos[1]: # if change located in CDS
                 new_diff.append(pos)
