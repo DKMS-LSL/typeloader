@@ -65,20 +65,20 @@ samples_dic =  {# samples to test
                                "id_int" : "ID000001",
                                "id_ext" : "DEDKM000001",
                                "submission_id" : "1111"},
-                "sample_2" : { "input" : "ID14278154.xml",
-                               "input_dir_origin" : "C_MM",
-                               "local_name" : "DKMS-LSL_ID14278154_C_1",
+                "sample_2" : { "input" : "5597571.xml",
+                               "input_dir_origin" : "A_MM",
+                               "local_name" : "DKMS-LSL_ID14278154_A_1",
                                "cell_line" : "DKMS-LSL_ID14278154",
-                               "gene" : "HLA-C",
-                               "target_allele" : "HLA-C*16:new",
-                               "partner_allele" : 'HLA-C*06:new',
+                               "gene" : "HLA-A",
+                               "target_allele" : "HLA-A*01:new",
+                               "partner_allele" : 'HLA-A*33:new',
                                "data_unittest_dir" : "new_allele_xml",
-                               "curr_ena_file" : "DKMS-LSL_ID14278154_C_1.ena.txt",
-                               "curr_fasta_file" : "DKMS-LSL_ID14278154_C_1.fa",
-                               "curr_blast_file" : "DKMS-LSL_ID14278154_C_1.blast.xml",
-                               "curr_gendx_file" : "DKMS-LSL_ID14278154_C_1.xml",
-                               "curr_ipd_befund_file" : "Befunde_C12_1.csv",
-                               "curr_ipd_ena_acc_file" : "AccessionNumbers_C12_LT989974-LT990037_1",                               
+                               "curr_ena_file" : "DKMS-LSL_ID14278154_A_1.ena.txt",
+                               "curr_fasta_file" : "DKMS-LSL_ID14278154_A_1.fa",
+                               "curr_blast_file" : "DKMS-LSL_ID14278154_A_1.blast.xml",
+                               "curr_gendx_file" : "DKMS-LSL_ID14278154_A_1.xml",
+                               "curr_ipd_befund_file" : "Befunde_A_WDH.csv",
+                               "curr_ipd_ena_acc_file" : "AccessionNumbers_A_WDH",                               
                                "id_int" : "ID14278154",
                                "id_ext" : "1348480",
                                "submission_id" : "2222"},
@@ -330,19 +330,21 @@ class Test_Create_New_Allele(unittest.TestCase):
     #@unittest.skip("skipping test_fasta_file")          
     def test_xml_file(self):
         """
-        Ceate ENA flatfile from xml
+        Create ENA flatfile from xml
         """ 
         self.form = ALLELE.NewAlleleForm(log, mydb, self.project_name, curr_settings, None, samples_dic["sample_2"]["id_int"], samples_dic["sample_2"]["id_ext"])
         self.form.file_widget.field.setText(os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], samples_dic["sample_2"]["data_unittest_dir"], samples_dic["sample_2"]["input"]))
         self.form.upload_btn.setEnabled(True)
         self.form.upload_btn.click()
         
-        self.assertEqual(self.form.allele2_sec.gene_field.text(), "HLA-C")
-        self.assertEqual(self.form.allele2_sec.GenDX_result, "C*16:02:01-Novel-2")
-        self.assertEqual(self.form.allele2_sec.name_field.text(), samples_dic["sample_2"]["target_allele"])
-        self.assertEqual(self.form.allele2_sec.product_field.text(), "MHC class I antigen")
-        self.assertEqual(int(self.form.allele2_sec.exon1_field.text()), 0)
-        self.assertEqual(int(self.form.allele2_sec.exon2_field.text()), 0)
+        self.form.allele1_sec.checkbox.setChecked(True) # choose second allele
+        
+        self.assertEqual(self.form.allele1_sec.gene_field.text(), "HLA-A")
+        self.assertEqual(self.form.allele1_sec.GenDX_result, "A*01:01:01:01")
+        self.assertEqual(self.form.allele1_sec.name_field.text(), samples_dic["sample_2"]["target_allele"])
+        self.assertEqual(self.form.allele1_sec.product_field.text(), "MHC class I antigen")
+        self.assertEqual(int(self.form.allele1_sec.exon1_field.text()), 0)
+        self.assertEqual(int(self.form.allele1_sec.exon2_field.text()), 0)
         
         self.form.ok_btn.click()
         self.form.save_btn.click()        
@@ -350,7 +352,6 @@ class Test_Create_New_Allele(unittest.TestCase):
         new_ena_file_path = os.path.join(curr_settings["projects_dir"], self.project_name, samples_dic["sample_2"]["id_int"], samples_dic["sample_2"]["curr_ena_file"])
         reference_file_path = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], samples_dic["sample_2"]["data_unittest_dir"], samples_dic["sample_2"]["curr_ena_file"])
         diff_ena_files = compare_2_files(new_ena_file_path, reference_file_path)
-        
         self.assertEqual(len(diff_ena_files["added_sings"]), 0)
         self.assertEqual(len(diff_ena_files["deleted_sings"]), 0)
 
@@ -405,19 +406,19 @@ class Test_Create_New_Allele(unittest.TestCase):
         self.assertEqual(data_content[1][3], 2) # project_nr
         self.assertEqual(data_content[1][4], "") # old cell_line
         self.assertEqual(data_content[1][5], "{}_{}_{}".format(curr_settings["cell_line_token"],
-                                                                  samples_dic["sample_2"]["id_int"], "C_1")) # local_name
+                                                                  samples_dic["sample_2"]["id_int"], "A_1")) # local_name
         
-        self.assertEqual(data_content[1][6], "HLA-C") # gene
+        self.assertEqual(data_content[1][6], "HLA-A") # gene
         self.assertEqual(data_content[1][7], "novel") # goal
         self.assertEqual(data_content[1][8], "ENA-ready") # allele_status
         self.assertEqual(data_content[1][14], "completed") # lab_status
         self.assertEqual(data_content[1][20], "yes") # long_read_data
-        self.assertEqual(data_content[1][21], "yes") # long_read_phasing
+        self.assertEqual(data_content[1][21], "") # long_read_phasing
         self.assertEqual(data_content[1][24], samples_dic["sample_2"]["target_allele"]) # target_allele
-        self.assertEqual(data_content[1][25], "HLA-C*06:new") # partner_allele
+        self.assertEqual(data_content[1][25], samples_dic["sample_2"]["partner_allele"]) # partner_allele
         self.assertEqual(data_content[1][28], "NGSengine") # new_genotyping_software
-        self.assertEqual(data_content[1][29], "2.7.0.9307") # new_software_version
-        self.assertEqual(data_content[1][30], "2018-03-08") # new_genotyping_date
+        self.assertEqual(data_content[1][29], "") # new_software_version
+        self.assertEqual(data_content[1][30], "") # new_genotyping_date
         self.assertEqual(data_content[1][31], "IPD-IMGT/HLA") # reference_database
         
     #@unittest.skip("skipping test_fasta_files_entries")        
@@ -927,7 +928,7 @@ class Test_Views(unittest.TestCase):
         self.assertEqual(model.data(model.index(1, 20)), 'yes')
         self.assertEqual(model.headerData(21, Qt.Horizontal, Qt.DisplayRole), "LR Phased?")
         self.assertEqual(model.data(model.index(0, 21)), '')
-        self.assertEqual(model.data(model.index(1, 21)), 'yes')
+        self.assertEqual(model.data(model.index(1, 21)), '')
         self.assertEqual(model.headerData(22, Qt.Horizontal, Qt.DisplayRole), "LR Technology")
         self.assertEqual(model.headerData(23, Qt.Horizontal, Qt.DisplayRole), "Comment")
         
@@ -945,10 +946,10 @@ class Test_Views(unittest.TestCase):
         self.assertEqual(model.data(model.index(1, 28)), "NGSengine")
         self.assertEqual(model.headerData(29, Qt.Horizontal, Qt.DisplayRole), "Software Version")
         self.assertEqual(model.data(model.index(0, 29)), "")
-        self.assertEqual(model.data(model.index(1, 29)), "2.7.0.9307")
+        self.assertEqual(model.data(model.index(1, 29)), "")
         self.assertEqual(model.headerData(30, Qt.Horizontal, Qt.DisplayRole), "Genotyping Date")
         self.assertEqual(model.data(model.index(0, 30)), "")
-        self.assertEqual(model.data(model.index(1, 30)), "2018-03-08")
+        self.assertEqual(model.data(model.index(1, 30)), "")
         self.assertEqual(model.headerData(31, Qt.Horizontal, Qt.DisplayRole), "Reference Database")
         self.assertEqual(model.data(model.index(0, 31)), "IPD-KIR")
         self.assertEqual(model.data(model.index(1, 31)), "IPD-IMGT/HLA")
@@ -2091,7 +2092,8 @@ def compare_2_files(query_path = "", reference_path = "", filetype = "", query_v
     if reference_path == "":
         reference_text = reference_var
     else:
-        with open(reference_path , 'r') as myfile: reference_text = myfile.read()            
+        with open(reference_path , 'r') as myfile: 
+            reference_text = myfile.read()
     
     if filetype == "IPD":
         # change the date in order to compare both ipd files
@@ -2103,7 +2105,7 @@ def compare_2_files(query_path = "", reference_path = "", filetype = "", query_v
     diffList = list(diffInstance.compare(query_text.strip(), reference_text.strip()))
     
     result["added_sings"] = ' '.join(x[2:] for x in diffList if x.startswith('+ '))
-    result["deleted_sings"]= ' '.join(x[2:] for x in diffList if x.startswith('- '))    
+    result["deleted_sings"]= ' '.join(x[2:] for x in diffList if x.startswith('- '))  
     if result["added_sings"] != "" or result["deleted_sings"] != "":
         log.error("Differences found!")
         log.debug("New file: {}".format(query_path))
