@@ -398,9 +398,11 @@ class ENASubmissionForm(CollapsibleDialog):
                                                 for item in error:
                                                     self.ENA_response += item.firstChild.nodeValue + "\n"
                                                     self.log.warning(item.firstChild.nodeValue)
+                                            if error == "Internal Server Error":
+                                                self.ENA_response += "\nPlease check https://wwwdev.ebi.ac.uk/ena/submit/webin/login for details.\n"
                                             self.ENA_response += "\nThe complete submission has been rolled back."
                                         if isinstance(info, str):
-                                            if info != "known error":
+                                            if info not in ["known error", "No message available"]:
                                                 self.ENA_response += info
                                         else:
                                             for item in info:

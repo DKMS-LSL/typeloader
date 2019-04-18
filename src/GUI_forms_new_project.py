@@ -185,9 +185,7 @@ class NewProjectForm(QDialog):
 #         if True:
             self.log.debug("Submitting project to ENA...")
             self.title = self.title_entry.text().strip()
-            #TODO: (future) generate a title if none is given
             self.description = self.desc_entry.text().strip()
-            #TODO: (future) generate a description if none is given
                         
             ## create variables
             successful_transmit = "false"
@@ -206,7 +204,7 @@ class NewProjectForm(QDialog):
             if (os.path.exists(project_filename)):
                 info_exists = "File '{}' already exist. Please change pool name.".format(project_filename)
                 QMessageBox.warning(self, "ALIAS already exists!", info_exists)
-                self.log.warning("File " + project_filename + " already exist, use another")
+                self.log.warning("File " + project_filename + " already exist, use another pool name")
             else:
                 success = EF.write_file(project_xml, project_filename, self.log)
                 if not success:
@@ -242,6 +240,10 @@ class NewProjectForm(QDialog):
                             if error_xml:
                                 if info_xml == "known error":
                                     error_msg = error_xml
+                                elif error_xml == "Internal Server Error":
+                                    error_msg = "Internal Server Error.\nPlease check https://wwwdev.ebi.ac.uk/ena/submit/webin/login for details."
+                                elif isinstance(error_xml, str):
+                                    error_msg = error_xml
                                 else:
                                     error_msg = "{}: {}".format(type(error_xml), str(error_xml))
                                 self.log.error(error_xml)
@@ -251,7 +253,7 @@ class NewProjectForm(QDialog):
                                     msg += "\nPlease choose another pool name and try again!"
                                     QMessageBox.warning(self, "Project name already in use", msg)
                                 else:
-                                    QMessageBox.warning(self, "Error during ENA submission!", "Cannot read ENA response file:\n\n{}".format(str(error_msg)))
+                                    QMessageBox.warning(self, "Error during ENA submission!", "ENA response:\n\n{}".format(str(error_msg)))
                                 successful_transmit = False
                                 self.submit_btn.setEnabled(False)
                      

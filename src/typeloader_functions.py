@@ -25,7 +25,7 @@ import general, db_internal
 
 from __init__ import __version__
 #from src.typeloader_core.errors import IncompleteSequenceError
-from typeloader_core.errors import IncompleteSequenceError
+from typeloader_core.errors import IncompleteSequenceWarning
 
 flatfile_dic = {"function_hla" : "antigen presenting molecule",
                 "function_kir" : "killer-immunoglobulin receptor",
@@ -47,8 +47,9 @@ class Allele:
         self.targetFamily = targetFamily
         self.gene = gene
         if targetFamily == "HLA":
-            if "HLA-" not in gene:
-                self.gene = "HLA-" + gene
+            if not gene.startswith("MIC"):
+                if "HLA-" not in gene:
+                    self.gene = "HLA-" + gene
         self.name = name
         self.product = product
         self.sample_id_int = sample_id_int
@@ -138,6 +139,7 @@ def upload_parse_sequence_file(raw_path, settings, log):
     
     return True, sample_name, filetype, temp_raw_file, blastXmlFile, targetFamily, fasta_filename, allelesFilename, header_data 
 
+
 def reformat_header_data(header_data, sample_id_ext, log):
     """translates header data into columns
     """
@@ -152,7 +154,7 @@ def reformat_header_data(header_data, sample_id_ext, log):
     for key in ["ref", "second", "third", "fourth"]:
         if key in header_data:
             allele = header_data[key]
-            if allele and allele != "NA":
+            if allele and allele not in ["NA", "another"] and not ".fa" in allele: # adjustment for DR2S MIC output
                 partners.append(allele)
     header_data["partner_allele"] = " or ".join(partners)
     
@@ -165,15 +167,18 @@ def reformat_header_data(header_data, sample_id_ext, log):
     if sample_id_ext:
         header_data["Spendernummer"] = sample_id_ext
 
+
 def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_filename, allelesFilename, 
-                          header_data, settings, log):
+                          header_data, settings, log, incomplete_ok = False):
     log.debug("Processing sequence file...")
     try:
         if filetype == "XML":
             try:
                 closestAlleles = CA.getClosestKnownAlleles(blastXmlFile, targetFamily, settings, log)
-            except errors.IncompleteSequenceError as E:
+            except errors.IncompleteSequenceWarning as E:
                 return False, "Incomplete sequence", E.msg
+            except errors.MissingUTRError as E:
+                return False, "Missing UTR", E.msg
         
             genDxAlleleNames = list(closestAlleles.keys())
             if closestAlleles[genDxAlleleNames[0]] == 0 or closestAlleles[genDxAlleleNames[1]] == 0:
@@ -204,9 +209,11 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
          
         else: # Fasta-File:
             try:
-                annotations = COO.getCoordinates(blastXmlFile, allelesFilename, targetFamily, settings, log)
-            except errors.IncompleteSequenceError as E:
+                annotations = COO.getCoordinates(blastXmlFile, allelesFilename, targetFamily, settings, log, incomplete_ok=incomplete_ok)
+            except errors.IncompleteSequenceWarning as E:
                 return False, "Incomplete sequence", E.msg
+            except errors.MissingUTRError as E:
+                return False, "Missing UTR", E.msg
             alleles = [allele for allele in annotations.keys()]
             # take the first sequence in fasta file
             alleleName = alleles[0]
@@ -223,12 +230,14 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 newAlleleName = "%s:new" % closestAlleleName.split(":")[0]
                 
                 posHash, sequences = EF.get_coordinates_from_annotation(annotations)
-            
+                
                 currentPosHash = posHash[alleleName]
                 sequence = sequences[alleleName]
                 features = annotations[alleleName]["features"]
                 enaPosHash = BME.transform(currentPosHash)
-                null_allele, _ = BME.is_null_allele(sequence, enaPosHash)                
+                null_allele, msg = BME.is_null_allele(sequence, enaPosHash)
+                if null_allele:
+                    log.info(msg)                
                  
                 # set productName and function
                 gene_tag = "gene"
@@ -243,7 +252,10 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                         productName_FT = productName_FT + " null allele" if null_allele else productName_FT
                 else:
                     function = flatfile_dic["function_hla"]
-                    geneName_short = geneName.split("-")[1]
+                    if geneName.startswith("HLA"):
+                        geneName_short = geneName.split("-")[1]
+                    else: # MIC
+                        geneName_short = geneName
                     # D ...for DQB, DPB, DRB
                     if geneName_short.startswith("D"):
                         productName_FT = productName_DE = (flatfile_dic["productname_hla_ii"]) \
@@ -267,10 +279,9 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
         log.error(E)
         log.exception(E)
         return False, "Error while processing the sequence file", repr(E), None
-        
 
 
-def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log):
+def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log, incomplete_ok = False):
     """creates ENA file for allele chosen from XML file
     """
     log.debug("Creating ENA text...")
@@ -278,7 +289,7 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log):
                                    settings["general_dir"],
                                    settings["reference_dir"],
                                    settings["hla_dat"])
-    annotations = COO.getCoordinates(blastXmlFile, allelesFilename, targetFamily, settings, log, isENA=True)
+    annotations = COO.getCoordinates(blastXmlFile, allelesFilename, targetFamily, settings, log, isENA=True, incomplete_ok=incomplete_ok)
     posHash, sequences = EF.get_coordinates_from_annotation(annotations)
     
     currentPosHash = posHash[allele.alleleName]
@@ -290,7 +301,9 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log):
     if allele.geneName in settings["pseudogenes"].split("|"):
         allele.null_allele = False # whole locus is already pseudogene
     else:
-        allele.null_allele, _ = BME.is_null_allele(sequence, enaPosHash)
+        allele.null_allele, msg = BME.is_null_allele(sequence, enaPosHash)
+        if allele.null_allele:
+            log.info(msg)
         allele.productName_FT = allele.productName_FT + " null allele" if allele.null_allele else allele.productName_FT
     
     generalData = BME.make_globaldata(gene_tag = "gene",
@@ -485,7 +498,7 @@ def parse_bulk_csv(csv_file, settings, log):
         data = csv.reader(f, delimiter=",")
         if data:
             for row in data:
-                if len(row) > 4:
+                if len(row) > 6:
                     if row[0] != "nr":
                         i += 1
                         err = False
@@ -507,12 +520,69 @@ def parse_bulk_csv(csv_file, settings, log):
                         sample_id_int = row[3].strip()
                         sample_id_ext = row[4].strip()
                         customer = row[5].strip()
+                        incomplete_ok = row[6].strip()
+                        if incomplete_ok.lower() in ["true", "wahr", "ok", "yes"]:
+                            incomplete_ok = True
+                        else:
+                            incomplete_ok = False
                         if not err:
-                            myallele = [nr, sample_id_int, sample_id_ext, mypath, customer]
+                            myallele = [nr, sample_id_int, sample_id_ext, mypath, customer, incomplete_ok]
                             alleles.append(myallele)
     log.info("\t=> {} processable alleles found in {} rows".format(len(alleles), i))
     return alleles, error_dic, i
                         
+
+def upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_path, customer,
+                               settings, mydb, log, incomplete_ok = False):
+    """adds one new target sequence to TypeLoader
+    """
+    log.info("Uploading {} to project {}...".format(sample_id_int, project_name))
+    results = upload_parse_sequence_file(raw_path, settings, log)
+    if results[0] == False: # something went wrong
+        return False, "{}: {}".format(results[1], results[2])
+    log.debug("\t=> success")
+    
+    (_, _, filetype, temp_raw_file, blastXmlFile, 
+     targetFamily, fasta_filename, allelesFilename, header_data) = results
+    reformat_header_data(header_data, sample_id_ext, log)
+    if customer:
+        header_data["Customer"] = customer
+    
+    # process raw file:
+    sample_name = sample_id_int
+    header_data["sample_id_int"] = sample_id_int
+    results = process_sequence_file(project_name, filetype, blastXmlFile, 
+                                    targetFamily, fasta_filename, allelesFilename, 
+                                    header_data, settings, log, incomplete_ok = incomplete_ok)
+    if results[0] == False: # something went wrong
+        return False, "{}: {}".format(results[1], results[2])
+    log.debug("\t=> success")
+    
+    (_, myalleles, ENA_text) = results
+    myallele = myalleles[0]
+    myallele.sample_id_int = sample_id_int
+    myallele.make_local_name()
+    # save allele files:
+    results = save_new_allele(project_name, sample_name, myallele.local_name, ENA_text, 
+                              filetype, temp_raw_file, blastXmlFile, fasta_filename,
+                              settings, log)
+    (success, err_type, msg, files) = results
+    
+    if not success:
+        return False, "{}: {}".format(err_type, msg)
+
+    [raw_file, fasta_filename, blastXmlFile, ena_path] = files
+    # save to db & emit signals:
+    (success, err_type, msg) = save_new_allele_to_db(myallele, project_name, 
+                                                     filetype, raw_file, 
+                                                     fasta_filename, blastXmlFile,
+                                                     header_data, targetFamily,
+                                                     ena_path, settings, mydb, log)
+    if success:
+        return True, myallele.local_name
+    else:
+        return False, "{}: {}".format(err_type, msg)
+
 
 def bulk_upload_new_alleles(csv_file, project, settings, mydb, log):
     """performs bulk uploading, parsing and saving of new target alleles
@@ -522,55 +592,16 @@ def bulk_upload_new_alleles(csv_file, project, settings, mydb, log):
     alleles, error_dic, num_rows = parse_bulk_csv(csv_file, settings, log)
     successful = []
     for allele in alleles:
-        [nr, sample_id_int, sample_id_ext, raw_path, customer] = allele
+        [nr, sample_id_int, sample_id_ext, raw_path, customer, incomplete_ok] = allele
         log.info("Uploading #{}: {}...".format(nr, sample_id_int))
-        # upload raw file:
-        results = upload_parse_sequence_file(raw_path, settings, log)
-        if results[0] == False: # something went wrong
-            error_dic[nr].append(":".join([results[1], results[2]]))
+        success, msg = upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, customer, settings, mydb, log, incomplete_ok=incomplete_ok)
+        if success:
+            successful.append("  - #{}: {}".format(nr, msg))
         else:
-            log.debug("\t=> success")
-            (_, _, filetype, temp_raw_file, blastXmlFile, 
-             targetFamily, fasta_filename, allelesFilename, header_data) = results
-            reformat_header_data(header_data, sample_id_ext, log)
-            if customer:
-                header_data["Customer"] = customer
-            # process raw file:
-            sample_name = sample_id_int
-            header_data["sample_id_int"] = sample_id_int
-            results = process_sequence_file(project, filetype, blastXmlFile, 
-                                            targetFamily, fasta_filename, allelesFilename, 
-                                            header_data, settings, log)
-            if results[0] == False: # something went wrong
-                error_dic[nr].append(":".join([results[1], results[2]]))
-                
-            else:
-                log.debug("\t=> success")
-                (_, myalleles, ENA_text) = results
-                myallele = myalleles[0]
-                myallele.sample_id_int = sample_id_int
-                myallele.make_local_name()
-                # save allele files:
-                results = save_new_allele(project, sample_name, myallele.local_name, ENA_text, 
-                                          filetype, temp_raw_file, blastXmlFile, fasta_filename,
-                                          settings, log)
-                (success, err_type, msg, files) = results
-                if not success:
-                    error_dic[nr].append(":".join([err_type, msg]))
-                else:
-                    [raw_file, fasta_filename, blastXmlFile, ena_path] = files
-                    # save to db & emit signals:
-                    (success, err_type, msg) = save_new_allele_to_db(myallele, project, 
-                                                                     filetype, raw_file, 
-                                                                     fasta_filename, blastXmlFile,
-                                                                     header_data, targetFamily,
-                                                                     ena_path, settings, mydb, log)
-                    if success:
-                        msg = "  - #{}: {}".format(nr, myallele.local_name)
-                        successful.append(msg)
-                    else:
-                        error_dic[nr].append(":".join([err_type, msg]))
-    
+            if msg.startswith("Incomplete sequence"):
+                msg = msg.replace("\n", " ").split("!")[0] + "!"
+            error_dic[nr].append(msg)
+        
     # format report:
     report = ""
     if len(successful) > 0:
@@ -582,7 +613,7 @@ def bulk_upload_new_alleles(csv_file, project, settings, mydb, log):
         errors_found = True
         errors = "Encountered problems in {} of {} alleles:\n".format(len(error_dic), num_rows)
         for nr in sorted(error_dic):
-            myerror = "  -#{}: {}\n".format(nr, " AND ".join(error_dic[nr]))
+            myerror = "  - #{}: {}\n".format(nr, " AND ".join(error_dic[nr]))
             errors += myerror
         errors += "\nThe problem-alleles were NOT added. Please fix them and try again!"
     else:
@@ -636,9 +667,20 @@ def delete_sample(sample, nr, project, settings, log, parent = None):
     
     if single_allele:
         log.debug("\tDeleting sample dir {}...".format(sample_dir))
-        os.removedirs(sample_dir)
+        try:
+            os.removedirs(sample_dir)
+        except Exception as E:
+            log.exception(E)
     log.debug("=> Sample {} #{} of project {} successfully deleted from database and file system".format(sample, nr, project))
 
+
+def delete_all_samples_from_project(project_name, settings, log, parent = None):
+    log.info("Deleting all samples from project {}...".format(project_name))
+    query = "select sample_id_int, allele_nr from ALLELES where project_name = '{}'".format(project_name)
+    success, data = db_internal.execute_query(query, 2, log, "Getting samples from ALLELES table", "Sample Deletion Error", parent)
+    for [sample_id_int, nr] in data:
+        delete_sample(sample_id_int, nr, project_name, settings, log)
+    
 
 def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
     """generates a random string of length {size},
@@ -647,13 +689,35 @@ def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choices(chars, k = size))    
 
 
+
 pass
 #===========================================================
 # main:
 
 def main(settings, log, mydb):
-    pass
-    
+    project = "20190321_ADMIN_MIC_1"
+#     delete_all_samples_from_project(project, settings, log)
+#     csv_file = r"Y:\Projects\typeloader\staging\data_unittest\MIC\bulk_upload_MIC_ok.csv"
+    csv_file = r"Y:\Projects\typeloader\staging\data_unittest\annotation_positions\bulk_upload_annotations.csv"
+    report, errors_found = bulk_upload_new_alleles(csv_file, project, settings, mydb, log)
+    print(report)
+
+#     mydir = r"Y:\Projects\typeloader\staging\data_unittest\annotation_positions"
+#     for (sample_id_int, filename) in [("HLA-A-6", "HLA-A_01-6.fa")]:
+# #         sample_id_int = "{}-{}".format(nr, item)
+#         try:
+#             delete_sample(sample_id_int, 1, project, settings, log)
+#         except:
+#             log.info("Could not delete")
+#               
+#         raw_path = os.path.join(mydir, filename)
+#         sample_id_ext = "DEDKM" + id_generator()
+#         success, msg = upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, "DKMS", 
+#                                                   settings, mydb, log, incomplete_ok = True)
+#         if not success:
+#             print("Not successful!", msg)
+# #         else:
+# #             delete_sample(sample_id_int, 1, project, settings, log)
     
 
 if __name__ == "__main__":

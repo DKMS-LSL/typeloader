@@ -92,6 +92,7 @@ class MainGUI(QMainWindow):
         self.navigation.changed_projects.connect(self.change_project)
         self.navigation.change_view.connect(self.display)
         self.navigation.refresh.connect(self.refresh_navigation)
+        self.navigation.refresh_btn.clicked.connect(self.refresh_navigation)
         
     def make_stack(self):
         """prepares stacked widgits (the actual main widgits) 
@@ -220,6 +221,9 @@ class MainGUI(QMainWindow):
             QMessageBox.warning(self, "Unsaved changes", message)
         else:
             self.log.info("Displaying View #{}: {}".format(i, self.stacked_widgits[i]))
+            if i == 1: # AllelesOverview
+                if not self.view_ov_alleles.widget.header_fixed:
+                    self.view_ov_alleles.widget.add_headers() # very slow => should only happen on demand
             self.Stack.setCurrentIndex(i)
             if i == 0:
                 sender = self.sender().text()

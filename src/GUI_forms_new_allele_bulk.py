@@ -140,13 +140,14 @@ class NewAlleleBulkForm(CollapsibleDialog):
             return False
         
     @pyqtSlot()
-    def perform_bulk_upload(self):
+    def perform_bulk_upload(self, auto_confirm = False):
         """parses chosen file & uploads all alleles
         """
-        confirmed = self.confirm_upload()
-        if not confirmed:
-            return
-        
+        if not auto_confirm:
+            confirmed = self.confirm_upload()
+            if not confirmed:
+                return
+            
         self.project = self.proj_widget.field.text().strip()
         self.csv_file = self.file_widget.field.text().strip()
         
@@ -164,6 +165,7 @@ class NewAlleleBulkForm(CollapsibleDialog):
         self.ok_btn.setEnabled(True)
         self.proceed_sections(0, 1)
         self.refresh_project.emit(self.project)
+        return True
         
         
     def define_section2(self):
@@ -220,11 +222,11 @@ if __name__ == '__main__':
     log = general.start_log(level="DEBUG")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
     sys.excepthook = log_uncaught_exceptions
-    mysettings = GUI_login.get_settings("test8", log)
+    mysettings = GUI_login.get_settings("staging", log)
     mydb = create_connection(log, mysettings["db_file"])
     
     app = QApplication(sys.argv)
-    project = "20180719_ADMIN_KIR2DS1_NEB1"
+    project = "20190319_STG_mixed_test"
     ex = NewAlleleBulkForm(log, mydb, project, mysettings)
 #     ex = QueryBox(log, mysettings)
     ex.show()

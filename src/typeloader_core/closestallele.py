@@ -13,7 +13,6 @@ from sys import argv
 import os
 
 from . import EMBLfunctions as EF
-from .errors import IncompleteSequenceError
 import ntpath
 
 ###################################################
@@ -62,8 +61,11 @@ def parseBlast(xmlRecords, targetFamily, query_fasta_file, settings, log):
         hsps = potentialClosestAlleleAlignment.hsps
 
         closestAlleleName = potentialClosestAlleleAlignment.hit_def
-        if closestAlleleName.find(targetFamily) == -1: 
-            closestAlleleName = potentialClosestAlleleAlignment.hit_id
+        if closestAlleleName.find(targetFamily) == -1:
+            if closestAlleleName.startswith("MIC") and targetFamily == "HLA":
+                pass
+            else:
+                closestAlleleName = potentialClosestAlleleAlignment.hit_id
 
         ref_sequence = SeqIO.to_dict(SeqIO.parse(output_db, "fasta"))[closestAlleleName].seq
         query_sequence = SeqIO.to_dict(SeqIO.parse(query_fasta_file, "fasta"))[queryId].seq
@@ -75,7 +77,7 @@ def parseBlast(xmlRecords, targetFamily, query_fasta_file, settings, log):
             closestAlleles[queryId] = closestAlleleItems(hsp_query, hsp_subject, hsp_match, closestAlleleName, concatHSPS, hsp_start)
 
     if hsp_start != 1:
-        raise IncompleteSequenceError(hsp_start - 1)
+        log.warning("Incomplete sequence found: first {} bp missing!".format(hsp_start - 1))
     return closestAlleles
 
 def closestAlleleItems(hsp_query, hsp_subject, hsp_match, closestAlleleName, concatHSPS, hsp_start):
@@ -325,5 +327,4 @@ def puzzleHspsFromFirstHit(hsps, ref_sequence, query_sequence, query_fasta_file)
     return (hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start)
 
 if __name__ == "__main__":
-
-	print(getClosestKnownAlleles(argv[1], "KIR"))
+    pass

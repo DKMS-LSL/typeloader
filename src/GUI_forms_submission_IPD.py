@@ -14,9 +14,12 @@ components for forms and dialogs
 
 import sys, os, shutil, time
 from shutil import copyfile
+from collections import namedtuple
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QGridLayout,
                              QPushButton, QMessageBox, QTextEdit,
-                             QWidget, QHBoxLayout)
+                             QWidget, QHBoxLayout, 
+                             QDialog, QLabel, QVBoxLayout, QGroupBox, QRadioButton,
+                             QTableWidget, QTableWidgetItem)
 from PyQt5.Qt import pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QIcon
 
@@ -26,6 +29,7 @@ from GUI_forms import (CollapsibleDialog, ChoiceSection, FileChoiceTable,
                        FileButton, ProceedButton, QueryButton)
 from GUI_forms_submission_ENA import ProjectInfoTable
 from GUI_misc import settings_ok
+from GUI_functions_local import check_local, check_nonproductive, make_fake_ENA_file
 
 #===========================================================
 # parameters:
@@ -33,20 +37,225 @@ from GUI_misc import settings_ok
 from __init__ import __version__
 #===========================================================
 # classes:
+
+TargetAllele = namedtuple("TargetAllele", "gene target_allele partner_allele")
+
+class AlleleChoiceBox(QWidget):
+    """displays one target allele with multiple novel alleles,
+    allows selecting the one pretyping representing the target allele
+    """
+    choice = pyqtSignal(tuple)
+    
+    def __init__(self, allele_info, log):
+        super().__init__()
+        [self.sample_id_int, self.local_name, self.allele, self.alleles] = allele_info
+        self.log = log
+        self.init_UI()
+        
+    def init_UI(self):
+        layout = QHBoxLayout(self)
+        self.setLayout(layout)
+        name_lbl = QLabel(self.local_name + ":")
+        layout.addWidget(name_lbl)
+        
+        box = QGroupBox("Which pretyping belongs to this allele?", self)
+        box_layout = QHBoxLayout(box)
+        box.setLayout(box_layout)
+        layout.addWidget(box)
+        self.options = []
+        for a in self.alleles:
+            btn = QRadioButton(a)
+            box_layout.addWidget(btn)
+            btn.clicked.connect(self.emit_choice)
+            self.options.append(btn)
+            
+    @pyqtSlot()
+    def emit_choice(self):
+        """emits chosen pretyping for this target allele
+        """
+        pretyping = self.sender().text()
+        self.log.info(" - {} is {}".format(self.local_name, pretyping))
+        self.choice.emit((self.local_name, pretyping))
+        
+
+class BothAllelesNovelDialog(QDialog):
+    """Popup created if target locus has more than 1 allele listed as novel
+    """
+    updated = pyqtSignal()
+    
+    def __init__(self, allele_dic, settings, log):
+        log.info("BothAllelesNovelDialog created...")
+        self.log = log
+        self.settings = settings
+        self.allele_dic = allele_dic
+        super().__init__()
+        
+        self.setWindowTitle("Multiple novel alleles")
+        self.setWindowIcon(QIcon(general.favicon))
+        self.init_UI()
+        self.show()
+        
+    def init_UI(self):
+        """establish and fill the UI
+        """
+        self.log.info("Starting BothAllelesNovelDialog: Which pretyping is right for these alleles?")
+        layout = QVBoxLayout(self)
+        self.setLayout(layout)
+        
+        lbl1 = QLabel("Attention!")
+        lbl1.setStyleSheet(general.label_style_2nd)
+        layout.addWidget(lbl1)
+        
+        n = len(self.allele_dic)
+        msg = "{} of the alleles to be submitted contain{} ".format(n, "s" if n == 1 else "")
+        msg += "multiple novel alleles in the target locus.\n"
+        msg += "Please indicate for each, which of the pretypings belongs to the allele you want to submit here!"
+        lbl = QLabel(msg)
+        lbl.setStyleSheet(general.label_style_normal)
+        layout.addWidget(lbl)
+        
+        self.choices_dic = {}
+        self.choice_boxes = {}
+        for allele in self.allele_dic:
+            allele_info = self.allele_dic[allele]
+            mybox = AlleleChoiceBox(allele_info, self.log)
+            self.choice_boxes[allele] = mybox
+            layout.addWidget(mybox)
+            self.choices_dic[allele_info[1]] = False
+            mybox.choice.connect(self.catch_choice)
+        self.submit_btn = QPushButton("Save choices")
+        self.submit_btn.setEnabled(False)
+        self.submit_btn.clicked.connect(self.save_results)
+        layout.addWidget(self.submit_btn)
+    
+    @pyqtSlot(tuple)
+    def catch_choice(self, mysignal):
+        """whenever a choice is made through a radiobutton,
+        these are caught and stored in self.choices_dic[local_name] = pretyping
+        """
+        (local_name, pretyping) = mysignal
+        alleles = self.allele_dic[local_name][-1]
+        partner_allele = " and ".join([allele for allele in alleles if allele != pretyping])
+        self.choices_dic[local_name] = (pretyping, partner_allele)
+        self.check_ready()
+    
+    def check_ready(self):
+        """checks if choices were made for all alleles;
+        if yes, enables submit_btn
+        """
+        self.log.debug("Checking readiness...")
+        ready = True
+        for local_name in self.choices_dic:
+            if not self.choices_dic[local_name]:
+                ready = False
+        if ready:
+            self.log.debug("\t=> ready")
+            self.submit_btn.setEnabled(True)
+            self.submit_btn.setStyleSheet(general.btn_style_ready)
+        else:
+            self.log.debug("\t=> not ready")
+            self.submit_btn.setEnabled(False)
+            self.submit_btn.setStyleSheet(general.btn_style_normal)
+    
+    def save_results(self):
+        """saves the user's choices in the db and emits signal
+        """
+        self.log.info("Saving choices to database...")
+        for allele in self.allele_dic:
+            [sample_id_int, local_name, allele_obj, _] = self.allele_dic[allele]
+            choice = self.choices_dic[local_name]
+            if "*" in choice[0]:
+                (target, partner) = choice
+            else:
+                target = "{}*{}".format(allele_obj.gene, choice[0])
+                partner = "{}*{}".format(allele_obj.gene, choice[1])
+            query = """update ALLELES 
+            set target_allele = '{}', partner_allele = '{}' 
+            where local_name = '{}' and sample_id_int = '{}'""".format(target, partner, local_name, sample_id_int)
+            success, _ = db_internal.execute_query(query, 0, self.log, "updating database", "Database error", self)
+        if success:
+            self.updated.emit()
+            self.close()     
+    
+
+class InvalidPretypingsDialog(QDialog):
+    """Popup created if pretypings are not consistent with TypeLoader's assigned allele
+    """
+    ok = pyqtSignal()
+    
+    def __init__(self, allele_dic, settings, log):
+        self.log = log
+        self.settings = settings
+        self.allele_dic = allele_dic
+        super().__init__()
+        
+        self.setWindowTitle("Invalid pretypings")
+        self.setWindowIcon(QIcon(general.favicon))
+        self.resize(800,400)
+        self.init_UI()
+        self.show()
+        
+    def init_UI(self):
+        """establish and fill the UI
+        """
+        self.log.info("Starting InvalidPretypingsDialog: please adjust pretypings file for these alleles...")
+        layout = QVBoxLayout(self)
+        self.setLayout(layout)
+        
+        lbl1 = QLabel("Attention!")
+        lbl1.setStyleSheet(general.label_style_2nd)
+        layout.addWidget(lbl1)
+        
+        n = len(self.allele_dic)
+        msg = "{} of the alleles to be submitted ha{} ".format(n, "s" if n == 1 else "ve")
+        msg += "an invalid pretyping for the target locus.\n"
+        msg += "Please adjust the pretypings file for each indicated sample, then try again!"
+        lbl = QLabel(msg)
+        lbl.setStyleSheet(general.label_style_normal)
+        layout.addWidget(lbl)
+        
+        self.add_table(layout)
+        
+        self.ok_btn = QPushButton("Ok")
+        self.ok_btn.clicked.connect(self.ok_clicked)
+        self.ok_btn.setStyleSheet(general.btn_style_ready)
+        layout.addWidget(self.ok_btn)
+        
+    def add_table(self, layout):
+        """add and fill the table with problematic alleles
+        """
+        self.table = QTableWidget()
+        self.table.setColumnCount(6)
+        self.table.setRowCount(len(self.allele_dic))
+        layout.addWidget(self.table)
+        self.table.setHorizontalHeaderLabels(["Sample", "Allele Name", "Locus", "Assigned Allele", "Pretyping", "Problem"])
+        for n, allele in enumerate(self.allele_dic):
+            i = 0
+            for item in self.allele_dic[allele]:
+                self.table.setItem(n, i, QTableWidgetItem(item))
+                i += 1
+        self.table.resizeColumnsToContents()
+        
+    def ok_clicked(self):
+        self.log.debug("User clicked 'ok' on InvalidPretypingsDialog")
+        self.ok.emit()
+        self.close()
+
     
 class IPDFileChoiceTable(FileChoiceTable):
     """displays all alleles of a project
     so user can choose which to submit to IPD
     """
     old_cell_lines = pyqtSignal(dict)
+    additional_info = pyqtSignal(dict)
     
     def __init__(self, project, log, parent = None):
         query = """select project_nr, alleles.sample_id_int, alleles.Local_name, allele_status, 
-        ENA_submission_id, IPD_submission_nr, cell_line_old
+        ENA_submission_id, IPD_submission_nr, cell_line_old, gene, target_allele, partner_allele
         from alleles
          join files on alleles.sample_id_int = files.sample_id_int and alleles.allele_nr = files.allele_nr
         """.format(project)
-        num_columns = 7
+        num_columns = 10
         header = ["Submit?", "Nr", "Sample", "Allele", "Allele Status", "ENA submission ID", "IPD submission ID"]
         if parent:
             self.settings = parent.settings
@@ -64,6 +273,7 @@ class IPDFileChoiceTable(FileChoiceTable):
         success, data = db_internal.execute_query(self.query + self.myfilter, self.num_columns, 
                                                   self.log, "retrieving data for FileChoiceTable from database", 
                                                   "Database error", self)
+        
         if success:
             self.data1 = data
         # add data based on cell_line_old:
@@ -75,25 +285,39 @@ class IPDFileChoiceTable(FileChoiceTable):
         
         #assemble data from both queries into one dict:
         self.cell_line_dic = {}
+        self.allele_dic = {} # contains additional info per local_name not displayed in the table
         self.data = []
         if self.data1:
             self.log.debug("\t{} matching alleles found based on local_name".format(len(self.data1)))
             for row in self.data1:
-                self.data.append(row[:-1])
+                self.data.append(row[:-2])
+                local_name = row[2]
+                gene = row[7]
+                target_allele = row[8]
+                partner_allele = row[9]
+                allele = TargetAllele(gene = gene, target_allele = target_allele, partner_allele = partner_allele)
+                self.allele_dic[local_name] = allele
         if self.data2:
             self.log.debug("\t{} matching alleles found based on cell_line_old".format(len(self.data2)))
             for row in self.data2:
-                self.data.append(row[:-1])
+                self.data.append(row[:-2])
                 local_name = row[2]
                 cell_line_old = row[6]
                 self.cell_line_dic[local_name] = cell_line_old
+                gene = row[7]
+                target_allele = row[8]
+                partner_allele = row[9]
+                allele = TargetAllele(gene = gene, target_allele = target_allele, partner_allele = partner_allele)
+                self.allele_dic[local_name] = allele
         
         self.log.debug("Emitting 'files = {}'".format(len(self.data)))
         self.files.emit(len(self.data))
         self.old_cell_lines.emit(self.cell_line_dic)
+        self.additional_info.emit(self.allele_dic)
     
-    def refresh(self, project, addfilter, addfilter2):
+    def refresh(self, project, addfilter, addfilter2, keep_choices = False):
         self.log.debug("refreshing IPDFileChoiceTable...")
+        self.keep_choices = keep_choices
         self.myfilter = " where alleles.project_name = '{}' {} order by ENA_submission_id, project_nr".format(project, addfilter)
         self.myfilter2 = " where alleles.project_name = '{}' {} order by ENA_submission_id, project_nr".format(project, addfilter2)
         self.fill_UI()
@@ -105,6 +329,8 @@ class IPDSubmissionForm(CollapsibleDialog):
     IPD_submitted = pyqtSignal()
     
     def __init__(self, log, mydb, project, settings, parent = None):
+        """initiates the IPDSubmissionForm
+        """
         self.log = log
         self.log.info("Opening 'IPD Submission' Dialog...")
         self.mydb = mydb
@@ -124,6 +350,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.imgt_files = {}
         self.submission_successful = False
         self.accepted = False
+        self.multis_handled = False
         self.show()
         ok, msg = settings_ok("IPD", self.settings, self.log)
         if not ok:
@@ -213,25 +440,55 @@ class IPDSubmissionForm(CollapsibleDialog):
         ENA_file_btn = FileButton("Upload email attachment from ENA reply", mypath, parent=self)
         self.ENA_file_widget = ChoiceSection("ENA reply file:", [ENA_file_btn], self, label_width=self.label_width)
         if self.settings["modus"] == "debugging":
-            self.ENA_file_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\IPD_Test\ENA_Accession_3DP1")
+            self.ENA_file_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\both_new\KIR\invalid_ENA.txt")
             ENA_file_btn.change_to_normal()
             
-        layout.addWidget(self.ENA_file_widget, 0, 0)
+        layout.addWidget(self.ENA_file_widget, 1, 0)
         
         befund_file_btn = FileButton("Choose file with pretypings for each sample", mypath, parent=self)
         self.befund_widget = ChoiceSection("Pretyping file:", [befund_file_btn], self, label_width=self.label_width)
         self.befund_widget.setWhatsThis("Choose a file containing a list of previously identified alleles for all loci for each sample")
         if self.settings["modus"] == "debugging":
-            self.befund_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\IPD_Test\Befunde_neu.csv")
+            self.befund_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\both_new\KIR\invalid_pretypings.csv")
             befund_file_btn.change_to_normal()
-        layout.addWidget(self.befund_widget, 1, 0)
+        layout.addWidget(self.befund_widget, 2, 0)
         
         self.ok_btn2 = ProceedButton("Proceed", [self.ENA_file_widget.field, self.befund_widget.field], self.log, 0)
         self.proj_widget.choice.connect(self.ok_btn2.check_ready)
         self.befund_widget.choice.connect(self.ok_btn2.check_ready)
-        layout.addWidget(self.ok_btn2, 0, 1,3,1)
+        layout.addWidget(self.ok_btn2, 1, 1,3,1)
         self.ok_btn2.proceed.connect(self.proceed_to3)
         self.sections.append(("(2) Upload ENA reply file:", mywidget))
+        
+        # add hidden button to create fake ENA response & fake pretyping file:
+        if check_nonproductive(self.settings):
+            if check_local(self.settings, self.log): # only visible for non-productive LSL users 
+                self.fake_btn = QPushButton("Generate fake input files")
+                self.fake_btn.setStyleSheet(general.btn_style_local)
+                self.fake_btn.clicked.connect(self.create_fake_input_files)
+                layout.addWidget(self.fake_btn, 1,1) 
+    
+    @pyqtSlot()
+    def create_fake_input_files(self):
+        """creates a fake ENA reply file & pretypinsg file
+        which can be used to create fake IPD files of any alleles in this project;
+        this functionality can be used to create IPD formatted files for alleles 
+         that have not been submitted to ENA or have not received an ENA identifier, yet
+        """
+        self.log.info("Creating fake ENA response file & fake pretypings file...")
+        try:
+            success, ena_file, pretypings_file = make_fake_ENA_file(self.project, self.log, self.settings, "local_name", self)
+        except Exception as E:
+            self.log.exception(E)
+            QMessageBox.warning(self, "Problem", "Could not generate fake files:\n\n{}".format(repr(E)))
+            success = False
+            
+        if success:
+            self.ENA_file_widget.field.setText(ena_file)
+            self.befund_widget.field.setText(pretypings_file)
+            self.fake_btn.setStyleSheet(general.btn_style_normal)
+            self.ok_btn2.check_ready()
+
     
     def parse_ENA_file(self):
         """parses the ENA reply file,
@@ -253,12 +510,17 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.refresh_section3()
         self.proceed_sections(1, 2)
         
-    def refresh_section3(self):
+    def refresh_section3(self, keep_choices = False):
         """refreshes data in section3 after project has been changed
         """
         self.log.debug("Refreshing section 3...")
         self.project_info.fill_UI(self.project)
-        self.project_files.refresh(self.project, self.add_filter, self.add_filter2)
+        self.project_files.refresh(self.project, self.add_filter, self.add_filter2, keep_choices = keep_choices)
+        if not keep_choices:
+            if self.settings["modus"] == "debugging":
+                if self.project_files.check_dic: # if debugging, auto-select first file
+                    self.project_files.check_dic[0].setChecked(True)
+                    self.project_files.files_chosen.emit(1)
         
     @pyqtSlot(str, str)
     def catch_project_info(self, title, description):
@@ -286,6 +548,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.project_files.files_chosen.connect(self.project_info.update_files_chosen)
         self.project_files.files.connect(self.project_info.update_files)
         self.project_files.old_cell_lines.connect(self.catch_cell_line)
+        self.project_files.additional_info.connect(self.catch_additional_info)
         
         items = [self.project_info.item(3,0)]
         self.submit_btn = ProceedButton("Generate IPD files", items, self.log, 1, self)
@@ -313,6 +576,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         """retrieves values for IPD file generation from GUI
         """
         self.pretypings = self.befund_widget.field.text().strip()
+        self.log.debug("pretypings file: {}".format(self.pretypings))
         self.project = self.proj_widget.field.text().strip()
         self.curr_time = time.strftime("%Y%m%d%H%M%S")
         self.subm_id = "IPD_{}".format(self.curr_time)
@@ -344,6 +608,36 @@ class IPDSubmissionForm(CollapsibleDialog):
                 self.ENA_id_map[local_name] = self.ENA_id_map[cell_line_old]
                 self.ENA_gene_map[local_name] = self.ENA_gene_map[cell_line_old]
     
+    @pyqtSlot(dict)
+    def catch_additional_info(self, allele_dic):
+        """catches mapping between local_name and other info not displayed in the GUI
+        for use in befund-part of IPD file
+        """
+        self.log.debug("Caught mapping between {} allele names and their addiditonal info".format(len(allele_dic)))
+        self.allele_dic = allele_dic # format: {local_name : TargetAllele}
+        
+    def handle_multiple_novel_alleles(self, problem_dic):
+        """if multiple novel alleles were found for the target locus
+        """
+        self.log.info("Found multiple novel alleles for target locus in {} samples".format(len(problem_dic)))
+        self.multi_dialog = BothAllelesNovelDialog(problem_dic, self.settings, self.log)
+        self.multi_dialog.updated.connect(self.reattempt_make_IPD_files)
+        self.multi_dialog.exec_()
+        self.multis_handled = True
+    
+    def handle_invalid_pretyings(self, problem_dic):
+        """if invalid pretypings were found for the target locus
+        """
+        self.log.info("Found invalid pretypings in {} samples".format(len(problem_dic)))
+        dialog = InvalidPretypingsDialog(problem_dic, self.settings, self.log)
+        dialog.ok.connect(self.close)
+        dialog.exec_()
+    
+    def reattempt_make_IPD_files(self):
+        self.log.info("Re-attempting IPD file creation...")
+        self.refresh_section3(keep_choices = True)
+        self.make_IPD_files()
+                
     @pyqtSlot()
     def make_IPD_files(self):
         """tell typeloader to create the IPD file
@@ -365,13 +659,22 @@ class IPDSubmissionForm(CollapsibleDialog):
             self.log.debug("Creating IPD file...")
             self.get_chosen_samples()
             self.get_files()
-            
-            results = MIF.write_imgt_files(project_dir, self.samples, self.file_dic, self.ENA_id_map, 
+            results = MIF.write_imgt_files(project_dir, self.samples, self.file_dic, self.allele_dic, self.ENA_id_map, 
                                            self.ENA_gene_map, self.pretypings, self.subm_id, 
                                            mydir, self.settings, self.log)
             if not results[0]:
-                QMessageBox.warning(self, "IPD file creation error", results[1])
-                return
+                if results[1] == "Invalid pretypings":
+                    self.handle_invalid_pretyings(results[2])
+                    return
+                elif results[1] == "Multiple novel alleles in target locus":
+                    self.handle_multiple_novel_alleles(results[2])
+                    return
+                else:
+                    print("MIF.write_imgt_files result:")
+                    print(results)
+                    QMessageBox.warning(self, "IPD file creation error", results[1])
+                    return
+                self.log.warning("? Should not pass here")
             else:
                 (self.IPD_file, self.cell_lines, self.customer_dic, resultText, self.imgt_files, success, error) = results
             if error:
@@ -556,13 +859,32 @@ if __name__ == '__main__':
     settings_dic = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, settings_dic["db_file"])
     
-    project = "20181204_ADMIN_mixed_IPD"
+    project = "20190321_ADMIN_MIC_1"
     app = QApplication(sys.argv)
+     
+#     problem_dic = {'DKMS10004135': ['ID13178800', 'DKMS-LSL_ID13178800_DPB1_1', TargetAllele(gene='HLA-DPB1', target_allele='HLA-DPB1*03:new', partner_allele='HLA-DPB1*13:01:01:01 or 02:01:02:01'), ['13:new', '04:new']]}
+#     ex = BothAllelesNovelDialog(problem_dic, settings_dic, log)
     ex = IPDSubmissionForm(log, mydb, project, settings_dic)
+     
     ex.show()
-    
+     
     result = app.exec_()
     close_connection(log, mydb)
     log.info("<End>")
     sys.exit(result)
+
+#     project_dir = r"\\nasdd12\daten\data\Typeloader\admin\projects\20190321_ADMIN_MIC_1"
+#     samples = [('MIC1', 'DKMS-LSL_MIC1_MICA_1', '')]
+#     file_dic = {'DKMS-LSL_MIC1_MICA_1': {'blast_xml': 'DKMS-LSL_MIC1_MICA_1.blast.xml', 'ena_file': 'DKMS-LSL_MIC1_MICA_1.ena.txt'}}
+#     allele_dic = {'DKMS-LSL_MIC1_MICA_1': TargetAllele(gene='MICA', target_allele='MICA*008:new', partner_allele='')}
+#     ENA_id_map = {'DKMS-LSL_MIC1_MICA_1': 'O61O3NVO'}
+#     ENA_gene_map = {'DKMS-LSL_MIC1_MICA_1': 'MICA'}
+#     pretypings = r"\\nasdd12\daten\data\Typeloader\admin\temp\fake_befunde.csv"
+#     subm_id = "IPD_20190322102215"
+#     mydir = r"\\nasdd12\daten\data\Typeloader\admin\projects\20190321_ADMIN_MIC_1\IPD-submissions\IPD_20190322102215"
+# 
+#     results = MIF.write_imgt_files(project_dir, samples, file_dic, allele_dic, ENA_id_map, 
+#                                    ENA_gene_map, pretypings, subm_id, 
+#                                    mydir, settings_dic, log)
+            
 

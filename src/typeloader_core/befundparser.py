@@ -20,7 +20,8 @@ useGenesList = ["A1","A2","B1","B2","C1","C2" \
                 ,"KIR3DL2-1","KIR3DL2-2","KIR3DL2-3","KIR3DL2-4" \
                 ,"KIR3DL3-1","KIR3DL3-2","KIR3DL3-3","KIR3DL3-4" \
                 ,"KIR3DP1-1","KIR3DP1-2","KIR3DP1-3","KIR3DP1-4" \
-                ,"KIR3DS1-1","KIR3DS1-2","KIR3DS1-3","KIR3DS1-4"]
+                ,"KIR3DS1-1","KIR3DS1-2","KIR3DS1-3","KIR3DS1-4" \
+                ,"MICA-1","MICA-2","MICB-1","MICB-2"]
 changeNamesFor = ["DQ","DP","DR"]
 patientIdPos = 0
 customerPos = 2
@@ -59,13 +60,21 @@ def getOtherAlleles(befundFile):
         for pos in usePos:
             befundGeneName = genes[usePos.index(pos)]
             changeName = reduce(lambda x,y: x or y, [befundGeneName.startswith(nameToChange) for nameToChange in changeNamesFor])
-            if changeName: geneName = "HLA-" + befundGeneName[:2] + "B1"
+            if changeName: 
+                geneName = "HLA-" + befundGeneName[:2] + "B1"
             else:
-                if befundGeneName.startswith("KIR"): geneName = befundGeneName[:-2]
-                else: geneName = "HLA-" + befundGeneName[:-1]
-            if not len(parts[pos]): continue
-            if geneName in befund[patient]: befund[patient][geneName].append(parts[pos])
-            else: befund[patient][geneName] = [parts[pos]]
+                if befundGeneName.startswith("KIR"): 
+                    geneName = befundGeneName[:-2]
+                elif befundGeneName.startswith("MIC"):
+                    geneName = befundGeneName[:-2]
+                else: 
+                    geneName = "HLA-" + befundGeneName[:-1]
+            if not len(parts[pos]):
+                continue
+            if geneName in befund[patient]: 
+                befund[patient][geneName].append(parts[pos])
+            else: 
+                befund[patient][geneName] = [parts[pos]]
 
     befundHandle.close()
 
