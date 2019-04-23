@@ -138,7 +138,10 @@ def make_befund_text(befund, closestAllele, myallele, geneMap, differencesText, 
                 
         if useme:    
             length = 3 if KIR else 2
-            myalleles = [allele.zfill(length) for allele in befund[gene]]
+            if gene[:3] in ["HLA", "KIR", "MIC"]:
+                myalleles = [allele.zfill(length) for allele in befund[gene]]
+            else:
+                myalleles = befund[gene]
             alleles = ",".join(myalleles)
             if gene == myallele.gene:
                 # check for consistency:
