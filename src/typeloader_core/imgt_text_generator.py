@@ -129,6 +129,7 @@ def make_befund_text(befund, closestAllele, myallele, geneMap, differencesText, 
 
     for gene in list(befund.keys()):
         useme = False
+        alleles = []
         if geneMap["targetFamily"] == "HLA":
             if gene.startswith("HLA") or gene.startswith("MIC"):
                 useme = True
