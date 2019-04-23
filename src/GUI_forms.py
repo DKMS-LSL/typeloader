@@ -398,6 +398,7 @@ class ChoiceSection(QGroupBox):
         self.buttons = btns
         self.label_width = label_width
         self.init_UI()
+        #TODO: add log to log choice
          
     def init_UI(self):
         grid = QGridLayout()
@@ -431,6 +432,7 @@ class ChoiceSection(QGroupBox):
             btn = self.button_dic[i]
             btn.done.connect(self.field.setText)
             btn.done.connect(self.choice.emit)
+            #TODO: log choice
             for j in self.button_dic:
                 if i != j:
                     btn2 = self.button_dic[j]
