@@ -1,11 +1,14 @@
+#!/usr/bin/env python3
+
 from functools import reduce
-#!/usr/bin/env python
+from collections import defaultdict
 
 # some of the KIR loci have 3 or maybe 4 alleles
 # to be prepared, they are in the list, but probably not in the befund.csv
-useGenesList = ["A1","A2","B1","B2","C1","C2" \
-                ,"DR1","DR2","DQ1","DQ2","DP1","DP2" \
-                ,"KIR2DL1-1","KIR2DL1-2","KIR2DL1-3","KIR2DL1-4" \
+useGenesList = ["HLA-A_1", "HLA-A_2", "HLA-B_1", "HLA-B_2", "HLA-C_1", "HLA-C_2", 
+                "HLA-DRB1_1", "HLA-DRB1_2", "HLA-DQB1_1", "HLA-DQB1_2", "HLA-DPB1_1", "HLA-DPB1_2", 
+                "HLA-E_1", "HLA-E_2", "AB0", "RHD", "CCR5_1", "CCR5_2", "MICA", "MICB", "CMV",
+                "KIR2DL1-1","KIR2DL1-2","KIR2DL1-3","KIR2DL1-4" \
                 ,"KIR2DL2-1","KIR2DL2-2","KIR2DL2-3","KIR2DL2-4" \
                 ,"KIR2DL3-1","KIR2DL3-2","KIR2DL3-3","KIR2DL3-4" \
                 ,"KIR2DL4-1","KIR2DL4-2","KIR2DL4-3","KIR2DL4-4" \
@@ -20,8 +23,10 @@ useGenesList = ["A1","A2","B1","B2","C1","C2" \
                 ,"KIR3DL2-1","KIR3DL2-2","KIR3DL2-3","KIR3DL2-4" \
                 ,"KIR3DL3-1","KIR3DL3-2","KIR3DL3-3","KIR3DL3-4" \
                 ,"KIR3DP1-1","KIR3DP1-2","KIR3DP1-3","KIR3DP1-4" \
-                ,"KIR3DS1-1","KIR3DS1-2","KIR3DS1-3","KIR3DS1-4" \
-                ,"MICA-1","MICA-2","MICB-1","MICB-2"]
+                ,"KIR3DS1-1","KIR3DS1-2","KIR3DS1-3","KIR3DS1-4"
+                ]
+old_columns = ["A1","A2","B1","B2","C1","C2",
+               "DR1","DR2","DQ1","DQ2","DP1","DP2"]
 changeNamesFor = ["DQ","DP","DR"]
 patientIdPos = 0
 patientIdPos_alt = 1
@@ -45,44 +50,47 @@ def getOtherAlleles(befundFile):
     usePos = []
     genes = []
     for pos in range(len(parts)):
-        if parts[pos] in useGenesList:
-            genes.append(parts[pos])
+        col = parts[pos]
+        if col in useGenesList or col in old_columns:
+            genes.append(col)
             usePos.append(pos)
 
     befund = {}
     for line in befundHandle:
-        if not (len(line.strip())): continue
+        if not (len(line.strip())): 
+            continue
         parts = line.strip().split(delimiter)
         patient = parts[patientIdPos]
         patient2 = parts[patientIdPos_alt] # alternately, use 2nd column as user-ID
+        if patient2 == patient:
+            patient2 = ""
         customer = parts[customerPos]
         customer_dic[patient] = customer
         customer_dic[patient2] = customer
-        befund[patient] = {}
-        befund[patient2] = {}
+        befund[patient] = defaultdict(list)
+        befund[patient2] = defaultdict(list)
 
         for pos in usePos:
             befundGeneName = genes[usePos.index(pos)]
+            geneName = befundGeneName.split("_")[0]
+            pretyping = parts[pos]
             changeName = reduce(lambda x,y: x or y, [befundGeneName.startswith(nameToChange) for nameToChange in changeNamesFor])
-            if changeName: 
+            if changeName:  # old class 2 columns
                 geneName = "HLA-" + befundGeneName[:2] + "B1"
             else:
-                if befundGeneName.startswith("KIR"): 
-                    geneName = befundGeneName[:-2]
-                elif befundGeneName.startswith("MIC"):
-                    geneName = befundGeneName[:-2]
-                else: 
-                    geneName = "HLA-" + befundGeneName[:-1]
-            if not len(parts[pos]):
+                if geneName in old_columns:
+                    geneName = "HLA-" + befundGeneName[:-1] # rename gene for old columns
+                elif geneName.startswith("KIR"):
+                    geneName = geneName.split("-")[0]
+                elif geneName.startswith("MIC"):
+                    pretyping = pretyping.replace("A","").replace("B","") # MIC pretypings are given as GL strings in one col per locus, unlike HLA
+            if not pretyping:
                 continue
-            if geneName in befund[patient]: 
-                befund[patient][geneName].append(parts[pos])
-            elif geneName in befund[patient2]: 
-                befund[patient2][geneName].append(parts[pos])
-            else: 
-                befund[patient][geneName] = [parts[pos]]
-                befund[patient2][geneName] = [parts[pos]]
-
+            for value in pretyping.split("+"):
+                if value:
+                    befund[patient][geneName].append(value)
+                    befund[patient2][geneName].append(value)
+            
     befundHandle.close()
 
     return befund, customer_dic
