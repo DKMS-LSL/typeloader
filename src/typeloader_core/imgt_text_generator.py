@@ -121,53 +121,45 @@ def make_befund_text(befund, closestAllele, myallele, geneMap, differencesText, 
     befundText = ""
     [locus, self_name] = closestAllele.split("*")
     if locus.startswith("KIR"):
-        KIR = True
         self_name = self_name[:3]
     else:
-        KIR = False
         self_name = self_name.split(":")[0]
 
     alleles = []
     for gene in list(befund.keys()):
-        useme = False
-        if geneMap["targetFamily"] == "HLA":
-            if gene.startswith("HLA") or gene.startswith("MIC"):
-                useme = True
-        elif geneMap["targetFamily"] == "KIR":
-            useme = True
-                
-        if useme:    
-            length = 3 if KIR else 2
-            if gene[:3] in ["HLA", "KIR", "MIC"]:
-                myalleles = [allele.zfill(length) for allele in befund[gene]]
-            else:
-                myalleles = befund[gene]
-            alleles = ",".join(myalleles)
-            if gene == myallele.gene:
-                # check for consistency:
-                mystring = alleles.lower()
-                if "pos" in mystring:
-                    log.warning("Invalid Pretyping: pretyping for target locus should not contain POS. Please adjust pretyping file!")
-                    raise InvalidPretypingError(myallele, myalleles, self_name, gene, "POS is not acceptable pretyping for a target locus")
+        genesystem = gene[:3]
+        if genesystem == "HLA":
+            myalleles = [allele.zfill(2) for allele in befund[gene]]
+        elif genesystem in ["KIR", "MIC"]:
+            myalleles = [allele.zfill(3) for allele in befund[gene]]
+        else:
+            myalleles = befund[gene]
+        alleles = ",".join(myalleles)
+        if gene == myallele.gene:
+            # check for consistency:
+            mystring = alleles.lower()
+            if "pos" in mystring:
+                log.warning("Invalid Pretyping: pretyping for target locus should not contain POS. Please adjust pretyping file!")
+                raise InvalidPretypingError(myallele, myalleles, self_name, gene, "POS is not acceptable pretyping for a target locus")
+                return
+            if self_name not in mystring:
+                log.warning("Invalid Pretyping: allele_name '{}:new' not found in pretyping for target locus. Please adjust pretyping file!".format(self_name))
+                raise InvalidPretypingError(myallele, myalleles, self_name, gene, "assigned allele name not found in pretyping")
+                return
+            if differencesText != "CC   Confirmation": # confirmations should not be labelled "new"!
+                i = mystring.count("new") + mystring.count("xxx")
+                if i == 0:
+                    raise InvalidPretypingError(myallele, myalleles, self_name, gene, "no allele marked as new in pretyping")
                     return
-                if self_name not in mystring:
-                    log.warning("Invalid Pretyping: allele_name '{}:new' not found in pretyping for target locus. Please adjust pretyping file!".format(self_name))
-                    raise InvalidPretypingError(myallele, myalleles, self_name, gene, "assigned allele name not found in pretyping")
-                    return
-                if differencesText != "CC   Confirmation": # confirmations should not be labelled "new"!
-                    i = mystring.count("new") + mystring.count("xxx")
-                    if i == 0:
-                        raise InvalidPretypingError(myallele, myalleles, self_name, gene, "no allele marked as new in pretyping")
+                if i > 1:
+                    log.info("Target locus {} has {} novel alleles".format(myallele.gene, i))
+                    success, alleles = reformat_partner_allele(myalleles, myallele, length, log)
+                    if not success:
+                        log.warning("Please indicate self!".format(myallele.gene, i))
+                        raise BothAllelesNovelError(myallele, myalleles)
                         return
-                    if i > 1:
-                        log.info("Target locus {} has {} novel alleles".format(myallele.gene, i))
-                        success, alleles = reformat_partner_allele(myalleles, myallele, length, log)
-                        if not success:
-                            log.warning("Please indicate self!".format(myallele.gene, i))
-                            raise BothAllelesNovelError(myallele, myalleles)
-                            return
                     
-            befundText += otherAllelesString.replace("{gene}", gene).replace("{alleleNames}",alleles)
+        befundText += otherAllelesString.replace("{gene}", gene).replace("{alleleNames}",alleles)
     check_all_required_loci(befundText, locus, myallele, alleles, self_name, log)
     return befundText
 
