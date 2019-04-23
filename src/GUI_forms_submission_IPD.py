@@ -264,13 +264,14 @@ class IPDFileChoiceTable(FileChoiceTable):
             self.settings = GUI_login.get_settings("admin", log)
         
         super().__init__(project, log, header, query, num_columns,
-                         myfilter = "", allele_status_column = 3, 
+                         myfilter = " order by project_nr ", allele_status_column = 3, 
                          instant_accept_status = "ENA submitted", parent = self)
     
     def get_data(self):
         """get alleles from database
         """
-        success, data = db_internal.execute_query(self.query + self.myfilter, self.num_columns, 
+        myquery = self.query + self.myfilter
+        success, data = db_internal.execute_query(myquery, self.num_columns, 
                                                   self.log, "retrieving data for FileChoiceTable from database", 
                                                   "Database error", self)
         
@@ -318,8 +319,8 @@ class IPDFileChoiceTable(FileChoiceTable):
     def refresh(self, project, addfilter, addfilter2, keep_choices = False):
         self.log.debug("refreshing IPDFileChoiceTable...")
         self.keep_choices = keep_choices
-        self.myfilter = " where alleles.project_name = '{}' {} order by ENA_submission_id, project_nr".format(project, addfilter)
-        self.myfilter2 = " where alleles.project_name = '{}' {} order by ENA_submission_id, project_nr".format(project, addfilter2)
+        self.myfilter = " where alleles.project_name = '{}' {} order by project_nr".format(project, addfilter)
+        self.myfilter2 = " where alleles.project_name = '{}' {} order by project_nr".format(project, addfilter2)
         self.fill_UI()
         
         
