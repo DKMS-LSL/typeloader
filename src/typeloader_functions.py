@@ -25,7 +25,6 @@ import general, db_internal
 
 from __init__ import __version__
 #from src.typeloader_core.errors import IncompleteSequenceError
-from typeloader_core.errors import IncompleteSequenceWarning
 
 flatfile_dic = {"function_hla" : "antigen presenting molecule",
                 "function_kir" : "killer-immunoglobulin receptor",
