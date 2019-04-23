@@ -468,7 +468,7 @@ class FileChoiceTable(QTableWidget):
         self.instant_accept_status = instant_accept_status
         self.query = query
         self.num_columns = num_columns
-        self.filter = myfilter
+        self.myfilter = myfilter
         self.keep_choices = False
         self.check_dic = {}
         self.init_UI()
