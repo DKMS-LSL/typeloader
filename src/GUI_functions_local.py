@@ -97,16 +97,15 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
     # write fake pretyping file:
     log.info("Writing fake pretyping-file...")
     fake_file_befunde = os.path.join(settings["login_dir"], "temp", "fake_befunde.csv")
-    columns = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'DR1', 'DR2', 'DQ1', 'DQ2', 'DP1', 'DP2', 'KIR2DL1-1', 'KIR2DL1-2', 'KIR2DL1-3', 'KIR2DL1-4', 'KIR2DL2-1', 'KIR2DL2-2', 'KIR2DL2-3', 'KIR2DL2-4', 'KIR2DL3-1', 'KIR2DL3-2', 'KIR2DL3-3', 'KIR2DL3-4', 'KIR2DL4-1', 'KIR2DL4-2', 'KIR2DL4-3', 'KIR2DL4-4', 'KIR2DL5-1', 'KIR2DL5-2', 'KIR2DL5-3', 'KIR2DL5-4', 'KIR2DP1-1', 'KIR2DP1-2', 'KIR2DP1-3', 'KIR2DP1-4', 'KIR2DS1-1', 'KIR2DS1-2', 'KIR2DS1-3', 'KIR2DS1-4', 'KIR2DS2-1', 'KIR2DS2-2', 'KIR2DS2-3', 'KIR2DS2-4', 'KIR2DS3-1', 'KIR2DS3-2', 'KIR2DS3-3', 'KIR2DS3-4', 'KIR2DS4-1', 'KIR2DS4-2', 'KIR2DS4-3', 'KIR2DS4-4', 'KIR2DS5-1', 'KIR2DS5-2', 'KIR2DS5-3', 'KIR2DS5-4', 'KIR3DL1-1', 'KIR3DL1-2', 'KIR3DL1-3', 'KIR3DL1-4', 'KIR3DL2-1', 'KIR3DL2-2', 'KIR3DL2-3', 'KIR3DL2-4', 'KIR3DL3-1', 'KIR3DL3-2', 'KIR3DL3-3', 'KIR3DL3-4', 'KIR3DP1-1', 'KIR3DP1-2', 'KIR3DP1-3', 'KIR3DP1-4', 'KIR3DS1-1', 'KIR3DS1-2', 'KIR3DS1-3', 'KIR3DS1-4', 'MICA-1', 'MICA-2', 'MICB-1', 'MICB-2']
+    columns = ["HLA-A_1", "HLA-A_2", "HLA-B_1", "HLA-B_2", "HLA-C_1", "HLA-C_2", "HLA-DRB1_1", 
+               "HLA-DRB1_2", "HLA-DQB1_1", "HLA-DQB1_2", "HLA-DPB1_1", "HLA-DPB1_2", 
+               "HLA-E_1", "HLA-E_2", "AB0", "RHD", "CCR5_1", "CCR5_2", "KIR", "MICA", "MICB", "CMV"]
     
-    gene_dic = {"HLA-A": ['A1', 'A2'], 
-                "HLA-B": ['B1', 'B2'],
-                "HLA-C": ['C1', 'C2'],
-                "HLA-DPB1": ['DP1', 'DP2'], 
-                "HLA-DQB1": ['DQ1', 'DQ2'],
-                "HLA-DRB1": ['DR1', 'DR2'],
-                "MICA": ['MICA-1', 'MICA-2'],
-                "MICB": ['MICB-1', 'MICB-2']}
+    gene_dic = {}
+    for g in ["HLA-A", "HLA-B", "HLA-C", "HLA-DRB1", "HLA-DQB1", "HLA-DPB1", "HLA-E", "CCR5"]:
+        gene_dic[g] = ["{}_1".format(g), "{}_2".format(g)]
+    for g in ["AB0", "RHD", "MICA", "MICB", "CMV"]:
+        gene_dic[g] = [g]
     for g in ['KIR2DL1', 'KIR2DL2', 'KIR2DL3', 'KIR2DL4', 'KIR2DL5',
               'KIR2DP1',
               'KIR2DS1', 'KIR2DS2', 'KIR2DS3', 'KIR2DS4', 'KIR2DS5',
@@ -119,26 +118,48 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
     
     default_dic = {}
     for col in columns:
-        if col.startswith("KIR"):
-            default_dic[col] = "001"
-        else:
+        if col.startswith("HLA"):
             default_dic[col] = "01:01"
+        elif col.startswith("KIR"):
+            default_dic[col] = "001"
+        elif col == "AB0":
+            default_dic[col] = "A"
+        elif col == "RHD":
+            default_dic[col] = "+"
+        elif col.startswith("CCR5"):
+            default_dic[col] = "WT"
+        elif col.startswith("CMV"):
+            default_dic[col] = "+"
+        elif col == "MICA":
+            default_dic[col] = "A001+A001"
+        elif col == "MICB":
+            default_dic[col] = "B001+B001"
     
     with open(fake_file_befunde, "w") as g:
-        header = "INTAUF_ID,Spendernr,Auftraggeber,{}\n".format(",".join(columns))
+        header = "sample_ID,internal_ID,client,{}\n".format(",".join(columns))
         g.write(header)
         
         for (sample_id_int, cell_line, mygene, target_allele, partner_allele) in data2:
             befunde = default_dic
-            for i, col in enumerate(gene_dic[mygene]):
-                if i == 0:
-                    befunde[col] = target_allele.split("*")[1]
-                elif i == 1:
-                    if partner_allele:
-                        befunde[col] = partner_allele.split("*")[1]
+            # overwrite pretyping of target allele:
+            if len(gene_dic[mygene]) == 1:
+                if mygene.startswith("MIC"):
+                    if not partner_allele:
+                        partner_allele = "{}001".format(mygene[-1])
+                    befunde[mygene] = "{}+{}".format(target_allele, partner_allele).replace("MICA*","A")
                 else:
-                    befunde[col] = ""
-            myline = "{},{},DKMS,".format(sample_id_int, cell_line)
+                    print("Cannot generate sensible fake pretyping: {} should have 2 columns!".format(mygene))
+            else:
+                for i, col in enumerate(gene_dic[mygene]):
+                    if i == 0:
+                        befunde[col] = target_allele.split("*")[1]
+                    elif i == 1:
+                        if partner_allele:
+                            befunde[col] = partner_allele.split("*")[1]
+                    else:
+                        befunde[col] = ""
+            # generate row for pretyping file:
+            myline = "{},{},DKMS,".format(cell_line, sample_id_int)
             pretypings = [befunde[col] for col in columns]
             myline += ",".join(pretypings) + "\n"
             g.write(myline)
@@ -163,7 +184,7 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
 
 def main(log):
     user = "admin"
-    project = "20190321_ADMIN_MIC_1"
+    project = "20190415_ADMIN_MIC_2"
     
     settings = GUI_login.get_settings(user, log)
     
