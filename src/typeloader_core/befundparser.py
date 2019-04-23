@@ -24,6 +24,7 @@ useGenesList = ["A1","A2","B1","B2","C1","C2" \
                 ,"MICA-1","MICA-2","MICB-1","MICB-2"]
 changeNamesFor = ["DQ","DP","DR"]
 patientIdPos = 0
+patientIdPos_alt = 1
 customerPos = 2
 
 def getOtherAlleles(befundFile):
@@ -53,9 +54,12 @@ def getOtherAlleles(befundFile):
         if not (len(line.strip())): continue
         parts = line.strip().split(delimiter)
         patient = parts[patientIdPos]
+        patient2 = parts[patientIdPos_alt] # alternately, use 2nd column as user-ID
         customer = parts[customerPos]
         customer_dic[patient] = customer
+        customer_dic[patient2] = customer
         befund[patient] = {}
+        befund[patient2] = {}
 
         for pos in usePos:
             befundGeneName = genes[usePos.index(pos)]
@@ -73,8 +77,11 @@ def getOtherAlleles(befundFile):
                 continue
             if geneName in befund[patient]: 
                 befund[patient][geneName].append(parts[pos])
+            elif geneName in befund[patient2]: 
+                befund[patient2][geneName].append(parts[pos])
             else: 
                 befund[patient][geneName] = [parts[pos]]
+                befund[patient2][geneName] = [parts[pos]]
 
     befundHandle.close()
 
