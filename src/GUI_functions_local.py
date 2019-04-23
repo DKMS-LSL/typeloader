@@ -11,12 +11,10 @@ contains TypeLoader functionality designed especially for use at DKMS Life Scien
 '''
 
 # import modules:
-import os
+import os, copy
 from configparser import ConfigParser
-from PyQt5.QtWidgets import QMessageBox
 
 import db_internal, general, typeloader_functions, GUI_login
-from typeloader_core import enaemailparser
 
 #===========================================================
 # parameters:
@@ -74,6 +72,7 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
     log.info("Writing fake ENA file...")
     fake_file_ena = os.path.join(settings["login_dir"], "temp", "fake_ENA_reply.txt")
     data2 = []
+    kir_contained = False
     with open(fake_file_ena, "w") as g:
         for [sample_id_int, cell_line_old, local_name, mygene, target_allele, partner_allele] in data:
             if basis == "local_name":
@@ -93,6 +92,8 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
             g.write('FT                   /{}="{}"\nXX\n'.format(gene_type, mygene))
             g.write("SQ   Sequence 35 BP; 1267 A; 928 C; 1161 G; 880 T; 0 other;\n")
             g.write("     gtgacccact gcttgtttct gtcacaggtg aggaa                                35\n//\n")
+            if mygene.startswith("KIR"):
+                kir_contained = True
     
     # write fake pretyping file:
     log.info("Writing fake pretyping-file...")
@@ -106,6 +107,7 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
         gene_dic[g] = ["{}_1".format(g), "{}_2".format(g)]
     for g in ["AB0", "RHD", "MICA", "MICB", "CMV"]:
         gene_dic[g] = [g]
+    kir_columns = []
     for g in ['KIR2DL1', 'KIR2DL2', 'KIR2DL3', 'KIR2DL4', 'KIR2DL5',
               'KIR2DP1',
               'KIR2DS1', 'KIR2DS2', 'KIR2DS3', 'KIR2DS4', 'KIR2DS5',
@@ -115,13 +117,19 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
         for i in range(1,5):
             l.append('{}-{}'.format(g, i))
         gene_dic[g] = l
+        kir_columns += l
     
     default_dic = {}
+    if kir_contained:
+        columns += kir_columns
     for col in columns:
         if col.startswith("HLA"):
             default_dic[col] = "01:01"
         elif col.startswith("KIR"):
-            default_dic[col] = "001"
+            if col[-1] in ["1", "2"]:
+                default_dic[col] = "001"
+            else:
+                default_dic[col] = ""
         elif col == "AB0":
             default_dic[col] = "A"
         elif col == "RHD":
@@ -134,13 +142,14 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
             default_dic[col] = "A001+A001"
         elif col == "MICB":
             default_dic[col] = "B001+B001"
+            
     
     with open(fake_file_befunde, "w") as g:
         header = "sample_ID,internal_ID,client,{}\n".format(",".join(columns))
         g.write(header)
         
         for (sample_id_int, cell_line, mygene, target_allele, partner_allele) in data2:
-            befunde = default_dic
+            befunde = copy.copy(default_dic)
             # overwrite pretyping of target allele:
             if len(gene_dic[mygene]) == 1:
                 if mygene.startswith("MIC"):
