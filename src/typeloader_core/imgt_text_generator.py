@@ -128,10 +128,13 @@ def make_befund_text(befund, closestAllele, myallele, geneMap, differencesText, 
     alleles = []
     for gene in list(befund.keys()):
         genesystem = gene[:3]
+        length = None
         if genesystem == "HLA":
-            myalleles = [allele.zfill(2) for allele in befund[gene]]
+            length = 2
         elif genesystem in ["KIR", "MIC"]:
-            myalleles = [allele.zfill(3) for allele in befund[gene]]
+            length = 3
+        if length:
+            myalleles = [allele.zfill(length) for allele in befund[gene]]
         else:
             myalleles = befund[gene]
         alleles = ",".join(myalleles)
