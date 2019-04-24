@@ -27,7 +27,7 @@ from __init__ import __version__
 from xml.etree import ElementTree
 from collections import namedtuple
 
-# no .pyw import possibile in linux
+# no .pyw import possible in linux
 # deletion in Test_Clean_Stuff
 shutil.copyfile(os.path.join(mypath_inner, "typeloader_GUI.pyw"), os.path.join(mypath_inner, "typeloader_GUI.py"))
 
@@ -48,6 +48,10 @@ from PyQt5.QtCore import Qt
 
 #===========================================================
 # test parameters:
+
+delete_all_stuff_at_the_end = True # deletes database entries and project directory
+skip_other_tests = False # can be set to True to skip all tests except the one currently worked at (out-comment it there in setUpClass)
+project_name = ""  ## this will be set in create project
 
 samples_dic =  {# samples to test 
                 "sample_1" : { "input" : "1395777_A.fa",
@@ -102,10 +106,6 @@ settings_both = {"reference_dir" : "reference_data_unittest",
                 "ipd_submissions" : "IPD-submissions",
                 }
 
-# deletes database entries and project directory
-delete_all_stuff_at_the_end = True
-skip_other_tests = False # can be set to True to skip all tests except the one currently worked at (out-comment it there in setUpClass)
-
 log = general.start_log(level="DEBUG")
 
 # assemble settings for testing:
@@ -129,7 +129,6 @@ project_pool = str(randint(1,999999))
 project_user = "Staging Account"
 project_title = "This is an optional title information"
 project_desc = "This is an optional description information"
-project_name = ""  ## this will be set in create project
 project_accession = "" ## this will be set in create project
 
 app = QApplication(sys.argv)
@@ -771,7 +770,7 @@ class Test_Send_To_IMGT(unittest.TestCase):
         self.assertEqual(data_content[0][14], "completed") # lab_status
         self.assertEqual(data_content[0][24], samples_dic["sample_1"]["target_allele"]) # target_allele
         self.assertEqual(data_content[0][31], "IPD-KIR") # reference_database
-        self.assertEqual(data_content[0][32], "2.7.1") # database_version
+        self.assertEqual(data_content[0][32], "2.8.0") # database_version
         self.assertEqual(data_content[0][36], data_content_ena[0][1]) # ena_submission_id
         self.assertEqual(data_content[0][38], "LT986596") # ena accession number: LTxxxxxx
         self.assertEqual(data_content[0][39], data_content_ipd[0][0]) # ipd_submission_id
@@ -960,7 +959,7 @@ class Test_Views(unittest.TestCase):
         
         self.assertEqual(model.headerData(36, Qt.Horizontal, Qt.DisplayRole), "ENA Submission ID") # will continually change, therefore not testing content
         self.assertEqual(model.headerData(37, Qt.Horizontal, Qt.DisplayRole), "ENA Acception Date")
-        self.assertEqual(model.data(model.index(0, 37)), "2018-07-10")
+        self.assertEqual(model.data(model.index(0, 37)), "2019-04-24")
         self.assertEqual(model.data(model.index(1, 37)), "")
         self.assertEqual(model.headerData(38, Qt.Horizontal, Qt.DisplayRole), "ENA Accession Nr")
         self.assertEqual(model.data(model.index(0, 38)), "LT986596")
@@ -1317,7 +1316,7 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.headerData(43, Qt.Vertical, Qt.DisplayRole), "Submission successful?")
             self.assertEqual(model.data(model.index(43, 0), Qt.DisplayRole), "yes")
             self.assertEqual(model.headerData(44, Qt.Vertical, Qt.DisplayRole), "ENA Acception Date")
-            self.assertEqual(model.data(model.index(44, 0), Qt.DisplayRole), "2018-07-10")
+            self.assertEqual(model.data(model.index(44, 0), Qt.DisplayRole), "2019-04-24")
             self.assertEqual(model.headerData(45, Qt.Vertical, Qt.DisplayRole), "ENA Accession Nr")
             self.assertEqual(model.data(model.index(45, 0), Qt.DisplayRole), "LT986596")
 
@@ -1785,6 +1784,90 @@ class Test_null_alleles(unittest.TestCase):
             self.assertEqual(len(result["added_sings"]), 0)
             self.assertEqual(len(result["deleted_sings"]), 0)              
  
+
+class Test_MIC(unittest.TestCase):
+    """ 
+    Test correct handling of MIC alleles
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping Test_MIC because skip_other_tests is set to True")
+        else:
+            self.sample_id_int = "MIC001"
+            self.local_name = "DKMS-LSL_MIC001_MICA_1"
+            self.fasta_name = "MICA_001-7.fa"
+            self.target_allele = "MICA*001:new"
+            self.partner_allele = ""
+            self.gene = "MICA"
+            
+            self.data_dir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "MIC") # input and reference files
+            raw_path = os.path.join(self.data_dir, self.fasta_name)
+            self.ena_reply_file = os.path.join(self.data_dir, "fake_ENA_reply.txt")
+            self.pretypings = os.path.join(self.data_dir, "fake_befunde.csv")
+            self.ref_ipd_file = os.path.join(self.data_dir, "DKMS10005555.txt")
+            
+            self.output_dir = os.path.join(curr_settings["projects_dir"], project_name, self.sample_id_int)
+            self.xml_file = "{}.blast.xml".format(self.local_name)
+            self.ena_file = "{}.ena.txt".format(self.local_name)
+            
+            typeloader_functions.delete_sample(self.sample_id_int, 1, project_name, curr_settings, log)
+            success, msg = typeloader_functions.upload_new_allele_complete(project_name, self.sample_id_int, "test", raw_path, 
+                                                                            "DKMS", curr_settings, mydb, log, incomplete_ok = True)
+            self.assertTrue(success, msg)
+            
+    @classmethod
+    def tearDownClass(self):
+        pass
+            
+    def test_file_uploaded_ok(self):    
+        """tests if MIC file was uploaded successfully and the right data is in the database
+        """
+        query = """select project_name, local_name, gene, target_allele, null_allele 
+        from alleles where sample_id_int = '{}'""".format(self.sample_id_int)
+        success, data = execute_db_query(query, 5, log, "Get data from ALLELES", "Successful select from {}", "Can't get rows from {}", 
+                                "ALLELES")
+        self.assertTrue(success)
+        [[myproject, local_name, gene, target_allele, null_allele]] = data
+        self.assertEqual(myproject, project_name)
+        self.assertEqual(local_name, self.local_name)
+        self.assertEqual(gene, "MICA")
+        self.assertEqual(target_allele, "MICA*001:new")
+        self.assertEqual(null_allele, "yes")
+        
+    def test_IPD_file_ok(self):
+        """tests whether IPD file can be generated and is correct
+        """ 
+        self.start_num = "5555"
+        self.IPD_filename = "DKMS1000" + self.start_num
+        self.samples = [(self.sample_id_int, self.local_name, self.IPD_filename)] 
+        self.file_dic = {self.local_name : {"blast_xml" : self.xml_file,
+                                            "ena_file" : self.ena_file}}
+        self.ENA_id_map, self.ENA_gene_map = MIF.parse_email(self.ena_reply_file)
+        self.allele_dic = {self.local_name: 
+                           TargetAllele(self.gene, 
+                                        target_allele=self.target_allele, 
+                                        partner_allele=self.partner_allele)
+                           }
+             
+        results = MIF.write_imgt_files(os.path.dirname(self.output_dir), 
+                                       self.samples, self.file_dic, self.allele_dic, self.ENA_id_map, 
+                                       self.ENA_gene_map, self.pretypings, self.start_num, 
+                                       self.output_dir, curr_settings, log)
+          
+        (_, cell_lines, _, _, _, success, error) = results
+        self.assertEqual(cell_lines[self.local_name], self.IPD_filename)
+        self.assertTrue(success)
+        self.assertEqual(error, None)
+
+        ipd_submission_file = os.path.join(self.output_dir, self.IPD_filename + ".txt")
+        log.debug("  IPD submission file: {}".format(ipd_submission_file))
+        self.assertTrue(os.path.exists(ipd_submission_file))
+                
+        diff = compare_2_files(ipd_submission_file, self.ref_ipd_file)
+        self.assertEqual(len(diff["added_sings"]), 0)
+        self.assertEqual(len(diff["deleted_sings"]), 0)
+  
 
 class Test_multiple_novel_alleles_part1(unittest.TestCase):
     """ 
