@@ -46,6 +46,7 @@ Here are some useful entry points
 * [=> Database tables](tables.md)
 * [=> Internal data structure](data_structure.md)
 * [=> Database Recovery and Logs](recovery_logs.md)
+* [=> Citing TypeLoader](citations.md)
 
 ## Development
 TypeLoader is still under active development. We enthusiastically welcome your contributions and feedback! (Ideally, create an issue or a merge request.)
