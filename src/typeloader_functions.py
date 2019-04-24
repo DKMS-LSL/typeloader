@@ -24,7 +24,6 @@ import general, db_internal
 # parameters:
 
 from __init__ import __version__
-#from src.typeloader_core.errors import IncompleteSequenceError
 
 flatfile_dic = {"function_hla" : "antigen presenting molecule",
                 "function_kir" : "killer-immunoglobulin receptor",
@@ -578,6 +577,7 @@ def upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_p
                                                      header_data, targetFamily,
                                                      ena_path, settings, mydb, log)
     if success:
+        log.debug("Allele uploaded successfully")
         return True, myallele.local_name
     else:
         return False, "{}: {}".format(err_type, msg)
@@ -695,11 +695,21 @@ pass
 
 def main(settings, log, mydb):
     project = "20190321_ADMIN_MIC_1"
+#     project = "20190423_STG_MIC_1"
 #     delete_all_samples_from_project(project, settings, log)
 #     csv_file = r"Y:\Projects\typeloader\staging\data_unittest\MIC\bulk_upload_MIC_ok.csv"
-    csv_file = r"Y:\Projects\typeloader\staging\data_unittest\annotation_positions\bulk_upload_annotations.csv"
-    report, errors_found = bulk_upload_new_alleles(csv_file, project, settings, mydb, log)
-    print(report)
+#     csv_file = r"Y:\Projects\typeloader\staging\data_unittest\annotation_positions\bulk_upload_annotations.csv"
+#     report, errors_found = bulk_upload_new_alleles(csv_file, project, settings, mydb, log)
+#     print(report)
+
+    myfile = r"\\nasdd11\bioinf\Projects\typeloader\staging\data_unittest\null_allele\DKMS-LSL-KIR2DL5-39.fa"
+    sample_id_int = "1"
+    success, msg = upload_new_allele_complete(project, sample_id_int, "test", myfile, "DKMS", 
+                                                  settings, mydb, log, incomplete_ok = True)
+    if not success:
+        print("Not successful!", msg)
+#     else:
+#         delete_sample(sample_id_int, 1, project, settings, log)
 
 #     mydir = r"Y:\Projects\typeloader\staging\data_unittest\annotation_positions"
 #     for (sample_id_int, filename) in [("HLA-A-6", "HLA-A_01-6.fa")]:
