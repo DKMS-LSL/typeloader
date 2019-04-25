@@ -340,7 +340,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.label_width = 150
         super().__init__(parent)
         
-        self.resize(1150,500)
+        self.resize(1250,500)
         self.setWindowTitle("Submit alleles to IPD")
         self.setWindowIcon(QIcon(general.favicon))
         self.samples = []
@@ -861,7 +861,7 @@ if __name__ == '__main__':
     settings_dic = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, settings_dic["db_file"])
     
-    project = "20190423_ADMIN_mixed_test"
+    project = "20190425_ADMIN_mixed_X"
     app = QApplication(sys.argv)
      
 #     problem_dic = {'DKMS10004135': ['ID13178800', 'DKMS-LSL_ID13178800_DPB1_1', TargetAllele(gene='HLA-DPB1', target_allele='HLA-DPB1*03:new', partner_allele='HLA-DPB1*13:01:01:01 or 02:01:02:01'), ['13:new', '04:new']]}
