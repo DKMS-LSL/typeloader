@@ -145,11 +145,17 @@ def make_befund_text(befund, closestAllele, myallele, geneMap, differencesText, 
                 log.warning("Invalid Pretyping: pretyping for target locus should not contain POS. Please adjust pretyping file!")
                 raise InvalidPretypingError(myallele, myalleles, self_name, gene, "POS is not acceptable pretyping for a target locus")
                 return
-            if self_name not in mystring:
-                log.warning("Invalid Pretyping: allele_name '{}:new' not found in pretyping for target locus. Please adjust pretyping file!".format(self_name))
-                raise InvalidPretypingError(myallele, myalleles, self_name, gene, "assigned allele name not found in pretyping")
-                return
-            if differencesText != "CC   Confirmation": # confirmations should not be labelled "new"!
+            if differencesText == "CC   Confirmation": # confirmations should not be labeled "new"!
+                if self_name not in mystring:
+                    log.warning("Invalid Pretyping: allele_name '{}' not found in pretyping for target locus. Please adjust pretyping file!".format(self_name))
+                    raise InvalidPretypingError(myallele, myalleles, self_name, gene, "assigned allele name not found in pretyping")
+                    return
+            else:
+                if self_name not in mystring:
+                    log.warning("Invalid Pretyping: allele_name '{}:new' not found in pretyping for target locus. Please adjust pretyping file!".format(self_name))
+                    raise InvalidPretypingError(myallele, myalleles, self_name, gene, "assigned allele name not found in pretyping")
+                    return
+            
                 i = mystring.count("new") + mystring.count("xxx")
                 if i == 0:
                     raise InvalidPretypingError(myallele, myalleles, self_name, gene, "no allele marked as new in pretyping")
