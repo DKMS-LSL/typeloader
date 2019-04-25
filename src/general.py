@@ -101,7 +101,7 @@ else:
 # for fasta header
 header_translation_dic = {"locus" : "GENE",
                           "LIMS_DONOR_ID" : "SAMPLE_ID_INT",
-                          "Spendernummer" : "SAMPLE_ID_EXT",
+                          "SAMPLE_ID_EXT" : "Spendernummer",
                           "notes" : "comment",
                           "short_read_data" : "sr_data",
                           "short_read_type" : "sr_tech",
