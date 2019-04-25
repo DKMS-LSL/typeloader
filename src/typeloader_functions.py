@@ -12,7 +12,7 @@ contains calls to TypeLoader_core and handling thereof
 '''
 
 # import modules:
-import sys, os, shutil
+import os, shutil
 import string, random
 from collections import defaultdict
 
@@ -127,11 +127,14 @@ def upload_parse_sequence_file(raw_path, settings, log):
     
     (blastXmlFile, targetFamily, fasta_filename, allelesFilename, header_data, xml_data_dic) = results
      
+    sample_name = None
     if header_data:
-        sample_name = header_data["LIMS_DONOR_ID"]
-    else: 
-        sample_name = None
-        
+        for key in ["SAMPLE_ID_INT", "LIMS-DONOR_ID"]:
+            if key in header_data:
+                if header_data[key]:
+                    sample_name = header_data[key]
+                    continue
+                        
     for key in xml_data_dic:
         header_data[key] = xml_data_dic[key]
     
