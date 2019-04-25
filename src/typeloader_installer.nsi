@@ -133,6 +133,7 @@ Function settingsPage0Leave
         Pop $UPDATING
 
         CreateDirectory "$TL_PATH\_general"
+        CreateDirectory "$TL_PATH\_general\sample_files"
 
 FunctionEnd
 
@@ -306,6 +307,14 @@ ShowInstDetails show
 ShowUnInstDetails show
 
 Section "MainSection" SEC01
+  SetOutPath "$TL_PATH\_general\sample_files"
+  SetOverwrite try
+  File "build\sample_files\HLA-A_01-01-01-01.fa"
+  File "build\sample_files\KIR2DL1_0020101.fa"
+  File "build\sample_files\KIR2DL4_0010201.fa"
+  File "build\sample_files\MICA_001.fa"
+  File "build\sample_files\fake_ENA_reply.fa"
+  File "build\sample_files\pretypings_example.csv"
   SetOutPath "$INSTDIR"
   SetOverwrite try
   File "build\exe.win32-3.6\TypeLoader.exe"

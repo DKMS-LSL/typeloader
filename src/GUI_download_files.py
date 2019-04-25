@@ -12,7 +12,7 @@ from shutil import copyfile
 import general
 
 from __init__ import __version__
-from PyQt5.Qt import QPushButton
+from PyQt5.Qt import QPushButton, QMessageBox
 
 
 #===========================================================
@@ -93,11 +93,18 @@ class ExampleFileDialog(QDialog):
         (designator, filename) = self.btn_dic[self.sender()]
         self.log.info("Downloading example {} file...".format(designator))
         myfile = os.path.join("sample_files", filename)
-        suggested_path = os.path.join(self.settings["default_saving_dir"], myfile)
-        chosen_path = QFileDialog.getSaveFileName(self, "Download example {} file...".format(designator), suggested_path)[0]
-        if chosen_path:
-            copyfile(myfile, chosen_path)
-            self.log.info("\tDownload successful!")
+        if not os.path.exists(myfile):
+            myfile = os.path.join(self.settings["root_path"], "_general", "sample_files", filename)
+        if os.path.exists(myfile):
+            suggested_path = os.path.join(self.settings["default_saving_dir"], myfile)
+            chosen_path = QFileDialog.getSaveFileName(self, "Download example {} file...".format(designator), suggested_path)[0]
+            if chosen_path:
+                copyfile(myfile, chosen_path)
+                self.log.info("\tDownload successful!")
+        else:
+            self.log.error("File not found: {}".format(myfile))
+            QMessageBox.warning(self, "File not found", "Sorry, I could not find the file: \n{}".format(myfile))
+            self.log.info("\tDownload aborted. :(")
 pass
 #===========================================================
 # functions:
