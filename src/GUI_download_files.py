@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from PyQt5.QtWidgets import (QDialog, QFileDialog, QVBoxLayout, 
+from PyQt5.QtWidgets import (QDialog, QFileDialog, QFormLayout,
                              QLabel, QApplication)
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtGui import QIcon
@@ -35,33 +35,69 @@ class ExampleFileDialog(QDialog):
     def init_UI(self):
         """establish and fill the UI
         """
-        layout = QVBoxLayout(self)
+        layout = QFormLayout(self)
         self.setLayout(layout)
+        self.btn_dic = {}
         
-        lbl = QLabel("Download example files")
-        lbl.setStyleSheet(general.label_style_2nd)
-        layout.addWidget(lbl)
+        # sequence files:
+        seq_lbl = QLabel("Example sequence files:")
+        seq_lbl.setStyleSheet(general.label_style_2nd)
+        layout.addRow(seq_lbl)
         
-        ipd_lbl = QLabel("For IPD submission:")
-        ipd_lbl.setStyleSheet(general.label_style_normal)
-        layout.addWidget(ipd_lbl)
+        seq_HLA_btn = QPushButton("Download!", self)
+        self.btn_dic[seq_HLA_btn] = ("HLA-A", "HLA-A_01-01-01-01.fa")
+        seq_HLA_btn.clicked.connect(self.download_file)
+        HLA_msg = "Click here to download an example fasta file for an existing HLA-A allele. It can be used as Input for New Sequence."
+        seq_HLA_btn.setWhatsThis(HLA_msg)
+        layout.addRow(QLabel("HLA-A example:"), seq_HLA_btn)
         
-        pretypings_btn = QPushButton("Pretypings File", self)
-        pretypings_btn.clicked.connect(self.download_pretypings)
-        pretypings_btn.setWhatsThis("This file contains a list of previously identified alleles for all loci for each sample to be submitted to IPD")
-        layout.addWidget(pretypings_btn)
+        seq_KIR1_btn = QPushButton("Download!", self)
+        self.btn_dic[seq_KIR1_btn] = ("KIR2DL1", "KIR2DL1_0020101.fa")
+        seq_KIR1_btn.clicked.connect(self.download_file)
+        seq_KIR1_btn.setWhatsThis("This is an example fasta file for an existing KIR2DL1 allele. It can be used as Input for New Sequence.")
+        layout.addRow(QLabel("KIR example 1 (KIR2DL1 contains a pseudoexon):"), seq_KIR1_btn)
+        
+        seq_KIR2_btn = QPushButton("Download!", self)
+        self.btn_dic[seq_KIR2_btn] = ("KIR2DL4", "KIR2DL4_0010201.fa")
+        seq_KIR2_btn.clicked.connect(self.download_file)
+        seq_KIR2_btn.setWhatsThis("This is an example fasta file for an existing KIR2DL4 allele. It can be used as Input for New Sequence.")
+        layout.addRow(QLabel("KIR example 2 (KIR2DL4 contains a deleted exon):"), seq_KIR2_btn)
+        
+        seq_MICA_btn = QPushButton("Download!", self)
+        self.btn_dic[seq_MICA_btn] = ("MICA", "MICA_001.fa")
+        seq_MICA_btn.clicked.connect(self.download_file)
+        seq_MICA_btn.setWhatsThis("This is an example fasta file for an existing MICA allele. It can be used as Input for New Sequence.")
+        layout.addRow(QLabel("MICA example:"), seq_MICA_btn)
+        
+        # IPD submission input files:
+        ipd_lbl = QLabel("Example input files for IPD submission:")
+        ipd_lbl.setStyleSheet(general.label_style_2nd)
+        layout.addRow(ipd_lbl)
+        
+        ENA_reply_btn = QPushButton("Download!", self)
+        self.btn_dic[ENA_reply_btn] = ("ENA reply", "fake_ENA_reply.txt")
+        ENA_reply_btn.clicked.connect(self.download_file)
+        ENA_reply_btn.setWhatsThis("This file is a truncated version of the file sent by ENA after ID assignment. It can be used as input for IPD file creation of the example sequences.")
+        layout.addRow(QLabel("ENA reply file:"), ENA_reply_btn)
+        
+        pretypings_btn = QPushButton("Download!", self)
+        self.btn_dic[pretypings_btn] = ("pretypings", "pretypings_example.csv")
+        pretypings_btn.clicked.connect(self.download_file)
+        pretypings_btn.setWhatsThis("This file contains a list of previously identified alleles for all loci for each sample to be submitted to IPD. It can be used as input for IPD file creation of the example sequences.")
+        layout.addRow(QLabel("Pretypings file:"), pretypings_btn)
         
     @pyqtSlot()
-    def download_pretypings(self):
-        """download example pretypings file
+    def download_file(self):
+        """downloads the example file corresponding to the sending button from TypeLoader
         """
-        self.log.debug("Downloading example pretypings file...")
-        myfile = os.path.join("sample_files", "pretypings_example.csv")
+        (designator, filename) = self.btn_dic[self.sender()]
+        self.log.info("Downloading example {} file...".format(designator))
+        myfile = os.path.join("sample_files", filename)
         suggested_path = os.path.join(self.settings["default_saving_dir"], myfile)
-        chosen_path = QFileDialog.getSaveFileName(self, "Download example pretypings file...", suggested_path)[0]
+        chosen_path = QFileDialog.getSaveFileName(self, "Download example {} file...".format(designator), suggested_path)[0]
         if chosen_path:
             copyfile(myfile, chosen_path)
-        
+            self.log.info("\tDownload successful!")
 pass
 #===========================================================
 # functions:
@@ -92,8 +128,7 @@ def main():
     sys.excepthook = log_uncaught_exceptions
     
     ex = ExampleFileDialog(settings_dic, log)
-#     ex = PasswordEditor(settings_dic, log)
-    ex.show()#Maximized()
+    ex.show()
     result = app.exec_()
     
     log.info("<End>")
