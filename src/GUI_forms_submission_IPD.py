@@ -617,28 +617,6 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.log.debug("Caught mapping between {} allele names and their addiditonal info".format(len(allele_dic)))
         self.allele_dic = allele_dic # format: {local_name : TargetAllele}
         
-    def handle_multiple_novel_alleles(self, problem_dic):
-        """if multiple novel alleles were found for the target locus
-        """
-        self.log.info("Found multiple novel alleles for target locus in {} samples".format(len(problem_dic)))
-        self.multi_dialog = BothAllelesNovelDialog(problem_dic, self.settings, self.log)
-        self.multi_dialog.updated.connect(self.reattempt_make_IPD_files)
-        self.multi_dialog.exec_()
-        self.multis_handled = True
-    
-    def handle_invalid_pretyings(self, problem_dic):
-        """if invalid pretypings were found for the target locus
-        """
-        self.log.info("Found invalid pretypings in {} samples".format(len(problem_dic)))
-        dialog = InvalidPretypingsDialog(problem_dic, self.settings, self.log)
-        dialog.ok.connect(self.close)
-        dialog.exec_()
-    
-    def reattempt_make_IPD_files(self):
-        self.log.info("Re-attempting IPD file creation...")
-        self.refresh_section3(keep_choices = True)
-        self.make_IPD_files()
-                
     @pyqtSlot()
     def make_IPD_files(self):
         """tell typeloader to create the IPD file
@@ -715,7 +693,30 @@ class IPDSubmissionForm(CollapsibleDialog):
         else:
             self.log.error("No IPD-File created!")
             QMessageBox.warning(self, "IPD file creation error", "Creation of the IPD zip file was not successful")
-            
+
+
+    def handle_multiple_novel_alleles(self, problem_dic):
+        """if multiple novel alleles were found for the target locus
+        """
+        self.log.info("Found multiple novel alleles for target locus in {} samples".format(len(problem_dic)))
+        self.multi_dialog = BothAllelesNovelDialog(problem_dic, self.settings, self.log)
+        self.multi_dialog.updated.connect(self.reattempt_make_IPD_files)
+        self.multi_dialog.exec_()
+        self.multis_handled = True
+    
+    def handle_invalid_pretyings(self, problem_dic):
+        """if invalid pretypings were found for the target locus
+        """
+        self.log.info("Found invalid pretypings in {} samples".format(len(problem_dic)))
+        dialog = InvalidPretypingsDialog(problem_dic, self.settings, self.log)
+        dialog.ok.connect(self.close)
+        dialog.exec_()
+    
+    def reattempt_make_IPD_files(self):
+        self.log.info("Re-attempting IPD file creation...")
+        self.refresh_section3(keep_choices = True)
+        self.make_IPD_files()
+                            
     @pyqtSlot(int)
     def proceed_to4(self):
         """proceed to next section
