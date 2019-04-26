@@ -15,13 +15,13 @@ else:
     from . import hla_embl_parser
 
 remote_db_path = { \
-            "hla_path" : "https://github.com/ANHIG/IMGTHLA/raw/Latest/hla.dat", \
-            "kir_path" : "https://github.com/ANHIG/IPDKIR/raw/Latest/KIR.dat" \
+            "hla_path" : "https://github.com/DKMS-LSL/IMGTHLA/raw/Latest/hla.dat", \
+            "kir_path" : "https://github.com/DKMS-LSL/IPDKIR/raw/Latest/KIR.dat" \
             }
 
 remote_checksumfile_index = { \
-            "kir_checksums_file" : "https://raw.githubusercontent.com/ANHIG/IPDKIR/Latest/md5checksum.txt", \
-            "hla_checksums_file" : "https://raw.githubusercontent.com/ANHIG/IMGTHLA/Latest/md5checksum.txt" \
+            "kir_checksums_file" : "https://raw.githubusercontent.com/DKMS-LSL/IPDKIR/Latest/md5checksum.txt", \
+            "hla_checksums_file" : "https://raw.githubusercontent.com/DKMS-LSL/IMGTHLA/Latest/md5checksum.txt" \
             }
 
 
