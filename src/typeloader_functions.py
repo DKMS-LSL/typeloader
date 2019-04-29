@@ -113,6 +113,9 @@ def upload_parse_sequence_file(raw_path, settings, log):
     # save uploaded file to temp dir:
     try:
         temp_raw_file = os.path.join(settings["temp_dir"], os.path.basename(raw_path))
+        if filetype == "FASTA":
+            if extension != ".fa":
+                temp_raw_file = os.path.splitext(temp_raw_file)[0] + ".fa"
         log.info("Saving file to {}".format(temp_raw_file))
         shutil.copyfile(raw_path, temp_raw_file)
         log.info("\t=> Done!")
@@ -705,31 +708,15 @@ def main(settings, log, mydb):
 #     report, errors_found = bulk_upload_new_alleles(csv_file, project, settings, mydb, log)
 #     print(report)
 
-    myfile = r"\\nasdd11\bioinf\Projects\typeloader\staging\data_unittest\null_allele\DKMS-LSL-KIR2DL5-39.fa"
+    myfile = r"\\labor.local\system\users\schoene\Desktop\TypeLoader_test_data\HLA\HLA-A_01-1.fasta"
     sample_id_int = "1"
     success, msg = upload_new_allele_complete(project, sample_id_int, "test", myfile, "DKMS", 
                                                   settings, mydb, log, incomplete_ok = True)
     if not success:
         print("Not successful!", msg)
-#     else:
-#         delete_sample(sample_id_int, 1, project, settings, log)
+    else:
+        delete_sample(sample_id_int, 1, project, settings, log)
 
-#     mydir = r"Y:\Projects\typeloader\staging\data_unittest\annotation_positions"
-#     for (sample_id_int, filename) in [("HLA-A-6", "HLA-A_01-6.fa")]:
-# #         sample_id_int = "{}-{}".format(nr, item)
-#         try:
-#             delete_sample(sample_id_int, 1, project, settings, log)
-#         except:
-#             log.info("Could not delete")
-#               
-#         raw_path = os.path.join(mydir, filename)
-#         sample_id_ext = "DEDKM" + id_generator()
-#         success, msg = upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, "DKMS", 
-#                                                   settings, mydb, log, incomplete_ok = True)
-#         if not success:
-#             print("Not successful!", msg)
-# #         else:
-# #             delete_sample(sample_id_int, 1, project, settings, log)
     
 
 if __name__ == "__main__":
