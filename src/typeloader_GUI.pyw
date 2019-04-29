@@ -537,7 +537,7 @@ def remove_lock(settings_dic, log):
     if settings_dic:
         log.debug("Removing lock...")
         try:
-            lockfile = os.path.join(settings_dic["login_dir"], ".locked")
+            lockfile = os.path.join(settings_dic["login_dir"], "_locked")
         except Exception as E:
             log.info("\tCannot find lockfile: {}".format(repr(E)))
         try:

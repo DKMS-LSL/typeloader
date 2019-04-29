@@ -282,7 +282,7 @@ class LoginForm(QDialog):
             else:
                 self.root_path = cf.get("Paths", "staging_path_linux")
         self.user_dir = os.path.join(self.root_path, self.login)
-        self.lockfile = os.path.join(self.user_dir, ".locked")
+        self.lockfile = os.path.join(self.user_dir, "_locked")
         if os.path.isfile(self.lockfile):
             msg = "This login is currently used by someone else!"
             self.log.warning(msg)
@@ -315,7 +315,6 @@ class LoginForm(QDialog):
                                                                 QMessageBox.No, QMessageBox.Yes)
                 if reply == QMessageBox.Yes:
                     self.log.info("Removing lock from user '{}'...".format(self.login))
-                    os.remove(self.lockfile)
                     self.accept()
                 else:
                     self.log.info("Not removing lock.")
@@ -484,7 +483,9 @@ def create_user_space(root_path, user, user_name, short_name, email, address, lo
         os.makedirs(settings_dic["projects_dir"])
         os.makedirs(settings_dic["temp_dir"])
         os.makedirs(settings_dic["recovery_dir"])
-        lockfile = os.path.join(settings_dic["login_dir"], ".locked")
+        lockfile = os.path.join(settings_dic["login_dir"], "_locked")
+        if os.path.exists(lockfile):
+            log.warning("Lockfile {} already exists! This should not be!".format(lockfile))
         with open(lockfile, "w") as _:
             os.utime(lockfile)
             

@@ -383,7 +383,7 @@ def execute_query_sqlite(query, db_file, log, cursor = None):
 def make_clean_db(db_file, log):
     """fills db_file with all necessary tables (empty)
     """
-    log.info("Creating empty tables for new user...")
+    log.info("Creating empty database for new user under {}...".format(db_file))
     conn, cursor = open_connection(db_file, log)
     
     tables = ["alleles", "samples", "projects", "files",
@@ -393,6 +393,7 @@ def make_clean_db(db_file, log):
     conn.commit()
     cursor.close()
     conn.close()
+    log.info("\t=> Success!")
     
     
 def show_table(table, cursor, log):
