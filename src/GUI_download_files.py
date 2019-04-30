@@ -64,7 +64,7 @@ class ExampleFileDialog(QDialog):
         layout.addRow(QLabel("KIR example 2 (KIR2DL4 contains a deleted exon):"), seq_KIR2_btn)
         
         seq_MICA_btn = QPushButton("Download!", self)
-        self.btn_dic[seq_MICA_btn] = ("MICA", "MICA_001.fa")
+        self.btn_dic[seq_MICA_btn] = ("MICA", "MICA_002_01.fa")
         seq_MICA_btn.clicked.connect(self.download_file)
         seq_MICA_btn.setWhatsThis("This is an example fasta file for an existing MICA allele. It can be used as Input for New Sequence.")
         layout.addRow(QLabel("MICA example:"), seq_MICA_btn)
