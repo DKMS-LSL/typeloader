@@ -124,7 +124,14 @@ def upload_parse_sequence_file(raw_path, settings, log):
         return False, "Could not save file", "An error occurred during upload of '{}'. Please try again!\n\n{}".format(raw_path, repr(E))
     
     # read file:
-    results = GASB.blastRawSeqs(temp_raw_file, filetype, settings, log)
+    try:
+        results = GASB.blastRawSeqs(temp_raw_file, filetype, settings, log)
+    except ValueError as E:
+        msg = E.args[0]
+        if msg.startswith("Fasta"):
+            return False, "Invalid FASTA file format", msg
+        else:
+            return False, "Problem with the FASTA file", msg
     if results[0] == False: # something went wrong
         return results
     
@@ -708,7 +715,7 @@ def main(settings, log, mydb):
 #     report, errors_found = bulk_upload_new_alleles(csv_file, project, settings, mydb, log)
 #     print(report)
 
-    myfile = r"\\labor.local\system\users\schoene\Desktop\TypeLoader_test_data\HLA\HLA-A_01-1.fasta"
+    myfile = r"\\labor.local\system\users\schoene\Desktop\TypeLoader_test_data\HLA\HLA-A_01-1_broken2.fasta"
     sample_id_int = "1"
     success, msg = upload_new_allele_complete(project, sample_id_int, "test", myfile, "DKMS", 
                                                   settings, mydb, log, incomplete_ok = True)

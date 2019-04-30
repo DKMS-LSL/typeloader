@@ -17,11 +17,33 @@ import gzip
 import pycurl
 import re
 
+def check_fasta_valid(fasta):
+    """checks whether the file opened as fasta conforms to basic fasta format
+    """
+    line1 = next(fasta)
+    if not line1.startswith(">"):
+        raise ValueError("FASTA files should have a header starting with >")
+    if len(line1.strip()) < 2:
+        raise ValueError("This input FASTA file has an empty header! Please put something after the '>'!")
+    try:
+        line2ok = True
+        line2 = next(fasta)
+        if not line2.strip():
+            line2ok = False
+        if line2[0].upper() not in ["A", "T", "G", "C", "N"]:
+            line2ok = False
+    except StopIteration:
+        line2ok = False
+    if not line2ok:
+        raise ValueError("FASTA files must contain a valid nucleotide sequence after the header!")
+    fasta.seek(0)
+
 def fasta_generator(fasta_file):
     """reads a fasta file,
     returns the header and sequence of the first entry
     """
     with open(fasta_file) as fasta:
+        check_fasta_valid(fasta)
         # groupby(data to group, function for grouping)
         tupple_out = (x[1] for x in groupby(fasta, lambda line: line[0] == ">"))
         for header in tupple_out:
