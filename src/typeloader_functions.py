@@ -29,8 +29,10 @@ flatfile_dic = {"function_hla" : "antigen presenting molecule",
                 "function_kir" : "killer-immunoglobulin receptor",
                 "productname_hla_i" : "MHC class I antigen",
                 "productname_hla_ii" : "MHC class II antigen",
+                "productname_mic" : "MHC Class I chain-related gene",
                 "productname_hla_i_null" : "MHC class I antigen null allele",
                 "productname_hla_ii_null" : "MHC class II antigen null allele",
+                "productname_mic_null" : "MHC Class I chain-related gene null allele",
                 "productname_kir_long" : "Human Killer-cell Immunoglobulin-like Receptor",
                 "productname_kir_short" : "Killer-cell Immunoglobulin-like Receptor",
                 "species" : "Homo sapiens"}
@@ -206,6 +208,8 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
             for geneName in geneNames:
                 if geneName.startswith("D"):
                     products.append(flatfile_dic["productname_hla_ii"])
+                elif geneName.startswith("MIC"):
+                    products.append(flatfile_dic["productname_mic"])
                 else:
                     products.append(flatfile_dic["productname_hla_i"])
             
@@ -271,6 +275,9 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                     if geneName_short.startswith("D"):
                         productName_FT = productName_DE = (flatfile_dic["productname_hla_ii"]) \
                             if null_allele == False else (flatfile_dic["productname_hla_ii_null"]) # class 2 gene
+                    elif geneName_short.startswith("MIC"):
+                        productName_FT = productName_DE = (flatfile_dic["productname_mic"]) \
+                            if null_allele == False else (flatfile_dic["productname_mic_null"]) # MIC
                     else:
                         productName_FT = productName_DE = (flatfile_dic["productname_hla_i"]) \
                             if null_allele == False else (flatfile_dic["productname_hla_i_null"]) # class 1 gene
