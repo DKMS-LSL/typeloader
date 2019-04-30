@@ -326,7 +326,6 @@ class Test_Create_New_Allele(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(curr_settings["projects_dir"], self.project_name, samples_dic["sample_1"]["id_int"], samples_dic["sample_1"]["curr_fasta_file"])))
         self.assertTrue(os.path.exists(os.path.join(curr_settings["projects_dir"], self.project_name, samples_dic["sample_1"]["id_int"], samples_dic["sample_1"]["curr_blast_file"])))
      
-    #@unittest.skip("skipping test_fasta_file")          
     def test_xml_file(self):
         """
         Create ENA flatfile from xml
@@ -493,7 +492,50 @@ class Test_Create_New_Allele(unittest.TestCase):
         # sample_2: xml
         self.assertEqual(data_content[1][0], samples_dic["sample_2"]["id_int"]) # sample_id_in
         self.assertEqual(data_content[1][1], samples_dic["sample_2"]["id_ext"]) # sample_id_ext        
+    
+    
+class Test_Reject_Invalid_Fastas(unittest.TestCase):
+    """ tests whether FASTA files with invalid format are rejected correctly
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping Test_Reject_Invalid_Fastas because skip_other_tests is set to True")
+        else:
+            self.project_name = project_name
+            self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "new_allele_fasta")
+                      
+    @classmethod
+    def tearDownClass(self):
+        pass
         
+    def test_fasta_rejected_no_header(self):
+        """reject FASTA file without header
+        """
+        myfile = os.path.join(self.mydir, "invalid1_noHeader.fasta")
+        success, msg = typeloader_functions.upload_new_allele_complete(self.project_name, "X", "test", myfile, 
+                                                                       "DKMS", curr_settings, mydb, log)
+        self.assertFalse(success)
+        self.assertEqual(msg, "Problem with the FASTA file: FASTA files should have a header starting with >")
+        
+    def test_fasta_rejected_no_sequence(self):
+        """reject FASTA file without sequence
+        """
+        myfile = os.path.join(self.mydir, "invalid2_noSeq.fasta")
+        success, msg = typeloader_functions.upload_new_allele_complete(self.project_name, "X", "test", myfile, 
+                                                                       "DKMS", curr_settings, mydb, log)
+        self.assertFalse(success)
+        self.assertEqual(msg, "Problem with the FASTA file: FASTA files must contain a valid nucleotide sequence after the header!")
+
+    def test_fasta_rejected_empty_header(self):
+        """reject FASTA file with empty header
+        """
+        myfile = os.path.join(self.mydir, "invalid3_emptyHeader.fasta")
+        success, msg = typeloader_functions.upload_new_allele_complete(self.project_name, "X", "test", myfile, 
+                                                                       "DKMS", curr_settings, mydb, log)
+        self.assertFalse(success)
+        self.assertEqual(msg, "Problem with the FASTA file: This input FASTA file has an empty header! Please put something after the '>'!")
+
 
 class Test_Send_To_ENA(unittest.TestCase):
     """ 
@@ -1811,7 +1853,6 @@ class Test_MIC(unittest.TestCase):
             self.xml_file = "{}.blast.xml".format(self.local_name)
             self.ena_file = "{}.ena.txt".format(self.local_name)
             
-            typeloader_functions.delete_sample(self.sample_id_int, 1, project_name, curr_settings, log)
             success, msg = typeloader_functions.upload_new_allele_complete(project_name, self.sample_id_int, "test", raw_path, 
                                                                             "DKMS", curr_settings, mydb, log, incomplete_ok = True)
             self.assertTrue(success, msg)
