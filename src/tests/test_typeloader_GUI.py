@@ -1864,7 +1864,7 @@ class Test_MIC(unittest.TestCase):
         log.debug("  IPD submission file: {}".format(ipd_submission_file))
         self.assertTrue(os.path.exists(ipd_submission_file))
                 
-        diff = compare_2_files(ipd_submission_file, self.ref_ipd_file)
+        diff = compare_2_files(ipd_submission_file, self.ref_ipd_file, filetype="IPD")
         self.assertEqual(len(diff["added_sings"]), 0)
         self.assertEqual(len(diff["deleted_sings"]), 0)
   
@@ -2186,15 +2186,23 @@ def compare_2_files(query_path = "", reference_path = "", filetype = "", query_v
 
     diffInstance = difflib.Differ()
     diffList = list(diffInstance.compare(query_text.strip(), reference_text.strip()))
-    
     result["added_sings"] = ' '.join(x[2:] for x in diffList if x.startswith('+ '))
-    result["deleted_sings"]= ' '.join(x[2:] for x in diffList if x.startswith('- '))  
+    result["deleted_sings"]= ' '.join(x[2:] for x in diffList if x.startswith('- '))
+    
     if result["added_sings"] != "" or result["deleted_sings"] != "":
         log.error("Differences found!")
         log.debug("New file: {}".format(query_path))
         log.debug("Reference file: {}".format(reference_path))
         log.warning("Differences (added): " + result["added_sings"])
         log.warning("Differences (deleted): " + result["deleted_sings"])
+        
+        print("Changed lines:")
+        query = query_text.split("\n")
+        ref = reference_text.split("\n")
+        for i in range(len(query)):
+            if query[i] != ref[i]:
+                print("Query:\t", query[i])
+                print("Reference:\t", ref[i])
     return result
 
 # functions to order Tests:
