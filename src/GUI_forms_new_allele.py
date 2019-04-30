@@ -148,21 +148,6 @@ class AlleleSection(QGroupBox):
         layout.addWidget(QLabel("\tProduct:"),5,0)
         layout.addWidget(self.product_field, 5,1,1,2)
         
-        lbl3 = QLabel("Choose exon subset: (optional)")
-        lbl3.setStyleSheet(general.label_style_2nd)
-        layout.addWidget(lbl3, 6,0,1,3)
-        
-        self.exon1_field = QLineEdit(self, text="0")
-        self.exon1_field.setWhatsThis("Ignore everything before this exon")
-        self.fields.append(self.exon1_field)
-        layout.addWidget(QLabel("\tFrom exon:"),7,0)
-        layout.addWidget(self.exon1_field, 7,1,1,2)
-        self.exon2_field = QLineEdit(self, text="0")
-        self.fields.append(self.exon2_field)
-        self.exon2_field.setWhatsThis("Ignore everything after this exon")
-        layout.addWidget(QLabel("\tTo exon:"),8,0)
-        layout.addWidget(self.exon2_field, 8,1,1,2)
-        
     def select(self):
         """select the whole section of this allele
         """
@@ -490,8 +475,6 @@ class NewAlleleForm(CollapsibleDialog):
             self.allele1.newAlleleName = self.allele1_sec.name_field.text().strip()
             self.allele1.productName_DE = self.allele1_sec.product_field.text().strip()
             self.allele1.productName_FT = self.allele1.productName_DE
-            self.allele1.fromExon = int(self.allele1_sec.exon1_field.text().strip())
-            self.allele1.toExon = int(self.allele1_sec.exon2_field.text().strip())
             self.allele1.partner_allele = self.allele2_sec.name_field.text().strip()
             
             self.allele2.geneName = self.allele2_sec.gene_field.text().strip()
@@ -499,8 +482,6 @@ class NewAlleleForm(CollapsibleDialog):
             self.allele2.newAlleleName = self.allele2_sec.name_field.text().strip()
             self.allele2.productName_DE = self.allele2_sec.product_field.text().strip()
             self.allele2.productName_FT = self.allele2.productName_DE
-            self.allele2.fromExon = int(self.allele2_sec.exon1_field.text().strip())
-            self.allele2.toExon = int(self.allele2_sec.exon2_field.text().strip())
             self.allele2.partner_allele = self.allele1_sec.name_field.text().strip()
             if self.allele1_sec.checkbox.checkState():
                 self.myallele = self.allele1

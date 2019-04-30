@@ -92,7 +92,7 @@ def make_header(backend_dict, general, enaPosHash, null_allele):
         headerop = headerop.replace(field, general[field])
     return headerop
 
-def make_genemodel(backend_dict,general,enaPosHash, extraInformation, features, fromExon = 0, toExon = 0):
+def make_genemodel(backend_dict,general,enaPosHash, extraInformation, features):
 
     eText = backend_dict["exonString"]
     iText = backend_dict["intronString"]
@@ -112,20 +112,11 @@ def make_genemodel(backend_dict,general,enaPosHash, extraInformation, features, 
         feature = features[featureIndex]
         if feature == "utr5" or feature == "utr3": continue
         number = feature[0]
-        ex_in = feature[1]
-        #print ex_in
-        #print number
         if feature[1].startswith("e"):
             # feature is an exon
-            #exon = exons[number]
             exon = pseudoexons[number] if feature[1].startswith("epseudo") else exons[number]
-            #print "exon"
-            #print exon
-            if fromExon and ((number) < fromExon): continue
-            if toExon and ((number) > toExon): break
             genemodelop += eText.replace("{start}",str(exon[0])).replace("{stop}",str(exon[1])).replace("{exon_num}",str(exonNums[number]))
             if (pseudoExonsNums[number] == True): genemodelop += peText
-            if toExon and ((number) == toExon): break
         else:
             # feature is an intron
             intron = introns[number]

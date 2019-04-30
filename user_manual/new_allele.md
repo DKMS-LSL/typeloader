@@ -74,7 +74,7 @@ These can be entered from the same raw XML file by uploading one allele, then up
 
 For more details see [=> Multiple alleles of one sample](multiple_alleles.md).
 
-##  Alternative 
-If you have several new fasta files you want to upload, you can use the [=> Bulk Fasta Upload](new_allele_bulk.md) instead. 
+##  Alternative: bulk upload 
+If you have several new fasta files you want to upload to one project, you can use the [=> Bulk Fasta Upload](new_allele_bulk.md) instead. 
 
-![Pic](images/icon_important.png) **We recommend not using this feature until you have gotten familiar with adding individual alleles.**
+![Pic](images/icon_important.png) **To avoid confusion and mistakes, TypeLoader does not enable this feature until you have gotten familiar with adding individual alleles.**

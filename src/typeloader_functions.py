@@ -283,7 +283,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 generalData = BME.make_globaldata(gene_tag = gene_tag, gene = geneName, allele = newAlleleName, product_DE = productName_DE, product_FT = productName_FT, 
                                                   function = function, species = flatfile_dic["species"], 
                                                   seqLen = str(len(sequence)), cellline = myallele.local_name)
-                ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, null_allele) + BME.make_genemodel(BE.backend_dict, generalData, enaPosHash, extraInformation, features, 0, 0) + BME.make_footer(BE.backend_dict, sequence)
+                ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, null_allele) + BME.make_genemodel(BE.backend_dict, generalData, enaPosHash, extraInformation, features) + BME.make_footer(BE.backend_dict, sequence)
                 #TODO (future): accept multiple sequences from one fasta file
         return True, myalleles, ENA_text
     except Exception as E:
@@ -328,7 +328,7 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log, incomplete_
                                       cellline = allele.local_name)
     ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, allele.null_allele) 
     ENA_text += BME.make_genemodel(BE.backend_dict, generalData, enaPosHash, 
-                                    extraInformation, features, allele.fromExon, allele.toExon) 
+                                    extraInformation, features) 
     ENA_text += BME.make_footer(BE.backend_dict, sequence)
     ENA_text = ENA_text.strip()
     

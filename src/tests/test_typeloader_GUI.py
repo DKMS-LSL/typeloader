@@ -341,8 +341,6 @@ class Test_Create_New_Allele(unittest.TestCase):
         self.assertEqual(self.form.allele1_sec.GenDX_result, "A*01:01:01:01")
         self.assertEqual(self.form.allele1_sec.name_field.text(), samples_dic["sample_2"]["target_allele"])
         self.assertEqual(self.form.allele1_sec.product_field.text(), "MHC class I antigen")
-        self.assertEqual(int(self.form.allele1_sec.exon1_field.text()), 0)
-        self.assertEqual(int(self.form.allele1_sec.exon2_field.text()), 0)
         
         self.form.ok_btn.click()
         self.form.save_btn.click()        
