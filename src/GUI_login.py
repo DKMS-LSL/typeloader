@@ -179,6 +179,7 @@ class LoginForm(QDialog):
             if login_ok:
                 locked = self.check_lock()
                 if not locked:
+                    self.log.info("Hello, user {}!".format(self.login))
                     self.accept()
                     
         except Exception as E:
