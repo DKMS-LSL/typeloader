@@ -1846,6 +1846,8 @@ class Test_MIC(unittest.TestCase):
             self.ena_reply_file = os.path.join(self.data_dir, "fake_ENA_reply.txt")
             self.pretypings = os.path.join(self.data_dir, "fake_befunde.csv")
             self.ref_ipd_file = os.path.join(self.data_dir, "DKMS10005555.txt")
+            log.debug("Pretypings file: {}".format(self.pretypings))
+            log.debug("ENA reply file: {}".format(self.ena_reply_file))
             
             self.output_dir = os.path.join(curr_settings["projects_dir"], project_name, self.sample_id_int)
             self.xml_file = "{}.blast.xml".format(self.local_name)
@@ -1894,7 +1896,9 @@ class Test_MIC(unittest.TestCase):
                                        self.ENA_gene_map, self.pretypings, self.start_num, 
                                        self.output_dir, curr_settings, log)
           
+        self.assertNotEqual(results[0], False)
         (_, cell_lines, _, _, _, success, error) = results
+        
         self.assertEqual(cell_lines[self.local_name], self.IPD_filename)
         self.assertTrue(success)
         self.assertEqual(error, None)
@@ -2240,14 +2244,14 @@ def compare_2_files(query_path = "", reference_path = "", filetype = "", query_v
         ref = reference_text.split("\n")
         for i in range(len(query)):
             if query[i] != ref[i]:
-                print("Query:\t", query[i])
+                print("Query:\t\t", query[i])
                 print("Reference:\t", ref[i])
     return result
 
 # functions to order Tests:
 # from: https://gist.github.com/catb0t/304ececa6c55f6e3788d
 # case_factory: gets all Test_Classes and tests
-# suiteFacotry: orders the testcases
+# suiteFactory: orders the testcases
 
 def suiteFactory(
         *testcases,

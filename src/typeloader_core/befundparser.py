@@ -31,7 +31,6 @@ changeNamesFor = ["DQ","DP","DR"]
 rename_columns = {"RHD": "RHESUS",
                   "AB0": "ABO"}
 patientIdPos = 0
-patientIdPos_alt = 1
 customerPos = 2
 
 def getOtherAlleles(befundFile):
@@ -62,14 +61,9 @@ def getOtherAlleles(befundFile):
             continue
         parts = line.strip().split(delimiter)
         patient = parts[patientIdPos]
-        patient2 = parts[patientIdPos_alt] # alternately, use 2nd column as user-ID
-        if patient2 == patient:
-            patient2 = ""
         customer = parts[customerPos]
         customer_dic[patient] = customer
-        customer_dic[patient2] = customer
         befund[patient] = defaultdict(list)
-        befund[patient2] = defaultdict(list)
         
         for pos in usePos:
             befundGeneName = genes[usePos.index(pos)]
@@ -91,12 +85,10 @@ def getOtherAlleles(befundFile):
                 continue
             if pretyping == "+":
                 befund[patient][geneName].append(pretyping)
-                befund[patient2][geneName].append(pretyping)
             else:
                 for value in pretyping.split("+"):
                     if value:
                         befund[patient][geneName].append(value)
-                        befund[patient2][geneName].append(value)
             
     befundHandle.close()
     return befund, customer_dic
