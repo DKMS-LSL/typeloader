@@ -145,7 +145,7 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
             
     
     with open(fake_file_befunde, "w") as g:
-        header = "sample_ID,internal_ID,client,{}\n".format(",".join(columns))
+        header = "sample_ID_int,sample_id_ext,client,{}\n".format(",".join(columns))
         g.write(header)
         
         for (sample_id_int, cell_line, mygene, target_allele, partner_allele) in data2:
@@ -168,7 +168,7 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
                     else:
                         befunde[col] = ""
             # generate row for pretyping file:
-            myline = "{},{},DKMS,".format(cell_line, sample_id_int)
+            myline = "{},{},DKMS,".format(sample_id_int, cell_line)
             pretypings = [befunde[col] for col in columns]
             myline += ",".join(pretypings) + "\n"
             g.write(myline)
