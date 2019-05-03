@@ -241,7 +241,72 @@ class InvalidPretypingsDialog(QDialog):
         self.ok.emit()
         self.close()
 
+
+class IPDCounterLockedDialog(QMessageBox):
+    """Popup created if IPD-counter is locked, allows removal of lock
+    """
+    remove_lock = pyqtSignal(bool)
     
+    def __init__(self, parent, title, text, settings, log):
+        self.log = log
+        self.settings = settings
+        super().__init__(parent)
+        self.setIcon(QMessageBox.Warning)
+        self.setText(text)
+        self.setWindowTitle(title)
+        self.init_UI()
+        self.show()
+        
+    def init_UI(self):
+        """establish and fill the UI
+        """
+        self.log.info("Starting IPDCounterLockedDialog...")
+
+        self.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
+        self.setDefaultButton(QMessageBox.Cancel)
+        
+        self.abort_txt = "Ok, I'll try again later."
+        self.proceed_txt = "Proceed anyway."
+        self.button(QMessageBox.Cancel).setText(self.abort_txt)
+        self.button(QMessageBox.Ok).setText(self.proceed_txt)
+        
+        self.buttonClicked.connect(self.handle_click)
+        
+    def handle_click(self, button):
+        """handles clicks on either of the buttons
+        """
+        txt = button.text()
+        if txt == self.proceed_txt:
+            self.proceed()
+        elif txt == self.abort_txt:
+            self.abort()
+        
+    def proceed(self):
+        """asks for confirmation, then emits signal to remove lock file
+        """
+        self.log.info("User decision: remove lock on IPD_counter!")
+        self.log.info("Are you sure?")
+        reply = QMessageBox.question(self, "Please confirm",
+             "Are you REALLY sure no other user is currently creating IPD files and you can continue safely?", 
+             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        
+        if reply == QMessageBox.Yes:
+            self.log.info("\t=> Yes, remove lock!")
+            self.remove_lock.emit(True)
+        else:
+            self.log.info("\t=> No, I'd rather check again.")
+            self.remove_lock.emit(False)
+        
+        self.close()
+        
+    def abort(self):
+        """aborts the attempt
+        """
+        self.log.info("User decision: abort attempt for now and try again later.")
+        self.remove_lock.emit(False)
+        self.close()
+
+
 class IPDFileChoiceTable(FileChoiceTable):
     """displays all alleles of a project
     so user can choose which to submit to IPD
@@ -649,11 +714,16 @@ class IPDSubmissionForm(CollapsibleDialog):
                     self.handle_multiple_novel_alleles(results[2])
                     return
                 else:
-                    print("MIF.write_imgt_files result:")
-                    print(results)
-                    QMessageBox.warning(self, "IPD file creation error", results[1])
-                    return
-                self.log.warning("? Should not pass here")
+                    if results[1].startswith("Another user is currently creating IPD files"):
+                        mbox = IPDCounterLockedDialog(self, "IPD file creation error", results[1], self.settings, self.log)
+                        mbox.remove_lock.connect(self.handle_IPDcounter_lock)
+                        return
+                    else:
+                        print("MIF.write_imgt_files result:")
+                        print(results)
+                        QMessageBox.warning(self, "IPD file creation error", results[1])
+                        return
+                    self.log.warning("? Should not pass here")
             else:
                 (self.IPD_file, self.cell_lines, self.customer_dic, resultText, self.imgt_files, success, error) = results
             if error:
@@ -711,6 +781,28 @@ class IPDSubmissionForm(CollapsibleDialog):
         dialog = InvalidPretypingsDialog(problem_dic, self.settings, self.log)
         dialog.ok.connect(self.close)
         dialog.exec_()
+    
+    def handle_IPDcounter_lock(self, remove_lock):
+        """catches signal from IPDCounterLockedDialog and issues corresponding actions 
+        """
+        self.log.debug("Signal received: remove IPD lock: {}!".format(remove_lock))
+        if remove_lock:
+            self.submit_btn.setChecked(False)
+            self.log.info("Removing IPD counter lockfile and trying again...")
+            lock_file = os.path.join(self.settings["root_path"], "_general", "ipd_nr.lock")
+            try:
+                os.remove(lock_file)
+                self.log.debug("\t=> Success")
+            except Exception as E:
+                self.log.warning("Could not delete IPD_counter lockfile from {}!".format(lock_file))
+                self.log.exception(E)
+                QMessageBox.warning(self, "Error", "Could not remove IPD lockfile, sorry! Please contact your admin!\n{}".repr(E))
+                return
+            self.reattempt_make_IPD_files()
+        else:
+            self.log.info("Will not remove IPD lockfile. Closing IPDSubmissionDialog.")
+            self.close()
+        
     
     def reattempt_make_IPD_files(self):
         self.log.info("Re-attempting IPD file creation...")
@@ -867,6 +959,7 @@ if __name__ == '__main__':
 #     problem_dic = {'DKMS10004135': ['ID13178800', 'DKMS-LSL_ID13178800_DPB1_1', TargetAllele(gene='HLA-DPB1', target_allele='HLA-DPB1*03:new', partner_allele='HLA-DPB1*13:01:01:01 or 02:01:02:01'), ['13:new', '04:new']]}
 #     ex = BothAllelesNovelDialog(problem_dic, settings_dic, log)
     ex = IPDSubmissionForm(log, mydb, project, settings_dic)
+#     ex = IPDCounterLockedDialog(None, "IPD file creation error", "Another user is currently creating IPD files.", settings_dic, log)
      
     ex.show()
      
