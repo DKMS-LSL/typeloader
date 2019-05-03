@@ -1,4 +1,4 @@
-#!/usr/bin/env Python2
+#!/usr/bin/env Python3
 '''
 
 
@@ -9,6 +9,6 @@ __license__ = "MIT"
 __maintainer__ = "Bianca Schoene"
 __email__ = "schoene@dkms-lab.de"
 
-__version__ = "2.3.0"
+__version__ = "2.3.1"
 __status__ = "productive"
 __all__ = ["typeloader_GUI"]
