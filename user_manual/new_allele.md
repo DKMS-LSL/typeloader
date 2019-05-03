@@ -1,6 +1,8 @@
 # ![Icon](images/TypeLoader_32.png) Adding a new allele 
 TypeLoader organizes its sequences in projects, which are a set of sequences with a common trait, e.g., a sample pool. This is neccessary, both to keep organized and also because ENA only accepts projects, not single sequences. 
 
+**For the minimal sequence requirements, see [=> here](new_allele_requirements.md).**
+
 To add a new target allele (a.k.a. sequence) to TypeLoader, choose the option "New Sequence" in the menu or task bar. This will open the New Allele dialog:
 
 ![Pic](images/new_allele0.png)

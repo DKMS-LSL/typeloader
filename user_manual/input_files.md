@@ -4,6 +4,9 @@ TypeLoader accepts sequences for [=> New Alleles](new_allele.md) in either of tw
  * Fasta format
  * XML format produced by NGSEngine (GenDX) 
 
+## Sequence Requirements
+See [=> Sequence Requirements](new_allele_requirements.md) to check the minimum requirements for TypeLoader's input sequences.
+
 ## Fasta files
 Fasta files should contain exactly one sequence. (If they contain more than that, only the first sequence is used. To add multiple fasta sequences at once, use the [=> Bulk Fasta Upload](new_allele_bulk.md).)
 
@@ -26,6 +29,8 @@ The following keys are  currently recognized:
  * **version** (version of the software used for full-length genotyping)
  * **date** (date of secondary genotyping)
 
-
 ## XML files
 The XML file exported from NSGEngine contains both alleles of one locus of one sample. If you upload such a file to TypeLoader, the dialog will ask you to clarify which of the alleles you want to add. (If you want to add both alleles, run the [=> New Allele Dialog](new_allele.md) twice with the same file, and choose the other allele during the second run.)
+
+## Example files
+TypeLoader provides [=> example sequences in fasta format](example_files.md) for all gene systems, so you can have a look at the format TypeLoader expects.

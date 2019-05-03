@@ -32,3 +32,6 @@ To view and/or edit details about a **target allele** or its sample, doubleclick
 If the Sample View is already open, you can switch between target alleles by just clicking them in the Navigation Area, and the Sample View will be refiltered to the newly selected target allele.
 
 (The additional option ``Delete Sample`` is meant for administrators only and requires a password to avoid data corruption.)
+
+## Refreshing
+Normally, the Navigation Area should update with any change of the diplayed data (status changes, added or deleted alleles etc.). If you think something is not displayed the way it should be, click the `Refresh Navigation` button underneath the Navigation Area to refresh it.
