@@ -754,8 +754,8 @@ class IPDSubmissionForm(CollapsibleDialog):
             self.download_btn.setEnabled(True)
             self.download_btn.setStyleSheet(general.btn_style_ready)
             self.ok_btn.setEnabled(True)
-            self.sender().setChecked(False)
-            self.sender().setStyleSheet(general.btn_style_normal)
+            self.submit_btn.setChecked(False)
+            self.submit_btn.setStyleSheet(general.btn_style_normal)
             
             self.save_to_db()
             self.IPD_submitted.emit()
