@@ -41,14 +41,16 @@ from __init__ import __version__
 class NewUserForm(QDialog):
     """a dialog to add a new user
     """
-    def __init__(self, log, parent = None):
+    def __init__(self, log, root_path, parent = None):
         super().__init__(parent)
         self.log = log
+        self.root_path = root_path
         self.user_db = parent.user_db
         self.setWindowTitle("New User")
         self.setWindowIcon(QIcon(general.favicon))
         self.init_UI()
         self.show()
+        self.check_test_user()
         
     def init_UI(self):
         layout = QFormLayout(self)
@@ -83,7 +85,7 @@ class NewUserForm(QDialog):
             item.textChanged.connect(ok_btn.check_ready)
         ok_btn.proceed.connect(self.make_new_user)
         layout.addRow(ok_btn)
-        
+    
     @pyqtSlot()
     def make_new_user(self, _ = None):
         """adds user to user_dic
@@ -116,6 +118,25 @@ class NewUserForm(QDialog):
                                 "An error occurred while creating user '{}':\n\n{}".format(repr(E)))
             return False
         
+    def check_test_user(self):
+        """checks whether a test user already exists; if not, shows popup asking to create one
+        """
+        self.log.info("Checking whether test user exists...")
+        test_user_found = False
+        for item in os.listdir(self.root_path):
+            if item.lower().startswith("test"):
+                if os.path.isdir(os.path.join(self.root_path, item)):
+                    test_user_found = True
+        if test_user_found:
+            self.log.info("\t=> test user found! :-)")
+        else:
+            self.log.info("\t=> no test user found, please create one!")
+            msg = "Before creating any other account, please create a test user! (Simply choose a username starting with 'test'.)\n\n"
+            msg += "Test user accounts are connected to ENA's test server. This avoids accidental submissions. "
+            msg += "With a test account, you can try all of TypeLoader's functionality safely."
+            msg += "\n\nFor more info, please check the user manual at\nhttps://github.com/DKMS-LSL/typeloader/blob/master/user_manual/users_test.md"
+            QMessageBox.information(self, "No test user found, yet!", msg)
+    
 
 class LoginForm(QDialog):
     """A simple user login dialog
@@ -124,7 +145,6 @@ class LoginForm(QDialog):
         super().__init__(parent)
         self.log = log
         self.log.debug("Starting login...")
-        
         self.setWindowTitle("TypeLoader Login")
         self.setWindowIcon(QIcon(general.favicon))
 
@@ -229,13 +249,13 @@ class LoginForm(QDialog):
                     QMessageBox.warning(self, "Unknown user", "User name {} does not exist. Please use the 'Create new user' button to create it!".format(self.login))
             else:
                 self.log.info("Keeping password unchanged")
-                
+    
     @pyqtSlot()
     def handle_new_user(self):
         """starts NewUserForm dialog to catch data for a new user
         """
         try:
-            dialog = NewUserForm(self.log, self)
+            dialog = NewUserForm(self.log, self.root_path, self)
             result = dialog.exec_()
             if result == QDialog.Accepted:
                 self.login = dialog.login
@@ -545,8 +565,15 @@ def check_for_reference_updates(log, settings, parent):
         msges = []
         for db_name in update_me:
             db_name = db_name.lower()
-            update_msg = update_reference.update_database(db_name, reference_local_path, blast_path, log)
-            msges.append(update_msg)
+            try:
+                update_msg = update_reference.update_database(db_name, reference_local_path, blast_path, log)
+                msges.append(update_msg)
+            except Exception as E:
+                log.error("Reference update failed!")
+                log.exception(E)
+                QMessageBox.warning(parent, "Reference update failed",
+                                    "Could not update the reference database(s). Please try again!\n\n{}".repr(E))
+            
         QMessageBox.information(parent, "Reference data updated", 
                                        "\n\n".join(msges))
             
