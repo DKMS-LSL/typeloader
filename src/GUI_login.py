@@ -294,7 +294,7 @@ class LoginForm(QDialog):
         """checks whether this login is currently in use;
         if not, creates lock
         """
-        self.log.debug("Checking lock...")
+        self.log.debug("Checking lock for user {}...".format(self.login))
         locked = False
         if self.login == "staging": # staging user has different paths depending on the os used
             cf, _, myos = get_raw_settings("staging", self.log)
