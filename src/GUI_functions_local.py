@@ -32,8 +32,12 @@ def read_local_settings(settings, log):
     if settings["modus"] == "staging":
         local_config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), local_config_file)
     log.info("Reading local settings from {}...".format(local_config_file))
-    cf = ConfigParser()
-    cf.read(local_config_file)
+    
+    if os.path.exists(local_config_file):
+        cf = ConfigParser()
+        cf.read(local_config_file)
+    else:
+        return False
     return cf
 
 
@@ -43,6 +47,8 @@ def check_local(settings, log):
     """
     permission = False
     local_cf = read_local_settings(settings, log)
+    if not local_cf:
+        return False
     if settings["lab_of_origin"] == local_cf.get("Local", "company_name"):
         permission = True
     return permission
