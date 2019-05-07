@@ -38,6 +38,7 @@ import patches
 # parameters:
 
 from __init__ import __version__
+from PyQt5.Qt import QDesktopWidget
 #===========================================================
 # classes:
 
@@ -84,9 +85,14 @@ class MainGUI(QMainWindow):
         """sets up the navigation area
         """
         self.navigation = GUI_navigation.Navigation(self.log, self.settings)
-        self.navigation.setMaximumWidth(250)
-        self.navigation.setMinimumWidth(200)
-        #ToDo: make Navigation width dependent on desktop width
+        
+        desktop = QDesktopWidget()
+        geometry = desktop.availableGeometry(desktop.primaryScreen())
+        self.settings["screen_width"] = geometry.width()
+        self.settings["screen_height"] = geometry.height()
+        self.navigation.setMaximumWidth(self.settings["screen_width"]/6.0)
+        self.navigation.setMinimumWidth(self.settings["screen_width"]/7.0)
+        
         self.grid.addWidget(self.navigation, 0,0)
         self.navigation.changed_allele.connect(self.change_allele)
         self.navigation.changed_projects.connect(self.change_project)
