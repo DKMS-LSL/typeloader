@@ -501,7 +501,7 @@ class SampleView(QWidget):
             self.grid.setColumnStretch(i, 3)
         self.grid.setColumnStretch(2, 1)
         
-        for i in range(4,9):
+        for i in [2, 4,5,6,7,8,9]:
             self.grid.setRowStretch(i, 1)
         
     @pyqtSlot(str, int, str)
