@@ -38,6 +38,7 @@ Select exactly one allele and check the data entered. Now you can click "Proceed
 ###  (3a) Check ENA text 
 
 Once TypeLoader knows which allele you want to upload, it will automatically annotate the sequence and generate the text file needed for ENA submission. This text is displayed for your information:
+
 ![Pic](images/new_allele3.png)
 
 You can edit the text and use the "Discard changes!" / "Save changes!" buttons on the bottom to decide whether to discard or save your changes.

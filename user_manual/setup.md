@@ -4,7 +4,7 @@
 See the [=> Linux Setup page](setup_linux.md).
 
 ## Windows ##
-Download the file `Setup_TypeLoader.exe` under [`installer` => `windows`](https://github.com/DKMS-LSL/typeloader/tree/master/installer/windows) and install it with admin privileges. The wizard will guide you through the installation process.
+Download the file `Setup_TypeLoader_<Version>.exe` under [`installer` => `windows`](https://github.com/DKMS-LSL/typeloader/tree/master/installer/windows) and install it with admin privileges. The wizard will guide you through the installation process.
 
 ### Important:
 
@@ -37,9 +37,9 @@ You will have to submit your first allele by hand (you can let TypeLoader do the
 **If you have never submitted alleles to IPD, yet, leave these fields empty for now!**
 
  * **Lab Name:** This is the name by which IPD knows your lab (given to them as "institute")
- * **Short name/acronym:** This should be a short acronym of your lab (can be identical to Cell Line Identifier, but doesn't have to). All your IPD submission files will start with this term. **Please use only letters and/or hyphens.**
- * IPD contact's **Full Name:** This is the name you are registered under.
- * IPD contact's **Form of Address:** This is what you provided as "title". (Dr./Mr./Mrs./Ms. etc)
+ * **Short name/acronym:** This should be a short acronym of your lab (can be identical to Cell Line Identifier, but doesn't have to). All your IPD submission files will start with this term. **Please use only letters, numbers and/or hyphens.**
+ * IPD contact's **Full Name:** This is the name associated with your submitter ID.
+ * IPD contact's **Form of Address:** This is what you provided as "title" for the name. (Dr./Mr./Mrs./Ms. etc)
  * IPD contact's **Email:** This is the email adress you registered with.
  * IPD contact's **Submittor ID:** This is the submitter ID you received from IPD.
 

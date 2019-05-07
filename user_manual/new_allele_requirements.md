@@ -21,6 +21,7 @@ Each file must contain **the sequence of one allele** of one of the following ge
 IPD does not accept partial genomic sequences. However, they consider a sequence full-length if it contains at least the last base of the 5' UTR, the first base of the 3' UTR, and all exons and introns in between. Therefore, this is TypeLoader's minimum requirement for any input sequence.
 
 TypeLoader normally expects sequences to cover the whole gene including both UTRs completely. If it gets a sequence with only partial UTRs, it throws a warning and asks you whether you are sure you want to proceed:
+
 ![Pic](images/new_allele_incomplete.png)
 
 By clicking `Yes`, you confirm that you are aware your sequence is incomplete, and of thepossible consequences of submitting such a sequence, and that you want to upload and eventually submit it, anyway.
