@@ -4,7 +4,7 @@
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "TypeLoader"
-!define PRODUCT_VERSION "2.2.0"
+!define PRODUCT_VERSION "2.3.1"
 !define PRODUCT_PUBLISHER "DKMS Life Science Lab GmbH"
 !define PRODUCT_WEB_SITE "https://github.com/DKMS-LSL/typeloader"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\TypeLoader.exe"
@@ -131,6 +131,11 @@ Function settingsPage0Leave
         FileWrite $0 "blast_path: $INSTDIR\blastn\blastn$\r$\n"
         FileClose $0
         Pop $UPDATING
+        
+        FileOpen $0 $INSTDIR\config_local.ini w
+	FileWrite $0 "[Local]$\r$\n"
+        FileWrite $0 "company_name: \r$\n" ; empty
+        FileClose $0
 
         CreateDirectory "$TL_PATH\_general"
         CreateDirectory "$TL_PATH\_general\sample_files"
@@ -300,21 +305,23 @@ var ICONS_GROUP
 ; MUI end ------
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
-OutFile "TypeLoader_Setup.exe"
+OutFile "TypeLoader_Setup_V${PRODUCT_VERSION}.exe"
 InstallDir "$PROGRAMFILES\TypeLoader"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
 ShowUnInstDetails show
 
 Section "MainSection" SEC01
+  CreateDirectory "$TL_PATH\_general"
+  CreateDirectory "$TL_PATH\_general\sample_files"
   SetOutPath "$TL_PATH\_general\sample_files"
   SetOverwrite try
-  File "build\sample_files\HLA-A_01-01-01-01.fa"
-  File "build\sample_files\KIR2DL1_0020101.fa"
-  File "build\sample_files\KIR2DL4_0010201.fa"
-  File "build\sample_files\MICA_001.fa"
-  File "build\sample_files\fake_ENA_reply.fa"
-  File "build\sample_files\pretypings_example.csv"
+  File "build\exe.win32-3.6\sample_files\HLA-A_01-01-01-01.fa"
+  File "build\exe.win32-3.6\sample_files\KIR2DL1_0020101.fa"
+  File "build\exe.win32-3.6\sample_files\KIR2DL4_0010201.fa"
+  File "build\exe.win32-3.6\sample_files\MICA_002_01.fa"
+  File "build\exe.win32-3.6\sample_files\fake_ENA_reply.txt"
+  File "build\exe.win32-3.6\sample_files\pretypings_example.csv"
   SetOutPath "$INSTDIR"
   SetOverwrite try
   File "build\exe.win32-3.6\TypeLoader.exe"
@@ -3111,6 +3118,7 @@ Section Uninstall
   Delete "$INSTDIR\config_raw.ini"
   Delete "$INSTDIR\config_base.ini"
   Delete "$INSTDIR\config_company.ini"
+  Delete "$INSTDIR\config_local.ini"
   Delete "$INSTDIR\lib\unicodedata.pyd"
   Delete "$INSTDIR\lib\sip.pyd"
   Delete "$INSTDIR\lib\select.pyd"
