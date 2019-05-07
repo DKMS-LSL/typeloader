@@ -1,5 +1,30 @@
 # Version History
 
+## V2.3.1.1 (2019-05-07)
+### Bugfixes
+- various bugfixes to make the Windows installer work
+
+## V2.3.1 (2019-05-03)
+### new features
+- Format of pretypings file changed (#95)
+- IPD reference data: TypeLoader now uses only tested-and-ok versions of IPD's releases, to avoid automatically using broken releases (#99)
+- added example files for all gene systems and steps (#88)
+- sanity-check for fasta file format (#75)
+
+### Bugfixes:
+- the key "sample_id_int" in fasta headers is now recognized correctly (#97)
+- handle fasta file extensions beside .fa (#87)
+- replaced .locked with _locked to hopefully work for external Windows users (#101)
+
+## 2.3.0 (2019-04-18)
+### new features:
+- Support for MICA and MICB (#52)
+- Support for incomplete sequences: if only the UTRs are partial, TypeLoader now throws a warning but the user can decide to upload anyway. Partially known exons or introns are still rejected (and will continue to be). (#63)
+
+### Bugfixes:
+- use class II enumeration for all HLA class II genes, not just DPB1
+- many small ones
+
 ## 2.2.1 (2019-03-11)
 ### new features:
 - Recognize multiple novel alleles in target locus: this is now checked during IPD file creation amd the files are formatted accordingly. If necessary, user input is requested to clarify which of the given alleles is the target allele. (#72)
