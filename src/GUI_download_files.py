@@ -99,11 +99,16 @@ class ExampleFileDialog(QDialog):
             suggested_path = os.path.join(self.settings["default_saving_dir"], myfile)
             chosen_path = QFileDialog.getSaveFileName(self, "Download example {} file...".format(designator), suggested_path)[0]
             if chosen_path:
-                copyfile(myfile, chosen_path)
-                self.log.info("\tDownload successful!")
+                try:
+                    copyfile(myfile, chosen_path)
+                    self.log.info("\tDownload successful!")
+                except Exception as E:
+                    self.log.error("\t=> Download failed!")
+                    self.log.exception(E)
+                    QMessageBox.warning(self, "Dowload failed", "Sorry, I could not download the file you requested:\n\n{}".format(repr(E)))
         else:
             self.log.error("File not found: {}".format(myfile))
-            QMessageBox.warning(self, "File not found", "Sorry, I could not find the file: \n{}".format(myfile))
+            QMessageBox.warning(self, "File not found", "Sorry, I could not find the file you requested: \n{}".format(myfile))
             self.log.info("\tDownload aborted. :(")
 pass
 #===========================================================
