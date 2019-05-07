@@ -5,12 +5,12 @@ To obtain your IPD submitter ID, you will have to submit at least your very firs
 ![Important](images/icon_important.png) **If you only expect to be submitting a few sporadic sequences, it might be easier if you generally use this procedure instead of [=> signing up as a bulk submitter](ipd.md).**
 
 ## (1) Create your IPD files with TypeLoader
-Use TypeLoader's [=> IPD submission dialog](submissions_ipd.md) to generate your IPD files. (You do not have to do this, but this way you can harness at least TypeLoader's annotation power to get the correct sequence annotations and coparison to the closest known allele.)
+Use TypeLoader's [=> IPD submission dialog](submissions_ipd.md) to generate your IPD files. (You do not have to do this, but this way you can harness at least TypeLoader's annotation power to get the correct sequence annotations and comparison to the closest known allele.)
 
 ## (2) Open the web form
 Go to [the HLA submission website](https://www.ebi.ac.uk/ipd/imgt/hla/subs/submit.html) or [the KIR submission website](https://www.ebi.ac.uk/ipd/kir/submit_stage_1.html), as appropriate for your allele. Click ``Start your submission here``.
 
-![Important](images/icon_important.png) **The following instructions are for the HLA submission tool as of January 2019. The KIR submission tool is quite similar, but the wording and order of steps differs in some places. Also, updates by IPD may have changed the HLA submission tool meanwhile.**
+![Important](images/icon_important.png) **The following instructions are for the HLA submission tool as of January 2019. The KIR submission tool is quite similar, but the wording and order of steps differs in some places. Also, updates by IPD may have changed the HLA submission tool meanwhile, but the general idea should still remain the same.**
 
 ## (2) Check Submission Checklist
 Go through the checklist provided and **make sure your workflow satisfies all these requirements**.
@@ -149,7 +149,7 @@ Use TypeLoader's Cell Line for this field. You can find it in the [=> Sample Vie
 Once you have everyhing filled out, click ``Continue``.
 
 ## (10) Source Sample Typing Profile
-Fill out the form with the known genotyping results of the other loci of your sample. You can copy these from your TypeLoader-generated IPD submission file (they are listed in lines starting with "FT&nbsp;&nbsp;&nbsp;", in the "FT&nbsp;&nbsp;&nbsp;source" section, directly above "FT&nbsp;&nbsp;&nbsp;method"). Copy these into tje "HLA DNA Typing" part of the form.
+Fill out the form with the known genotyping results of the other loci of your sample. You can copy these from your TypeLoader-generated IPD submission file (they are listed in lines starting with "FT&nbsp;&nbsp;&nbsp;", in the "FT&nbsp;&nbsp;&nbsp;source" section, directly above "FT&nbsp;&nbsp;&nbsp;method"). Copy these into the "HLA DNA Typing" part of the form.
 
 E.g., if you have the line 
 
