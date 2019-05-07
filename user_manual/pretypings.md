@@ -52,7 +52,7 @@ Example file:
  * MIC: 003:new
  * KIR: 003new (**no colon**, as the KIR nomenclature doesn't use them)
 
-![Important](images/icon_important.png) **If you submit an allele for a locus containing *more than one novel allele*, use one row per target allele, and differentiate them by the first column. In each row, only mark the allele corresponding to this target-allele as new, leave the other one at first field resolution.** (See [=> Multiple novel alleles](multiple_alleles.md))
+![Important](images/icon_important.png) **If you submit an allele for a locus containing *more than one novel allele*, mark BOTH of them as new. Make sure the fields "Target Allele" and "Partner Allele" in the [=> Sample View](view_sample.md) tab "New Genotyping" of each allele corresponds with your pretypings (in the SampleView, only the respective target allele should be marked as new, the partner allele should be left at first field resolution).** (See [=> Multiple novel alleles](multiple_alleles.md))
 
 ### Requirement checks
 TypeLoader checks the given pretypings for the following requirements, and shows a popup asking you to clarify if necessary:
