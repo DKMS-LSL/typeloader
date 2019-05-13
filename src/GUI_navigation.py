@@ -393,22 +393,25 @@ class Navigation(QWidget):
         index = self.tree.indexAt(pos)
         nodetype = self.model.nodeType(index)
         self.log.debug("Opening navigation menu...")
+        show_extended = False
+        if self.settings["modus"] == "debugging":
+            show_extended = True
         if nodetype == "Project":
             menu = QMenu()
             open_project_act = menu.addAction("Open Project View")
-            if self.settings["modus"] == "debugging":
+            if show_extended:
                 delete_all_samples_act = menu.addAction("Delete all alleles (admin-only!)")
             action = menu.exec_(self.tree.mapToGlobal(pos))
-            
+            project = self.model.data(index, Qt.DisplayRole)
+            status = self.model.data(self.model.parent(index), Qt.DisplayRole)
             if action == open_project_act:
-                project = self.model.data(index, Qt.DisplayRole)
-                status = self.model.data(self.model.parent(index), Qt.DisplayRole)
                 self.changed_projects.emit(project, status)
                 self.change_view.emit(3)
                 self.log.debug("Navigation emitted changed_projects & change_view to ProjectView")
-            elif action == delete_all_samples_act:
-                self.log.info("Deleting all alleles of project {}".format(project))
-                self.delete_all_samples(project, status)
+            elif show_extended:
+                if action == delete_all_samples_act:
+                    self.log.info("Deleting all alleles of project {}".format(project))
+                    self.delete_all_samples(project, status)
             
         elif nodetype == "Sample":
             menu = QMenu()
