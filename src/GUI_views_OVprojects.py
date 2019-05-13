@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from PyQt5.QtSql import QSqlQueryModel, QSqlQuery
-from PyQt5.QtWidgets import QHeaderView, QMenu, QApplication
+from PyQt5.QtWidgets import QHeaderView, QMenu, QApplication, QMessageBox
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt5.Qt import QPushButton
 
@@ -174,7 +174,9 @@ class ProjectsOverview(FilterableTable):
             self.log.debug("=> Project '{}' successfully deleted from database and file system".format(project))
             self.deleted_project.emit()
         else:
-            self.log.debug("\t=> Project contains {} alleles => cannot delete!".format(alleles))
+            msg = "Project contains {} alleles => cannot delete!".format(alleles)
+            QMessageBox.warning(self, "Could not delete", msg)
+            self.log.debug("\t=> {}".format(msg))
             
             
     def refresh(self):
