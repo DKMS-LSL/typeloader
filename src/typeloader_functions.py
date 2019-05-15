@@ -229,6 +229,17 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 return False, "Incomplete sequence", E.msg
             except errors.MissingUTRError as E:
                 return False, "Missing UTR", E.msg
+            except ValueError as E:
+                empty_xml = False
+                if E.args:
+                    msg = E.args[0]
+                    if msg == "Your XML file was empty":
+                        empty_xml = True
+                if empty_xml:
+                    return False, "BLAST hickup", "The generated blast.xml-file was empty. This was probably a BLAST hickup. Please restart TypeLoader and try again!"
+                else:
+                    return False, "Input File Error", repr(E)
+                    
             alleles = [allele for allele in annotations.keys()]
             # take the first sequence in fasta file
             alleleName = alleles[0]
