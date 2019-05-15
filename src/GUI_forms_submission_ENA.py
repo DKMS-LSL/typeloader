@@ -391,7 +391,7 @@ class ENASubmissionForm(CollapsibleDialog):
                                     try:
                                         if error:
                                             self.log.error(error)
-                                            self.ENA_response += "ERROR:\n"
+                                            self.ENA_response += "ERROR after transmission to ENA:\n"
                                             if isinstance(error, str):
                                                 self.ENA_response += error
                                             else:
