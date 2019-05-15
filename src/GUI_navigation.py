@@ -3,13 +3,15 @@ from PyQt5 import QtSql
 from PyQt5.QtWidgets import (QGridLayout, QWidget, QMessageBox,
                              QLabel, QApplication, QMenu)
 from PyQt5.QtCore import (Qt, QAbstractItemModel, QObject, QPoint)
-from PyQt5.Qt import QModelIndex, QTreeView, pyqtSlot, pyqtSignal, QPixmap,\
+from PyQt5.Qt import QModelIndex, QTreeView, pyqtSlot, pyqtSignal, \
     QInputDialog, QLineEdit, QPushButton
 from PyQt5.QtGui import QIcon
 
 import general, db_internal
 from __init__ import __version__
 import typeloader_functions
+
+show_extended = False
 
 class Node(QObject):
     """source: https://www.youtube.com/watch?v=1WWp71fTdTQ&index=12&list=PLJewNuO700GfElihmE9R8zManDym4S13m
@@ -393,7 +395,7 @@ class Navigation(QWidget):
         index = self.tree.indexAt(pos)
         nodetype = self.model.nodeType(index)
         self.log.debug("Opening navigation menu...")
-        show_extended = False
+        global show_extended
         if self.settings["modus"] == "debugging":
             show_extended = True
         if nodetype == "Project":
