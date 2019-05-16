@@ -11,7 +11,7 @@ import general, db_internal
 from __init__ import __version__
 import typeloader_functions
 
-show_extended = False
+show_extended = True
 
 class Node(QObject):
     """source: https://www.youtube.com/watch?v=1WWp71fTdTQ&index=12&list=PLJewNuO700GfElihmE9R8zManDym4S13m
