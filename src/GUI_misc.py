@@ -188,8 +188,6 @@ def settings_ok(category, all_settings, log):
                              }
     elif category == "IPD":
         relevant_settings = {"submittor_id" : "IPD Submittor ID",
-                             "email" : "Your email address",
-                             "lab_contact_address" : "Lab Contact's Form of Address",
                              "lab_contact" : "Lab Contact for IPD",
                              "lab_contact_email": "Lab Contact Email",
                              "lab_of_origin" : "Company Name (for IPD)",

@@ -267,6 +267,18 @@ def make_imgt_text(submissionId, cellLine, local_name, myallele, enaId, befund, 
     todaystr = datetime.datetime.now().strftime('%d/%m/%Y')
 
     imgtText = header
+    
+    # reformat names & emails for presence or absence of optional parts:
+    user_name = settings["user_name"]
+    if settings["address_form"]:
+        user_name = settings["address_form"] + " " + user_name
+    lab_contact = settings["lab_contact"]
+    if settings["lab_contact_address"]:
+        lab_contact = settings["lab_contact_address"] + " " + lab_contact
+    emails = settings["lab_contact_email"]
+    if settings["email"]:
+        emails = settings["email"] + "," + emails
+    
     replace_placeholders = [("{submission_id}", submissionId),
                             ("{sequence length}", str(len(sequence))),
                             ("{allele_counter}", "1"),
@@ -280,11 +292,9 @@ def make_imgt_text(submissionId, cellLine, local_name, myallele, enaId, befund, 
                             ("{related allele}", closestAllele),
                             ("{submittor id}", settings["submittor_id"]),
                             ("{address form}", settings["address_form"]),
-                            ("{full user name}", settings["user_name"]),
-                            ("{contact address form}", settings["lab_contact_address"]),
-                            ("{lab contact}", settings["lab_contact"]),
-                            ("{user email}", settings["email"]),
-                            ("{lab contact email}", settings["lab_contact_email"]),
+                            ("{full user name}", user_name),
+                            ("{lab contact}", lab_contact),
+                            ("{email}", emails),
                             ("{lab of origin}", settings["lab_of_origin"]),
                             ("{material available}", settings["material_available"]),
                             ("{typeloader version}", settings["TL_version"]),

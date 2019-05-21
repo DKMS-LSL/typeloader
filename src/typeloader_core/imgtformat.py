@@ -26,9 +26,9 @@ FH   Key            Location/Qualifier
 FH
 FT   submitter      1..{sequence length}
 FT                  /ID="{submittor id}"
-FT                  /name="{address form} {full user name}"
-FT                  /alt_contact="{contact address form} {lab contact}"
-FT                  /email="{user email},{lab contact email}"
+FT                  /name="{lab contact}"
+FT                  /alt_contact="{full user name}"
+FT                  /email="{email}"
 FT   source         1..{sequence length}
 FT                  /cell_id="{cell_line}"
 FT                  /ethnic_origin="Unknown"
