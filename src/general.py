@@ -262,6 +262,16 @@ def move_rename_file(old_path, new_dir, new_name):
         shutil.move(old_path, new_path)
     return new_path
 
+def read_seq_from_fasta(fasta):
+    """retrieves the sequence of a fasta file, returns it as string
+    """
+    with open(fasta, "r") as f:
+        seq = ""
+        for line in f:
+            if line:
+                if not line.startswith(">"): # ignore header
+                    seq += line.strip()
+    return seq.upper()
 
 def delete_sample():
     pass
