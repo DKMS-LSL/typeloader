@@ -614,7 +614,16 @@ if __name__ == '__main__':
             ex = MainGUI(mydb, log, settings_dic)
             ex.showMaximized()
             splash.finish(ex)
-            GUI_login.check_for_reference_updates(log, settings_dic, ex)
+            try:
+                GUI_login.check_for_reference_updates(log, settings_dic, ex)
+            except Exception as E:
+                log.error(E)
+                log.exception(E)
+                try:
+                    QMessageBox.warning(ex, "Reference error", "Could not update the reference file, probably due to a temporary connection hickup. Please restart TypeLoader to try again.")
+                except Exception as E2:
+                    log.info("Could not open QMessagebox")
+                    log.exception(E2)
             result = app.exec_()
             cleanup_recovery(settings_dic, log)
             ok = True
