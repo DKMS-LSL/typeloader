@@ -2080,12 +2080,13 @@ class Test_pretyping_valid(unittest.TestCase):
              
             # read samples from csv:
             log.info("Reading files...")
-            log.debug("Reading samples.csv...")
+            myfile = os.path.join(self.mydir, "samples.csv")
+            log.debug("Reading samples.csv from {}...".format(myfile))
             SampleObject = namedtuple("SampleObject", """name description closest_allele gene 
                                                         target_allele partner_allele 
                                                         target_family diff_text final_result error_exp""")
             self.samples = {}
-            with open(os.path.join(self.mydir, "samples.csv")) as f:
+            with open(myfile) as f:
                 data = csv.reader(f, delimiter=",")
                 for i, row in enumerate(data):
                     if i != 0:
