@@ -29,7 +29,7 @@ from GUI_forms import (CollapsibleDialog, ChoiceSection, FileChoiceTable,
                        FileButton, ProceedButton, QueryButton)
 from GUI_forms_submission_ENA import ProjectInfoTable
 from GUI_misc import settings_ok
-from GUI_functions_local import check_local, check_nonproductive, make_fake_ENA_file
+from GUI_functions_local import check_local, check_nonproductive, make_fake_ENA_file, get_pretypings_from_oracledb
 
 #===========================================================
 # parameters:
@@ -522,17 +522,23 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.ok_btn2 = ProceedButton("Proceed", [self.ENA_file_widget.field, self.befund_widget.field], self.log, 0)
         self.proj_widget.choice.connect(self.ok_btn2.check_ready)
         self.befund_widget.choice.connect(self.ok_btn2.check_ready)
-        layout.addWidget(self.ok_btn2, 1, 1,3,1)
+        layout.addWidget(self.ok_btn2, 1, 1, 3, 1)
         self.ok_btn2.proceed.connect(self.proceed_to3)
         self.sections.append(("(2) Upload ENA reply file:", mywidget))
         
         # add hidden button to create fake ENA response & fake pretyping file:
-        if check_nonproductive(self.settings):
-            if check_local(self.settings, self.log): # only visible for non-productive LSL users 
+        local_user, self.local_cf = check_local(self.settings, self.log)
+        if local_user: # only visible for LSL users
+            self.pretypings_btn = QPushButton("Generate pretyping file")
+            self.pretypings_btn.setStyleSheet(general.btn_style_local)
+            self.pretypings_btn.clicked.connect(self.get_pretypings)
+            layout.addWidget(self.pretypings_btn, 1,1) 
+            
+            if check_nonproductive(self.settings): # only visible for non-productive LSL users
                 self.fake_btn = QPushButton("Generate fake input files")
                 self.fake_btn.setStyleSheet(general.btn_style_local)
                 self.fake_btn.clicked.connect(self.create_fake_input_files)
-                layout.addWidget(self.fake_btn, 1,1) 
+                layout.addWidget(self.fake_btn, 0, 1) 
     
     @pyqtSlot()
     def create_fake_input_files(self):
@@ -555,7 +561,35 @@ class IPDSubmissionForm(CollapsibleDialog):
             self.fake_btn.setStyleSheet(general.btn_style_normal)
             self.ok_btn2.check_ready()
 
-    
+    @pyqtSlot()
+    def get_pretypings(self):
+        """creates pretypings file from oracle database
+        """
+        try:
+            success, pretypings_file, samples_not_found = get_pretypings_from_oracledb(self.project, self.local_cf, self.settings, self.log, self)
+        except Exception as E:
+            log.exception(E)
+            QMessageBox.warning(self, "Error while generating pretypings file", "Could not generate the pretypings file:\n\n{}".format(repr(E)))
+            success = False
+        if success:
+            if samples_not_found:
+                QMessageBox.information(self, "Not all pretypings found", 
+                                 "Could not find pretypings for the following {} samples: \n- {}".format(len(samples_not_found), 
+                                                                                                    "\n-".join(samples_not_found)))
+            
+            try:
+                suggested_path = os.path.join(self.settings["default_saving_dir"], "pretypings.csv")
+                chosen_path = QFileDialog.getSaveFileName(self, "Download generated pretypings file...", suggested_path)[0]
+                log.info("Saving generated pretypings file under {}...".format(chosen_path))
+                shutil.copy(pretypings_file, chosen_path)
+                self.befund_widget.field.setText(chosen_path)
+                self.pretypings_btn.setStyleSheet(general.btn_style_normal)
+            except Exception as E:
+                log.exception(E)
+                QMessageBox.warning(self, "Error while generating pretypings file", "Could not save the pretypings file:\n\n{}".format(repr(E)))
+                self.pretypings_btn.setChecked(False)
+            self.ok_btn2.check_ready()
+        
     def parse_ENA_file(self):
         """parses the ENA reply file,
         stores results and adjusts filter for IPDFileChoiceTable
@@ -686,6 +720,7 @@ class IPDSubmissionForm(CollapsibleDialog):
     def make_IPD_files(self):
         """tell typeloader to create the IPD file
         """
+        self.submit_btn.setChecked(False)
         success = self.get_values()
         if not success:
             return
@@ -953,7 +988,7 @@ if __name__ == '__main__':
     settings_dic = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, settings_dic["db_file"])
     
-    project = "20190425_ADMIN_mixed_X"
+    project = "20190515_ADMIN_KIR_1"
     app = QApplication(sys.argv)
      
 #     problem_dic = {'DKMS10004135': ['ID13178800', 'DKMS-LSL_ID13178800_DPB1_1', TargetAllele(gene='HLA-DPB1', target_allele='HLA-DPB1*03:new', partner_allele='HLA-DPB1*13:01:01:01 or 02:01:02:01'), ['13:new', '04:new']]}

@@ -13,8 +13,8 @@ contains TypeLoader functionality designed especially for use at DKMS Life Scien
 # import modules:
 import os, copy
 from configparser import ConfigParser
-
-import db_internal, general, typeloader_functions, GUI_login
+from PyQt5.QtWidgets import QMessageBox
+import db_internal, db_external, general, typeloader_functions, GUI_login
 
 #===========================================================
 # parameters:
@@ -48,10 +48,10 @@ def check_local(settings, log):
     permission = False
     local_cf = read_local_settings(settings, log)
     if not local_cf:
-        return False
+        return False, None
     if settings["lab_of_origin"] == local_cf.get("Local", "company_name"):
         permission = True
-    return permission
+    return permission, local_cf
 
 
 def check_nonproductive(settings):
@@ -64,13 +64,23 @@ def check_nonproductive(settings):
     return permission
 
 
-def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = None):
-    """creates a pseudo-ENA reply file with random ENA accession IDs and a pseudo pretypings file,
-    which can be used to create fake-IPD files before ENA has assigned official accession numbers
+def find_alleles_per_project(project, log, parent = None):
+    """finds all alleles of a project
     """
     log.info("Finding alleles of project {}...".format(project))
     query = "select distinct sample_id_int, cell_line_old, local_name, gene, target_allele, partner_allele from alleles where project_name = '{}'".format(project)
     success, data = db_internal.execute_query(query, 6, log, "getting samples from database", "DB error", parent)
+    if not success:
+        return False, None
+    else:
+        return True, data
+
+
+def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = None):
+    """creates a pseudo-ENA reply file with random ENA accession IDs and a pseudo pretypings file,
+    which can be used to create fake-IPD files before ENA has assigned official accession numbers
+    """
+    success, data = find_alleles_per_project(project, log, parent)
     if not success:
         return False, None, None
     
@@ -195,20 +205,44 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
     log.debug("Fake ENA file: {}".format(fake_file_ena))
     log.debug("Fake Befunde file: {}".format(fake_file_befunde))
     return True, fake_file_ena, fake_file_befunde
-            
+
+
+def get_pretypings_from_oracledb(project, local_cf, settings, log, parent = None):
+    """writes pretyping file with the pretyping results from the oracle database
+    """
+    success, alleles = find_alleles_per_project(project, log, parent)
+    if not success:
+        return False, None, None
+    
+    sample_ids = [[row[0], row[3]] for row in alleles] # format [[sample_id_int, locus]]
+    if not sample_ids:
+        msg = "No samples found for project {}!".format(project)
+        log.error(msg)
+        if parent:
+            QMessageBox.warning(parent, "Pretypings error", msg)
+        return False, None, None
+    pretypings, samples, not_found = db_external.get_pretypings_from_limsrep(sample_ids, local_cf, log)
+    output_file = os.path.join(settings["temp_dir"], "pretypings.csv")
+    db_external.write_pretypings_file(pretypings, samples, output_file, log)
+    return True, output_file, not_found
+    
+           
 
 def main(log):
     user = "admin"
-    project = "20190415_ADMIN_MIC_2"
+    project = "20190515_ADMIN_KIR_1"
+    sample_id_int = "ID17040887"
     
     settings = GUI_login.get_settings(user, log)
     
     from typeloader_GUI import create_connection, close_connection
+    
     db_file = settings["db_file"]
     mydb = create_connection(log, db_file)
-    
     try:
-        make_fake_ENA_file(project, log, settings, basis = "local_name")
+        local_user, local_cf = check_local(settings, log)
+        if local_user:
+            get_pretypings_from_oracledb(project, local_cf, settings, log, parent = None)
     except Exception as E:
         log.exception(E)
     
