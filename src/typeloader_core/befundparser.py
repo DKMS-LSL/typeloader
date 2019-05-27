@@ -59,6 +59,7 @@ def getOtherAlleles(befundFile):
     for line in befundHandle:
         if not (len(line.strip())): 
             continue
+        line = line.replace("'","").replace('"',"") # remove quotes
         parts = line.strip().split(delimiter)
         patient = parts[patientIdPos]
         customer = parts[customerPos]

@@ -87,7 +87,7 @@ def reformat_partner_allele(alleles, myallele, length, log):
                             partners.append(a.split(":")[0])
                         else:
                             partners.append(a[:length])
-                partner = ",".join(partners)
+                partner = "+".join(partners)
                 reformated_alleles = [alleles[i], partner]
                 appendix = "s are" if len(alleles) > 2 else " is"
                 log.info("\t => Success: {} is self, partner allele{} {}!".format(alleles[i], appendix, 
@@ -99,7 +99,7 @@ def reformat_partner_allele(alleles, myallele, length, log):
         alleles = reformated_alleles
     else:
         log.info("\t => Could not figure it out, need user input!")
-    alleles = ",".join(alleles)
+    alleles = "+".join(alleles)
     return success, alleles
 
 
@@ -137,7 +137,7 @@ def make_befund_text(befund, closestAllele, myallele, geneMap, differencesText, 
             myalleles = [allele.zfill(length) for allele in befund[gene]]
         else:
             myalleles = befund[gene]
-        alleles = ",".join(myalleles)
+        alleles = "+".join(myalleles)
         if gene == myallele.gene:
             # check for consistency:
             mystring = alleles.lower()
