@@ -2126,25 +2126,24 @@ class Test_pretyping_valid(unittest.TestCase):
             s = self.samples[name]
             log.debug("testing {}: ({})".format(s.name, s.description))
             target_allele = TargetAllele(gene = s.gene, target_allele = s.target_allele, partner_allele = s.partner_allele)
-             
+            self_name = s.target_allele.split("*")[1]
+            befund = self.pretypings[name]
+            geneMap = {'gene': ['HLA', 'KIR'], 'targetFamily': s.target_family}
             if s.error_exp: # sad path testing (are correct errors raised?)
                 myerror = self.error_dic[s.error_exp]
                 # make sure right error type is raised:
-                self.assertRaises(myerror, ITG.make_befund_text, self.pretypings[name], s.closest_allele, target_allele, 
-                                           {'gene': ['HLA', 'KIR'], 'targetFamily': s.target_family},
-                                           s.diff_text, log)
+                self.assertRaises(myerror, ITG.make_befund_text, befund, self_name, target_allele, s.closest_allele,
+                                           geneMap, s.diff_text, log)
                 # make sure error text is correct if an error is raised:
                 try:
-                    ITG.make_befund_text(self.pretypings[name], s.closest_allele, target_allele, 
-                                           {'gene': ['HLA', 'KIR'], 'targetFamily': s.target_family},
-                                           s.diff_text, log)
+                    ITG.make_befund_text(befund, self_name, target_allele, s.closest_allele,
+                                           geneMap, s.diff_text, log)
                 except Exception as E:
                     self.assertEqual(E.problem, s.error_exp)
                  
             else: # happy path testing (these should pass without errors)
-                txt = ITG.make_befund_text(self.pretypings[name], s.closest_allele, target_allele, 
-                                           {'gene': ['HLA', 'KIR'], 'targetFamily': s.target_family},
-                                           s.diff_text, log)
+                txt = ITG.make_befund_text(befund, self_name, target_allele, s.closest_allele, 
+                                           geneMap, s.diff_text, log)
                 for line in txt.split("\n"):
                     if s.gene in line:
                         self.assertEqual(line, "FT                  /{}".format(s.final_result), 

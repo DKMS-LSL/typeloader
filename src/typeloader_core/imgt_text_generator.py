@@ -97,6 +97,7 @@ def reformat_partner_allele(alleles, myallele, length, log):
                         
     if success:
         alleles = reformated_alleles
+
     else:
         log.info("\t => Could not figure it out, need user input!")
     alleles = "+".join(alleles)
@@ -117,15 +118,13 @@ def check_all_required_loci(befund_text, gene, target_allele, alleles, allele_na
                                     "pretyping for {} missing".format(" and ".join(sorted(missing))))
         
     
-def make_befund_text(befund, closestAllele, myallele, geneMap, differencesText, log):
+def make_befund_text(befund, self_name, myallele, closestAllele, geneMap, differencesText, log):
     befundText = ""
-    [locus, self_name] = closestAllele.split("*")
-    if locus.startswith("KIR"):
-        self_name = self_name[:3]
-    else:
-        self_name = self_name.split(":")[0]
-
     alleles = []
+    confirmation = False
+    if differencesText.startswith("CC   Confirmation"):
+        confirmation = True
+        
     for gene in list(befund.keys()):
         genesystem = gene[:3]
         length = None
@@ -141,42 +140,43 @@ def make_befund_text(befund, closestAllele, myallele, geneMap, differencesText, 
         if gene == myallele.gene:
             # check for consistency:
             mystring = alleles.lower()
-            if "pos" in mystring:
+            if "pos" in mystring: # target locus not allowed to be POS
                 log.warning("Invalid Pretyping: pretyping for target locus should not contain POS. Please adjust pretyping file!")
                 raise InvalidPretypingError(myallele, myalleles, self_name, gene, "POS is not acceptable pretyping for a target locus")
                 return
-            if differencesText == "CC   Confirmation": # confirmations should not be labeled "new"!
-                if self_name not in mystring:
-                    log.warning("Invalid Pretyping: allele_name '{}' not found in pretyping for target locus. Please adjust pretyping file!".format(self_name))
-                    raise InvalidPretypingError(myallele, myalleles, self_name, gene, "assigned allele name not found in pretyping")
+                
+            i = mystring.count("new") + mystring.count("xxx")
+            if i == 0: # no pretyping marked as new
+                if not confirmation:
+                    raise InvalidPretypingError(myallele, myalleles, self_name, gene, "no allele marked as new in pretyping")
                     return
+                
+            if i > 1:
+                log.info("Target locus {} has {} novel alleles".format(myallele.gene, i))
+                success, alleles = reformat_partner_allele(myalleles, myallele, length, log)
+                if not success:
+                    log.warning("Please indicate self!".format(myallele.gene, i))
+                    raise BothAllelesNovelError(myallele, myalleles)
+                    return
+                
             else:
-                if self_name not in mystring:
+                if self_name.replace(":new","").replace("new","") not in mystring:
                     log.warning("Invalid Pretyping: allele_name '{}:new' not found in pretyping for target locus. Please adjust pretyping file!".format(self_name))
                     raise InvalidPretypingError(myallele, myalleles, self_name, gene, "assigned allele name not found in pretyping")
                     return
             
-                i = mystring.count("new") + mystring.count("xxx")
-                if i == 0:
-                    raise InvalidPretypingError(myallele, myalleles, self_name, gene, "no allele marked as new in pretyping")
-                    return
-                if i > 1:
-                    log.info("Target locus {} has {} novel alleles".format(myallele.gene, i))
-                    success, alleles = reformat_partner_allele(myalleles, myallele, length, log)
-                    if not success:
-                        log.warning("Please indicate self!".format(myallele.gene, i))
-                        raise BothAllelesNovelError(myallele, myalleles)
-                        return
-                    
+            if confirmation:
+                alleles = alleles.replace(self_name, closestAllele.split("*")[1])
+                
         befundText += otherAllelesString.replace("{gene}", gene).replace("{alleleNames}",alleles)
-    check_all_required_loci(befundText, locus, myallele, alleles, self_name, log)
+    check_all_required_loci(befundText, gene, myallele, alleles, self_name, log)
     return befundText
 
 
-def make_diff_line(differences, imgtDiff, closestAllele):
+def make_diff_line(differences, imgtDiff, self_name, closestAllele):
 
     baseText = "%s differs from %s like so : "
-    diffText = baseText % ("%s:new" % closestAllele.split(":")[0], closestAllele)
+    diffText = baseText % (self_name, closestAllele)
 
     diffsExist = False
 
@@ -211,7 +211,8 @@ def make_diff_line(differences, imgtDiff, closestAllele):
         diffsExist = True
 
     if diffsExist: return diffText
-    else: return "Confirmation"
+    else: 
+        return "Confirmation of {}".format(closestAllele)
 
 def make_imgt_footer(sequence, sequencewidth=60):
 
@@ -253,8 +254,16 @@ def make_imgt_footer(sequence, sequencewidth=60):
 
 def make_imgt_text(submissionId, cellLine, local_name, myallele, enaId, befund, closestAllele, diffToClosest, 
                    imgtDiff, enafile, sequence, geneMap, missing_bp_start, missing_bp_end, settings, log):
-    differencesText = refAlleleDiffString.replace("{text}",make_diff_line(diffToClosest, imgtDiff, closestAllele))    
-    otherAllelesText = make_befund_text(befund, closestAllele, myallele, geneMap, differencesText, log)
+    
+    [locus, self_name] = closestAllele.split("*")
+    if locus.startswith("KIR"):
+        self_name = self_name[:3] + "new"
+    else:
+        self_name = self_name.split(":")[0] + ":new"
+        
+    diffLine = make_diff_line(diffToClosest, imgtDiff, "{}*{}".format(locus, self_name), closestAllele)
+    differencesText = refAlleleDiffString.replace("{text}", diffLine)    
+    otherAllelesText = make_befund_text(befund, self_name, myallele, closestAllele, geneMap, differencesText, log)
     
     partial_UTR5, partial_UTR3 = False, False
     if missing_bp_start:
