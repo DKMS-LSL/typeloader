@@ -580,12 +580,12 @@ class IPDSubmissionForm(CollapsibleDialog):
             try:
                 suggested_path = os.path.join(self.settings["default_saving_dir"], "pretypings.csv")
                 chosen_path = QFileDialog.getSaveFileName(self, "Download generated pretypings file...", suggested_path)[0]
-                log.info("Saving generated pretypings file under {}...".format(chosen_path))
+                self.log.info("Saving generated pretypings file under {}...".format(chosen_path))
                 shutil.copy(pretypings_file, chosen_path)
                 self.befund_widget.field.setText(chosen_path)
                 self.pretypings_btn.setStyleSheet(general.btn_style_normal)
             except Exception as E:
-                log.exception(E)
+                self.log.exception(E)
                 QMessageBox.warning(self, "Error while generating pretypings file", "Could not save the pretypings file:\n\n{}".format(repr(E)))
                 self.pretypings_btn.setChecked(False)
             self.ok_btn2.check_ready()
