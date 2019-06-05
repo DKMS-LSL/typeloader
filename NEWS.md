@@ -1,5 +1,18 @@
 # Version History
 
+## V2.3.2 (2019-05-29)
+### New features:
+- users can delete individual alleles or all alleles of a project by rightclicking in the navigation area (on an allele or project, respectively)
+- DKMS-users can now retrieve pretypings directly from the database (#16, #84)
+
+### Changes
+- IPD files: fields "name" and "lab\_contact" now contain the general company identifier, while the individual submitter is given as "alt\_contact" (#108)
+- all pretypings in IPD files are now consistently formatted as GL-strings
+- confirmation IPD files now contain the closest known allele in the description section (#106)
+
+### Bugfixes
+- TypeLoader errors during reference updates are now caught (previously led to crashes) (#109)
+
 ## V2.3.1.1 (2019-05-07)
 ### Bugfixes
 - various bugfixes to make the Windows installer work
