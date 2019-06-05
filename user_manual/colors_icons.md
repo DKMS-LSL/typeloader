@@ -32,7 +32,7 @@ The allele status designates the overall status of the allele. TypeLoader knows 
 | lab process completed     | ToDo | Lab work to characterize the target allele has been finished, the sequence can now be uploaded to TypeLoader. |
 | ENA-ready                 | ToDo | The sequence has been uploaded to TypeLoader and an ENA-file has been generated. This can now be submitted to ENA. |
 | ENA submitted             | Pending | The allele has been submitted to ENA and is awaiting their response with an accession number. |
-| ENA-problem               | Error | The allele was rejcted during ENA submission. Something in its ENA-file must be fixed. Then the allele can be resubmitted. |
+| ENA-problem               | Error | The allele was rejected during ENA submission. Something in its ENA-file must be fixed. Then the allele can be resubmitted. |
 | ENA accepted              | ToDo  | The allele has received an ENA accession number and can now be submitted to IPD. |
 | IPD submitted             | Pending | The allele has been submitted to IPD and is awaiting their response with an allele name and HWS number. |
 | IPD-problem               | Error  | The allele was rejected by IPD. Something must be fixed. Then the allele can be resubmitted. |

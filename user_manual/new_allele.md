@@ -21,10 +21,10 @@ If TypeLoader does not find the sample's ID in the raw file (it can be provided 
 
 ![Pic](images/new_allele1.png)
 
-Here, you enter the sample's internal ID ("Lims donor ID") and external ID ("Spendernummer") and click "Done" to proceed.
+Here, you enter the sample's internal ID (sample identifier within your lab - this is the main ID TypeLoader will use to identify the sample) and external ID (e.g., the sample identifier provided by the client) and click "Done" to proceed.
 
 ##  (2) Specifying allele details (for XML files) 
-If the uploaded file is a GenDX NGSEngine file, it contains multiple alleles of one locus. TypeLoader will ask you to specify which allele you want to upload, and to give a unique cell line identifier:
+If the uploaded file is a GenDX NGSEngine file, it contains multiple alleles of one locus. TypeLoader will ask you to specify which allele you want to upload:
 
 ![Pic](images/new_allele2.png)
 
@@ -32,7 +32,7 @@ Select one of the alleles by using the checkboxes.
 
 Any allele marked by NSGEngine as "novel" is auto-selected. 
 
-Select exactly one allele and check the data entered. Now you can click "Proceed" and TypeLoader will take you to the next step.
+Select exactly one allele. Now you can click "Proceed" and TypeLoader will take you to the next step.
 
 ##  (3) Check ENA-text and save results 
 ###  (3a) Check ENA text 
@@ -41,7 +41,7 @@ Once TypeLoader knows which allele you want to upload, it will automatically ann
 
 ![Pic](images/new_allele3.png)
 
-You can edit the text and use the "Discard changes!" / "Save changes!" buttons on the bottom to decide whether to discard or save your changes.
+You can edit the text and use the "Discard changes!" / "Save changes!" buttons on the bottom to decide whether to discard or save your changes. (Usually, there should be no need to edit the ENA files.)
 
 ![Pic](images/icon_important.png) **Do NOT change the identifier listed as cell line! This is the unique ID for your target allele and will be used to identify this allele in correspondence with ENA and IPD.**
 
@@ -68,12 +68,12 @@ For DR2S files which provide "software: DR2S" in their header, the following val
 
 All of these can later be edited in the AlleleView.
 
-Once TypeLoader finishes this, the dialog is closed. Now you can find the allele in the [=> Navigation Area](navigation.md) and view and edit its data in its [=> Sample View](view_sample.md).
+Once TypeLoader finishes this step, the dialog is closed. Now you can find the allele in the [=> Navigation Area](navigation.md) and view and edit its data in its [=> Sample View](view_sample.md).
 
 ##  Adding multiple alleles of one sample 
-You can add multiple alleles of one sample one by one by specifying the same internal and external user ID.
+You can add multiple alleles of one sample one by one by specifying the same internal sample ID (the external sample ID of subsequent alleles of the same internal sample ID is ignored, to make sure to keep internal and external ID consistent ith each other).
 
-These can be entered from the same raw XML file by uploading one allele, then uploading the same file again but choosing the other allele. Alternatively, a different raw file can also be used.
+These alleles can be entered from the same raw XML file by uploading one allele, then uploading the same file again but choosing the other allele. Alternatively, a different raw file can also be used.
 
 For more details see [=> Multiple alleles of one sample](multiple_alleles.md).
 

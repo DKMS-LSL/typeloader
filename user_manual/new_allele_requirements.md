@@ -15,7 +15,7 @@ Each file must contain **the sequence of one allele** of one of the following ge
  * All sequences **must** be **genomic** sequences (i.e., no cDNA sequences or ARD-only sequences)
  * All sequences **must** cover **all exons AND all introns** (i.e., no partial sequences)
  * All sequences **must** cover **at least 1 bp of each UTR**.
- * **Ideally**, sequences should start at the **first base of the official 5' UTR** and end at the **last base of the official 3' UTR**.
+ * **Ideally**, sequences should start at the **first base of the official 5' UTR** and end at the **last base of the official 3' UTR**. Less is possible, if the requirements above are met (i.e., parts of the UTRs can be missing). **Any additional adjacent sequence parts must be trimmed before uploading!**
 
 ### Incomplete UTRs
 IPD does not accept partial genomic sequences. However, they consider a sequence full-length if it contains at least the last base of the 5' UTR, the first base of the 3' UTR, and all exons and introns in between. Therefore, this is TypeLoader's minimum requirement for any input sequence.
@@ -24,7 +24,7 @@ TypeLoader normally expects sequences to cover the whole gene including both UTR
 
 ![Pic](images/new_allele_incomplete.png)
 
-By clicking `Yes`, you confirm that you are aware your sequence is incomplete, and of thepossible consequences of submitting such a sequence, and that you want to upload and eventually submit it, anyway.
+By clicking `Yes`, you confirm that you are aware your sequence is incomplete, and of the possible consequences of submitting such a sequence, and that you want to upload and eventually submit it, anyway.
 
 ![Pic](images/icon_important.png) **Please consider carefully if you really can't provide a full-length sequence covering the whole gene, including both UTRs!** Incomplete sequences in the IPD databases often cause problems for NGS-based genotyping and other analyses, so it is *highly* preferable to submit only complete sequences to IPD.
 

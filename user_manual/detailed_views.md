@@ -7,4 +7,4 @@ TypeLoader offers two types of Detailed Views for its elements:
 
 These views are the main instruments to interact with a given allele, sample or table. They contain several tables which show the data of the selected object in a neat and intuitive arrangement. They also allow editing of these projects, samples and alleles. (Not all data can be edited, though, to ensure data consistency and protect from accidental changes.)
 
-To open a Detailed View, rightclick the element of choice in the [=> Navigation Area](navigation.md) or an [=> Overview](overviews.md) and choose ``Open SampleView`` or ``Open ProjectView``.
+To open a Detailed View, rightclick the element of choice in the [=> Navigation Area](navigation.md) or an [=> Overview](overviews.md) and choose ``Open SampleView`` or ``Open ProjectView``, or simply double click the element of choice.

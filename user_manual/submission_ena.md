@@ -40,7 +40,7 @@ Click ``OK`` to save the results to TypeLoader. All alleles will then have their
 ###  Submission not successful 
 ![EnaSubmission1](images/ena_submission4b.png)
 
-If even one sample of the submission fails ENA's tests, ENA will refuse the whole submission.
+If even one allele of the submission fails ENA's tests, ENA will refuse the whole submission.
 
 As a reply, you get a list of what problem was found for each problematic sample. (For your convenience, TypeLoader will automatically insert the appropriate allele name into these messages.)
 

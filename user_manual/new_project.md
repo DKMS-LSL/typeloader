@@ -31,7 +31,7 @@ If the name is already in use (because the same user (or someone with the same i
 ##  (3) Register project with ENA 
 Now, the project must be registered with ENA. To do this, click the now green ``Start new project`` button.
 
-TypeLoader will then automatically submit the project's details to ENA and retrieve the project ID that ENA generates. This project ID is then displayed as "ENA project nr":
+TypeLoader will then automatically submit the project's details to ENA and retrieve the project ID that ENA generates. This project ID is then displayed as "ENA Project Nr":
 
 ![NewProject0](images/new_project3.png)
 

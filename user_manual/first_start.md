@@ -7,10 +7,10 @@ When you start TypeLoader for the first time after Setup, you will have to creat
 
 **Please create a [=> Test Account](users_test.md) first and use it to get familiar with all of TypeLoader's functions, before creating a productive account!**
 
-(Unlike other user accounts, test accounts are connected to ENA's test server insted of their productive server. You don't want to screw around on their productive server! They complain! ;-))
+(Unlike other user accounts, test accounts are connected to ENA's test server instead of their productive server. You don't want to screw around on their productive server! They complain! ;-))
 
 Once you have created an account and logged into it, TypeLoader will ask whether you want to update the reference data. Since the installation does not bring any reference data along, **you must accept the reference update** for TypeLoader to work!
-Just click "Yes" and wait until another Popup appears to tell you that TypeLoader has (hopefully) successfully update its reference data (or give you an error message if a problem was encountered).
+Just click "Yes" and wait until another Popup appears to tell you that TypeLoader has (hopefully) successfully updated its reference data (or give you an error message if a problem was encountered).
 
 After the reference data has been downloaded and processed successfully, you can get familiar with TypeLoader.
 
@@ -29,12 +29,14 @@ After you have created a project, you can [=> add new alleles](new_allele.md) to
 When your test project contains a handful of alleles, you can submit them to ENA using the [=> ENA submission dialog](submission_ena.md). If there are no problems encountered, all your submitted alleles will now have the status ``ENA submitted``. If ENA has problems with any of your sequences, TypeLoader will show you a popup window explaining the problem, so you can fix them before trying again. 
 
 ## Create a productive user account
-Once you are satisfied that ENA's test server accepts your sequences, restart TypeLoader, create a productive [=> User Account](users.md) and log into that (and, if necessary, [=> configure its settings, too](settings.md). Create a project and add your sequences, just like you did in the test account.
+Once you are satisfied that ENA's test server accepts your sequences, restart TypeLoader, create a productive [=> User Account](users.md) and log into that (and, if necessary, [=> configure its settings, too](settings.md)). Create a project and add your sequences, just like you did in the test account.
 
 When your project contains the alleles you want, submit them to ENA. (You do not have to submit all alleles of a project at once, and you can add more alleles to a project after you have submitted other alleles of the same project. To get started, it might be good idea to try out a handful of alleles, submit them, and await the ENA accession numbers, before uploading hundreds of alleles and only then realising a problem with the input format or methodology.)
 
 ## Submit alleles to IPD
-Once ENA has assigned accession numbers to your alleles, they will send you an email. After you have received that email, you can [=> create IPD submission files](submission_ipd.md). (You can do this in your productive user account, as there is no direct server interaction with IPD.) For this, you will need to have a .csv file with the genotyping results of all other loci of your samples (you can [=> download an example file](example_files.md) from TypeLoader), and the attachment of the ENA email. **You also must make sure to [=> configure the Methods part of your settings](settings.md) to correctly depict your workflow!** 
+Once ENA has assigned accession numbers to your alleles, they will send you an email. After you have received that email, you can [=> create IPD submission files](submission_ipd.md). (You can do this in your productive user account right away, as there is no direct server interaction with IPD.) For this, you will need to have the attachment of the ENA email and a .csv file with the genotyping results of all other loci of your samples (see [=> Pretypings file](pretypings.md) for more details; you can [=> download an example file](example_files.md)).
+
+![important](images/icon_important.png) **You also must make sure to [=> configure the Methods part of your settings](settings.md) to correctly depict your workflow!** 
 
 If you have not ever submitted novel alleles to IPD, open your first submission text file, go to [IPD's submission page](https://www.ebi.ac.uk/ipd/imgt/hla/subs/submit.html) and type the required information into their web form. (See [=> IPD Submission via IPD's Web Form](ipd_webform.md).) You need to do this in order to get a submittor ID, which you can then [=> add to your TypeLoader settings](settings.md). 
 

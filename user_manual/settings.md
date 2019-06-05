@@ -12,7 +12,7 @@ In the first tab, you can see and edit all settings about your user account, inc
 ## Company & Communications Settings
 ![settings2](images/settings2.png)
 
-In the second tab, you can see and edit data about your company, mainly the contact data used for communication with ENA and IPD. By default, this dialog holds the values you entered during TypeLoader's Setup, but you can change them here. (While the default values from setup are used for every user account, you can only edit them for each individual user.)
+In the second tab, you can see and edit data about your company, mainly the contact data used for communication with ENA and IPD. By default, this dialog holds the values you entered during TypeLoader's Setup, but you can change them here. (While the default values from setup are used for every new user account, you can only edit them for each individual user.)
 
 ## Lab Method Settings
 ![settings3](images/settings3.png)

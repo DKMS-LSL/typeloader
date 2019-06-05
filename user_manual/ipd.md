@@ -6,4 +6,4 @@ This process will allow the IPD Submissions team to assess the expected volume o
 
 To expedite this step, it is advisable that before reaching out to IPD, you submit a number of sequences to the appropriate IPD Database [=> using IPD's web-based submission tool](ipd_webform.md). This should included a number of confirmatory sequences to help confirm any methods used and expected accuracy of the sequences.
 
-(You will only have to go through this process once per lab. If you have multiple TypeLoader users in your lab, they can share the same submitter ID and thereby count as one submitter for IPD.)
+(You will only have to go through this process once per lab. If you have multiple TypeLoader users in your lab,  ask IPD to associate your lab name or head of lab with the submittor ID, and enter this name as "Lab contact for IPD" in your [=> TypeLoader settings](settings.md). Then individual lab members can share this submitter ID and thereby count as one submitter for IPD.)

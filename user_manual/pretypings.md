@@ -1,8 +1,8 @@
 # ![Icon](images/TypeLoader_32.png) The pretypings file
 
-For every submitted allele, IPD requires, among other data, genotyping results for several loci to characterize the sample the novel allele originated from ("Source Sample Typing Profile"). To pass this information to TypeLoader, you put add it as a .csv file during [=> IPD submission](submission_ipd.md).
+For every submitted allele, IPD requires, among other data, genotyping results for several loci to characterize the sample the novel allele originated from ("Source Sample Typing Profile"). To pass this information to TypeLoader, you add it as a .csv file during [=> IPD submission](submission_ipd.md).
 
-You can fill this file either manually or automatically, if your LIMS etc. provide this.
+You can fill this file either manually or automatically, if your LIMS etc. provides such functionality.
 
 ## Required loci
 The following loci are the minimum acceptable pretyping profile for IPD submissions:
@@ -19,9 +19,13 @@ The pretypings file must be a .csv file (comma separated text file). You can gen
 
 The file should contain **one row per sample you want to submit alleles from**. 
 
+Example file:
+
+![IPDSubmission2b](images/ipd_submission2a.png)
+
 ### Columns:
-  * **internal_ID**: **this column is used to identify the sample**
-  * **external_ID**: optional (can be left blank but **NOT** deleted!); can be used to store any additional information; TypeLoader ignores the content of this column
+  * **sample\_ID\_int**: internal sample ID; **this column is used to identify the sample**
+  * **sample\_ID\_ext**: external sample ID; optional (can be left blank but **NOT** deleted!); alternatively, this column can be used to store any additional information; TypeLoader ignores the content of this column
   * **client**: optional (can be left blank but **NOT** deleted!); the customer who sent this sample; this information is saved in TypeLoader
 
 **This is followed by several columns per locus:**
@@ -34,13 +38,9 @@ The file should contain **one row per sample you want to submit alleles from**.
 * **CCR5:** 2 columns, "CCR5_1" and "CCR5_2", giving both alleles of the sample as "WT" (for wildtype) or "Del32" for the delta32 mutation
 * **CMV:** 1 column, called "CMV", containing the CMV status as "+" or "-"
 
-![Important](images/icon_important.png) **You can leave out any columns that you don't genotype, as long as the required loci (see above) are provided.**
+![Important](images/icon_important.png) **You can leave out/delete any columns that you don't genotype, as long as the required loci (see above) are provided.**
 
-![Important](images/icon_important.png) **If you are using Excel etc. and any of your genotyping results consist only of numbers, please use single quotes around them to ensure Excel doesn't cut off the leading zeros!** (I.e., enter the allele `00105` as `'00105'`, or Excel will convert that to `105`.)
-
-Example file:
-
-![IPDSubmission2b](images/ipd_submission2a.png)
+![Important](images/icon_important.png) **If you are using Excel etc. and any of your genotyping results consist only of numbers or something Excel might think is a time, please use single quotes around them to ensure Excel doesn't cut off the leading zeros!** (I.e., enter the allele `00105` as `'00105'`, or Excel will convert that to `105`.)
 
 ![Important](images/icon_important.png) **You can download an example file with the right format and headers from TypeLoader's menu: ``Options`` => ``Download example files`` => ``Pretypings File``. You can use this as a template to fill in your data, either manually or from your LIMS etc.**
 
@@ -57,7 +57,7 @@ Example file:
 ![Important](images/icon_important.png) **If you submit an allele for a locus containing *more than one novel allele*, mark BOTH of them as new. Make sure the fields "Target Allele" and "Partner Allele" in the [=> Sample View](view_sample.md) tab "New Genotyping" of each allele corresponds with your pretypings (in the SampleView, only the respective target allele should be marked as new, the partner allele should be left at first field resolution).** (See [=> Multiple novel alleles](multiple_alleles.md))
 
 ### Requirement checks
-TypeLoader checks the given pretypings for the following requirements, and shows a popup asking you to clarify if necessary:
+After you upload the pretypings file, TypeLoader checks the given pretypings for the following requirements, and shows a popup asking you to clarify if necessary:
 
 #### Invalid pretypings
 If any of the following things happen, TypeLoader will recognize the pretyping as invalid:
@@ -77,7 +77,7 @@ If this happens, you have to adjust the pretypings file accordingly. Then you ca
 
 If any of the target alleles in your submission are from samples with more than one novel allele in the target locus, TypeLoader will try to figure out which of these pretypings belongs to which target allele by comparing the content of "Target allele" and "Partner allele" in the [=> SampleView](view_sample.md) (lower half, tab "New Genotyping") to the provided pretypings (these values are extracted from the original Fasta or XML file during [=> New sequence file upload](new_allele.md)).
 
-If these do not match, TypeLoader will show you a popup dialog asking you for each unclear target allele, which of the provided pretypings belongs to this target allele:
+If these do not match, TypeLoader will show you a popup dialog asking for each unclear target allele, which of the provided pretypings belongs to this target allele:
 
 ![pic](images/multiple_novel_alleles_dialog.png)
 
