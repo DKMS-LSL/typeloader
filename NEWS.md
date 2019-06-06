@@ -4,6 +4,7 @@
 ### New features:
 - users can delete individual alleles or all alleles of a project by rightclicking in the navigation area (on an allele or project, respectively)
 - DKMS-users can now retrieve pretypings directly from the database (#16, #84)
+- BothAllelesNovelDialog is now scrollable (#112)
 
 ### Changes
 - IPD files: fields "name" and "lab\_contact" now contain the general company identifier, while the individual submitter is given as "alt\_contact" (#108)
