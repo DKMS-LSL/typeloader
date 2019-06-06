@@ -17,7 +17,7 @@ from shutil import copyfile
 from collections import namedtuple
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QGridLayout,
                              QPushButton, QMessageBox, QTextEdit,
-                             QWidget, QHBoxLayout, 
+                             QWidget, QHBoxLayout, QScrollArea,
                              QDialog, QLabel, QVBoxLayout, QGroupBox, QRadioButton,
                              QTableWidget, QTableWidgetItem)
 from PyQt5.Qt import pyqtSlot, pyqtSignal
@@ -85,6 +85,7 @@ class BothAllelesNovelDialog(QDialog):
     
     def __init__(self, allele_dic, settings, log):
         log.info("BothAllelesNovelDialog created...")
+        print(allele_dic)
         self.log = log
         self.settings = settings
         self.allele_dic = allele_dic
@@ -114,15 +115,26 @@ class BothAllelesNovelDialog(QDialog):
         lbl.setStyleSheet(general.label_style_normal)
         layout.addWidget(lbl)
         
+        self.scrollArea = QScrollArea(self)
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollAreaWidgetContents = QWidget(self.scrollArea)
+        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+        scrollArea_layout = QVBoxLayout(self.scrollAreaWidgetContents)
+        self.scrollAreaWidgetContents.setLayout(scrollArea_layout)
+        
+        layout.addWidget(self.scrollArea)
+        
         self.choices_dic = {}
         self.choice_boxes = {}
         for allele in self.allele_dic:
             allele_info = self.allele_dic[allele]
             mybox = AlleleChoiceBox(allele_info, self.log)
             self.choice_boxes[allele] = mybox
-            layout.addWidget(mybox)
+            scrollArea_layout.addWidget(mybox)
             self.choices_dic[allele_info[1]] = False
             mybox.choice.connect(self.catch_choice)
+        
+        layout.addWidget(self.scrollArea)
         self.submit_btn = QPushButton("Save choices")
         self.submit_btn.setEnabled(False)
         self.submit_btn.clicked.connect(self.save_results)
@@ -990,11 +1002,9 @@ if __name__ == '__main__':
     
     project = "20190515_ADMIN_KIR_1"
     app = QApplication(sys.argv)
-     
-#     problem_dic = {'DKMS10004135': ['ID13178800', 'DKMS-LSL_ID13178800_DPB1_1', TargetAllele(gene='HLA-DPB1', target_allele='HLA-DPB1*03:new', partner_allele='HLA-DPB1*13:01:01:01 or 02:01:02:01'), ['13:new', '04:new']]}
-#     ex = BothAllelesNovelDialog(problem_dic, settings_dic, log)
+    
+#     ex = BothAllelesNovelDialog(allele_dic, settings_dic, log)
     ex = IPDSubmissionForm(log, mydb, project, settings_dic)
-#     ex = IPDCounterLockedDialog(None, "IPD file creation error", "Another user is currently creating IPD files.", settings_dic, log)
      
     ex.show()
      
@@ -1002,19 +1012,3 @@ if __name__ == '__main__':
     close_connection(log, mydb)
     log.info("<End>")
     sys.exit(result)
-
-#     project_dir = r"\\nasdd12\daten\data\Typeloader\admin\projects\20190321_ADMIN_MIC_1"
-#     samples = [('MIC1', 'DKMS-LSL_MIC1_MICA_1', '')]
-#     file_dic = {'DKMS-LSL_MIC1_MICA_1': {'blast_xml': 'DKMS-LSL_MIC1_MICA_1.blast.xml', 'ena_file': 'DKMS-LSL_MIC1_MICA_1.ena.txt'}}
-#     allele_dic = {'DKMS-LSL_MIC1_MICA_1': TargetAllele(gene='MICA', target_allele='MICA*008:new', partner_allele='')}
-#     ENA_id_map = {'DKMS-LSL_MIC1_MICA_1': 'O61O3NVO'}
-#     ENA_gene_map = {'DKMS-LSL_MIC1_MICA_1': 'MICA'}
-#     pretypings = r"\\nasdd12\daten\data\Typeloader\admin\temp\fake_befunde.csv"
-#     subm_id = "IPD_20190322102215"
-#     mydir = r"\\nasdd12\daten\data\Typeloader\admin\projects\20190321_ADMIN_MIC_1\IPD-submissions\IPD_20190322102215"
-# 
-#     results = MIF.write_imgt_files(project_dir, samples, file_dic, allele_dic, ENA_id_map, 
-#                                    ENA_gene_map, pretypings, subm_id, 
-#                                    mydir, settings_dic, log)
-            
-
