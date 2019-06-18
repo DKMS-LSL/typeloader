@@ -1,5 +1,9 @@
 # Version History
 
+## V2.3.2.1 (2019-06-18)
+### Bugfix:
+- target alleles with a deletion and a mismatch near the end of the CDS can now be handled (#113)
+
 ## V2.3.2 (2019-05-29)
 ### New features:
 - users can delete individual alleles or all alleles of a project by rightclicking in the navigation area (on an allele or project, respectively)
