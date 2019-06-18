@@ -4,6 +4,7 @@
 
 import re, sys
 from Bio import SeqIO
+from collections import defaultdict
 from .closestallele import getClosestKnownAlleles
 from .hla_embl_parser import read_dat_file
 from .imgtTransform import changeToImgtCoords
@@ -52,10 +53,11 @@ def getMismatchData(annotations):
     for mmIndex in range(len(annotations["differences"]["mismatches"])):
         genomicPos = annotations["differences"]["mismatchPositions"][mmIndex]
         cdsPos = annotations["imgtDifferences_orig"]["mismatchPositions"][mmIndex][0]
-        if genomicPos == cdsPos + missing_bp:
+        if genomicPos == cdsPos + missing_bp: # non-CDS positions
             mmCodons.append(())
             continue
 
+        # CDS positions:
         canonicalMMCodonNum = int(ceil(float(cdsPos)/3))
         
         """
@@ -102,15 +104,29 @@ def getMismatchData(annotations):
         startPos = 0
 
         for index in range(1,(len(cdsSeq)//3) + 1):
-            cdsCodonHash[index], closestAlleleCodonHash[index] = cdsSeq[startPos:startPos+3], closestAlleleCdsSeq[startPos:startPos+3]
+            cdsCodonHash[index] = cdsSeq[startPos:startPos+3]
+            closestAlleleCodonHash[index] = closestAlleleCdsSeq[startPos:startPos+3]
             startPos += 3
-
-        if cdsCodonHash[canonicalMMCodonNum] != closestAlleleCodonHash[canonicalMMCodonNum]:
-            mmCodons.append((imgtMMCodonNum,(cdsCodonHash[canonicalMMCodonNum], closestAlleleCodonHash[canonicalMMCodonNum])))
-        elif cdsCodonHash[canonicalMMCodonNum - 1] != closestAlleleCodonHash[canonicalMMCodonNum - 1]:
-            mmCodons.append((imgtMMCodonNum,  (cdsCodonHash[canonicalMMCodonNum - 1], closestAlleleCodonHash[canonicalMMCodonNum - 1])))
-        else:
-            mmCodons.append((imgtMMCodonNum,  (cdsCodonHash[canonicalMMCodonNum + 1], closestAlleleCodonHash[canonicalMMCodonNum + 1])))
+        len_dif = len(closestAlleleCdsSeq) - len(cdsSeq)
+        
+        needs_shifting = defaultdict(lambda: 0)
+        if len_dif > 2: # target allele contains deletion => cdsSeq does not align with complete reference seq
+            startPos = len(cdsSeq) + 3
+            for index in range(len(cdsSeq)//3 + 1, len(closestAlleleCdsSeq)//3 + 1):
+                cdsCodonHash[index] = cdsSeq[-3:]
+                mycodon = closestAlleleCdsSeq[startPos:startPos+3]
+                closestAlleleCodonHash[index] = mycodon
+                startPos += 3
+                needs_shifting[index] = 1
+        try:
+            if cdsCodonHash[canonicalMMCodonNum] != closestAlleleCodonHash[canonicalMMCodonNum]:
+                mmCodons.append((imgtMMCodonNum,(cdsCodonHash[canonicalMMCodonNum], closestAlleleCodonHash[canonicalMMCodonNum - needs_shifting[canonicalMMCodonNum]])))
+            elif cdsCodonHash[canonicalMMCodonNum - 1] != closestAlleleCodonHash[canonicalMMCodonNum - 1]:
+                mmCodons.append((imgtMMCodonNum,  (cdsCodonHash[canonicalMMCodonNum - 1], closestAlleleCodonHash[canonicalMMCodonNum - 1])))
+            else:
+                mmCodons.append((imgtMMCodonNum,  (cdsCodonHash[canonicalMMCodonNum + 1], closestAlleleCodonHash[canonicalMMCodonNum + 1])))
+        except KeyError:
+            raise KeyError("Could not calculate annotation positions: Reference allele {} has no codon number {}!".format(closestallele, canonicalMMCodonNum))
 
     return mmCodons
 
