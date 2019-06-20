@@ -29,7 +29,7 @@ Here, you can create a user account.
 After successfully creating a user account, TypeLoader will create everything needed for this account and log into it.
 
 ### Test User Accounts
-![Important](images/icon_important.png) **We highly recommend you create a test user account first**, to validate your server connections and try things out.
+![Important](images/icon_important.png) **We HIGHLY recommend you create a test user account first**, to validate your server connections and try things out.
 
 See [=> here](users_test.md) for details. 
 

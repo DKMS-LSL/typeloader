@@ -2,12 +2,12 @@
 
 ![layout](images/main_annotated.png)
 
-TypeLoader's GUI is diveded into different parts. 
+TypeLoader's GUI is divided into different parts. 
 
 On the top, you have the menu bar and the tool bar to choose what you want to do:
 
- * [=> Adding new alleles](new_allele.md)
- * [=> Adding new projects](new_project.md)
+ * [=> Add a new allele](new_allele.md)
+ * [=> Add a new project](new_project.md)
  * View an [=> Overview](overviews.md) or [=> Detailed View ](detailed_views.md)
  * [=> Submit alleles to ENA](submission_ena.md)
  * [=> Create files for IPD submission](submission_IPD.md)

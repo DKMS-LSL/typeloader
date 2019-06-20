@@ -52,7 +52,7 @@ After you have selected the alleles you want to submit (must be at least one all
 
 This section will tell you whether TypeLoader was successful in creating the IPD files or encountered any problems.
 
-From here, you can download a zipped version of all IPD files generated in this submission session, by clicking the green ``Download zipped IPD files`` button. These files can now be submitted to IPD per email.
+From here, you can download a zipped version of all IPD files generated in this submission session, by clicking the green ``Download zipped IPD files`` button. These files can now be submitted to IPD per email (or whichever way IPD told you to submit your files).
 
 ![Important](images/icon_important.png) **If you don't download this now, you can still get the individual files for each target allele by going to each allele's [=> SampleView](view_sample.md) and clicking ``Save files``. But you will have to do that for each allele individually, which might be laborious (depending on the number of alleles submitted). So downloading it now is probably a very good idea. ;-).**
 

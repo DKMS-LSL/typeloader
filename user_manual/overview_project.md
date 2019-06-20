@@ -12,4 +12,4 @@ Rightclicking any row will give you the following options:
   * **Select as current project**: chooses this project as current project. The selection in the [=> Navigation Area](navigation.md) will jump to this project and expand it, and it will be pre-selected as default when opening a dialog. (The effect is the same as clicking the project in the [=> Navigation Area](navigation.md).)
   * **Submit project to ENA**: opens the [=> ENA Submission Dialog](submission_ena.md), with this project pre-selected.
   * **Submit project to IPD**: opens the [=> IPD Submission Dialog](submission_ipd.md), with this project pre-selected.
-  * **Delete project if empty**: delete an accidentally started project that does not contain any alleles, yet. (Please, use this option with caution. The deleted project will still remain registered with ENA and clutter up their data!)
+  * **Delete project if empty**: delete an accidentally started project that does not contain any alleles, yet. (Please, use this option with caution. The deleted project will still remain registered with ENA and clutter up their data, and they will probably eventually enquire about it!)

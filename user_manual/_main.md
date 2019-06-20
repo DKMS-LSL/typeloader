@@ -1,11 +1,11 @@
 ![SplashScreen](images/TypeLoaderSplash.png)
 # Introduction
 
-You have discovered novel HLA, KIR or MIC alleles, but you have not yet submitted them to the European Nucleotide Archive ([ENA](https://www.ebi.ac.uk/ena/submit)) and to [IPD-IMGT/HLA](https://www.ebi.ac.uk/ipd/imgt/hla/) or [IPD-KIR](https://www.ebi.ac.uk/ipd/kir/)? You have extended HLA, KIR or MIC alleles that are only partially known to full length? Maybe you have already submitted alleles, but the tedious process of manually annotating and submitting them each individually is wrecking your nerves and costing you hours you'd rather spend on doing something more productive?
+You have discovered novel HLA, KIR or MIC alleles, but you have not yet submitted them to the European Nucleotide Archive ([ENA](https://www.ebi.ac.uk/ena/submit)) and to [IPD-IMGT/HLA](https://www.ebi.ac.uk/ipd/imgt/hla/) or [IPD-KIR](https://www.ebi.ac.uk/ipd/kir/)? You have extended HLA, KIR or MIC alleles to full length that are currently only partially known? Maybe you have already submitted alleles, but the tedious process of manually annotating and submitting them each individually is wrecking your nerves and costing you hours you'd rather spend on doing something more productive?
 
 **Welcome to TypeLoader!**
 
-TypeLoader was developed at [DKMS Life Science Lab](https://dkms-lab.de/) to automate the annotation and submission of novel HLA, KIR and MIC alleles as far as possible. This reduces the hands-on time and error rate of creating the submission files by over 95%. Meanwhile, we have submitted [over 2500 HLA alleles](https://www.ncbi.nlm.nih.gov/pubmed/28547825) and a growing number of KIR alleles using this software. 
+TypeLoader was developed at [DKMS Life Science Lab](https://dkms-lab.de/) to automate the annotation and submission of novel HLA, KIR and MIC alleles as far as possible. This reduces the hands-on time and error rate of creating the submission files by over 95%. Meanwhile, we have submitted [over 3000 HLA alleles](https://www.ncbi.nlm.nih.gov/pubmed/28547825) and a growing number of KIR and MIC alleles using this software. 
 
 We are making TypeLoader available to others, to get all those full-length alleles submitted - for a more complete and a more consistent reference database for all of us in the HLA, KIR and MIC communities.
 

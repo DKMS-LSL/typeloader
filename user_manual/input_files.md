@@ -23,10 +23,10 @@ The following keys are  currently recognized:
  * **LIMS\_DONOR\_ID** or **SAMPLE\_ID\_INT** (internal sample ID)
  * **Spendernummer** or **SAMPLE\_ID\_EXT** (external sample ID)
  * **notes** (comment)
- * **short\_read_data**
- * **short\_read_type**
- * **long\_read_data**
- * **long\_read_type**
+ * **short\_read_data** (was short-read data used to generate this sequence, yes/no?)
+ * **short\_read_type** (type of short reads used)
+ * **long\_read_data** (was long-read data used to generate this sequence, yes/no?)
+ * **long\_read_type** (type of long reads used)
  * **software** (software used for full-length genotyping)
  * **version** (version of the software used for full-length genotyping)
  * **date** (date of secondary genotyping)

@@ -1,21 +1,21 @@
 # ![Icon](images/TypeLoader_32.png) Project View 
 This [=> Detailed View](detailed_views.md) shows the current state and all data concerning one TypeLoader project.
 
-To open it, choose a project (either in the [=> Navigation Area](navigation.md), the [=> Project Overview](overview_project.md) or [=> Allele Overview](overview_alleles.md), rightclick on it and select ``Open Project View``, or just doubleclick the project in the [=> Navigation Area](navigation.md):
+To open it, choose a project (either in the [=> Navigation Area](navigation.md), the [=> Project Overview](overview_project.md) or [=> Allele Overview](overview_alleles.md)), rightclick on it and select ``Open Project View``, or just doubleclick the project in the [=> Navigation Area](navigation.md):
 
 ![ProjectView](images/view_project.png)
 
 The data in this view is organized in three tables:
 
   * **Statistics**: (upper left) how many samples are contained, and how many have reached which status
-  * **General Information**:: (lower left) details and IDs describing this project
+  * **General Information**: (lower left) details and IDs describing this project
   * **Alleles:** (right) a list of all alleles of this project
 
 ##  Statistics 
 This table gives a summary of all statistical data of this project:
 
-  * How many alleles are contained? (nr\_alleles)
-  * How many are finished? (closed) (see [=> Colors, icons and status](colors_icons.md) for which status values are considered closed)
+  * How many alleles are contained? (number of alleles)
+  * How many are finished? (closed alleles) (see [=> Colors, icons and status](colors_icons.md) for which status values are considered closed)
   * How many have been submitted to ENA and IPD?
   * How many have been accepted by IPD?
   * How many have been abandoned?

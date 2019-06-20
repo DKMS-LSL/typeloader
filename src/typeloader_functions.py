@@ -725,7 +725,7 @@ pass
 # main:
 
 def main(settings, log, mydb):
-    project = "20190321_ADMIN_MIC_1"
+    project = "20190423_ADMIN_mixed_test"
 #     project = "20190423_STG_MIC_1"
 #     delete_all_samples_from_project(project, settings, log)
 #     csv_file = r"Y:\Projects\typeloader\staging\data_unittest\MIC\bulk_upload_MIC_ok.csv"
@@ -733,14 +733,14 @@ def main(settings, log, mydb):
 #     report, errors_found = bulk_upload_new_alleles(csv_file, project, settings, mydb, log)
 #     print(report)
 
-    myfile = r"\\labor.local\system\users\schoene\Desktop\TypeLoader_test_data\HLA\HLA-A_01-1_broken2.fasta"
+    myfile = r"H:\Projekte\RnD\24_NeueAllele\3_Veröffentlichung\1.2_fastaExport_DR2S\MICA\ID17326884\hapA.pacbio.minimap.fa"
     sample_id_int = "1"
     success, msg = upload_new_allele_complete(project, sample_id_int, "test", myfile, "DKMS", 
                                                   settings, mydb, log, incomplete_ok = True)
-    if not success:
-        print("Not successful!", msg)
-    else:
-        delete_sample(sample_id_int, 1, project, settings, log)
+#     if not success:
+#         print("Not successful!", msg)
+#     else:
+#         delete_sample(sample_id_int, 1, project, settings, log)
 
     
 
