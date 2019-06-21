@@ -134,7 +134,7 @@ def make_befund_text(befund, self_name, myallele, closestAllele, geneMap, differ
         elif genesystem in ["KIR", "MIC"]:
             length = 3
             if genesystem == "KIR":
-                delimiter = "+" # for KIR, use a comma as allele separator (normal GL strings)
+                delimiter = "+" # for KIR, use a plus as allele separator (normal GL strings)
         
         if length:
             myalleles = [allele.zfill(length) for allele in befund[gene]]
