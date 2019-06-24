@@ -183,9 +183,17 @@ def reformat_pretypings(allele_data, gene, cursor, log, fields = 2):
             pass
         else: # KIR
             mylocus = "KIR" + locus
+            if locus == "2DS4N":
+                mylocus = "KIR2DS4"
+                typing_2DS4 = items[-1][0]
+                if KIR_loci[-1] == "KIR2DS4":
+                    items = items[:-1]
+                    allele1 = typing_2DS4 + "+" + allele1
+            else:
+                KIR_loci.append(mylocus)
+                
             items.append([allele1,])
-            KIR_loci.append(mylocus)
-    
+            
     # reformat KIR:
     for i, params in enumerate(items):
         mylocus = KIR_loci[i]
@@ -195,7 +203,7 @@ def reformat_pretypings(allele_data, gene, cursor, log, fields = 2):
             GL = mydata[0][0]
         except:
             GL = ""
-        if "NEW" in GL: # only keep "NEW" in target gene, all others should fall back to POS (or 1field) as per request of IPD
+        if "NEW" in GL or "POS" in GL: # only keep "NEW" in target gene, all others should fall back to POS (or 1field) as per request of IPD
             if mylocus != gene:
                 GL = "POS"
         alleles = split_GL_string(GL)
@@ -323,11 +331,21 @@ def read_local_settings(log):
 
 
 def main(log):
-    alleles = [['ID17040887', 'KIR2DL1'], ['ID15531073', 'HLA-A'], ["123", "HLA-A"]]
+    alleles = [['ID14829342', 'KIR3DL3']]
+#     a = ["ID14830878", "ID14830825", "ID14784647", "ID14818625", "ID14800520", "ID14818499", "ID14791480", "ID14829342", 
+#          "ID14807741", "ID14803153", "ID14814228", "ID14795402", "ID14820789", "ID14785607", "ID14811691", "ID14807361", 
+#          "ID14787353"]
+#     alleles = [[myID, "KIR3DL3"] for myID in a]
     output_file = r"\\nasdd12\daten\data\Typeloader\admin\temp\pretypings.csv"
     
     local_cf = read_local_settings(log)
     pretypings, samples, not_found = get_pretypings_from_limsrep(alleles, local_cf, log)
+#     for sample in pretypings:
+#         print()
+#         for gene in sorted(pretypings[sample]):
+#             if gene.startswith("KIR2DS4"):
+#                 value = pretypings[sample][gene]
+#                 print(sample, gene, value)
     write_pretypings_file(pretypings, samples, output_file, log)
     
         
