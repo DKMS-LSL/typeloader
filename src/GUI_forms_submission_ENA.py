@@ -23,6 +23,7 @@ from typeloader_core import EMBLfunctions as EF
 from GUI_forms import (CollapsibleDialog, ChoiceSection, 
                        ProceedButton, QueryButton, FileChoiceTable)
 from GUI_misc import settings_ok
+from typeloader_functions import submit_sequences_to_ENA
 
 #===========================================================
 # parameters:
@@ -285,167 +286,49 @@ class ENASubmissionForm(CollapsibleDialog):
         if not proceed:
             self.submit_btn.setChecked(False)
             return
-        self.log.info("Submitting alleles to ENA...")
-        self.accepted = False
-        try:
-            projects_dir = self.settings["projects_dir"]
-            self.project_name = self.proj_widget.field.text()
-            files = []
-            j = 0
-            for i in self.project_files.check_dic:
-                box = self.project_files.check_dic[i]
-                if box.checkState():
-                    nr = self.project_files.item(i, 1).text()
-                    sample = self.project_files.item(i, 2).text()
-                    file = self.project_files.item(i, 3).text()
-                    files.append(os.path.join(projects_dir, self.project_name, sample, file))
-                    cell_line = file.split(".")[0]
-                    self.samples.append([self.project_name, nr])
-                    self.choices[j] = [self.project_name, nr, sample, cell_line]
-                    j += 1
-                    
-            curr_time = time.strftime("%Y%m%d%H%M%S")
-            analysis_alias = self.project_info.ENA_ID + "_" + curr_time
-            self.concat_FF_zip = os.path.join(projects_dir, self.project_name, analysis_alias + "_flatfile.txt.gz")
-            self.analysis_filename = os.path.join(projects_dir, self.project_name, analysis_alias + "_analysis.xml")
-            self.analysis_filename_submission = os.path.join(projects_dir, self.project_name, analysis_alias + "_submission.xml")
-            self.output_filename =  os.path.join(projects_dir, self.project_name, analysis_alias + "_output.xml")
-            submission_alias = analysis_alias + "_filesub"
-            analysis_title = self.title 
-            analysis_description = self.description 
-            self.ENA_response = ""
-            
-            if len(files) == 0:
-                self.log.warning(" No files were selected for Submission")
-                QMessageBox.warning(self, "No files selected", "Please select at least one file for submission!")
-                self.cleanup_submission_failed()
-                return
-            else:
-                ## 1. create a concatenated flatfile
-                self.log.debug("Concatenating flatfiles...")
-                concat_successful = EF.concatenate_flatfile(files, self.concat_FF_zip, self.log)
-                if not concat_successful:
-                    self.log.error("Concatenation wasn't successful")
-                    QMessageBox.warning(self, "Concatenation problem", "Concatenated file is empty :-(")
-                    self.cleanup_submission_failed()
-                    return
-                else:
-                    ## 2. calculate md5 checksum
-                    self.log.debug("Calculating md5 checksum...")
-                    md5_checksum = EF.make_md5(self.concat_FF_zip, self.log)
-                    
-                    ## 3. create and save analysis file
-                    self.log.debug("Creating analysis file...")
-                    xml_center_name = self.settings["xml_center_name"]
-                    analysis_xml = EF.generate_analysis_xml(analysis_title, analysis_description, analysis_alias, self.project_info.ENA_ID, xml_center_name, self.concat_FF_zip, md5_checksum)
-                    write_result_analysis = EF.write_file(analysis_xml, self.analysis_filename, self.log)
-                    
-                    if not write_result_analysis:
-                        self.log.error("Could not write _analysis.xml file")
-                        QMessageBox.warning(self, "Problem with ENA file generation", "Could not write the file {}".format(self.analysis_filename))
-                        self.cleanup_submission_failed()
-                        return
-                    else:
-                        ## 4. create and save submission file
-                        self.log.debug("Creating submission file...")
-                        submission_xml = EF.generate_submission_ff_xml(submission_alias, xml_center_name, os.path.basename(self.analysis_filename))
-                        write_result_analysis = EF.write_file(submission_xml, self.analysis_filename_submission, self.log)
-                        if not write_result_analysis:
-                            self.log.error("Could not write _submission.xml file")
-                            QMessageBox.warning(self, "Problem with ENA file generation", "Could not write the file {}".format(self.analysis_filename_submission))
-                            self.cleanup_submission_failed()
-                            return
-                        else:
-                            ## 5. send zipped flatfiles to EMBL FTP
-                            self.log.debug("Sending zipped flatfiles to ENA's FTP...")
-                            ftp_transmit_result = None
-                            ftp_user = self.settings["ftp_user"]
-                            ftp_pwd = self.settings["ftp_pwd"]
-                            ftp_server = self.settings["embl_ftp"]
-                            ftp_transmit_result = EF.connect_ftp("push", self.concat_FF_zip, ftp_user, ftp_pwd, ftp_server, self.log, self.settings["modus"])
-                            if ftp_transmit_result != "True":
-                                self.log.error("Could not push files to ENA's FTP server")
-                                QMessageBox.warning(self, "ENA FTP connection failed", "Could not push files to ENA's FTP server:\n\n{}".format(ftp_transmit_result))
-                                self.cleanup_submission_failed()
-                                return
-                            else:
-                                ## 6. send analysis.xml and submission.xml to EMBLfunctions
-                                self.log.debug("Sending analysis.xml and submission.xml to ENA'S FTP...")
-                                server = self.settings["embl_submission"]
-                                proxy = self.settings["proxy"]
-                                userpwd = "{}:{}".format(self.settings["ftp_user"], self.settings["ftp_pwd"])
-                                analysis_err = EF.submit_project_ENA(self.analysis_filename_submission, self.analysis_filename, "ANALYSIS", 
-                                                                     server, proxy, self.output_filename, userpwd)
-                                if analysis_err:
-                                    self.log.error(analysis_err)
-                                    self.log.exception(analysis_err)
-                                    QMessageBox(self, "FTP error", "An error occurred while trying to submit to ENA:\n\n{}".format(repr(analysis_err)))
-                                    self.cleanup_submission_failed()
-                                    return
-                                else:
-                                    self.log.debug("Parsing ENA's reply...")
-                                    ans_time = time.strftime("%Y%m%d%H%M%S")
-                                    _, submission_accession_number, _, _, _ = EF.parse_register_EMBL_xml(self.output_filename, "SUBMISSION")
-                                    successful_transmit, analysis_accession_number, info, error, self.problem_samples = EF.parse_register_EMBL_xml(self.output_filename, "ANALYSIS", self.choices)
-                                    #TODO: (future) get submission_acc_nr & analysis_acc_nr from one call of EF.parse_register_EMBL_xml()
-                                    try:
-                                        if error:
-                                            self.log.error(error)
-                                            self.ENA_response += "ERROR after transmission to ENA:\n"
-                                            if isinstance(error, str):
-                                                self.ENA_response += error
-                                            else:
-                                                for item in error:
-                                                    self.ENA_response += item.firstChild.nodeValue + "\n"
-                                                    self.log.warning(item.firstChild.nodeValue)
-                                            if error == "Internal Server Error":
-                                                self.ENA_response += "\nPlease check https://wwwdev.ebi.ac.uk/ena/submit/webin/login for details.\n"
-                                            self.ENA_response += "\nThe complete submission has been rolled back."
-                                        if isinstance(info, str):
-                                            if info not in ["known error", "No message available"]:
-                                                self.ENA_response += info
-                                        else:
-                                            for item in info:
-                                                self.ENA_response += item.firstChild.nodeValue + "\n"
-                                        
-                                    except Exception as E:
-                                        self.log.error(E)
-                                        self.log.exception(E)
-                                        QMessageBox.warning(self, "ENA response error", "Could not parse ENA's reply: \n\n{}\n\n{}".format(error, repr(E)))
-                                    
-                                    self.textbox.setText(self.ENA_response)
-                                        
-                                    if successful_transmit != "true":
-                                        self.log.error("Could not transmit to ENA. Rolling back...")
-                                        result = EF.connect_ftp("delete", self.concat_FF_zip, ftp_user, ftp_pwd, ftp_server, self.log, self.settings["modus"])
-                                        if result == "True":
-                                            self.log.debug("=> Successfully deleted concatenated ENA files from FTP server")
-                                        else:
-                                            self.log.warning("=> Problem during rollback: {}".format(result))
-                                        self.cleanup_submission_failed()
-                                        self.proceed_sections(1, 2)
-                                        return
-                                    
-                                    elif self.settings["modus"] in ("staging", "testing", "debugging"): # don't spam ENA's test server
-                                        self.log.debug("Only testing: deleting file from server...")
-                                        result = EF.connect_ftp("delete", self.concat_FF_zip, ftp_user, ftp_pwd, ftp_server, self.log, self.settings["modus"])
-                                        if result == "True":
-                                            self.log.debug("=> Successfully deleted concatenated ENA files from FTP server")
-                                        else:
-                                            self.log.warning("=> Problem during rollback: {}".format(result))
-                                            return
+        
+        self.project_name = self.proj_widget.field.text()
+        ENA_ID = self.project_info.ENA_ID
+        project_title = self.title 
+        project_description = self.description 
 
-            self.log.info("=> Successfully transmitted all data to ENA!")
-            self.proceed_sections(1, 2)
-            self.submission_successful = True
-            self.ena_results = (analysis_alias, curr_time, ans_time, 
-                                analysis_accession_number, submission_accession_number)
+        projects_dir = self.settings["projects_dir"]
+        
+        self.accepted = False
+        
+        files = []
+        j = 0
+        for i in self.project_files.check_dic:
+            box = self.project_files.check_dic[i]
+            if box.checkState():
+                nr = self.project_files.item(i, 1).text()
+                sample = self.project_files.item(i, 2).text()
+                file = self.project_files.item(i, 3).text()
+                files.append(os.path.join(projects_dir, self.project_name, sample, file))
+                cell_line = file.split(".")[0]
+                self.samples.append([self.project_name, nr])
+                self.choices[j] = [self.project_name, nr, sample, cell_line]
+                j += 1
+        
+        try:
+            self.submission_successful = True       
+            self.ena_results, err_type, msg = submit_sequences_to_ENA(self.project_name, ENA_ID, project_title, project_description, 
+                                                         self.samples, self.choices, self.settings, self.log)
+            
+            self.textbox.setText(self.ena_results[-1])
         except Exception as E:
             self.log.exception(E)
             QMessageBox.warning(self, "ENA submission failed", 
                                 "An error occured during ENA submission:\n\n{}".format(repr(E)))
             self.submission_successful = False
             self.cleanup_submission_failed()
+        
+                    
+        if not self.ena_results:
+            QMessageBox.warning(self, err_type, msg)
+            self.cleanup_submission_failed()
+            return
+                
                                         
     def cleanup_submission_failed(self):
         """deletes old files after submission failed
@@ -486,7 +369,7 @@ class ENASubmissionForm(CollapsibleDialog):
         if self.submission_successful:
             self.log.debug("Saving changes to db...")
             (submission_id, timestamp_sent, timestamp_confirmed, acc_analysis,
-             acc_submission) = self.ena_results
+             acc_submission, self.problem_samples, self.ENA_response) = self.ena_results
             
             # update allele_status for individual alleles:
             for [project_name, nr] in self.samples:

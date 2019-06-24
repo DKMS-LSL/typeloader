@@ -13,7 +13,7 @@ contains calls to TypeLoader_core and handling thereof
 
 # import modules:
 import os, shutil
-import string, random
+import string, random, time
 from collections import defaultdict
 
 from typeloader_core import (EMBLfunctions as EF, coordinates as COO, backend_make_ena as BME, 
@@ -707,7 +707,7 @@ def delete_sample(sample, nr, project, settings, log, parent = None):
 def delete_all_samples_from_project(project_name, settings, log, parent = None):
     log.info("Deleting all samples from project {}...".format(project_name))
     query = "select sample_id_int, allele_nr from ALLELES where project_name = '{}'".format(project_name)
-    success, data = db_internal.execute_query(query, 2, log, "Getting samples from ALLELES table", "Sample Deletion Error", parent)
+    _, data = db_internal.execute_query(query, 2, log, "Getting samples from ALLELES table", "Sample Deletion Error", parent)
     for [sample_id_int, nr] in data:
         delete_sample(sample_id_int, nr, project_name, settings, log)
     
@@ -718,7 +718,128 @@ def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
     """
     return ''.join(random.choices(chars, k = size))    
 
+def submit_sequences_to_ENA(project_name, ENA_ID, title, description, samples, choices, settings, log):
+    log.info("Submitting sequences to ENA...")
+    projects_dir = settings["projects_dir"]
+    files = []
+            
+    curr_time = time.strftime("%Y%m%d%H%M%S")
+    analysis_alias = ENA_ID + "_" + curr_time
+    concat_FF_zip = os.path.join(projects_dir, project_name, analysis_alias + "_flatfile.txt.gz")
+    analysis_filename = os.path.join(projects_dir, project_name, analysis_alias + "_analysis.xml")
+    analysis_filename_submission = os.path.join(projects_dir, project_name, analysis_alias + "_submission.xml")
+    output_filename =  os.path.join(projects_dir, project_name, analysis_alias + "_output.xml")
+    submission_alias = analysis_alias + "_filesub"
+    analysis_title = title 
+    analysis_description = description 
+    ENA_response = ""
+    
+    if len(files) == 0:
+        log.warning("No files were selected for Submission!")
+        return False, "No files selected", "Please select at least one file for submission!"
+    
+    ## 1. create a concatenated flatfile
+    log.debug("Concatenating flatfiles...")
+    concat_successful = EF.concatenate_flatfile(files, concat_FF_zip, log)
+    if not concat_successful:
+        log.error("Concatenation wasn't successful")
+        return False, "Concatenation problem", "Concatenated file is empty :-("
 
+    ## 2. calculate md5 checksum
+    log.debug("Calculating md5 checksum...")
+    md5_checksum = EF.make_md5(concat_FF_zip, log)
+    
+    ## 3. create and save analysis file
+    log.debug("Creating analysis file...")
+    xml_center_name = settings["xml_center_name"]
+    analysis_xml = EF.generate_analysis_xml(analysis_title, analysis_description, analysis_alias, ENA_ID, xml_center_name, 
+                                            concat_FF_zip, md5_checksum)
+    write_result_analysis = EF.write_file(analysis_xml, analysis_filename, log)
+    if not write_result_analysis:
+        log.error("Could not write _analysis.xml file")
+        return False, "Problem with ENA file generation", "Could not write the file {}".format(analysis_filename)
+
+    ## 4. create and save submission file
+    log.debug("Creating submission file...")
+    submission_xml = EF.generate_submission_ff_xml(submission_alias, xml_center_name, os.path.basename(analysis_filename))
+    write_result_analysis = EF.write_file(submission_xml, analysis_filename_submission, log)
+    if not write_result_analysis:
+        log.error("Could not write _submission.xml file")
+        return False, "Problem with ENA file generation", "Could not write the file {}".format(analysis_filename_submission)
+
+    ## 5. send zipped flatfiles to EMBL FTP
+    log.debug("Sending zipped flatfiles to ENA's FTP...")
+    ftp_user = settings["ftp_user"]
+    ftp_pwd = settings["ftp_pwd"]
+    ftp_server = settings["embl_ftp"]
+    ftp_transmit_result = EF.connect_ftp("push", concat_FF_zip, ftp_user, ftp_pwd, ftp_server, log, settings["modus"])
+    if ftp_transmit_result != "True":
+        log.error("Could not push files to ENA's FTP server")
+        return False, "ENA FTP connection failed", "Could not push files to ENA's FTP server:\n\n{}".format(ftp_transmit_result)
+        
+    ## 6. send analysis.xml and submission.xml to EMBLfunctions
+    log.debug("Sending analysis.xml and submission.xml to ENA'S FTP...")
+    server = settings["embl_submission"]
+    proxy = settings["proxy"]
+    userpwd = "{}:{}".format(settings["ftp_user"], settings["ftp_pwd"])
+    analysis_err = EF.submit_project_ENA(analysis_filename_submission, analysis_filename, "ANALYSIS", 
+                                         server, proxy, output_filename, userpwd)
+    if analysis_err:
+        log.error(analysis_err)
+        log.exception(analysis_err)
+        return False, "FTP error", "An error occurred while trying to submit to ENA:\n\n{}".format(repr(analysis_err))
+
+    log.debug("Parsing ENA's reply...")
+    ans_time = time.strftime("%Y%m%d%H%M%S")
+    _, submission_accession_number, _, _, _ = EF.parse_register_EMBL_xml(output_filename, "SUBMISSION")
+    successful_transmit, analysis_accession_number, info, error, problem_samples = EF.parse_register_EMBL_xml(output_filename, "ANALYSIS", choices)
+    #TODO: (future) get submission_acc_nr & analysis_acc_nr from one call of EF.parse_register_EMBL_xml()
+    try:
+        if error:
+            log.error(error)
+            ENA_response += "ERROR after transmission to ENA:\n"
+            if isinstance(error, str):
+                ENA_response += error
+            else:
+                for item in error:
+                    ENA_response += item.firstChild.nodeValue + "\n"
+                    log.warning(item.firstChild.nodeValue)
+            if error == "Internal Server Error":
+                ENA_response += "\nPlease check https://wwwdev.ebi.ac.uk/ena/submit/webin/login for details.\n"
+            ENA_response += "\nThe complete submission has been rolled back."
+        if isinstance(info, str):
+            if info not in ["known error", "No message available"]:
+                ENA_response += info
+        else:
+            for item in info:
+                ENA_response += item.firstChild.nodeValue + "\n"
+        
+    except Exception as E:
+        log.error(E)
+        log.exception(E)
+        return False, "ENA response error", "Could not parse ENA's reply: \n\n{}\n\n{}".format(error, repr(E))
+        
+    if successful_transmit != "true":
+        log.error("Could not transmit to ENA. Rolling back...")
+        result = EF.connect_ftp("delete", concat_FF_zip, ftp_user, ftp_pwd, ftp_server, log, settings["modus"])
+        if result == "True":
+            log.debug("=> Successfully deleted concatenated ENA files from FTP server")
+        else:
+            log.warning("=> Problem during rollback: {}".format(result))
+            return False, "Problem during rollback", "Could not delete ENA files from test FTP server"
+    
+    if settings["modus"] in ("staging", "testing", "debugging"): # don't spam ENA's test server
+        log.debug("Only testing: deleting file from server...")
+        result = EF.connect_ftp("delete", concat_FF_zip, ftp_user, ftp_pwd, ftp_server, log, settings["modus"])
+        if result == "True":
+            log.debug("=> Successfully deleted concatenated ENA files from FTP server")
+            ena_results = (analysis_alias, curr_time, ans_time, 
+                        analysis_accession_number, submission_accession_number, 
+                        problem_samples, ENA_response)
+            return ena_results, None, None
+        else:
+            log.warning("=> Problem during rollback: {}".format(result))
+            return False, "Problem during rollback", "Could not delete ENA files from test FTP server"
 
 pass
 #===========================================================
