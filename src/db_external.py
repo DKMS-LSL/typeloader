@@ -190,6 +190,10 @@ def reformat_pretypings(allele_data, gene, cursor, log, fields = 2):
                     if KIR_loci[-1] == "KIR2DS4":
                         items = items[:-1]
                         allele1 = typing_2DS4 + "+" + allele1
+                    else:
+                        log.error("KIR2DS4N handling only works correctly if the 2DS4N row is directly preceded by 2DS4. Here, it is preceded by {} insteads. Rejecting!".format(KIR_loci[-1]))
+                        raise ValueError("Could not correctly puzzle KIR2DS4 and 2DS4N together. Please contact the TypeLoader staff!")
+                        return None
                 else:
                     KIR_loci.append(mylocus)
                     
@@ -259,16 +263,11 @@ def get_pretypings_from_limsrep(input_params, local_cf, log):
     log.info("Reformatting pretypings...")
     conn, cursor = open_connection(ngsm_scheme, log)
     pretypings = {}
-    try:
-        for i, allele_data in enumerate(data_pretypings):
-            [sample_id_int, gene] = input_params[i]
-            if not sample_id_int in not_found:
-                log.info("\t{}...".format(sample_id_int))
-                pretypings[sample_id_int] = reformat_pretypings(allele_data, gene, cursor, log)
-        
-    except Exception as E:
-        log.error("\t=> Query failed!")
-        log.exception(E)
+    for i, allele_data in enumerate(data_pretypings):
+        [sample_id_int, gene] = input_params[i]
+        if not sample_id_int in not_found:
+            log.info("\t{}...".format(sample_id_int))
+            pretypings[sample_id_int] = reformat_pretypings(allele_data, gene, cursor, log)
     
     close_connection(conn, cursor, log)
     log.info("=> reformatting complete!")
