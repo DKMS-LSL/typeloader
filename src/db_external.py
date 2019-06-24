@@ -172,27 +172,28 @@ def reformat_pretypings(allele_data, gene, cursor, log, fields = 2):
         
     for row in allele_data:
         (locus, allele1, allele2) = row
-        if locus.startswith("HLA") or locus in ["CCR5"]:
-            pretypings_dic[locus + "_1"] = allele1
-            pretypings_dic[locus + "_2"] = allele2
-        elif locus in ["AB0", "MICA", "MICB"]:
-            pretypings_dic[locus] = allele1
-        elif locus == "RH":
-            pretypings_dic["RHD"] = allele1
-        elif locus == "KIR":
-            pass
-        else: # KIR
-            mylocus = "KIR" + locus
-            if locus == "2DS4N":
-                mylocus = "KIR2DS4"
-                typing_2DS4 = items[-1][0]
-                if KIR_loci[-1] == "KIR2DS4":
-                    items = items[:-1]
-                    allele1 = typing_2DS4 + "+" + allele1
-            else:
-                KIR_loci.append(mylocus)
-                
-            items.append([allele1,])
+        if allele1:
+            if locus.startswith("HLA") or locus in ["CCR5"]:
+                pretypings_dic[locus + "_1"] = allele1
+                pretypings_dic[locus + "_2"] = allele2
+            elif locus in ["AB0", "MICA", "MICB"]:
+                pretypings_dic[locus] = allele1
+            elif locus == "RH":
+                pretypings_dic["RHD"] = allele1
+            elif locus == "KIR":
+                pass
+            else: # KIR
+                mylocus = "KIR" + locus
+                if locus == "2DS4N":
+                    mylocus = "KIR2DS4"
+                    typing_2DS4 = items[-1][0]
+                    if KIR_loci[-1] == "KIR2DS4":
+                        items = items[:-1]
+                        allele1 = typing_2DS4 + "+" + allele1
+                else:
+                    KIR_loci.append(mylocus)
+                    
+                items.append([allele1,])
             
     # reformat KIR:
     for i, params in enumerate(items):
@@ -213,7 +214,7 @@ def reformat_pretypings(allele_data, gene, cursor, log, fields = 2):
                 pretypings_dic[col_name] = alleles[i]
             else:
                 pretypings_dic[col_name] = ""
-        
+    
     return pretypings_dic
     
 
@@ -331,21 +332,12 @@ def read_local_settings(log):
 
 
 def main(log):
-    alleles = [['ID14829342', 'KIR3DL3']]
-#     a = ["ID14830878", "ID14830825", "ID14784647", "ID14818625", "ID14800520", "ID14818499", "ID14791480", "ID14829342", 
-#          "ID14807741", "ID14803153", "ID14814228", "ID14795402", "ID14820789", "ID14785607", "ID14811691", "ID14807361", 
-#          "ID14787353"]
-#     alleles = [[myID, "KIR3DL3"] for myID in a]
+    alleles = [['ID14818837', 'KIR3DL3']]
     output_file = r"\\nasdd12\daten\data\Typeloader\admin\temp\pretypings.csv"
     
     local_cf = read_local_settings(log)
     pretypings, samples, not_found = get_pretypings_from_limsrep(alleles, local_cf, log)
-#     for sample in pretypings:
-#         print()
-#         for gene in sorted(pretypings[sample]):
-#             if gene.startswith("KIR2DS4"):
-#                 value = pretypings[sample][gene]
-#                 print(sample, gene, value)
+
     write_pretypings_file(pretypings, samples, output_file, log)
     
         
