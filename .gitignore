@@ -15,4 +15,4 @@ user.pickle
 log.txt
 src/TypeLoader_Setup.exe
 src/typeLoader_GUI.py
-src/ENA_Webin_CLI/test_data*
+src/ENA_Webin_CLI/test_data/*
