@@ -718,61 +718,73 @@ def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
     """
     return ''.join(random.choices(chars, k = size))    
 
-def submit_sequences_to_ENA(project_name, ENA_ID, title, description, samples, choices, settings, log):
-    log.info("Submitting sequences to ENA...")
-    projects_dir = settings["projects_dir"]
-    files = []
-            
+def create_ENA_filenames(project_name, ENA_ID, settings):
+    """creates the filenames for all files needed for ENA sequence submission,
+    returns them as a dict
+    """
     curr_time = time.strftime("%Y%m%d%H%M%S")
     analysis_alias = ENA_ID + "_" + curr_time
+    projects_dir = settings["projects_dir"]
     concat_FF_zip = os.path.join(projects_dir, project_name, analysis_alias + "_flatfile.txt.gz")
     analysis_filename = os.path.join(projects_dir, project_name, analysis_alias + "_analysis.xml")
     analysis_filename_submission = os.path.join(projects_dir, project_name, analysis_alias + "_submission.xml")
     output_filename =  os.path.join(projects_dir, project_name, analysis_alias + "_output.xml")
+    
+    file_dic = {"concat_FF_zip" : concat_FF_zip,
+                             "analysis_filename" : analysis_filename,
+                             "analysis_filename_submission" : analysis_filename_submission,
+                             "output_filename" : output_filename}
+    return file_dic, curr_time, analysis_alias
+
+def submit_sequences_to_ENA(project_name, title, description, ENA_ID, analysis_alias, curr_time, samples, choices, input_files, file_dic, settings, log):
+    """handles submission of sequences to ENA's REST server & creation of all files for this
+    """
+    log.info("Submitting sequences to ENA...")
+    
     submission_alias = analysis_alias + "_filesub"
     analysis_title = title 
     analysis_description = description 
     ENA_response = ""
     
-    if len(files) == 0:
+    if len(input_files) == 0:
         log.warning("No files were selected for Submission!")
         return False, "No files selected", "Please select at least one file for submission!"
     
     ## 1. create a concatenated flatfile
     log.debug("Concatenating flatfiles...")
-    concat_successful = EF.concatenate_flatfile(files, concat_FF_zip, log)
+    concat_successful = EF.concatenate_flatfile(input_files, file_dic["concat_FF_zip"], log)
     if not concat_successful:
         log.error("Concatenation wasn't successful")
         return False, "Concatenation problem", "Concatenated file is empty :-("
 
     ## 2. calculate md5 checksum
     log.debug("Calculating md5 checksum...")
-    md5_checksum = EF.make_md5(concat_FF_zip, log)
+    md5_checksum = EF.make_md5(file_dic["concat_FF_zip"], log)
     
     ## 3. create and save analysis file
     log.debug("Creating analysis file...")
     xml_center_name = settings["xml_center_name"]
     analysis_xml = EF.generate_analysis_xml(analysis_title, analysis_description, analysis_alias, ENA_ID, xml_center_name, 
-                                            concat_FF_zip, md5_checksum)
-    write_result_analysis = EF.write_file(analysis_xml, analysis_filename, log)
+                                            file_dic["concat_FF_zip"], md5_checksum)
+    write_result_analysis = EF.write_file(analysis_xml, file_dic["analysis_filename"], log)
     if not write_result_analysis:
         log.error("Could not write _analysis.xml file")
-        return False, "Problem with ENA file generation", "Could not write the file {}".format(analysis_filename)
+        return False, "Problem with ENA file generation", "Could not write the file {}".format(file_dic["analysis_filename"])
 
     ## 4. create and save submission file
     log.debug("Creating submission file...")
-    submission_xml = EF.generate_submission_ff_xml(submission_alias, xml_center_name, os.path.basename(analysis_filename))
-    write_result_analysis = EF.write_file(submission_xml, analysis_filename_submission, log)
+    submission_xml = EF.generate_submission_ff_xml(submission_alias, xml_center_name, os.path.basename(file_dic["analysis_filename"]))
+    write_result_analysis = EF.write_file(submission_xml, file_dic["analysis_filename_submission"], log)
     if not write_result_analysis:
         log.error("Could not write _submission.xml file")
-        return False, "Problem with ENA file generation", "Could not write the file {}".format(analysis_filename_submission)
+        return False, "Problem with ENA file generation", "Could not write the file {}".format(file_dic["analysis_filename_submission"])
 
     ## 5. send zipped flatfiles to EMBL FTP
     log.debug("Sending zipped flatfiles to ENA's FTP...")
     ftp_user = settings["ftp_user"]
     ftp_pwd = settings["ftp_pwd"]
     ftp_server = settings["embl_ftp"]
-    ftp_transmit_result = EF.connect_ftp("push", concat_FF_zip, ftp_user, ftp_pwd, ftp_server, log, settings["modus"])
+    ftp_transmit_result = EF.connect_ftp("push", file_dic["concat_FF_zip"], ftp_user, ftp_pwd, ftp_server, log, settings["modus"])
     if ftp_transmit_result != "True":
         log.error("Could not push files to ENA's FTP server")
         return False, "ENA FTP connection failed", "Could not push files to ENA's FTP server:\n\n{}".format(ftp_transmit_result)
@@ -782,8 +794,8 @@ def submit_sequences_to_ENA(project_name, ENA_ID, title, description, samples, c
     server = settings["embl_submission"]
     proxy = settings["proxy"]
     userpwd = "{}:{}".format(settings["ftp_user"], settings["ftp_pwd"])
-    analysis_err = EF.submit_project_ENA(analysis_filename_submission, analysis_filename, "ANALYSIS", 
-                                         server, proxy, output_filename, userpwd)
+    analysis_err = EF.submit_project_ENA(file_dic["analysis_filename_submission"], file_dic["analysis_filename"], "ANALYSIS", 
+                                         server, proxy, file_dic["output_filename"], userpwd)
     if analysis_err:
         log.error(analysis_err)
         log.exception(analysis_err)
@@ -791,8 +803,8 @@ def submit_sequences_to_ENA(project_name, ENA_ID, title, description, samples, c
 
     log.debug("Parsing ENA's reply...")
     ans_time = time.strftime("%Y%m%d%H%M%S")
-    _, submission_accession_number, _, _, _ = EF.parse_register_EMBL_xml(output_filename, "SUBMISSION")
-    successful_transmit, analysis_accession_number, info, error, problem_samples = EF.parse_register_EMBL_xml(output_filename, "ANALYSIS", choices)
+    _, submission_accession_number, _, _, _ = EF.parse_register_EMBL_xml(file_dic["output_filename"], "SUBMISSION")
+    successful_transmit, analysis_accession_number, info, error, problem_samples = EF.parse_register_EMBL_xml(file_dic["output_filename"], "ANALYSIS", choices)
     #TODO: (future) get submission_acc_nr & analysis_acc_nr from one call of EF.parse_register_EMBL_xml()
     try:
         if error:
@@ -821,7 +833,7 @@ def submit_sequences_to_ENA(project_name, ENA_ID, title, description, samples, c
         
     if successful_transmit != "true":
         log.error("Could not transmit to ENA. Rolling back...")
-        result = EF.connect_ftp("delete", concat_FF_zip, ftp_user, ftp_pwd, ftp_server, log, settings["modus"])
+        result = EF.connect_ftp("delete", file_dic["concat_FF_zip"], ftp_user, ftp_pwd, ftp_server, log, settings["modus"])
         if result == "True":
             log.debug("=> Successfully deleted concatenated ENA files from FTP server")
         else:
@@ -830,7 +842,7 @@ def submit_sequences_to_ENA(project_name, ENA_ID, title, description, samples, c
     
     if settings["modus"] in ("staging", "testing", "debugging"): # don't spam ENA's test server
         log.debug("Only testing: deleting file from server...")
-        result = EF.connect_ftp("delete", concat_FF_zip, ftp_user, ftp_pwd, ftp_server, log, settings["modus"])
+        result = EF.connect_ftp("delete", file_dic["concat_FF_zip"], ftp_user, ftp_pwd, ftp_server, log, settings["modus"])
         if result == "True":
             log.debug("=> Successfully deleted concatenated ENA files from FTP server")
             ena_results = (analysis_alias, curr_time, ans_time, 
@@ -854,16 +866,14 @@ def main(settings, log, mydb):
 #     report, errors_found = bulk_upload_new_alleles(csv_file, project, settings, mydb, log)
 #     print(report)
 
-    myfile = r"H:\Projekte\RnD\24_NeueAllele\3_Veröffentlichung\1.2_fastaExport_DR2S\MICA\ID17326884\hapA.pacbio.minimap.fa"
-    sample_id_int = "1"
-    success, msg = upload_new_allele_complete(project, sample_id_int, "test", myfile, "DKMS", 
-                                                  settings, mydb, log, incomplete_ok = True)
+#     myfile = r"H:\Projekte\RnD\24_NeueAllele\3_Veröffentlichung\1.2_fastaExport_DR2S\MICA\ID17326884\hapA.pacbio.minimap.fa"
+#     sample_id_int = "1"
+#     success, msg = upload_new_allele_complete(project, sample_id_int, "test", myfile, "DKMS", 
+#                                                   settings, mydb, log, incomplete_ok = True)
 #     if not success:
 #         print("Not successful!", msg)
 #     else:
 #         delete_sample(sample_id_int, 1, project, settings, log)
-
-    
 
 if __name__ == "__main__":
     from typeloader_GUI import create_connection, close_connection
