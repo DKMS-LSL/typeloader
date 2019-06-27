@@ -718,147 +718,114 @@ def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
     """
     return ''.join(random.choices(chars, k = size))    
 
-def create_ENA_filenames(project_name, ENA_ID, settings):
+
+def create_ENA_filenames(project_name, ENA_ID, settings, log):
     """creates the filenames for all files needed for ENA sequence submission,
     returns them as a dict
     """
+    log.debug("Creating project filenames for ENA submission...")
+
     curr_time = time.strftime("%Y%m%d%H%M%S")
     analysis_alias = ENA_ID + "_" + curr_time
-    projects_dir = settings["projects_dir"]
-    concat_FF_zip = os.path.join(projects_dir, project_name, analysis_alias + "_flatfile.txt.gz")
-    analysis_filename = os.path.join(projects_dir, project_name, analysis_alias + "_analysis.xml")
-    analysis_filename_submission = os.path.join(projects_dir, project_name, analysis_alias + "_submission.xml")
-    output_filename =  os.path.join(projects_dir, project_name, analysis_alias + "_output.xml")
+    project_dir = os.path.join(settings["projects_dir"], project_name)
+    file_start = os.path.join(project_dir, analysis_alias)
+    concat_FF_zip = file_start + "_flatfile.txt.gz"
+    manifest_filename = file_start + "_manifest.txt"
     
     file_dic = {"concat_FF_zip" : concat_FF_zip,
-                             "analysis_filename" : analysis_filename,
-                             "analysis_filename_submission" : analysis_filename_submission,
-                             "output_filename" : output_filename}
+                "manifest": manifest_filename,
+                "project_dir" : project_dir}
+    
+    log.debug("\t=> done")
     return file_dic, curr_time, analysis_alias
 
-def submit_sequences_to_ENA(project_name, title, description, ENA_ID, analysis_alias, curr_time, samples, choices, input_files, file_dic, settings, log):
-    """handles submission of sequences to ENA's REST server & creation of all files for this
+
+def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_time, samples, input_files, file_dic, settings, log):
+    """handles submission of sequences via ENA's Webin-CLI & creation of all files for this
     """
     log.info("Submitting sequences to ENA...")
     
     submission_alias = analysis_alias + "_filesub"
-    analysis_title = title 
-    analysis_description = description 
-    ENA_response = ""
     
     if len(input_files) == 0:
         log.warning("No files were selected for Submission!")
-        return False, "No files selected", "Please select at least one file for submission!"
+        return False, "No files selected", "Please select at least one file for submission!", []
     
     ## 1. create a concatenated flatfile
     log.debug("Concatenating flatfiles...")
-    concat_successful = EF.concatenate_flatfile(input_files, file_dic["concat_FF_zip"], log)
+    concat_successful, line_dic = EF.concatenate_flatfile(input_files, file_dic["concat_FF_zip"], log)
     if not concat_successful:
         log.error("Concatenation wasn't successful")
-        return False, "Concatenation problem", "Concatenated file is empty :-("
+        return False, "Concatenation problem", "Concatenated file is empty :-(", []
 
-    ## 2. calculate md5 checksum
-    log.debug("Calculating md5 checksum...")
-    md5_checksum = EF.make_md5(file_dic["concat_FF_zip"], log)
-    
-    ## 3. create and save analysis file
-    log.debug("Creating analysis file...")
-    xml_center_name = settings["xml_center_name"]
-    analysis_xml = EF.generate_analysis_xml(analysis_title, analysis_description, analysis_alias, ENA_ID, xml_center_name, 
-                                            file_dic["concat_FF_zip"], md5_checksum)
-    write_result_analysis = EF.write_file(analysis_xml, file_dic["analysis_filename"], log)
-    if not write_result_analysis:
-        log.error("Could not write _analysis.xml file")
-        return False, "Problem with ENA file generation", "Could not write the file {}".format(file_dic["analysis_filename"])
-
-    ## 4. create and save submission file
-    log.debug("Creating submission file...")
-    submission_xml = EF.generate_submission_ff_xml(submission_alias, xml_center_name, os.path.basename(file_dic["analysis_filename"]))
-    write_result_analysis = EF.write_file(submission_xml, file_dic["analysis_filename_submission"], log)
-    if not write_result_analysis:
-        log.error("Could not write _submission.xml file")
-        return False, "Problem with ENA file generation", "Could not write the file {}".format(file_dic["analysis_filename_submission"])
-
-    ## 5. send zipped flatfiles to EMBL FTP
-    log.debug("Sending zipped flatfiles to ENA's FTP...")
-    ftp_user = settings["ftp_user"]
-    ftp_pwd = settings["ftp_pwd"]
-    ftp_server = settings["embl_ftp"]
-    ftp_transmit_result = EF.connect_ftp("push", file_dic["concat_FF_zip"], ftp_user, ftp_pwd, ftp_server, log, settings["modus"])
-    if ftp_transmit_result != "True":
-        log.error("Could not push files to ENA's FTP server")
-        return False, "ENA FTP connection failed", "Could not push files to ENA's FTP server:\n\n{}".format(ftp_transmit_result)
-        
-    ## 6. send analysis.xml and submission.xml to EMBLfunctions
-    log.debug("Sending analysis.xml and submission.xml to ENA'S FTP...")
-    server = settings["embl_submission"]
-    proxy = settings["proxy"]
-    userpwd = "{}:{}".format(settings["ftp_user"], settings["ftp_pwd"])
-    analysis_err = EF.submit_project_ENA(file_dic["analysis_filename_submission"], file_dic["analysis_filename"], "ANALYSIS", 
-                                         server, proxy, file_dic["output_filename"], userpwd)
-    if analysis_err:
-        log.error(analysis_err)
-        log.exception(analysis_err)
-        return False, "FTP error", "An error occurred while trying to submit to ENA:\n\n{}".format(repr(analysis_err))
-
-    log.debug("Parsing ENA's reply...")
-    ans_time = time.strftime("%Y%m%d%H%M%S")
-    _, submission_accession_number, _, _, _ = EF.parse_register_EMBL_xml(file_dic["output_filename"], "SUBMISSION")
-    successful_transmit, analysis_accession_number, info, error, problem_samples = EF.parse_register_EMBL_xml(file_dic["output_filename"], "ANALYSIS", choices)
-    #TODO: (future) get submission_acc_nr & analysis_acc_nr from one call of EF.parse_register_EMBL_xml()
+    ## 2. create a manifest file
+    log.debug("Creating submission manifest...")
     try:
-        if error:
-            log.error(error)
-            ENA_response += "ERROR after transmission to ENA:\n"
-            if isinstance(error, str):
-                ENA_response += error
-            else:
-                for item in error:
-                    ENA_response += item.firstChild.nodeValue + "\n"
-                    log.warning(item.firstChild.nodeValue)
-            if error == "Internal Server Error":
-                ENA_response += "\nPlease check https://wwwdev.ebi.ac.uk/ena/submit/webin/login for details.\n"
-            ENA_response += "\nThe complete submission has been rolled back."
-        if isinstance(info, str):
-            if info not in ["known error", "No message available"]:
-                ENA_response += info
-        else:
-            for item in info:
-                ENA_response += item.firstChild.nodeValue + "\n"
-        
+        EF.make_manifest(file_dic["manifest"], ENA_ID, submission_alias, file_dic["concat_FF_zip"], log)
     except Exception as E:
-        log.error(E)
+        log.error("Could not create manifest file!")
         log.exception(E)
-        return False, "ENA response error", "Could not parse ENA's reply: \n\n{}\n\n{}".format(error, repr(E))
-        
-    if successful_transmit != "true":
-        log.error("Could not transmit to ENA. Rolling back...")
-        result = EF.connect_ftp("delete", file_dic["concat_FF_zip"], ftp_user, ftp_pwd, ftp_server, log, settings["modus"])
-        if result == "True":
-            log.debug("=> Successfully deleted concatenated ENA files from FTP server")
-        else:
-            log.warning("=> Problem during rollback: {}".format(result))
-            return False, "Problem during rollback", "Could not delete ENA files from test FTP server"
+        return False, "Manifest file problem", "Could not create the manifest file for ENA submission: {}".format(repr(E)), []
     
-    if settings["modus"] in ("staging", "testing", "debugging"): # don't spam ENA's test server
-        log.debug("Only testing: deleting file from server...")
-        result = EF.connect_ftp("delete", file_dic["concat_FF_zip"], ftp_user, ftp_pwd, ftp_server, log, settings["modus"])
-        if result == "True":
-            log.debug("=> Successfully deleted concatenated ENA files from FTP server")
-            ena_results = (analysis_alias, curr_time, ans_time, 
-                        analysis_accession_number, submission_accession_number, 
-                        problem_samples, ENA_response)
-            return ena_results, None, None
-        else:
-            log.warning("=> Problem during rollback: {}".format(result))
-            return False, "Problem during rollback", "Could not delete ENA files from test FTP server"
+    ## 3. validate files via CLI
+    log.debug("Validating submission files using ENA's Webin-CLI...")
+    cmd_string, msg = EF.make_ENA_CLI_command_string(file_dic["manifest"], file_dic["project_dir"], settings, log)
+    
+    if not cmd_string:
+        log.error("Could not generate command for Webin-CLI!")
+        return False, "Webin-CLI command problem", msg, []
+    
+    log.debug("Validating command and files...")
+      
+    validate_cmd = cmd_string + " -validate"
+    success, output, _, problem_samples = EF.handle_webin_CLI(validate_cmd, "validate", submission_alias, file_dic["project_dir"], 
+                                                              line_dic, log)
+    if not success:
+        log.error("Validation by ENA's Webin-CLI failed!")
+        log.error(output)
+        print(output)
+        return False, "ENA validation error", output, problem_samples
 
+    log.debug("\t=> looking good")
+    
+    ## 4. submit files via CLI
+    log.debug("Submitting files...")
+    submission_cmd = cmd_string + " -submit"
+    successful_transmit, ENA_response, analysis_accession_number, problem_samples = EF.handle_webin_CLI(submission_cmd, "submit", submission_alias, 
+                                                                                 file_dic["project_dir"], line_dic, log)
+    submission_accession_number = None # used to be contained in ENA's reply, but has been deprecated with the start of Webin-CLI
+    
+    if not successful_transmit:
+        msg = "Submission to ENA failed even though validation passed"
+        log.error(msg)
+        log.error(ENA_response)
+        # FIXME: we used to roll back the submission, to not SPAM the server. Can we still do this?
+        return False, "ENA submission error", "{}:\n\n{}".format(msg, ENA_response), problem_samples
+
+    log.debug("\t=> submission successful (submission ID = {})".format(analysis_accession_number))
+    ans_time = time.strftime("%Y%m%d%H%M%S")
+    ena_results = (analysis_alias, curr_time, ans_time, 
+                   analysis_accession_number, submission_accession_number, 
+                   ENA_response)
+    return ena_results, None, None, problem_samples
+        
 pass
 #===========================================================
 # main:
 
 def main(settings, log, mydb):
-    project = "20190423_ADMIN_mixed_test"
+    project = "20190627_ADMIN_mixed_ENA-Test"
+    ENA_ID = "PRJEB33235"
+    samples = [['20190627_ADMIN_mixed_ENA-Test', '1'], ['20190627_ADMIN_mixed_ENA-Test', '2'], ['20190627_ADMIN_mixed_ENA-Test', '3'], ['20190627_ADMIN_mixed_ENA-Test', '4']]
+    input_files= ['\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-HLA01\\DKMS-LSL_IDTest-HLA01_A_1.ena.txt', 
+                  '\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-KIR01\\DKMS-LSL_IDTest-KIR01_2DL1_1.ena.txt', 
+                  '\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-KIR01\\DKMS-LSL_IDTest-KIR01_2DL4_1.ena.txt', 
+                  '\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-MIC01\\DKMS-LSL_IDTest-MIC01_MICA_1.ena.txt']
+    
+    file_dic, curr_time, analysis_alias = create_ENA_filenames(project, ENA_ID, settings, log)
+    submit_sequences_to_ENA_via_CLI(project, ENA_ID, analysis_alias, curr_time, samples, input_files, file_dic, settings, log)
+    
+
 #     project = "20190423_STG_MIC_1"
 #     delete_all_samples_from_project(project, settings, log)
 #     csv_file = r"Y:\Projects\typeloader\staging\data_unittest\MIC\bulk_upload_MIC_ok.csv"
