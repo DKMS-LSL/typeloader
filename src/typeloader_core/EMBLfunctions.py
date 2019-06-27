@@ -321,7 +321,7 @@ def concatenate_flatfile(files, concat_FF_zip, log):
     """concatenates all text files into one gzipped text file;
     returns True if that file has any content, else False
     """
-    log.info("Concatenating {} files...".format(len(files)))
+    log.debug("Concatenating {} files...".format(len(files)))
     line_dic = {} # format: {line number in flatfile : (nr of depicted sequence, local_name of depicted sequence)}
     i = 0 # line number in flatfile
     j = 0 # sequence number in flatfile
@@ -335,7 +335,7 @@ def concatenate_flatfile(files, concat_FF_zip, log):
                     line_dic[i] = (j, sequence)
                     g.write(line)
                 g.write("\n")
-    log.info("\t=>Done!")
+    log.debug("\t=>Done!")
     if os.path.getsize(concat_FF_zip) > 0:
         return True, line_dic
     else:
@@ -453,7 +453,7 @@ def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic,
     elif modus == "submit":
         if "The submission has been completed successfully." in last_line:
             success = True
-            output_txt = "{}\n{}".format(output_list[-2].replace("INFO : ",""),last_line.replace("INFO : ",""))
+            output_txt = "Success!\n\n{}\n{}".format(output_list[-2].replace("INFO : ",""),last_line.replace("INFO : ",""))
             ENA_submission_ID = last_line.split("was assigned to the submission: ")[1].strip()
         else:
             output_txt = "ERROR: ENA rejected your files (submission failed):\n"
@@ -469,6 +469,12 @@ def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic,
             output_txt = "ERROR: ENA rejected your files:\n" + "\n".join(output_list)
 
         output_txt += "\n\nThe complete submission has been rejected." 
+    
+    else:
+        if " -test " in cmd_string:
+            output_txt += "\n\nThis submission is a TEST submission and will be discarded within 24 hours."
+    
+    output_txt = output_txt.replace("  ","\n") # break weird long lines in ENA-reply
     
     return success, output_txt, ENA_submission_ID, problem_samples
             

@@ -19,11 +19,10 @@ from PyQt5.Qt import QWidget, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QIcon
 
 import general, db_internal
-from typeloader_core import EMBLfunctions as EF
 from GUI_forms import (CollapsibleDialog, ChoiceSection, 
                        ProceedButton, QueryButton, FileChoiceTable)
 from GUI_misc import settings_ok
-from typeloader_functions import create_ENA_filenames, submit_sequences_to_ENA
+from typeloader_functions import create_ENA_filenames, submit_sequences_to_ENA_via_CLI
 
 #===========================================================
 # parameters:
@@ -312,11 +311,12 @@ class ENASubmissionForm(CollapsibleDialog):
         
         try:
             self.submission_successful = True
-            self.file_dic, curr_time, analysis_alias = create_ENA_filenames(self.project_name, ENA_ID, self.settings)
-            self.ena_results, err_type, msg = submit_sequences_to_ENA(self.project_name, project_title, project_description, 
-                                                         ENA_ID, analysis_alias, curr_time, self.samples, self.choices, files, self.file_dic, 
-                                                         self.settings, self.log)
-            
+            self.file_dic, curr_time, analysis_alias = create_ENA_filenames(self.project_name, ENA_ID, self.settings, self.log)
+            self.ena_results, err_type, msg, self.problem_samples = submit_sequences_to_ENA_via_CLI(self.project_name, ENA_ID, 
+                                                                            analysis_alias, curr_time, 
+                                                                            self.samples, files, self.file_dic, 
+                                                                            self.settings, self.log)
+
             if self.ena_results:
                 self.textbox.setText(self.ena_results[-1])
                 self.proceed_sections(1,2)
@@ -344,8 +344,9 @@ class ENASubmissionForm(CollapsibleDialog):
                 if ext == ".gz":
                     (path, ext1) = os.path.splitext(path)
                     ext = ext1 + ext
-                new_path = path + "_failed" + ext
-                os.rename(myfile, new_path)
+                if not os.path.isdir(myfile):
+                    new_path = path + "_failed" + ext
+                    os.rename(myfile, new_path)
             except IOError:
                 pass
         self.submit_btn.setChecked(False)
@@ -377,7 +378,7 @@ class ENASubmissionForm(CollapsibleDialog):
         if self.submission_successful:
             self.log.debug("Saving changes to db...")
             (submission_id, timestamp_sent, timestamp_confirmed, acc_analysis,
-             acc_submission, self.problem_samples, self.ENA_response) = self.ena_results
+             acc_submission, self.ENA_response) = self.ena_results
             
             # update allele_status for individual alleles:
             for [project_name, nr] in self.samples:
@@ -454,7 +455,7 @@ if __name__ == '__main__':
     mydb = create_connection(log, settings_dic["db_file"])
     
     app = QApplication(sys.argv)
-    ex = ENASubmissionForm(log, mydb, "20190624_ADMIN_mixed_ENA-Test", settings_dic)
+    ex = ENASubmissionForm(log, mydb, "20190627_ADMIN_mixed_ENA-Test", settings_dic)
     ex.show()
     
     result = app.exec_()

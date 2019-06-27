@@ -805,8 +805,7 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
     log.debug("\t=> submission successful (submission ID = {})".format(analysis_accession_number))
     ans_time = time.strftime("%Y%m%d%H%M%S")
     ena_results = (analysis_alias, curr_time, ans_time, 
-                   analysis_accession_number, submission_accession_number, 
-                   ENA_response)
+                   analysis_accession_number, submission_accession_number, ENA_response)
     return ena_results, None, None, problem_samples
         
 pass
