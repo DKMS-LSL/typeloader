@@ -379,7 +379,7 @@ class ENASubmissionForm(CollapsibleDialog):
         if self.submission_successful:
             self.log.debug("Saving changes to db...")
             (submission_id, timestamp_sent, timestamp_confirmed, acc_analysis,
-             acc_submission, self.ENA_response) = self.ena_results
+             _, self.ENA_response) = self.ena_results
             
             # update allele_status for individual alleles:
             for [project_name, nr] in self.samples:
@@ -390,12 +390,11 @@ class ENASubmissionForm(CollapsibleDialog):
             # update ENA_submissions table:
             query2 = """insert into ena_submissions 
             (PROJECT_NAME, SUBMISSION_ID, NR_ALLELES, TIMESTAMP_SENT, 
-            TIMESTAMP_CONFIRMED, ACC_ANALYSIS, ACC_SUBMISSION, SUCCESS) values
+            TIMESTAMP_CONFIRMED, ACC_ANALYSIS, SUCCESS) values
             ('{}', '{}', {}, '{}',
-            '{}', '{}', '{}', 'yes')""".format(self.project_name, submission_id,
+            '{}', '{}', 'yes')""".format(self.project_name, submission_id,
                                             len(self.samples), timestamp_sent,
-                                            timestamp_confirmed, acc_analysis,
-                                            acc_submission) 
+                                            timestamp_confirmed, acc_analysis) 
             update_queries.append(query2)
             
         else:
