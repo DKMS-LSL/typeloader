@@ -288,9 +288,7 @@ class ENASubmissionForm(CollapsibleDialog):
         
         self.project_name = self.proj_widget.field.text()
         ENA_ID = self.project_info.ENA_ID
-        project_title = self.title 
-        project_description = self.description 
-
+        
         projects_dir = self.settings["projects_dir"]
         
         self.accepted = False
@@ -312,14 +310,19 @@ class ENASubmissionForm(CollapsibleDialog):
         try:
             self.submission_successful = True
             self.file_dic, curr_time, analysis_alias = create_ENA_filenames(self.project_name, ENA_ID, self.settings, self.log)
-            self.ena_results, err_type, msg, self.problem_samples = submit_sequences_to_ENA_via_CLI(self.project_name, ENA_ID, 
+            self.ena_results, success, err_type, msg, self.problem_samples = submit_sequences_to_ENA_via_CLI(self.project_name, ENA_ID, 
                                                                             analysis_alias, curr_time, 
                                                                             self.samples, files, self.file_dic, 
                                                                             self.settings, self.log)
 
-            if self.ena_results:
+            if self.ena_results: # files were created and we got a reply from ENA, positive or negative
                 self.textbox.setText(self.ena_results[-1])
+            
+                if not success:
+                    self.submission_successful = False
+                    self.cleanup_submission_failed()
                 self.proceed_sections(1,2)
+            
             else:
                 QMessageBox.warning(self, err_type, msg)
                 self.submission_successful = False
@@ -331,7 +334,6 @@ class ENASubmissionForm(CollapsibleDialog):
                                 "An error occured during ENA submission:\n\n{}".format(repr(E)))
             self.submission_successful = False
             self.cleanup_submission_failed()
-        
                                         
     def cleanup_submission_failed(self):
         """deletes old files after submission failed
@@ -352,7 +354,6 @@ class ENASubmissionForm(CollapsibleDialog):
         self.submit_btn.setChecked(False)
         self.accepted = True
         self.log.debug("\t=> Done")
-            
             
     def define_section3(self):
         """defining section 3: ENA response
