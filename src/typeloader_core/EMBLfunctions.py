@@ -415,10 +415,10 @@ def parse_ENA_report(report_file, line_dic, log):
                 
     text = ""
     for key in sorted(msg_dic):
-        text += "\t- {}:\n".format(key)
+        text += " - {}:\n".format(key)
         for line in msg_dic[key]:
             text += line + "\n"
-        text += "(Problematic lines in concatenated flatfile: {})".format(", ".join(affected_lines_dic[key]))
+        text += "(Problematic lines in concatenated flatfile: {})\n".format(", ".join(affected_lines_dic[key]))
             
     return text, problem_samples
 
@@ -447,7 +447,7 @@ def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic,
             success = True
             output_txt = last_line.replace("INFO : ","")
         else: # validation failed
-            output_txt = "ERROR: ENA rejected your files (validation failed):\n"
+            output_txt = "ERROR: ENA rejected your files (validation failed):\n\n"
             report = os.path.join(project_dir, "sequence", submission_alias, "validate", 
                           "{}_{}_flatfile.txt.gz.report".format(s[0], s[1]))
     elif modus == "submit":
@@ -456,19 +456,23 @@ def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic,
             output_txt = "Success!\n\n{}\n{}".format(output_list[-2].replace("INFO : ",""),last_line.replace("INFO : ",""))
             ENA_submission_ID = last_line.split("was assigned to the submission: ")[1].strip()
         else:
-            output_txt = "ERROR: ENA rejected your files (submission failed):\n"
+            output_txt = "ERROR: ENA rejected your files (submission failed):\n\n"
             report = os.path.join(project_dir, "sequence", submission_alias, "validate", 
                           "{}_{}_flatfile.txt.gz.report".format(s[0], s[1]))
     
     if not success: 
         log.error("\n".join(output_list))
         if report:
-            report_content, problem_samples = parse_ENA_report(report, line_dic, log)
+            try:
+                report_content, problem_samples = parse_ENA_report(report, line_dic, log)
+            except FileNotFoundError:
+                error_lines = [line for line in output_list if not line.startswith("INFO")]
+                report_content = "\n".join(error_lines) + "\n"
             output_txt += report_content
         else:
-            output_txt = "ERROR: ENA rejected your files:\n" + "\n".join(output_list)
+            output_txt = "ERROR: ENA rejected your files:\n\n" + "\n".join(output_list)
 
-        output_txt += "\n\nThe complete submission has been rejected." 
+        output_txt += "\nThe complete submission has been rejected." 
     
     else:
         if " -test " in cmd_string:
