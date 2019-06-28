@@ -756,7 +756,7 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
     concat_successful, line_dic = EF.concatenate_flatfile(input_files, file_dic["concat_FF_zip"], log)
     if not concat_successful:
         log.error("Concatenation wasn't successful")
-        return False, "Concatenation problem", "Concatenated file is empty :-(", []
+        return False, False, "Concatenation problem", "Concatenated file is empty :-(", []
 
     ## 2. create a manifest file
     log.debug("Creating submission manifest...")
@@ -765,7 +765,7 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
     except Exception as E:
         log.error("Could not create manifest file!")
         log.exception(E)
-        return False, "Manifest file problem", "Could not create the manifest file for ENA submission: {}".format(repr(E)), []
+        return False, False, "Manifest file problem", "Could not create the manifest file for ENA submission: {}".format(repr(E)), []
     
     ## 3. validate files via CLI
     log.debug("Validating submission files using ENA's Webin-CLI...")
@@ -773,18 +773,18 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
     
     if not cmd_string:
         log.error("Could not generate command for Webin-CLI!")
-        return False, "Webin-CLI command problem", msg, []
+        return False, False, "Webin-CLI command problem", msg, []
     
     log.debug("Validating command and files...")
       
     validate_cmd = cmd_string + " -validate"
-    success, output, _, problem_samples = EF.handle_webin_CLI(validate_cmd, "validate", submission_alias, file_dic["project_dir"], 
+    success, ENA_response, _, problem_samples = EF.handle_webin_CLI(validate_cmd, "validate", submission_alias, file_dic["project_dir"], 
                                                               line_dic, log)
     if not success:
         log.error("Validation by ENA's Webin-CLI failed!")
-        log.error(output)
-        print(output)
-        return False, "ENA validation error", output, problem_samples
+        log.error(ENA_response)
+        print(ENA_response)
+        return [ENA_response], False, "ENA validation error", ENA_response, problem_samples
 
     log.debug("\t=> looking good")
     
@@ -800,13 +800,13 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
         log.error(msg)
         log.error(ENA_response)
         # FIXME: we used to roll back the submission, to not SPAM the server. Can we still do this?
-        return False, "ENA submission error", "{}:\n\n{}".format(msg, ENA_response), problem_samples
+        return True, False, "ENA submission error", "ENA submission error", "{}:\n\n{}".format(msg, ENA_response), problem_samples
 
     log.debug("\t=> submission successful (submission ID = {})".format(analysis_accession_number))
     ans_time = time.strftime("%Y%m%d%H%M%S")
     ena_results = (analysis_alias, curr_time, ans_time, 
                    analysis_accession_number, submission_accession_number, ENA_response)
-    return ena_results, None, None, problem_samples
+    return ena_results, True, None, None, problem_samples
         
 pass
 #===========================================================
