@@ -6,8 +6,7 @@ from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 from xml.etree.ElementTree import SubElement
 import hashlib
-
-import configparser as CP
+from collections import defaultdict
 import ftplib
 import logging
 import os
@@ -322,18 +321,25 @@ def concatenate_flatfile(files, concat_FF_zip, log):
     """concatenates all text files into one gzipped text file;
     returns True if that file has any content, else False
     """
-    log.info("Concatenating {} files...".format(len(files)))
+    log.debug("Concatenating {} files...".format(len(files)))
+    line_dic = {} # format: {line number in flatfile : (nr of depicted sequence, local_name of depicted sequence)}
+    i = 0 # line number in flatfile
+    j = 0 # sequence number in flatfile
     with gzip.open(concat_FF_zip, "wt") as g:
         for file in files:
+            sequence = os.path.basename(file).split(".")[0]
+            j += 1
             with open(file, "r") as f:
                 for line in f:
+                    i += 1
+                    line_dic[i] = (j, sequence)
                     g.write(line)
                 g.write("\n")
-    log.info("\t=>Done!")
+    log.debug("\t=>Done!")
     if os.path.getsize(concat_FF_zip) > 0:
-        return True
+        return True, line_dic
     else:
-        return False
+        return False, None
     
 def make_md5(concat_FF, log):
     with open(concat_FF, 'rb') as fh:
@@ -348,3 +354,143 @@ def make_md5(concat_FF, log):
         return checksum
 
 
+def make_manifest(manifest_file, ENA_ID, submission_alias, flatfile, log):
+    with open(manifest_file, "w") as g:
+        g.write("STUDY\t{}\n".format(ENA_ID))
+        g.write("NAME\t{}\n".format(submission_alias))
+        g.write("FLATFILE\t{}\n".format(os.path.basename(flatfile)))
+    log.debug("\tmanifest file written to {}".format(manifest_file))
+    
+
+def make_ENA_CLI_command_string(manifest_file, project_dir, settings, log):
+    import glob
+    # find webin-cli:
+    log.debug("Locating ENA's Webin-CLI client...")
+    TL_src_dir = os.path.dirname(os.path.dirname(__file__))
+    CLI_path = os.path.join(TL_src_dir, "ENA_Webin_CLI")
+    CLI_files = glob.glob(os.path.join(CLI_path, "webin-cli*.jar"))
+    if not CLI_files:
+        log.error("ENA Webin-CLI not found in {}!".format(CLI_path))
+        return False, "ENA Webin-CLI client not found!"
+    
+    CLI_file = sorted(CLI_files)[-1] # if multiple versions found, use highest version
+    log.debug("\t=> found: {}".format(CLI_file))
+    
+    # create command:
+    log.debug("Creating command for Webin-CLI...")
+    cmd = ['java', '-jar', '"{}"'.format(CLI_file), '-context', 'sequence', '-manifest', manifest_file, 
+           '-userName', settings["ftp_user"], '-password', settings["ftp_pwd"], '-centerName', '"{}"'.format(settings["xml_center_name"]),
+           '-inputDir', '"{}"'.format(project_dir), '-outputDir', '"{}"'.format(project_dir)]
+    
+    if settings["use_ena_server"] != "PROD": # use TEST server
+        cmd.append("-test")
+        
+    cmd = " ".join(cmd)
+    log.debug("\t=> done")
+    
+    return cmd, None
+
+
+def parse_ENA_report(report_file, line_dic, log):
+    """parses ENA report file generated after rejection by Webin-CLI
+    """
+    log.info("Reading ENA's reply from {}...".format(report_file))
+    problem_samples = []
+    msg_dic = defaultdict(list)
+    affected_lines_dic = defaultdict(list)
+    
+    with open(report_file, "r") as f:
+        for line in f:
+            log.debug(line.strip())
+            myline = line.split("ERROR: ")[1].split(" [ line: ")
+            line_nr = myline[1].split(" ")[0]
+            (allele_nr, allele) = line_dic[int(line_nr)]
+            if not allele_nr - 1 in problem_samples:
+                problem_samples.append(allele_nr - 1)
+            key = "Sequence {} ({})".format(allele_nr, allele)
+            if not line_nr in affected_lines_dic[key]:
+                affected_lines_dic[key].append(line_nr)
+            if myline[0] not in msg_dic[key]: # remove doubled lines
+                msg_dic[key].append(myline[0])
+                
+    text = ""
+    for key in sorted(msg_dic):
+        text += " - {}:\n".format(key)
+        for line in msg_dic[key]:
+            text += line + "\n"
+        text += "(Problematic lines in concatenated flatfile: {})\n".format(", ".join(affected_lines_dic[key]))
+            
+    return text, problem_samples
+
+def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic, log):
+    """calls the command-string via webin-CLI and parses the output
+    """
+    from subprocess import check_output, CalledProcessError
+    success = False
+    ENA_submission_ID = None
+    problem_samples = []
+    report = None
+    
+    try:
+        output = check_output(cmd_string).decode("utf-8")
+    except CalledProcessError as E:
+        log.error("ENA's Webin-CLI threw an error after this command:")
+        log.error(cmd_string)
+        output = E.output.decode("utf-8")
+        
+    output_list = [line.rstrip() for line in output.split("\n") if line] # make list and remove newlines
+    last_line = output_list[-1]
+    s = submission_alias.split("_")
+
+    if modus == "validate":
+        if last_line == 'INFO : The submission has been validated successfully.':
+            success = True
+            output_txt = last_line.replace("INFO : ","")
+        else: # validation failed
+            output_txt = "ERROR: ENA rejected your files (validation failed):\n\n"
+            report = os.path.join(project_dir, "sequence", submission_alias, "validate", 
+                          "{}_{}_flatfile.txt.gz.report".format(s[0], s[1]))
+    elif modus == "submit":
+        if "The submission has been completed successfully." in last_line:
+            success = True
+            output_txt = "Success!\n\n{}\n{}".format(output_list[-2].replace("INFO : ",""),last_line.replace("INFO : ",""))
+            ENA_submission_ID = last_line.split("was assigned to the submission: ")[1].strip()
+        else:
+            output_txt = "ERROR: ENA rejected your files (submission failed):\n\n"
+            report = os.path.join(project_dir, "sequence", submission_alias, "validate", 
+                          "{}_{}_flatfile.txt.gz.report".format(s[0], s[1]))
+    
+    if not success: 
+        log.error("\n".join(output_list))
+        if report:
+            try:
+                report_content, problem_samples = parse_ENA_report(report, line_dic, log)
+            except FileNotFoundError:
+                error_lines = [line for line in output_list if not line.startswith("INFO")]
+                report_content = "\n".join(error_lines) + "\n"
+            output_txt += report_content
+        else:
+            output_txt = "ERROR: ENA rejected your files:\n\n" + "\n".join(output_list)
+
+        output_txt += "\nThe complete submission has been rejected." 
+    
+    else:
+        if " -test " in cmd_string:
+            output_txt += "\n\nThis submission is a TEST submission and will be discarded within 24 hours."
+    
+    output_txt = output_txt.replace("  ","\n") # break weird long lines in ENA-reply
+    
+    return success, output_txt, ENA_submission_ID, problem_samples
+            
+    
+if __name__ == "__main__":
+    log = logging.getLogger()
+    manifest_file = r"\\nasdd12\daten\data\Typeloader\admin\projects\20190625_ADMIN_mixed_ENA-Test2\PRJEB33198_20190625155412_manifest.txt"
+    project_dir = r"\\nasdd12\daten\data\Typeloader\admin\projects\20190625_ADMIN_mixed_ENA-Test2"
+    settings = {"ftp_user" : "submission@dkms-lab.de",
+                "ftp_pwd" : "DKMS2805",
+                "xml_center_name" : "DKMS LIFE SCIENCE LAB",
+                "use_ena_server": "TEST"}
+    cmd, msg = make_ENA_CLI_command_string(manifest_file, project_dir, settings, log)
+    
+    handle_webin_CLI(cmd + " -validate", log)

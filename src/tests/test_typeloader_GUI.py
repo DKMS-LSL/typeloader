@@ -578,51 +578,29 @@ class Test_Send_To_ENA(unittest.TestCase):
         # do not write in database, if close btn isn't clicked
         self.form.close_btn.click()
         
-    #@unittest.skip("demonstrating skipping")
-    def test_parse_ena_analysis_xml(self):
-        """
-        Parse the written ena analysis XML file
-        """
-        path = os.path.join(curr_settings["projects_dir"], self.project_name)
-        # neccessary, because timestep is not known
-        analysis_file = list(filter(lambda x: re.search(r'^PRJEB.*analysis.xml', x), os.listdir(path)))[0]
-        file_split = analysis_file.split("_")
-        analysis_file_path = os.path.join(path, analysis_file)
-        curr_alias = "_".join([file_split[0], file_split[1]])
-        curr_flatfile = list(filter(lambda x: re.search(r'^PRJEB.*txt.gz', x), os.listdir(path)))[0]        
-        
-        xml_stuff = ElementTree.parse(analysis_file_path)
-        root = xml_stuff.getroot()
-        
-        self.assertEqual(root[0].attrib["alias"], curr_alias)
-        self.assertEqual(root[0].attrib["center_name"], center_name)
-        self.assertEqual(root[0][0].text, project_title)
-        self.assertEqual(root[0][1].text, project_desc)
-        self.assertEqual(root[0][4][0].attrib["checksum"], EF.make_md5(os.path.join(path, curr_flatfile), log))
-        self.assertEqual(root[0][4][0].attrib["checksum_method"], "MD5")
-        self.assertEqual(root[0][4][0].attrib["filename"], curr_flatfile)
-        self.assertEqual(root[0][4][0].attrib["filetype"], "flatfile")
-    
     #@unittest.skip("demonstrating skipping")    
-    def test_parse_ena_submission_xml(self):
-        """
-        Parse the written ena submission XML file
+    def test_parse_ena_manifest_file(self):
+        """Parse the written ena manifest file
         """        
         path = os.path.join(curr_settings["projects_dir"], self.project_name)
         # neccessary, because timestep is not known
-        submission_file = list(filter(lambda x: re.search(r'^PRJEB.*submission.xml', x), os.listdir(path)))[0]
+        submission_file = list(filter(lambda x: re.search(r'^PRJEB.*manifest.txt', x), os.listdir(path)))[0]
         file_split = submission_file.split("_")
         submission_file_path = os.path.join(path, submission_file)
+        project_id = file_split[0]
         curr_alias = "_".join([file_split[0], file_split[1], "filesub"])
-        curr_source = "_".join([file_split[0], file_split[1], "analysis.xml"])
+        flatfile = "_".join([file_split[0], file_split[1], "flatfile.txt.gz"])
         
-        xml_stuff = ElementTree.parse(submission_file_path)
-        root = xml_stuff.getroot()
-        
-        self.assertEqual(root.attrib["alias"], curr_alias)
-        self.assertEqual(root.attrib["center_name"], center_name)
-        self.assertEqual(root[0][0][0].attrib["schema"], "analysis")
-        self.assertEqual(root[0][0][0].attrib["source"], curr_source)
+        with open(submission_file_path, "r") as f:
+            i = 0
+            for line in f:
+                if i == 0:
+                    self.assertEqual(line, "STUDY\t{}\n".format(project_id))
+                elif i == 1:
+                    self.assertEqual(line, "NAME\t{}\n".format(curr_alias))
+                elif i == 2:
+                    self.assertEqual(line, "FLATFILE\t{}\n".format(flatfile))
+                i += 1
 
     #@unittest.skip("demonstrating skipping")
     def test_parse_ena_output_and_db_entry(self):
@@ -631,12 +609,10 @@ class Test_Send_To_ENA(unittest.TestCase):
         """    
         path = os.path.join(curr_settings["projects_dir"], self.project_name)
         # neccessary, because timestep is not known
-        output_file = list(filter(lambda x: re.search(r'^PRJEB.*output.xml', x), os.listdir(path)))[0]
-        file_split = output_file.split("_")
-        output_file_path = os.path.join(path, output_file)  
+        manifest_file = list(filter(lambda x: re.search(r'^PRJEB.*manifest.txt', x), os.listdir(path)))[0]
+        file_split = manifest_file.split("_")
         curr_sub_id = "_".join([file_split[0], file_split[1]])
-        curr_alias = "_".join([file_split[0], file_split[1], "filesub"])
-        curr_submissionFile = "_".join([file_split[0], file_split[1], "submission.xml"])  
+        webin_report = os.path.join(path, "webin-cli.report")  
         
         query = "PRAGMA table_info (ENA_SUBMISSIONS)"
         success, data_info = execute_db_query(query, 
@@ -646,7 +622,7 @@ class Test_Send_To_ENA(unittest.TestCase):
                                          "Successful read table_info at {}", 
                                          "Can't get information from {}", 
                                          "ENA_SUBMISSIONS")
-        
+        self.assertTrue(success)
         query = "SELECT * from ENA_SUBMISSIONS"
         success, data_content = execute_db_query(query, 
                                          len(data_info), 
@@ -656,6 +632,7 @@ class Test_Send_To_ENA(unittest.TestCase):
                                          "Can't get rows from {}", 
                                          "ENA_SUBMISSIONS")        
         
+        self.assertTrue(success)
         self.assertEqual(len(data_content), 1)
         self.assertEqual(data_content[0][0], self.project_name) # project_name
         self.assertEqual(data_content[0][1], curr_sub_id ) # submission_id
@@ -664,17 +641,19 @@ class Test_Send_To_ENA(unittest.TestCase):
         
         acc_analysis = data_content[0][5]
         acc_submission = data_content[0][6]
+        self.assertEqual(acc_submission, '') # is no longer used
         
-        xml_stuff = ElementTree.parse(output_file_path)
-        root = xml_stuff.getroot()
-        
-        self.assertEqual(root.attrib["submissionFile"], curr_submissionFile)
-        self.assertEqual(root.attrib["success"], "true")
-        self.assertEqual(root[0].attrib["accession"], acc_analysis) # analysis accession
-        self.assertEqual(root[0].attrib["alias"], curr_sub_id) # alias
-        self.assertEqual(root[1].attrib["accession"], acc_submission) # submission accession
-        self.assertEqual(root[1].attrib["alias"], curr_alias) # alias
-        self.assertEqual(root[2][0].text, "Submission has been committed.")    
+        # read webin_cli:
+        with open(webin_report, "r") as f:
+            text = f.read()
+            s = [line for line in text.split("\n") if line]
+            # check penultimate line:
+            self.assertTrue("Files have been uploaded to webin.ebi.ac.uk." in s[-2])
+            # check last line:
+            s2 = s[-1].split("The submission has been completed successfully.  The following analysis accession was assigned to the submission: ")
+            self.assertEqual(len(s2), 2)
+            submission_id = s2[-1]
+            self.assertEqual(submission_id, acc_analysis)
 
  
 class Test_Send_To_IMGT(unittest.TestCase):

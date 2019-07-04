@@ -100,7 +100,7 @@ def parse_embl_response(path):
             if (feature.type == "CDS"):
                 # has to be filled once
                 # gene = e.g. "HLA-B"
-                for qualifier in feature.qualifiers:
+                for qualifier in sorted(feature.qualifiers, reverse = True): # if "gene" and "pseudogene" are all present, use "gene"
                     # either "gene" or "pseudogene" is in the Flatfile
                     # depends on the gene
                     # currently: KIR3DP1 has this tag
@@ -117,7 +117,6 @@ def parse_embl_response(path):
 if __name__ == "__main__":
 
     info_dict, gene = parse_embl_response(argv[1])
-    print(info_dict)
     #for cellLine in info_dict.keys():
        #print cellLine, info_dict[cellLine]
 
