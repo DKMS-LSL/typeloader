@@ -56,7 +56,9 @@ def parseBlast(xmlRecords, targetFamily, query_fasta_file, settings, log):
             log.error("Unknown reference file (in closestallele.py):", output_db)
         alignments = xmlRecord.alignments
         queryLength = xmlRecord.query_length
-
+        if not alignments:
+            log.error("No alignments found: probably not a supported locus!")
+            raise ValueError("No fitting result found in reference. Maybe this allele belongs to a gene not supported by TypeLoader?")
         potentialClosestAlleleAlignment = alignments[0]
         hsps = potentialClosestAlleleAlignment.hsps
 
