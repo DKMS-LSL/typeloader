@@ -85,7 +85,6 @@ class BothAllelesNovelDialog(QDialog):
     
     def __init__(self, allele_dic, settings, log):
         log.info("BothAllelesNovelDialog created...")
-        print(allele_dic)
         self.log = log
         self.settings = settings
         self.allele_dic = allele_dic
@@ -580,7 +579,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         try:
             success, pretypings_file, samples_not_found = get_pretypings_from_oracledb(self.project, self.local_cf, self.settings, self.log, self)
         except Exception as E:
-            log.exception(E)
+            self.log.exception(E)
             QMessageBox.warning(self, "Error while generating pretypings file", "Could not generate the pretypings file:\n\n{}".format(repr(E)))
             success = False
         if success:
@@ -997,10 +996,10 @@ if __name__ == '__main__':
     sys.excepthook = log_uncaught_exceptions
     log = general.start_log(level="DEBUG")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
-    settings_dic = GUI_login.get_settings("admin", log)
+    settings_dic = GUI_login.get_settings("test6", log)
     mydb = create_connection(log, settings_dic["db_file"])
     
-    project = "20190515_ADMIN_KIR_1"
+    project = "20190514_KP_KIR3DL3_KIR3DL3AB"
     app = QApplication(sys.argv)
     
 #     ex = BothAllelesNovelDialog(allele_dic, settings_dic, log)

@@ -13,7 +13,7 @@ contains calls to TypeLoader_core and handling thereof
 
 # import modules:
 import os, shutil
-import string, random
+import string, random, time
 from collections import defaultdict
 
 from typeloader_core import (EMBLfunctions as EF, coordinates as COO, backend_make_ena as BME, 
@@ -707,7 +707,7 @@ def delete_sample(sample, nr, project, settings, log, parent = None):
 def delete_all_samples_from_project(project_name, settings, log, parent = None):
     log.info("Deleting all samples from project {}...".format(project_name))
     query = "select sample_id_int, allele_nr from ALLELES where project_name = '{}'".format(project_name)
-    success, data = db_internal.execute_query(query, 2, log, "Getting samples from ALLELES table", "Sample Deletion Error", parent)
+    _, data = db_internal.execute_query(query, 2, log, "Getting samples from ALLELES table", "Sample Deletion Error", parent)
     for [sample_id_int, nr] in data:
         delete_sample(sample_id_int, nr, project_name, settings, log)
     
@@ -719,13 +719,112 @@ def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choices(chars, k = size))    
 
 
+def create_ENA_filenames(project_name, ENA_ID, settings, log):
+    """creates the filenames for all files needed for ENA sequence submission,
+    returns them as a dict
+    """
+    log.debug("Creating project filenames for ENA submission...")
 
+    curr_time = time.strftime("%Y%m%d%H%M%S")
+    analysis_alias = ENA_ID + "_" + curr_time
+    project_dir = os.path.join(settings["projects_dir"], project_name)
+    file_start = os.path.join(project_dir, analysis_alias)
+    concat_FF_zip = file_start + "_flatfile.txt.gz"
+    manifest_filename = file_start + "_manifest.txt"
+    
+    file_dic = {"concat_FF_zip" : concat_FF_zip,
+                "manifest": manifest_filename,
+                "project_dir" : project_dir}
+    
+    log.debug("\t=> done")
+    return file_dic, curr_time, analysis_alias
+
+
+def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_time, samples, input_files, file_dic, settings, log):
+    """handles submission of sequences via ENA's Webin-CLI & creation of all files for this
+    """
+    log.info("Submitting sequences to ENA...")
+    
+    submission_alias = analysis_alias + "_filesub"
+    
+    if len(input_files) == 0:
+        log.warning("No files were selected for Submission!")
+        return False, "No files selected", "Please select at least one file for submission!", []
+    
+    ## 1. create a concatenated flatfile
+    log.debug("Concatenating flatfiles...")
+    concat_successful, line_dic = EF.concatenate_flatfile(input_files, file_dic["concat_FF_zip"], log)
+    if not concat_successful:
+        log.error("Concatenation wasn't successful")
+        return False, False, "Concatenation problem", "Concatenated file is empty :-(", []
+
+    ## 2. create a manifest file
+    log.debug("Creating submission manifest...")
+    try:
+        EF.make_manifest(file_dic["manifest"], ENA_ID, submission_alias, file_dic["concat_FF_zip"], log)
+    except Exception as E:
+        log.error("Could not create manifest file!")
+        log.exception(E)
+        return False, False, "Manifest file problem", "Could not create the manifest file for ENA submission: {}".format(repr(E)), []
+    
+    ## 3. validate files via CLI
+    log.debug("Validating submission files using ENA's Webin-CLI...")
+    cmd_string, msg = EF.make_ENA_CLI_command_string(file_dic["manifest"], file_dic["project_dir"], settings, log)
+    
+    if not cmd_string:
+        log.error("Could not generate command for Webin-CLI!")
+        return False, False, "Webin-CLI command problem", msg, []
+    
+    log.debug("Validating command and files...")
+      
+    validate_cmd = cmd_string + " -validate"
+    success, ENA_response, _, problem_samples = EF.handle_webin_CLI(validate_cmd, "validate", submission_alias, file_dic["project_dir"], 
+                                                              line_dic, log)
+    if not success:
+        log.error("Validation by ENA's Webin-CLI failed!")
+        log.error(ENA_response)
+        print(ENA_response)
+        return [ENA_response], False, "ENA validation error", ENA_response, problem_samples
+
+    log.debug("\t=> looking good")
+    
+    ## 4. submit files via CLI
+    log.debug("Submitting files...")
+    submission_cmd = cmd_string + " -submit"
+    successful_transmit, ENA_response, analysis_accession_number, problem_samples = EF.handle_webin_CLI(submission_cmd, "submit", submission_alias, 
+                                                                                 file_dic["project_dir"], line_dic, log)
+    submission_accession_number = None # used to be contained in ENA's reply, but has been deprecated with the start of Webin-CLI
+    
+    if not successful_transmit:
+        msg = "Submission to ENA failed even though validation passed"
+        log.error(msg)
+        log.error(ENA_response)
+        # FIXME: we used to roll back the submission, to not SPAM the server. Can we still do this?
+        return True, False, "ENA submission error", "ENA submission error", "{}:\n\n{}".format(msg, ENA_response), problem_samples
+
+    log.debug("\t=> submission successful (submission ID = {})".format(analysis_accession_number))
+    ans_time = time.strftime("%Y%m%d%H%M%S")
+    ena_results = (analysis_alias, curr_time, ans_time, 
+                   analysis_accession_number, submission_accession_number, ENA_response)
+    return ena_results, True, None, None, problem_samples
+        
 pass
 #===========================================================
 # main:
 
 def main(settings, log, mydb):
-    project = "20190423_ADMIN_mixed_test"
+    project = "20190627_ADMIN_mixed_ENA-Test"
+    ENA_ID = "PRJEB33235"
+    samples = [['20190627_ADMIN_mixed_ENA-Test', '1'], ['20190627_ADMIN_mixed_ENA-Test', '2'], ['20190627_ADMIN_mixed_ENA-Test', '3'], ['20190627_ADMIN_mixed_ENA-Test', '4']]
+    input_files= ['\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-HLA01\\DKMS-LSL_IDTest-HLA01_A_1.ena.txt', 
+                  '\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-KIR01\\DKMS-LSL_IDTest-KIR01_2DL1_1.ena.txt', 
+                  '\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-KIR01\\DKMS-LSL_IDTest-KIR01_2DL4_1.ena.txt', 
+                  '\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-MIC01\\DKMS-LSL_IDTest-MIC01_MICA_1.ena.txt']
+    
+    file_dic, curr_time, analysis_alias = create_ENA_filenames(project, ENA_ID, settings, log)
+    submit_sequences_to_ENA_via_CLI(project, ENA_ID, analysis_alias, curr_time, samples, input_files, file_dic, settings, log)
+    
+
 #     project = "20190423_STG_MIC_1"
 #     delete_all_samples_from_project(project, settings, log)
 #     csv_file = r"Y:\Projects\typeloader\staging\data_unittest\MIC\bulk_upload_MIC_ok.csv"
@@ -733,16 +832,14 @@ def main(settings, log, mydb):
 #     report, errors_found = bulk_upload_new_alleles(csv_file, project, settings, mydb, log)
 #     print(report)
 
-    myfile = r"H:\Projekte\RnD\24_NeueAllele\3_Veröffentlichung\1.2_fastaExport_DR2S\MICA\ID17326884\hapA.pacbio.minimap.fa"
-    sample_id_int = "1"
-    success, msg = upload_new_allele_complete(project, sample_id_int, "test", myfile, "DKMS", 
-                                                  settings, mydb, log, incomplete_ok = True)
+#     myfile = r"H:\Projekte\RnD\24_NeueAllele\3_Veröffentlichung\1.2_fastaExport_DR2S\MICA\ID17326884\hapA.pacbio.minimap.fa"
+#     sample_id_int = "1"
+#     success, msg = upload_new_allele_complete(project, sample_id_int, "test", myfile, "DKMS", 
+#                                                   settings, mydb, log, incomplete_ok = True)
 #     if not success:
 #         print("Not successful!", msg)
 #     else:
 #         delete_sample(sample_id_int, 1, project, settings, log)
-
-    
 
 if __name__ == "__main__":
     from typeloader_GUI import create_connection, close_connection
