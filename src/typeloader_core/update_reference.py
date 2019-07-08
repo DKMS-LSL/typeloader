@@ -270,21 +270,3 @@ if __name__ == '__main__':
     blast_path = r"Y:\Projects\typeloader\blast-2.7.1+\bin"
     reference_local_path = r"\\nasdd12\daten\data\Typeloader\_general\reference_data_unittest"
     update_msg = update_database("KIR", reference_local_path, blast_path, log)
-    
-
-    
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
