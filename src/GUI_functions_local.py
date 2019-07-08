@@ -135,6 +135,10 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
         gene_dic[g] = l
         kir_columns += l
     
+    if not mygene in gene_dic: #not one of our standard-genes
+        gene_dic[mygene] = ["{}_1".format(mygene), "{}_2".format(mygene)]
+        columns += gene_dic[mygene]
+        
     default_dic = {}
     if kir_contained:
         columns += kir_columns
@@ -167,6 +171,12 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
         for (sample_id_int, cell_line, mygene, target_allele, partner_allele) in data2:
             befunde = copy.copy(default_dic)
             # overwrite pretyping of target allele:
+            if not mygene in gene_dic:
+                print(mygene)
+                gene_dic[mygene] = ["{}_1".format(mygene), "{}_2".format(mygene)]
+                columns += gene_dic[mygene]
+                for col in gene_dic[mygene]:
+                    befunde[mygene] = "01:01"
             if len(gene_dic[mygene]) == 1:
                 if mygene.startswith("MIC"):
                     if not partner_allele:
