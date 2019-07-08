@@ -996,10 +996,10 @@ if __name__ == '__main__':
     sys.excepthook = log_uncaught_exceptions
     log = general.start_log(level="DEBUG")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
-    settings_dic = GUI_login.get_settings("test6", log)
+    settings_dic = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, settings_dic["db_file"])
     
-    project = "20190514_KP_KIR3DL3_KIR3DL3AB"
+    project = "20190628_ADMIN_mixed_ENA-test"
     app = QApplication(sys.argv)
     
 #     ex = BothAllelesNovelDialog(allele_dic, settings_dic, log)

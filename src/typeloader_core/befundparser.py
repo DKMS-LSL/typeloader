@@ -7,7 +7,9 @@ from collections import defaultdict
 # to be prepared, they are in the list, but probably not in the befund.csv
 useGenesList = ["HLA-A_1", "HLA-A_2", "HLA-B_1", "HLA-B_2", "HLA-C_1", "HLA-C_2", 
                 "HLA-DRB1_1", "HLA-DRB1_2", "HLA-DQB1_1", "HLA-DQB1_2", "HLA-DPB1_1", "HLA-DPB1_2", 
-                "HLA-E_1", "HLA-E_2", "AB0", "ABO", "RHD", "RHESUS", "CCR5_1", "CCR5_2", "MICA", "MICB", "CMV",
+                "HLA-E_1", "HLA-E_2", 
+                "HLA-DPA1_1", "HLA-DPA1_2", "HLA-DQA1_1", "HLA-DQA1_2",
+                "AB0", "ABO", "RHD", "RHESUS", "CCR5_1", "CCR5_2", "MICA", "MICB", "CMV",
                 "KIR2DL1-1","KIR2DL1-2","KIR2DL1-3","KIR2DL1-4" \
                 ,"KIR2DL2-1","KIR2DL2-2","KIR2DL2-3","KIR2DL2-4" \
                 ,"KIR2DL3-1","KIR2DL3-2","KIR2DL3-3","KIR2DL3-4" \
