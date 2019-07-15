@@ -19,8 +19,8 @@ import general
 #===========================================================
 # parameters:
 
-
 from __init__ import __version__
+
 #===========================================================
 # classes:
 
@@ -149,7 +149,6 @@ def split_GL_string(GL_string):
     """
     if "|" in GL_string: # pretyping contains phasing
         return [GL_string] # put everything into first field
-#         return ["POS"]
     else:
         alleles = GL_string.split("+")
         if len(alleles) > 4: # GCN > 4 is probably incorrect
@@ -173,13 +172,11 @@ def reformat_pretypings(allele_data, gene, cursor, log, fields = 2):
     for row in allele_data:
         (locus, allele1, allele2) = row
         if allele1:
-            if locus.startswith("HLA") or locus in ["CCR5"]:
+            if locus.startswith("HLA"):
                 pretypings_dic[locus + "_1"] = allele1
                 pretypings_dic[locus + "_2"] = allele2
-            elif locus in ["AB0", "MICA", "MICB"]:
+            elif locus in ["MICA", "MICB"]:
                 pretypings_dic[locus] = allele1
-            elif locus == "RH":
-                pretypings_dic["RHD"] = allele1
             elif locus == "KIR":
                 pass
             else: # KIR
@@ -207,6 +204,8 @@ def reformat_pretypings(allele_data, gene, cursor, log, fields = 2):
         try:
             GL = mydata[0][0]
         except:
+            GL = ""
+        if not GL: # got None as result
             GL = ""
         if "NEW" in GL or "POS" in GL: # only keep "NEW" in target gene, all others should fall back to POS (or 1field) as per request of IPD
             if mylocus != gene:
@@ -278,7 +277,16 @@ def write_pretypings_file(pretypings, samples, output_file, log):
     """generate pretypings file
     """
     log.info("Writing pretypings to file {}...".format(output_file))
-    columns = ['HLA-A_1', 'HLA-A_2', 'HLA-B_1', 'HLA-B_2', 'HLA-C_1', 'HLA-C_2', 'HLA-DRB1_1', 'HLA-DRB1_2', 'HLA-DQB1_1', 'HLA-DQB1_2', 'HLA-DPB1_1', 'HLA-DPB1_2', 'HLA-E_1', 'HLA-E_2', 'AB0', 'RHD', 'CCR5_1', 'CCR5_2', 'KIR', 'MICA', 'MICB', 'CMV', 'KIR2DL1-1', 'KIR2DL1-2', 'KIR2DL1-3', 'KIR2DL1-4', 'KIR2DL2-1', 'KIR2DL2-2', 'KIR2DL2-3', 'KIR2DL2-4', 'KIR2DL3-1', 'KIR2DL3-2', 'KIR2DL3-3', 'KIR2DL3-4', 'KIR2DL4-1', 'KIR2DL4-2', 'KIR2DL4-3', 'KIR2DL4-4', 'KIR2DL5-1', 'KIR2DL5-2', 'KIR2DL5-3', 'KIR2DL5-4', 'KIR2DP1-1', 'KIR2DP1-2', 'KIR2DP1-3', 'KIR2DP1-4', 'KIR2DS1-1', 'KIR2DS1-2', 'KIR2DS1-3', 'KIR2DS1-4', 'KIR2DS2-1', 'KIR2DS2-2', 'KIR2DS2-3', 'KIR2DS2-4', 'KIR2DS3-1', 'KIR2DS3-2', 'KIR2DS3-3', 'KIR2DS3-4', 'KIR2DS4-1', 'KIR2DS4-2', 'KIR2DS4-3', 'KIR2DS4-4', 'KIR2DS5-1', 'KIR2DS5-2', 'KIR2DS5-3', 'KIR2DS5-4', 'KIR3DL1-1', 'KIR3DL1-2', 'KIR3DL1-3', 'KIR3DL1-4', 'KIR3DL2-1', 'KIR3DL2-2', 'KIR3DL2-3', 'KIR3DL2-4', 'KIR3DL3-1', 'KIR3DL3-2', 'KIR3DL3-3', 'KIR3DL3-4', 'KIR3DP1-1', 'KIR3DP1-2', 'KIR3DP1-3', 'KIR3DP1-4', 'KIR3DS1-1', 'KIR3DS1-2', 'KIR3DS1-3', 'KIR3DS1-4']
+    columns = ['HLA-A_1', 'HLA-A_2', 'HLA-B_1', 'HLA-B_2', 'HLA-C_1', 'HLA-C_2', 'HLA-DRB1_1', 'HLA-DRB1_2', 
+               'HLA-DQB1_1', 'HLA-DQB1_2', 'HLA-DPB1_1', 'HLA-DPB1_2', 'HLA-E_1', 'HLA-E_2', 'MICA', 'MICB', 
+               'KIR2DL1-1', 'KIR2DL1-2', 'KIR2DL1-3', 'KIR2DL1-4', 'KIR2DL2-1', 'KIR2DL2-2', 'KIR2DL2-3', 'KIR2DL2-4', 
+               'KIR2DL3-1', 'KIR2DL3-2', 'KIR2DL3-3', 'KIR2DL3-4', 'KIR2DL4-1', 'KIR2DL4-2', 'KIR2DL4-3', 'KIR2DL4-4', 
+               'KIR2DL5-1', 'KIR2DL5-2', 'KIR2DL5-3', 'KIR2DL5-4', 'KIR2DP1-1', 'KIR2DP1-2', 'KIR2DP1-3', 'KIR2DP1-4', 
+               'KIR2DS1-1', 'KIR2DS1-2', 'KIR2DS1-3', 'KIR2DS1-4', 'KIR2DS2-1', 'KIR2DS2-2', 'KIR2DS2-3', 'KIR2DS2-4', 
+               'KIR2DS3-1', 'KIR2DS3-2', 'KIR2DS3-3', 'KIR2DS3-4', 'KIR2DS4-1', 'KIR2DS4-2', 'KIR2DS4-3', 'KIR2DS4-4', 
+               'KIR2DS5-1', 'KIR2DS5-2', 'KIR2DS5-3', 'KIR2DS5-4', 'KIR3DL1-1', 'KIR3DL1-2', 'KIR3DL1-3', 'KIR3DL1-4', 
+               'KIR3DL2-1', 'KIR3DL2-2', 'KIR3DL2-3', 'KIR3DL2-4', 'KIR3DL3-1', 'KIR3DL3-2', 'KIR3DL3-3', 'KIR3DL3-4', 
+               'KIR3DP1-1', 'KIR3DP1-2', 'KIR3DP1-3', 'KIR3DP1-4', 'KIR3DS1-1', 'KIR3DS1-2', 'KIR3DS1-3', 'KIR3DS1-4']
     with open(output_file, "w", newline = "") as g:
         data = csv.writer(g, delimiter=",")
         header = ['sample_ID_int', 'sample_id_ext', 'client'] + columns
@@ -294,8 +302,7 @@ def write_pretypings_file(pretypings, samples, output_file, log):
                     mytyping = pretypings_dic[col]
                 else:
                     mytyping = ""
-                    if col not in ["KIR", "CMV"]:
-                        not_found.append(col)
+                    not_found.append(col)
                 if mytyping:
                     if mytyping.startswith("0"):
                         if mytyping.isdigit():

@@ -116,12 +116,12 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
     fake_file_befunde = os.path.join(settings["login_dir"], "temp", "fake_befunde.csv")
     columns = ["HLA-A_1", "HLA-A_2", "HLA-B_1", "HLA-B_2", "HLA-C_1", "HLA-C_2", "HLA-DRB1_1", 
                "HLA-DRB1_2", "HLA-DQB1_1", "HLA-DQB1_2", "HLA-DPB1_1", "HLA-DPB1_2", 
-               "HLA-E_1", "HLA-E_2", "AB0", "RHD", "CCR5_1", "CCR5_2", "KIR", "MICA", "MICB", "CMV"]
+               "HLA-E_1", "HLA-E_2", "MICA", "MICB"]
     
     gene_dic = {}
-    for g in ["HLA-A", "HLA-B", "HLA-C", "HLA-DRB1", "HLA-DQB1", "HLA-DPB1", "HLA-E", "CCR5"]:
+    for g in ["HLA-A", "HLA-B", "HLA-C", "HLA-DRB1", "HLA-DQB1", "HLA-DPB1", "HLA-E"]:
         gene_dic[g] = ["{}_1".format(g), "{}_2".format(g)]
-    for g in ["AB0", "RHD", "MICA", "MICB", "CMV"]:
+    for g in ["MICA", "MICB"]:
         gene_dic[g] = [g]
     kir_columns = []
     for g in ['KIR2DL1', 'KIR2DL2', 'KIR2DL3', 'KIR2DL4', 'KIR2DL5',
@@ -150,14 +150,6 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
                 default_dic[col] = "001"
             else:
                 default_dic[col] = ""
-        elif col == "AB0":
-            default_dic[col] = "A"
-        elif col == "RHD":
-            default_dic[col] = "+"
-        elif col.startswith("CCR5"):
-            default_dic[col] = "WT"
-        elif col.startswith("CMV"):
-            default_dic[col] = "+"
         elif col == "MICA":
             default_dic[col] = "A001+A001"
         elif col == "MICB":
