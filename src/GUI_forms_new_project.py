@@ -12,7 +12,7 @@ widgits for adding new sequences or new projects to TypeLoader
 
 # import modules:
 
-import sys, os, shutil
+import sys, os, shutil, re
 from PyQt5.QtSql import QSqlQuery 
 from PyQt5.QtWidgets import (QApplication, QFormLayout, QPushButton, QLineEdit, QDialog, 
                              QMessageBox)
@@ -56,6 +56,7 @@ class NewProjectForm(QDialog):
             self.pool = ""
             self.project_name = None
             self.success = False
+            self.invalid_fields = []
             self.show()
             ok, msg = settings_ok("ENA", self.settings, self.log)
             if not ok:
@@ -146,6 +147,49 @@ class NewProjectForm(QDialog):
             if data:
                 self.existing_projects = [project for (project,) in data]
     
+    def get_values(self):
+        """retrieves all values from the GUI
+        """
+        self.check_ready_project()
+        self.title = self.title_entry.text().strip()
+        self.description = self.desc_entry.text().strip()
+        
+    
+    def check_all_fields_valid(self):
+        """checks whether all fields contain only valid characters
+        """
+        self.log.debug("\tChecking whether all fields are ok...")
+        self.invalid_fields = []
+        allowed_characters = '^[a-zA-Z0-9-]+$'# only alphanumeric characters or hyphens
+        
+        fields_to_test = [("gene", self.gene), ("pool", self.pool)]
+        for (field, value) in fields_to_test:
+            valid = re.match(allowed_characters, value)
+            if not valid:
+                self.invalid_fields.append(field)
+                self.log.info("=> invalid character found in {}: {}!".format(field, value))
+        
+        secondary_fields = [("user name", self.user), ("title", self.title), ("description", self.description)]
+        allowed_characters = '^[a-zA-Z0-9- ]+$' # these may also contain spaces 
+        for (field, value) in secondary_fields:
+            if value:
+                valid = re.match(allowed_characters, value)
+                if not valid:
+                    self.invalid_fields.append(field)
+                    self.log.info("\t=> invalid character found in {}: {}!".format(field, value))
+        
+        invalid_msg = ""
+        if self.invalid_fields:
+            invalid_fields = " and ".join(self.invalid_fields)
+            invalid_msg = "Invalid character found in {}!\n".format(invalid_fields)
+            invalid_msg += "Please don't use anything but letters, numbers or hyphens in your fields.\n"
+            invalid_msg += "(Title, description and user name may also contain spaces.)"
+        else:
+            self.log.debug("\t=> everything ok")
+        
+        return invalid_msg
+        
+    
     @pyqtSlot()
     def on_projectBtn_clicked(self):
         """generates project_name out of given fields & displays it on itself
@@ -159,6 +203,12 @@ class NewProjectForm(QDialog):
 
         date = general.timestamp("%Y%m%d")
         
+        self.get_values()
+        invalid_msg = self.check_all_fields_valid()
+        if invalid_msg:
+            QMessageBox.warning(self, "Invalid character in {}".format(" and ".join(self.invalid_fields)), invalid_msg)
+            return False
+        
         try:
             self.project_name = "_".join([date, initials, self.gene, self.pool])
             self.project_name = self.project_name.replace(" ","-")
@@ -166,11 +216,16 @@ class NewProjectForm(QDialog):
             self.log.error(E)
             QMessageBox.warning(self, "Cannot create project name!",
                                 "Cannot create a project name with the given parameters (see error below).\nPlease adjust them!\n\n{}".format(E))
+            return
+        
+        self.log.debug("=> project name {} assigned".format(self.project_name))
         if self.project_name in self.existing_projects:
             self.log.warning("Project '{}' already exists! Choose a different pool name!".format(self.project_name))
             QMessageBox.warning(self, "Project name not unique!", 
                                 """A project named '{}' already exists!\nPlease choose a different pool name.
                                 """.format(self.project_name))
+            return
+        
         else:
             self.project_btn.setText(self.project_name)
             self.submit_btn.setEnabled(True)
@@ -184,9 +239,6 @@ class NewProjectForm(QDialog):
         try: # for debugging
 #         if True:
             self.log.debug("Submitting project to ENA...")
-            self.title = self.title_entry.text().strip()
-            self.description = self.desc_entry.text().strip()
-                        
             ## create variables
             successful_transmit = "false"
             xml_center_name =  self.settings["xml_center_name"]

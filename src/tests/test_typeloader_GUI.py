@@ -177,21 +177,52 @@ class Test_Create_Project(unittest.TestCase):
         else:
             self.form = PROJECT.NewProjectForm(log, mydb, curr_settings)
             self.form.project_dir = "" #not initially set in form
-             
+            
+            # format: (field, default_value, whitespace_ok)
+            self.myvalues = [(self.form.user_entry, project_user, True),
+                             (self.form.gene_entry, project_gene, False),
+                             (self.form.pool_entry, project_pool, False),
+                             (self.form.title_entry, project_title, True),
+                             (self.form.desc_entry, project_desc, True)]
+            for (field, value, _) in self.myvalues:
+                field.setText(value) 
+        
     @classmethod
     def tearDownClass(self):
         pass
 
-    #@unittest.skip("demonstrating skipping")        
-    def test_create_project(self):
+    def test_reject_invalid(self):
+        """make sure invalid entries are rejected properly
+        """
+        invalid = ['"', "'", "_", "#", "%"] # disallowed characters without spaces
+        
+        for (field, orig_value, whitespace_ok) in self.myvalues:
+            if whitespace_ok:
+                invalid_chars = invalid
+            else:
+                invalid_chars = invalid + [" "] # spaces should be rejected, too 
+            
+            # check that default value is ok:
+            field.setText(orig_value)
+            self.form.get_values()
+            invalid_msg = self.form.check_all_fields_valid()
+            self.assertFalse(invalid_msg)
+            
+            # check that invalid characters are rejected:
+            for char in invalid_chars:
+                mytext = orig_value + char
+                field.setText(mytext)
+                self.form.get_values()
+                invalid_msg = self.form.check_all_fields_valid()
+                self.assertTrue(invalid_msg)
+            field.setText(orig_value)
+                
+    def test_create_project_success(self):
         """
         Defines a project name and creates a project on ENA Test Server
-        """                
-        self.form.gene_entry.setText(project_gene)
-        self.form.pool_entry.setText(project_pool)
-        self.form.user_entry.setText(project_user)
-        self.form.title_entry.setText(project_title)
-        self.form.desc_entry.setText(project_desc)
+        """
+        for (field, value, _) in self.myvalues:
+            field.setText(value)
         
         self.form.project_btn.click()
         self.form.submit_btn.click()
@@ -202,8 +233,8 @@ class Test_Create_Project(unittest.TestCase):
         global project_accession
         project_name = self.form.project_name
         project_accession = self.form.accession
+        
     
-    #@unittest.skip("demonstrating skipping")   
     def test_parse_project_name(self):
         """
         parse project name
@@ -212,14 +243,12 @@ class Test_Create_Project(unittest.TestCase):
         new_project = "_".join([date, "SA", project_gene, project_pool])
         self.assertEqual(self.form.project_name, new_project)
     
-    #@unittest.skip("demonstrating skipping")
     def test_dir_exists(self):
         """
         If project dir is created?
         """
         self.assertTrue(os.path.exists(self.form.project_dir))
     
-    #@unittest.skip("demonstrating skipping")
     def test_projectfiles_exists(self):
         """
         If project files are created successfull
@@ -231,7 +260,6 @@ class Test_Create_Project(unittest.TestCase):
         self.assertTrue(os.path.exists(self.form.submission_file))
         self.assertTrue(os.path.exists(self.form.output_file))
     
-    #@unittest.skip("demonstrating skipping")
     def test_parse_project_xml(self):
         """
         Parse the written project XML file
@@ -244,7 +272,6 @@ class Test_Create_Project(unittest.TestCase):
         self.assertEqual(root[0][0].text, project_title)
         self.assertEqual(root[0][1].text, project_desc)
         
-    #@unittest.skip("demonstrating skipping")
     def test_parse_submission_xml(self):
         """
         Parse the written submission XML file
@@ -257,7 +284,6 @@ class Test_Create_Project(unittest.TestCase):
         self.assertEqual(root[0][0][0].attrib["schema"], "project")
         self.assertEqual(root[0][0][0].attrib["source"], self.form.project_name + ".xml")
 
-    #@unittest.skip("demonstrating skipping")
     def test_parse_output_xml(self):
         """
         Parse the written output XML file
