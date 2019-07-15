@@ -1,5 +1,18 @@
 # Version History
 
+## V2.4.0 (2019-07-15)
+### New features:
+- ENA submission is now handled through the new Webin-CLI (#100)
+- added support for DPA1 and DQA1 (#118)
+
+### Changes & adjustments:
+- pretypings are now limited to HLA, KIR and MIC, as per IPD request (#119)
+- if allele belongs to an unsupported locus, raise a meaningful error (#118)
+- New Projects: all fields are now checked for disallowed characters (#116)
+
+### Behind the scenes:
+- moved ENA submission functionality from ENASubmissionForm to typeloader_functions (#14) 
+
 ## V2.3.2.1 (2019-06-18)
 ### Bugfix:
 - target alleles with a deletion and a mismatch near the end of the CDS can now be handled (#113)
