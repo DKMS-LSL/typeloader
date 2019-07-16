@@ -367,11 +367,14 @@ def make_ENA_CLI_command_string(manifest_file, project_dir, settings, log):
     # find webin-cli:
     log.debug("Locating ENA's Webin-CLI client...")
     TL_src_dir = os.path.dirname(os.path.dirname(__file__))
-    CLI_path = os.path.join(TL_src_dir, "ENA_Webin_CLI")
-    CLI_files = glob.glob(os.path.join(CLI_path, "webin-cli*.jar"))
-    if not CLI_files:
-        log.error("ENA Webin-CLI not found in {}!".format(CLI_path))
-        return False, "ENA Webin-CLI client not found!"
+    CLI_path = os.path.join(TL_src_dir, "ENA_Webin_CLI") # should work if executed from Python
+    CLI_files = glob.glob(os.path.join(CLI_path, "webin-cli*.jar")) 
+    if not CLI_files: 
+        CLI_path2 = os.path.join(os.path.dirname(TL_src_dir), "ENA_Webin_CLI") # should work if executed from .exe
+        CLI_files = glob.glob(os.path.join(CLI_path2, "webin-cli*.jar"))
+        if not CLI_files: 
+            log.error("ENA Webin-CLI not found in {}!".format(CLI_path))
+            return False, "ENA Webin-CLI client not found!"
     
     CLI_file = sorted(CLI_files)[-1] # if multiple versions found, use highest version
     log.debug("\t=> found: {}".format(CLI_file))
