@@ -7,6 +7,7 @@ logs*
 temp*
 build*
 blastn*
+*.exe
 reference_data*
 config_base.ini
 config_company.ini
