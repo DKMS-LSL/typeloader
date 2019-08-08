@@ -406,7 +406,7 @@ def make_new_settings(root_path, user, user_name, short_name, email, address,
         config.set("Paths", "login_dir", user_dir) 
         projects_dir = os.path.join(user_dir, "projects")
         config.set("Paths", "projects_dir", projects_dir) 
-        config.set("Paths", "temp_dir", os.path.join(user_dir, "temp_remove_user")) 
+        config.set("Paths", "temp_dir", os.path.join(user_dir, "temp")) 
         config.set("Paths", "recovery_dir", os.path.join(user_dir, "recovery")) 
         config.set("Paths", "db_file", os.path.join(user_dir, "data.db")) 
         config.set("Paths", "dat_path", root_path) 

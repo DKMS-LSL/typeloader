@@ -1,5 +1,9 @@
 # Version History
 
+## V2.4.1 (2019-08-07)
+### Changes:
+- the Windows installer is now provided via GitHub release and is no longer part of the repository itself (#120)
+
 ## V2.4.0 (2019-07-15)
 ### New features:
 - ENA submission is now handled through the new Webin-CLI (#100)

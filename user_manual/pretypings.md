@@ -26,21 +26,17 @@ Example file:
 ### Columns:
   * **sample\_ID\_int**: internal sample ID; **this column is used to identify the sample**
   * **sample\_ID\_ext**: external sample ID; optional (can be left blank but **NOT** deleted!); alternatively, this column can be used to store any additional information; TypeLoader ignores the content of this column
-  * **client**: optional (can be left blank but **NOT** deleted!); the customer who sent this sample; this information is saved in TypeLoader
+  * **client**: optional (can be left blank but **NOT** deleted!); the customer who sent this sample; this information is saved in TypeLoader, if given
 
 **This is followed by several columns per locus:**
 
 * **HLA loci:** 2 columns per locus (one per allele), "HLA-A\_1", "HLA-A\_2" etc. (genotyping results should be at maximal resolution available and contain no locus)
-* **KIR loci:** 4 columns per locus (one per possible allele), "KIR2DL1-1", "KIR2DL1-2" etc. (genotyping results should be shortened to 2 field (=5 digit) resolution or be given as POS/NEG for absence/presence. Cells that are not needed should be left blank).
+* **KIR loci:** 4 columns per locus (one per possible allele), "KIR2DL1-1", "KIR2DL1-2" etc. (genotyping results should be shortened to 2 field (=5 digit) resolution or be given as POS/NEG for absence/presence. If needed, a GL-string for all alleles of a gene can be placed in that gene's first column. Cells that are not needed should be left blank).
 * **MIC:** 1 column for each gene, called "MICA" and "MICB", each containing **all** alleles for the gene, separated by a "+", each starting with the MIC-letter (e.g., A001+A002, B001+B001)
-* **ABO:** 1 column, called "ABO", containing the ABO blood group as "A"/"B"/"AB"/"O"
-* **Rhesus:** 1 column, called "RHESUS" or "RHD", containing the Rhesus blood group as "+" or "-"
-* **CCR5:** 2 columns, "CCR5_1" and "CCR5_2", giving both alleles of the sample as "WT" (for wildtype) or "Del32" for the delta32 mutation
-* **CMV:** 1 column, called "CMV", containing the CMV status as "+" or "-"
 
 ![Important](images/icon_important.png) **You can leave out/delete any columns that you don't genotype, as long as the required loci (see above) are provided.**
 
-![Important](images/icon_important.png) **If you are using Excel etc. and any of your genotyping results consist only of numbers or something Excel might think is a time, please use single quotes around them to ensure Excel doesn't cut off the leading zeros!** (I.e., enter the allele `00105` as `'00105'`, or Excel will convert that to `105`.)
+![Important](images/icon_important.png) **If you are using Excel etc. and any of your genotyping results consist only of numbers or something Excel might think is a time or a number, please use single quotes around them to ensure Excel doesn't cut off the leading zeros or otherwise wrecks it!** (I.e., enter the allele `00105` as `'00105'`, or Excel will convert that to `105`.)
 
 ![Important](images/icon_important.png) **You can download an example file with the right format and headers from TypeLoader's menu: ``Options`` => ``Download example files`` => ``Pretypings File``. You can use this as a template to fill in your data, either manually or from your LIMS etc.**
 

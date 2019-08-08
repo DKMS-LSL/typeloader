@@ -14,7 +14,7 @@ contains TypeLoader functionality designed especially for use at DKMS Life Scien
 import os, copy
 from configparser import ConfigParser
 from PyQt5.QtWidgets import QMessageBox
-import db_internal, db_external, general, typeloader_functions, GUI_login
+import db_internal, general, typeloader_functions, GUI_login
 
 #===========================================================
 # parameters:
@@ -212,6 +212,12 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
 def get_pretypings_from_oracledb(project, local_cf, settings, log, parent = None):
     """writes pretyping file with the pretyping results from the oracle database
     """
+    try:
+        import db_external
+    except Exception as E:
+        log.exception(E)
+        log.error("Could not import db_external, probably because cx_Oracle is missing on this computer!")
+        return False, None, None
     success, alleles = find_alleles_per_project(project, log, parent)
     if not success:
         return False, None, None
