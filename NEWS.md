@@ -1,5 +1,10 @@
 # Version History
 
+## V2.5.0 (2019-09-11)
+### Bugfixes:
+- in IPD files, now the correct pretyping delimiter (comma or plus) is used even if both alleles are novel (#122) 
+- correctly catch and display errors from ENA submission, if they happen
+
 ## V2.4.1 (2019-08-07)
 ### Changes:
 - the Windows installer is now provided via GitHub release and is no longer part of the repository itself (#120)
