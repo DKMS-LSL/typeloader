@@ -2,8 +2,12 @@ import datetime
 import re
 from copy import copy
 import textwrap
-from .imgtformat import *
-from .errors import BothAllelesNovelError, InvalidPretypingError
+if __name__ == '__main__':
+    from imgtformat import *
+    from errors import BothAllelesNovelError, InvalidPretypingError
+else:    
+    from .imgtformat import *
+    from .errors import BothAllelesNovelError, InvalidPretypingError
 
 def make_genemodel_text(enaFile, sequence, partial_UTR5, partial_UTR3):
     enaHandle = open(enaFile)
@@ -63,7 +67,7 @@ def make_genemodel_text(enaFile, sequence, partial_UTR5, partial_UTR3):
     return imgtGeneModelText
 
 
-def reformat_partner_allele(alleles, myallele, length, log):
+def reformat_partner_allele(alleles, myallele, length, delimiter, log):
     """tries to figure out which of the two novel alleles of the target locus is itself
     """
     log.info("Figuring out which allele this is...")
@@ -87,7 +91,7 @@ def reformat_partner_allele(alleles, myallele, length, log):
                             partners.append(a.split(":")[0])
                         else:
                             partners.append(a[:length])
-                partner = "+".join(partners)
+                partner = delimiter.join(partners)
                 reformated_alleles = [alleles[i], partner]
                 appendix = "s are" if len(alleles) > 2 else " is"
                 log.info("\t => Success: {} is self, partner allele{} {}!".format(alleles[i], appendix, 
@@ -100,7 +104,7 @@ def reformat_partner_allele(alleles, myallele, length, log):
 
     else:
         log.info("\t => Could not figure it out, need user input!")
-    alleles = "+".join(alleles)
+    alleles = delimiter.join(alleles)
     return success, alleles
 
 
@@ -119,6 +123,12 @@ def check_all_required_loci(befund_text, gene, target_allele, alleles, allele_na
         
     
 def make_befund_text(befund, self_name, myallele, closestAllele, geneMap, differencesText, log):
+#     print("befund = ", befund)
+#     print("self_name =", self_name)
+#     print("myallele =", myallele)
+#     print("closestAllele =", closestAllele)
+#     print("geneMap =", geneMap)
+#     print("differencesText = ", differencesText)
     befundText = ""
     alleles = []
     confirmation = False
@@ -157,7 +167,7 @@ def make_befund_text(befund, self_name, myallele, closestAllele, geneMap, differ
                 
             if i > 1:
                 log.info("Target locus {} has {} novel alleles".format(myallele.gene, i))
-                success, alleles = reformat_partner_allele(myalleles, myallele, length, log)
+                success, alleles = reformat_partner_allele(myalleles, myallele, length, delimiter, log)
                 if not success:
                     log.warning("Please indicate self!".format(myallele.gene, i))
                     raise BothAllelesNovelError(myallele, myalleles)
@@ -171,7 +181,7 @@ def make_befund_text(befund, self_name, myallele, closestAllele, geneMap, differ
             
             if confirmation:
                 alleles = alleles.replace(self_name, closestAllele.split("*")[1])
-                
+        
         befundText += otherAllelesString.replace("{gene}", gene).replace("{alleleNames}",alleles)
     check_all_required_loci(befundText, gene, myallele, alleles, self_name, log)
     return befundText
@@ -337,9 +347,12 @@ if __name__ == '__main__':
     log.addHandler(stream_handler)
     
     from collections import namedtuple
-    befund =  {'HLA-A': ['30:01:01G', '68:02:01G'], 'HLA-B': ['49:01:01G', '49:01:01G'], 'HLA-C': ['07:01:01G', '07:01:01G'], 'HLA-DRB1': ['13:01:01', '01:02:01'], 'HLA-DQB1': ['06:03:01', '05:01:01'], 'HLA-DPB1': ['13:new', '04:new']}
-    closestAllele =  "HLA-DPB1*04:01:01:29"
+    befund =  {'HLA-A': ['24:02:01G', '02:01:01G'], 'HLA-B': ['39:06:02G', '48:01:01G'], 'HLA-C': ['08:01:01G', '07:02:01G'], 'HLA-DRB1': ['08:02:01G', '14:06:01'], 'HLA-DQB1': ['04:02', '03:01:01'], 'HLA-DPB1': ['04:02', '04:02'], 'HLA-E': ['01:01:01G', '01:03:01G'], 'MICB': ['004:new', '005:new']}
+    self_name = "004:new"
+    closestAllele = "MICB*004:01:01"
     TargetAllele = namedtuple("TargetAllele", "gene target_allele partner_allele")
-    myallele = TargetAllele(gene='HLA-DPB1', target_allele='HLA-DPB1*04:new', partner_allele='HLA-DPB1*13:01:01:01 or 02:01:02:01')
+    myallele = TargetAllele(gene='MICB', target_allele='MICB*004:new', partner_allele='MICB*005:new')
     geneMap =  {'gene': ['HLA', 'KIR'], 'targetFamily': 'HLA'}
-    make_befund_text(befund, closestAllele, myallele, geneMap, log)
+    differencesText =  "CC   MICB*004:new differs from MICB*004:01:01 like so : [...]" 
+
+    make_befund_text(befund, self_name, myallele, closestAllele, geneMap, differencesText, log)
