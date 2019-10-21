@@ -219,7 +219,7 @@ class InvalidPretypingsDialog(QDialog):
         
         n = len(self.allele_dic)
         msg = "{} of the alleles to be submitted ha{} ".format(n, "s" if n == 1 else "ve")
-        msg += "an invalid pretyping for the target locus.\n"
+        msg += "an invalid pretyping for the specfied locus.\n"
         msg += "Please adjust the pretypings file for each indicated sample, then try again!"
         lbl = QLabel(msg)
         lbl.setStyleSheet(general.label_style_normal)
