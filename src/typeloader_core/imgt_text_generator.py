@@ -151,6 +151,11 @@ def make_befund_text(befund, self_name, myallele, closestAllele, geneMap, differ
         else:
             myalleles = befund[gene]
         alleles = delimiter.join(myalleles)
+        
+        if gene != "KIR":
+            if "|" in alleles:
+                raise InvalidPretypingError(myallele, myalleles, "", gene, "Pretyping contains '|'! GL-Stings are only accepted for KIR!") 
+         
         if gene == myallele.gene:
             # check for consistency:
             mystring = alleles.lower()
@@ -347,7 +352,7 @@ if __name__ == '__main__':
     log.addHandler(stream_handler)
     
     from collections import namedtuple
-    befund =  {'HLA-A': ['24:02:01G', '02:01:01G'], 'HLA-B': ['39:06:02G', '48:01:01G'], 'HLA-C': ['08:01:01G', '07:02:01G'], 'HLA-DRB1': ['08:02:01G', '14:06:01'], 'HLA-DQB1': ['04:02', '03:01:01'], 'HLA-DPB1': ['04:02', '04:02'], 'HLA-E': ['01:01:01G', '01:03:01G'], 'MICB': ['004:new', '005:new']}
+    befund =  {'HLA-A': ['01:02|24:02:01G', '02:01:01G'], 'HLA-B': ['39:06:02G', '48:01:01G'], 'HLA-C': ['08:01:01G', '07:02:01G'], 'HLA-DRB1': ['08:02:01G', '14:06:01'], 'HLA-DQB1': ['04:02', '03:01:01'], 'HLA-DPB1': ['04:02', '04:02'], 'HLA-E': ['01:01:01G', '01:03:01G'], 'MICB': ['004:new', '005:new']}
     self_name = "004:new"
     closestAllele = "MICB*004:01:01"
     TargetAllele = namedtuple("TargetAllele", "gene target_allele partner_allele")

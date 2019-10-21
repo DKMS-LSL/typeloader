@@ -2118,7 +2118,8 @@ class Test_pretyping_valid(unittest.TestCase):
                               "no allele marked as new in pretyping" : errors.InvalidPretypingError,
                               "assigned allele name not found in pretyping" : errors.InvalidPretypingError,
                               "POS is not acceptable pretyping for a target locus": errors.InvalidPretypingError,
-                              "pretyping for HLA-B missing" : errors.InvalidPretypingError}
+                              "pretyping for HLA-B missing" : errors.InvalidPretypingError,
+                              "Pretyping contains '|'! GL-Stings are only accepted for KIR!" : errors.InvalidPretypingError}
                          
     @classmethod
     def tearDownClass(self):
