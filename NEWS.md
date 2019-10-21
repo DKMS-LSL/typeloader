@@ -1,5 +1,8 @@
 # Version History
 
+## V2.5.1 (2019-10-21)
+- During IPD file creation, reject GL strings in non-KIR loci (#123)
+
 ## V2.5.0 (2019-09-11)
 ### Bugfixes:
 - in IPD files, now the correct pretyping delimiter (comma or plus) is used even if both alleles are novel (#122) 
