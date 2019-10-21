@@ -1,7 +1,7 @@
 # Version History
 
 ## V2.5.1 (2019-10-21)
-- during IPD file creation, reject GL strings for non-KIR loci (#123)
+- During IPD file creation, reject GL strings in non-KIR loci (#123)
 
 ## V2.5.0 (2019-09-11)
 ### Bugfixes:
