@@ -56,10 +56,11 @@ class InvalidPretypingError(Exception):
         self.allele = target_allele #TargetAllele object
         self.allele_name = allele_name # name of closest allele, assigned by TypeLoader
         self.locus = locus
-        if not "new" in allele_name:
-            if self.locus.startswith("KIR"):
-                self.allele_name = allele_name + "new"
-            else:
-                self.allele_name = allele_name + ":new"
+        if allele_name:
+            if not "new" in allele_name:
+                if self.locus.startswith("KIR"):
+                    self.allele_name = allele_name + "new"
+                else:
+                    self.allele_name = allele_name + ":new"
         self.alleles = ",".join(alleles) # list of both alleles from the pretypings csv
         self.problem = problem

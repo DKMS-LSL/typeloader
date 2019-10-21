@@ -62,6 +62,7 @@ If any of the following things happen, TypeLoader will recognize the pretyping a
 * None of the alleles of the target locus are marked as new even though this is not a confirmatory sequence (= identical to an already known full-length sequence).
 * The closest known allele is not contained in the pretypings of the target locus. (This is quite common if your pretypings were not created with the most recent database version.)
 * Pretypings for any of the required loci are missing.
+* Any locus except KIR contains a GL string including a phasing (recognized by containing a '|' character). IPD does not accept these, except for KIR genes in KIR submissions.
 
 If any of these are encountered, TypeLoader will show a popup dialog listing all affected samples from this submission, with the encountered problem:
 

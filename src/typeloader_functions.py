@@ -744,12 +744,11 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
     """handles submission of sequences via ENA's Webin-CLI & creation of all files for this
     """
     log.info("Submitting sequences to ENA...")
-    
     submission_alias = analysis_alias + "_filesub"
     
     if len(input_files) == 0:
         log.warning("No files were selected for Submission!")
-        return False, "No files selected", "Please select at least one file for submission!", []
+        return False, False, "No files selected", "Please select at least one file for submission!", []
     
     ## 1. create a concatenated flatfile
     log.debug("Concatenating flatfiles...")
@@ -800,7 +799,7 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
         log.error(msg)
         log.error(ENA_response)
         # FIXME: we used to roll back the submission, to not SPAM the server. Can we still do this?
-        return True, False, "ENA submission error", "ENA submission error", "{}:\n\n{}".format(msg, ENA_response), problem_samples
+        return [ENA_response], False, "ENA submission error", "ENA submission error {}:\n\n{}".format(msg, ENA_response), problem_samples
 
     log.debug("\t=> submission successful (submission ID = {})".format(analysis_accession_number))
     ans_time = time.strftime("%Y%m%d%H%M%S")
