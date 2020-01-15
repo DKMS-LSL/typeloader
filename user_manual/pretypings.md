@@ -9,7 +9,7 @@ The following loci are the minimum acceptable pretyping profile for IPD submissi
  
  * HLA-A
  * HLA-B
- * HLA-DQB1
+ * HLA-DRB1
  * the gene you are submitting
 
 However, **IPD strongly encourages adding as much genotyping data about the sample as you have.**

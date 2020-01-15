@@ -113,7 +113,7 @@ def reformat_partner_allele(alleles, myallele, length, delimiter, log):
 def check_all_required_loci(befund_text, gene, target_allele, alleles, allele_name, log):
     """makes sure all loci required by IPD have a pretyping
     """
-    required = ["HLA-A", "HLA-B", "HLA-DQB1", gene]
+    required = ["HLA-A", "HLA-B", "HLA-DRB1", gene]
     missing = []
     for locus in required:
         if not locus in befund_text:
