@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # This routine establishes the co-ordinates for the new allele from the closest known allele
 # The closest known allele is determined using getclosestKnownAllele from closestallele.py
 
@@ -134,7 +136,6 @@ def getMismatchData(annotations):
 def getCoordinates(blastXmlFilename, allelesFilename, targetFamily, settings, log, isENA=True, incomplete_ok = False):
     allAlleles, _ = read_dat_file(allelesFilename, targetFamily, isENA)
     closestAlleles = getClosestKnownAlleles(blastXmlFilename, targetFamily, settings, log)
-
     seqsFile = blastXmlFilename.replace(".blast.xml",".fa")
 
     try: 
@@ -244,9 +245,15 @@ def processAlleles(closestAlleles, allAlleles, hashOfQuerySequences, incomplete_
         if not closestAlleles[alleleQuery]:
             annotations[alleleQuery] = None
             continue
-        closestAlleleName, differences, isExactMatch, concatHSPS, hitStart = closestAlleles[alleleQuery]["name"], closestAlleles[alleleQuery]["differences"], \
-                                                                    closestAlleles[alleleQuery]["exactMatch"], closestAlleles[alleleQuery]["concatHSPS"], closestAlleles[alleleQuery]["hitStart"]
+        closestAlleleName = closestAlleles[alleleQuery]["name"]
+        differences = closestAlleles[alleleQuery]["differences"]
+        isExactMatch = closestAlleles[alleleQuery]["exactMatch"]
+        concatHSPS = closestAlleles[alleleQuery]["concatHSPS"]
+        hitStart = closestAlleles[alleleQuery]["hitStart"]
         missing_bp = hitStart - 1
+        alignLength = closestAlleles[alleleQuery]["alignLength"]
+        queryLength = closestAlleles[alleleQuery]["queryLength"]
+        
         
         features, coordinates, extraInformation, closestAlleleCdsSequence, closestAlleleSequence = calculateCoordinates(closestAlleleName, allAlleles, differences, len(hashOfQuerySequences[alleleQuery]), missing_bp)
         
@@ -268,7 +275,8 @@ def processAlleles(closestAlleles, allAlleles, hashOfQuerySequences, incomplete_
                                     "closestAllele":closestAlleleName, "cdsMap":cdsMap, "closestAlleleCdsSequence": closestAlleleCdsSequence, \
                                     "closestAlleleSequence":closestAlleleSequence, "isExactMatch":isExactMatch, "extraInformation":extraInformation, \
                                     "concatHSPS": concatHSPS, 
-                                    "missing_bp": missing_bp, "missing_bp_end": missing_bp_end, "imgtDifferences_orig": imgtDifferences_orig}
+                                    "missing_bp": missing_bp, "missing_bp_end": missing_bp_end, "imgtDifferences_orig": imgtDifferences_orig,
+                                    "queryLength": queryLength, "alignLength": alignLength}
         
         
     return annotations

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 header = """ID   XXX; XXX; linear; XXX; XXX; XXX; XXX.
 XX

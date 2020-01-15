@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 def constructCDS(features, coordinates):
     exonCoordinates = [coordinates[featureIndex] for featureIndex in range(len(features)) if features[featureIndex][1] == "e"]
     cdsMap = {}

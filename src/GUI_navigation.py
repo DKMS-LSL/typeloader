@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+# -*- coding: cp1252 -*-
+'''
+Created on ?
+
+GUI_navigation.py
+
+Navigation area and related code for TypeLoader
+
+@author: Bianca Schoene
+'''
 import sys, os
 from PyQt5 import QtSql
 from PyQt5.QtWidgets import (QGridLayout, QWidget, QMessageBox,

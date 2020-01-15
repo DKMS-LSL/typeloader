@@ -1,5 +1,9 @@
+#!/usr/bin/env python3
+# -*- coding: cp1252 -*-
 '''
 Created on 03.09.2018
+
+builds the TypeLoader executable for Windows using cx_Freeze
 
 @author: schoene
 '''

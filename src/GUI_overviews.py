@@ -1,5 +1,15 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+'''
+Created on ?
+
+GUI_overviews.py
+
+Models, buttons, tables, dialogs, and other widgets
+used by TypeLoader Overviews
+
+@author: Bianca Schoene
+'''
 
 from PyQt5.QtSql import QSqlQueryModel, QSqlTableModel, QSqlQuery, QSqlRelationalTableModel
 from PyQt5.QtWidgets import (QTableView, QHeaderView, QItemDelegate,

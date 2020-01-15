@@ -1,5 +1,14 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: cp1252 -*-
+'''
+Created on ?
+
+GUI_reference_fix.py
+
+a QDialog to replace a broken IPD release with an older working version
+
+@author: Bianca Schoene
+'''
 
 from PyQt5.QtWidgets import (QDialog, QFileDialog, QFormLayout,
                              QLabel, QApplication)

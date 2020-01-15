@@ -1,5 +1,14 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: cp1252 -*-
+'''
+Created on ?
+
+GUI_views_settings.py
+
+classes involved in building the SettingsView for Typeloader
+
+@author: Bianca Schoene
+'''
 
 from PyQt5.QtWidgets import (QDialog, QFormLayout, QLineEdit,
                              QTabWidget, QVBoxLayout, QWidget, QMessageBox,

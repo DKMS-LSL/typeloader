@@ -1,5 +1,14 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: cp1252 -*-
+'''
+Created on ?
+
+GUI_views_OVProjects.py
+
+ProjectsOverview class for Typeloader
+
+@author: Bianca Schoene
+'''
 
 from PyQt5.QtSql import QSqlQueryModel, QSqlQuery
 from PyQt5.QtWidgets import QHeaderView, QMenu, QApplication, QMessageBox

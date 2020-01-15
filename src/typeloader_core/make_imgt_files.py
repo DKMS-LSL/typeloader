@@ -116,7 +116,7 @@ def update_IPD_counter(new_value, cf, config_file, lock_file, log):
 def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, geneMapENA, befund_csv_file,
                    settings, log):
     log.debug("Making IPD data...")
-        
+    
     geneMap = {"gene":[settings["gene_hla"], settings["gene_kir"]]}
     (patientBefundMap, customer_dic) = getPatientBefund(befund_csv_file)
     if not patientBefundMap:

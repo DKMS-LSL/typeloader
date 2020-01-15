@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 Created on 26.11.2018
 
@@ -64,3 +65,4 @@ class InvalidPretypingError(Exception):
                     self.allele_name = allele_name + ":new"
         self.alleles = ",".join(alleles) # list of both alleles from the pretypings csv
         self.problem = problem
+        
