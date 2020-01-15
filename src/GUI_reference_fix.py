@@ -53,7 +53,7 @@ class ReferenceFixingDialog(QDialog):
         lbl.setStyleSheet(general.label_style_italic)
         layout.addRow(lbl)
         
-        msg = "Clicking this button will download an older, non-broken release for {} and TypeLoader will then use it as its reference."
+        msg = "Clicking this button will download an older, non-broken release from IPD and TypeLoader will then use it as its reference."
         
         layout.addRow(QLabel(""))
         hla_btn = QPushButton("Replace with trusted version!", self)
