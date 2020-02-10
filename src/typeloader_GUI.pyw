@@ -24,20 +24,20 @@ from PyQt5 import QtSql
 from PyQt5.QtCore import pyqtSlot, Qt
 from configparser import NoSectionError
 
-import general
-import GUI_navigation, GUI_login, GUI_stylesheet
-import GUI_forms_new_project, GUI_forms_new_allele, GUI_forms_new_allele_bulk
-import GUI_forms_submission_ENA, GUI_forms_submission_IPD
-import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample
-import GUI_views_settings
-import GUI_download_files, GUI_user_manual
-from GUI_misc import UnderConstruction
-import patches
+from src import general
+from src import GUI_navigation, GUI_login, GUI_stylesheet
+from src import GUI_forms_new_project, GUI_forms_new_allele, GUI_forms_new_allele_bulk
+from src import GUI_forms_submission_ENA, GUI_forms_submission_IPD
+from src import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample
+from src import GUI_views_settings
+from src import GUI_download_files, GUI_user_manual
+from src.GUI_misc import UnderConstruction
+from src import patches
 
 #===========================================================
 # parameters:
 
-from __init__ import __version__
+from src.__init__ import __version__
 from PyQt5.Qt import QDesktopWidget
 #===========================================================
 # classes:

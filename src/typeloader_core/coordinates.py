@@ -261,6 +261,8 @@ def processAlleles(closestAlleles, allAlleles, hashOfQuerySequences, incomplete_
         
         (UTR3start, UTR3end) = coordinates[-1]
         UTR3length = UTR3end - UTR3start + 1
+        print("UTR3length", UTR3length)
+        print(f"UTR3 coordinates: {UTR3start}, {UTR3end}")
         if UTR3length <= 0:
             raise MissingUTRError(3)
 
