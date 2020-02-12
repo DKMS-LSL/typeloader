@@ -55,8 +55,10 @@ class NewProjectForm(QDialog):
             self.gene = ""
             self.pool = ""
             self.project_name = None
+            self.submission_file = None
             self.success = False
             self.invalid_fields = []
+            self.output_file = None
             self.show()
             ok, msg = settings_ok("ENA", self.settings, self.log)
             if not ok:
@@ -236,12 +238,11 @@ class NewProjectForm(QDialog):
     def on_submitBtn_clicked(self):
         """submits data to ENA & shows the accession-ID
         """
-        try: # for debugging
-#         if True:
+        try:  # for debugging
             self.log.debug("Submitting project to ENA...")
             ## create variables
             successful_transmit = "false"
-            xml_center_name =  self.settings["xml_center_name"]
+            xml_center_name = self.settings["xml_center_name"]
                         
             ## Creating XML files
             self.project_dir = os.path.join(self.settings["projects_dir"], self.project_name)
@@ -250,43 +251,44 @@ class NewProjectForm(QDialog):
                 os.makedirs(self.project_dir)
             except WindowsError:
                 self.log.warning("'{}' already exists".format(self.project_dir))
-            project_xml = EF.generate_project_xml(self.title, self.description, self.project_name, xml_center_name)
-            project_filename = os.path.join(self.project_dir, self.project_name + ".xml")
+            self.project_xml = EF.generate_project_xml(self.title, self.description, self.project_name, xml_center_name)
+            self.project_filename = os.path.join(self.project_dir, self.project_name + ".xml")
             
-            if (os.path.exists(project_filename)):
-                info_exists = "File '{}' already exist. Please change pool name.".format(project_filename)
+            if os.path.exists(self.project_filename):
+                info_exists = "File '{}' already exist. Please change pool name.".format(self.project_filename)
                 QMessageBox.warning(self, "ALIAS already exists!", info_exists)
-                self.log.warning("File " + project_filename + " already exist, use another pool name")
+                self.log.warning("File " + self.project_filename + " already exist, use another pool name")
             else:
-                success = EF.write_file(project_xml, project_filename, self.log)
+                success = EF.write_file(self.project_xml, self.project_filename, self.log)
                 if not success:
-                    msg = "Could not write to {}!".format(project_filename)
+                    msg = "Could not write to {}!".format(self.project_filename)
                     QMessageBox(self, "Error writing project xml file!", msg)
                 else:
                     submission_alias = self.project_name + "_sub"
-                    submission_project_xml = EF.generate_submission_project_xml(submission_alias, xml_center_name, project_filename)
-                    submission_project_filename = os.path.join(self.project_dir, submission_alias + ".xml")
-                    success = EF.write_file(submission_project_xml, submission_project_filename, self.log)
+                    submission_project_xml = EF.generate_submission_project_xml(submission_alias, xml_center_name, self.project_filename)
+                    self.submission_file = os.path.join(self.project_dir, submission_alias + ".xml")
+                    success = EF.write_file(submission_project_xml, self.submission_file, self.log)
                 
                     if not success:
-                        msg = "Could not write to {}!".format(submission_project_filename)
+                        msg = "Could not write to {}!".format(self.submission_file)
                         QMessageBox(self, "Error writing project submission xml file!", msg)
                     else:
                         ## Communicate with EMBL
                         self.log.info("Submitting new project to EMBL...")
                         server = self.settings["embl_submission"]
                         proxy = self.settings["proxy"]
-                        output_filename = os.path.join(self.project_dir, self.project_name + "_output.xml")
+                        self.output_file = os.path.join(self.project_dir, self.project_name + "_output.xml")
+
                         userpwd = "{}:{}".format(self.settings["ftp_user"], self.settings["ftp_pwd"])
-                        study_err = EF.submit_project_ENA(submission_project_filename, project_filename, "PROJECT", 
-                                                          server, proxy, output_filename, userpwd)
+                        study_err = EF.submit_project_ENA(self.submission_file, self.project_filename, "PROJECT",
+                                                          server, proxy, self.output_file, userpwd)
                         if study_err:
                             self.log.exception(study_err)
                             QMessageBox.warning(self, "Error during ENA submission!", "Project submission to ENA did not work:\n\n{}!".format(study_err))
                         else:
                             self.log.info("=> Submission sent, awaiting response...")
-                            successful_transmit, self.submission_ID, info_xml, error_xml, _ = EF.parse_register_EMBL_xml(output_filename, "SUBMISSION")
-                            successful_transmit, self.accession_ID, info_xml, error_xml, _ = EF.parse_register_EMBL_xml(output_filename, "PROJECT")
+                            successful_transmit, self.submission_ID, info_xml, error_xml, _ = EF.parse_register_EMBL_xml(self.output_file, "SUBMISSION")
+                            successful_transmit, self.accession_ID, info_xml, error_xml, _ = EF.parse_register_EMBL_xml(self.output_file, "PROJECT")
                             #TODO: (future) cleanup: put all parsing into one function, add EXT_ID
                             
                             if error_xml:

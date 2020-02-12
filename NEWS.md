@@ -1,5 +1,13 @@
 # Version History
 
+## 2.6.0 (2020-01-12)
+- Added support for HLA-E (#131) and DPA1 & DQA1 (#118)
+- Updated ENA Webin CLI to V2.2.0 (#129)
+- Adjusted the use of the tags "gene" and "pseudogene" in ENA files to the requirements of the new Webin CLI. (#130)
+
+## V2.5.1 (2019-10-21)
+- Pretypings in GL-string form for non-KIR loci are now rejected. (#123)
+
 ## V2.5.0 (2019-09-11)
 ### Bugfixes:
 - in IPD files, now the correct pretyping delimiter (comma or plus) is used even if both alleles are novel (#122) 
