@@ -310,7 +310,7 @@ class NewAlleleForm(CollapsibleDialog):
             # process file & create Allele objects:
             self.header_data["sample_id_int"] = self.sample_name
             results = typeloader.process_sequence_file(self.project, self.filetype, self.blastXmlFile, self.targetFamily, self.fasta_filename, self.allelesFilename, self.header_data, self.settings, self.log)
-            if results[0] == False: # something went wrong
+            if not results[0]: # something went wrong
                 if results[1] == "Incomplete sequence":
                     reply = QMessageBox.question(self, results[1], results[2], QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                     if reply == QMessageBox.Yes:
