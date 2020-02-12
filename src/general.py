@@ -198,7 +198,7 @@ def read_package_variable(key):
         for line in f:
             parts = line.strip().split(' ')
             if parts and parts[0] == key:
-                return parts[-1].strip("'")
+                return parts[-1].strip('"').strip("'")
     assert 0, "'{0}' not found in '{1}'".format(key, init_path)
 
 def timestamp(date_format = "%Y%m%d_%H-%M"):
