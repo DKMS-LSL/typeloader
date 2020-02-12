@@ -14,7 +14,7 @@ FT                   /mol_type="genomic DNA"
 FT                   /cell_line="{cell line}"
 FT   CDS             join({exon_coord_list})
 FT                   /codon_start={reading frame}
-FT                   /{gene_tag}="{gene}"
+FT                   /{gene_tag}="{gene}"{pseudogene}
 FT                   /allele="{allele}"
 FT                   /product="{product_FT}"
 FT                   /function="{function}"

@@ -243,6 +243,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
             alleles = [allele for allele in annotations.keys()]
             # take the first sequence in fasta file
             alleleName = alleles[0]
+            pseudogene = ""
             if annotations[alleleName] is None:
                 # No BLAST hit at position 1
                 msg = "No BLAST hit at position 1"
@@ -272,7 +273,8 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                     productName_DE = flatfile_dic["productname_kir_long"]
                     function = flatfile_dic["function_kir"]
                     if geneName in settings["pseudogenes"].split("|"):
-                        gene_tag = "pseudogene"
+                        gene_tag = "gene"
+                        pseudogene = '\nFT                   /pseudogene="unprocessed"'
                         null_allele = False
                     else:
                         productName_FT = productName_FT + " null allele" if null_allele else productName_FT
@@ -300,7 +302,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 
                 generalData = BME.make_globaldata(gene_tag = gene_tag, gene = geneName, allele = newAlleleName, product_DE = productName_DE, product_FT = productName_FT, 
                                                   function = function, species = flatfile_dic["species"], 
-                                                  seqLen = str(len(sequence)), cellline = myallele.local_name)
+                                                  seqLen = str(len(sequence)), cellline = myallele.local_name, pseudogene = pseudogene)
                 ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, null_allele) + BME.make_genemodel(BE.backend_dict, generalData, enaPosHash, extraInformation, features) + BME.make_footer(BE.backend_dict, sequence)
                 #TODO (future): accept multiple sequences from one fasta file
         return True, myalleles, ENA_text
@@ -815,11 +817,11 @@ def main(settings, log, mydb):
     project = "20190627_ADMIN_mixed_ENA-Test"
     ENA_ID = "PRJEB33235"
     samples = [['20190627_ADMIN_mixed_ENA-Test', '1'], ['20190627_ADMIN_mixed_ENA-Test', '2'], ['20190627_ADMIN_mixed_ENA-Test', '3'], ['20190627_ADMIN_mixed_ENA-Test', '4']]
-    input_files= ['\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-HLA01\\DKMS-LSL_IDTest-HLA01_A_1.ena.txt', 
-                  '\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-KIR01\\DKMS-LSL_IDTest-KIR01_2DL1_1.ena.txt', 
-                  '\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-KIR01\\DKMS-LSL_IDTest-KIR01_2DL4_1.ena.txt', 
+    input_files= ['\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-HLA01\\DKMS-LSL_IDTest-HLA01_A_1.ena.txt',
+                  '\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-KIR01\\DKMS-LSL_IDTest-KIR01_2DL1_1.ena.txt',
+                  '\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-KIR01\\DKMS-LSL_IDTest-KIR01_2DL4_1.ena.txt',
                   '\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-MIC01\\DKMS-LSL_IDTest-MIC01_MICA_1.ena.txt']
-    
+
     file_dic, curr_time, analysis_alias = create_ENA_filenames(project, ENA_ID, settings, log)
     submit_sequences_to_ENA_via_CLI(project, ENA_ID, analysis_alias, curr_time, samples, input_files, file_dic, settings, log)
     
