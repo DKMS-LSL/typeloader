@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
+    <data-source source="LOCAL" name="tl_test" uuid="355a3ff4-099d-45c1-a076-9b4573561c98">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:H:\Mitarbeiterordner\Bianca\Eclipse-Workspaces\TypeLoader\Python3\src\typeloader2\src\tl_test.db</jdbc-url>
+    </data-source>
+    <data-source source="LOCAL" name="test" uuid="118fce40-e677-45af-9dac-8646985833ad">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:H:\Mitarbeiterordner\Bianca\Eclipse-Workspaces\TypeLoader\Python3\src\typeloader2\src\test.db</jdbc-url>
+    </data-source>
+  </component>
+</project>
