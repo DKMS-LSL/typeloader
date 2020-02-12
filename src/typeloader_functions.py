@@ -279,6 +279,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                     productName_DE = flatfile_dic["productname_kir_long"]
                     function = flatfile_dic["function_kir"]
                     if geneName in settings["pseudogenes"].split("|"):
+                        log.info("This is a pseudogene!")
                         gene_tag = "gene"
                         pseudogene = '\nFT                   /pseudogene="unprocessed"'
                         null_allele = False
@@ -309,7 +310,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 generalData = BME.make_globaldata(gene_tag=gene_tag, gene=geneName, allele=newAlleleName,
                                                   product_DE=productName_DE, product_FT=productName_FT,
                                                   function=function, species=flatfile_dic["species"],
-                                                  seqLen=str(len(sequence)), cellline=myallele.local_name)
+                                                  seqLen=str(len(sequence)), cellline=myallele.local_name, pseudogene=pseudogene)
                 ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, null_allele) + BME.make_genemodel(
                     BE.backend_dict, generalData, enaPosHash, extraInformation, features) + BME.make_footer(
                     BE.backend_dict, sequence)
