@@ -4,9 +4,12 @@ from .backend_enaformat import *
 from copy import copy
 import textwrap
 
-def make_globaldata(species="Homo sapiens", gene_tag="", gene="", allele="", partial="", product_DE="", product_FT="", function="", seqLen="",cellline="",codonstart="1"):
+def make_globaldata(species="Homo sapiens", gene_tag="", gene="", allele="", partial="", product_DE="", product_FT="",
+                    function="", seqLen="",cellline="",codonstart="1", pseudogene = ""):
 
-    globaldata = {"{species}":species, "{gene_tag}":gene_tag, "{gene}":gene,"{allele}":allele,"{partial}":partial,"{product_DE}":product_DE,"{product_FT}":product_FT,"{function}":function,"{sequence length}":seqLen,"{cell line}":cellline,"{reading frame}":codonstart}
+    globaldata = {"{species}":species, "{gene_tag}":gene_tag, "{gene}":gene,"{allele}":allele,"{partial}":partial,
+                  "{product_DE}":product_DE,"{product_FT}":product_FT,"{function}":function,"{sequence length}":seqLen,
+                  "{cell line}":cellline,"{reading frame}":codonstart, "{pseudogene}":pseudogene}
     return globaldata
 
 def transform(posHash):
