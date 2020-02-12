@@ -20,3 +20,4 @@ src/ENA_Webin_CLI/test_data/*
 src/ENA_Webin_CLI/java
 /.idea/
 *.idea*
+/venv/
