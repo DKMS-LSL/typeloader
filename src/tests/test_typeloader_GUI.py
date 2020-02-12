@@ -23,7 +23,6 @@ sys.path.append(mypath)
 sys.path.append(mypath_inner)
 
 import general, db_internal, GUI_login
-from __init__ import __version__
 from xml.etree import ElementTree
 from collections import namedtuple
 
@@ -107,7 +106,7 @@ settings_both = {"reference_dir": "reference_data_unittest",
                 }
 
 log = general.start_log(level="DEBUG")
-
+__version__ = general.read_package_variable("__version__")
 # assemble settings for testing:
 cf = ConfigParser()
 cf.read(os.path.join(mypath_inner, base_config_file))

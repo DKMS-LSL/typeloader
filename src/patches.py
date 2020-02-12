@@ -20,7 +20,6 @@ from PyQt5.Qt import pyqtSignal
 from PyQt5.QtGui import QIcon
 
 import general, db_internal
-from __init__ import __version__
 from GUI_login import local_patchme_file, user_config_file, company_config_file
 from GUI_forms import ProceedButton
 
