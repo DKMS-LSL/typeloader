@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="9e28d8db-e733-4658-9004-0598d3095c15" name="Default Changelist" comment="Merge branch '131-HLA-E'&#10;&#10;# Conflicts:&#10;#&#9;NEWS.md">
+      <change beforePath="$PROJECT_DIR$/NEWS.md" beforeDir="false" afterPath="$PROJECT_DIR$/NEWS.md" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="DatabaseView">
+    <option name="SHOW_INTERMEDIATE" value="true" />
+    <option name="GROUP_DATA_SOURCES" value="true" />
+    <option name="GROUP_SCHEMA" value="true" />
+    <option name="GROUP_CONTENTS" value="false" />
+    <option name="SORT_POSITIONED" value="false" />
+    <option name="SHOW_EMPTY_GROUPS" value="false" />
+    <option name="AUTO_SCROLL_FROM_SOURCE" value="false" />
+    <option name="HIDDEN_KINDS">
+      <set />
+    </option>
+    <expand />
+    <select />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <favorite-branches>
+      <branch-storage>
+        <map>
+          <entry type="LOCAL">
+            <value>
+              <list>
+                <branch-info repo="$PROJECT_DIR$" source="productive" />
+              </list>
+            </value>
+          </entry>
+        </map>
+      </branch-storage>
+    </favorite-branches>
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="productive" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="IgnoredFileRootStore">
+    <option name="generatedRoots">
+      <set>
+        <option value="H:\Mitarbeiterordner\Bianca\Eclipse-Workspaces\TypeLoader\Python3\src\typeloader2\.idea" />
+      </set>
+    </option>
+  </component>
+  <component name="ProjectId" id="1W9WbGOLF9BqffjE3wbwMwi48El" />
+  <component name="ProjectViewState">
+    <option name="autoscrollFromSource" value="true" />
+    <option name="autoscrollToSource" value="true" />
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
+    <property name="ASKED_SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyIntegratedToolsModulesConfigurable" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="H:\Mitarbeiterordner\Bianca\Eclipse-Workspaces\TypeLoader\Python3\src\typeloader2\src\typeloader_core" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python tests.Unittests in test_typeloader_GUI.py">
+    <configuration name="temp_remove_user" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="typeloader2" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/temp_remove_user.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="typeloader_GUI.pyw (1)" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="typeloader2" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/typeloader_GUI.pyw" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="typeloader_functions" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="typeloader2" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/typeloader_functions.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unittests in test_typeloader_GUI.py" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="typeloader2" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/src/tests/test_typeloader_GUI.py&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python tests.Unittests in test_typeloader_GUI.py" />
+        <item itemvalue="Python.typeloader_GUI.pyw (1)" />
+        <item itemvalue="Python.typeloader_functions" />
+        <item itemvalue="Python.temp_remove_user" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="ServiceViewManager">
+    <option name="viewStates">
+      <list>
+        <serviceView>
+          <treeState>
+            <expand />
+            <select />
+          </treeState>
+        </serviceView>
+      </list>
+    </option>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="9e28d8db-e733-4658-9004-0598d3095c15" name="Default Changelist" comment="" />
+      <created>1578562360041</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1578562360041</updated>
+      <workItem from="1578562365210" duration="4392000" />
+      <workItem from="1578570413105" duration="2395000" />
+      <workItem from="1578905292406" duration="618000" />
+      <workItem from="1578908138432" duration="4071000" />
+      <workItem from="1578990568230" duration="3571000" />
+      <workItem from="1579183804862" duration="25000" />
+      <workItem from="1580199611387" duration="4288000" />
+      <workItem from="1580206255444" duration="40000" />
+      <workItem from="1580206331888" duration="13209000" />
+      <workItem from="1580223794620" duration="2495000" />
+      <workItem from="1580291934369" duration="3474000" />
+      <workItem from="1580303165819" duration="18186000" />
+      <workItem from="1581326719086" duration="34506000" />
+    </task>
+    <task id="LOCAL-00001" summary="changed shebang lines consistently to #!/usr/bin/env python3 to avoid Windows10 issues (#126)">
+      <created>1579077331141</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1579077331141</updated>
+    </task>
+    <task id="LOCAL-00002" summary="typo fixed">
+      <created>1579077385272</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1579077385272</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Bugfix: changed required loci from DQB1 to DRB1 (#127)">
+      <created>1579077774869</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1579077774869</updated>
+    </task>
+    <task id="LOCAL-00004" summary="had to recreate file to clean up shebang problems under Windows10">
+      <created>1580200484646</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1580200484646</updated>
+    </task>
+    <task id="LOCAL-00005" summary="generate a meaningful error if java is not found (#130)">
+      <created>1580206563170</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1580206563170</updated>
+    </task>
+    <task id="LOCAL-00006" summary="removed temp file">
+      <created>1580206617925</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1580206617925</updated>
+    </task>
+    <task id="LOCAL-00007" summary="check ignored alignment parts near sequence ends (#124)">
+      <created>1581342666964</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1581342666964</updated>
+    </task>
+    <task id="LOCAL-00008" summary="update ENA's Webin client (#129)">
+      <created>1581344989243</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1581344989243</updated>
+    </task>
+    <task id="LOCAL-00009" summary="adjusted use of &quot;pseudogene&quot; tag for new Webin-CLI version (#132)">
+      <created>1581501701261</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1581501701261</updated>
+    </task>
+    <task id="LOCAL-00010" summary="added support for HLA-E (#131)">
+      <created>1581501726337</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1581501726337</updated>
+    </task>
+    <task id="LOCAL-00011" summary="updated NEWS.md for 2.6.0">
+      <created>1581502416834</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1581502416834</updated>
+    </task>
+    <task id="LOCAL-00012" summary="version bump to 2.6.0">
+      <created>1581502459370</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1581502459370</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="CHECK_NEW_TODO" value="false" />
+    <MESSAGE value="changed shebang lines consistently to #!/usr/bin/env python3 to avoid Windows10 issues (#126)" />
+    <MESSAGE value="typo fixed" />
+    <MESSAGE value="Bugfix: changed required loci from DQB1 to DRB1 (#127)" />
+    <MESSAGE value="had to recreate file to clean up shebang problems under Windows10" />
+    <MESSAGE value="generate a meaningful error if java is not found (#130)" />
+    <MESSAGE value="removed temp file" />
+    <MESSAGE value="check ignored alignment parts near sequence ends (#124)" />
+    <MESSAGE value="update ENA's Webin client (#129)" />
+    <MESSAGE value="adjusted use of &quot;pseudogene&quot; tag for new Webin-CLI version (#132)" />
+    <MESSAGE value="added support for HLA-E (#131)" />
+    <MESSAGE value="updated NEWS.md for 2.6.0" />
+    <MESSAGE value="version bump to 2.6.0" />
+    <option name="LAST_COMMIT_MESSAGE" value="version bump to 2.6.0" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="294" y="164" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1581427790647">
+      <screen x="0" y="0" width="1680" height="1020" />
+    </state>
+    <state x="294" y="164" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1680.1020/-1680.0.1680.1020@0.0.1680.1020" timestamp="1581427790647" />
+    <state x="92" y="92" width="1496" height="836" key="#com.intellij.execution.junit2.states.ComparisonFailureState$DiffDialog" timestamp="1581344764249">
+      <screen x="0" y="0" width="1680" height="1020" />
+    </state>
+    <state x="92" y="92" width="1496" height="836" key="#com.intellij.execution.junit2.states.ComparisonFailureState$DiffDialog/0.0.1680.1020/-1680.0.1680.1020@0.0.1680.1020" timestamp="1581344764249" />
+    <state x="559" y="119" key="#typeloader_GUI.pyw" timestamp="1578562455968">
+      <screen x="0" y="0" width="1680" height="1010" />
+    </state>
+    <state x="559" y="119" key="#typeloader_GUI.pyw/0.0.1680.1010/-1680.0.1680.1010@0.0.1680.1010" timestamp="1578562455968" />
+    <state x="374" y="103" key="CommitChangelistDialog2" timestamp="1581502693265">
+      <screen x="0" y="0" width="1680" height="1020" />
+    </state>
+    <state x="374" y="103" key="CommitChangelistDialog2/0.0.1680.1020/-1680.0.1680.1020@0.0.1680.1020" timestamp="1581502693265" />
+    <state x="620" y="262" key="FileChooserDialogImpl" timestamp="1580381251587">
+      <screen x="0" y="0" width="1680" height="1020" />
+    </state>
+    <state x="620" y="259" key="FileChooserDialogImpl/0.0.1680.1010/-1680.0.1680.1010@0.0.1680.1010" timestamp="1578568222898" />
+    <state x="620" y="262" key="FileChooserDialogImpl/0.0.1680.1020/-1680.0.1680.1020@0.0.1680.1020" timestamp="1580381251587" />
+    <state width="1637" height="277" key="GridCell.Tab.0.bottom" timestamp="1581498157404">
+      <screen x="0" y="0" width="1680" height="1020" />
+    </state>
+    <state width="1637" height="264" key="GridCell.Tab.0.bottom/0.0.1680.1010/-1680.0.1680.1010@0.0.1680.1010" timestamp="1578916250616" />
+    <state width="1637" height="272" key="GridCell.Tab.0.bottom/0.0.1680.1020/-1680.0.1680.1020@-1680.0.1680.1020" timestamp="1580303085465" />
+    <state width="1637" height="277" key="GridCell.Tab.0.bottom/0.0.1680.1020/-1680.0.1680.1020@0.0.1680.1020" timestamp="1581498157404" />
+    <state width="1637" height="277" key="GridCell.Tab.0.center" timestamp="1581498157403">
+      <screen x="0" y="0" width="1680" height="1020" />
+    </state>
+    <state width="1637" height="264" key="GridCell.Tab.0.center/0.0.1680.1010/-1680.0.1680.1010@0.0.1680.1010" timestamp="1578916250616" />
+    <state width="1637" height="272" key="GridCell.Tab.0.center/0.0.1680.1020/-1680.0.1680.1020@-1680.0.1680.1020" timestamp="1580303085465" />
+    <state width="1637" height="277" key="GridCell.Tab.0.center/0.0.1680.1020/-1680.0.1680.1020@0.0.1680.1020" timestamp="1581498157403" />
+    <state width="1637" height="277" key="GridCell.Tab.0.left" timestamp="1581498157403">
+      <screen x="0" y="0" width="1680" height="1020" />
+    </state>
+    <state width="1637" height="264" key="GridCell.Tab.0.left/0.0.1680.1010/-1680.0.1680.1010@0.0.1680.1010" timestamp="1578916250616" />
+    <state width="1637" height="272" key="GridCell.Tab.0.left/0.0.1680.1020/-1680.0.1680.1020@-1680.0.1680.1020" timestamp="1580303085465" />
+    <state width="1637" height="277" key="GridCell.Tab.0.left/0.0.1680.1020/-1680.0.1680.1020@0.0.1680.1020" timestamp="1581498157403" />
+    <state width="1637" height="277" key="GridCell.Tab.0.right" timestamp="1581498157404">
+      <screen x="0" y="0" width="1680" height="1020" />
+    </state>
+    <state width="1637" height="264" key="GridCell.Tab.0.right/0.0.1680.1010/-1680.0.1680.1010@0.0.1680.1010" timestamp="1578916250616" />
+    <state width="1637" height="272" key="GridCell.Tab.0.right/0.0.1680.1020/-1680.0.1680.1020@-1680.0.1680.1020" timestamp="1580303085465" />
+    <state width="1637" height="277" key="GridCell.Tab.0.right/0.0.1680.1020/-1680.0.1680.1020@0.0.1680.1020" timestamp="1581498157404" />
+    <state x="341" y="148" key="SettingsEditor" timestamp="1581427378596">
+      <screen x="0" y="0" width="1680" height="1020" />
+    </state>
+    <state x="341" y="147" key="SettingsEditor/0.0.1680.1010/-1680.0.1680.1010@0.0.1680.1010" timestamp="1578569553043" />
+    <state x="341" y="148" key="SettingsEditor/0.0.1680.1020/-1680.0.1680.1020@0.0.1680.1020" timestamp="1581427378596" />
+    <state x="536" y="110" width="607" height="789" key="find.popup" timestamp="1578570386020">
+      <screen x="0" y="0" width="1680" height="1010" />
+    </state>
+    <state x="536" y="110" width="607" height="789" key="find.popup/0.0.1680.1010/-1680.0.1680.1010@0.0.1680.1010" timestamp="1578570386020" />
+    <state x="503" y="219" width="672" height="685" key="search.everywhere.popup" timestamp="1580212628331">
+      <screen x="0" y="0" width="1680" height="1020" />
+    </state>
+    <state x="503" y="217" width="672" height="678" key="search.everywhere.popup/0.0.1680.1010/-1680.0.1680.1010@0.0.1680.1010" timestamp="1578570347409" />
+    <state x="503" y="219" width="672" height="685" key="search.everywhere.popup/0.0.1680.1020/-1680.0.1680.1020@0.0.1680.1020" timestamp="1580212628331" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/typeloader2$temp_remove_user.coverage" NAME="temp_remove_user Coverage Results" MODIFIED="1578915426107" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/typeloader2$temp3.coverage" NAME="temp3 Coverage Results" MODIFIED="1580383192317" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/typeloader2$temp_pyw.coverage" NAME="temp.pyw Coverage Results" MODIFIED="1578570763637" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/typeloader2$test_typeloader_GUI.coverage" NAME="test_typeloader_GUI Coverage Results" MODIFIED="1581498157394" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/tests" />
+    <SUITE FILE_PATH="coverage/typeloader2$typeloader_GUI.coverage" NAME="typeloader_GUI Coverage Results" MODIFIED="1581432283718" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/typeloader2$Unittests_in_test_typeloader_GUI_py.coverage" NAME="Unittests in test_typeloader_GUI.py Coverage Results" MODIFIED="1581428087228" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/tests" />
+    <SUITE FILE_PATH="coverage/typeloader2$typeloader_GUI_pyw__1_.coverage" NAME="typeloader_GUI.pyw (1) Coverage Results" MODIFIED="1581409769216" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/typeloader2$main.coverage" NAME="main Coverage Results" MODIFIED="1581427555852" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/tests" />
+    <SUITE FILE_PATH="coverage/typeloader2$test2.coverage" NAME="test2 Coverage Results" MODIFIED="1581427741917" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/tests" />
+    <SUITE FILE_PATH="coverage/typeloader2$typeloader_functions.coverage" NAME="typeloader_functions Coverage Results" MODIFIED="1581342366454" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/typeloader2$Unittests_in_test_2_py.coverage" NAME="Unittests in test_2.py Coverage Results" MODIFIED="1581427623251" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/tests" />
+    <SUITE FILE_PATH="coverage/typeloader2$Unittests_for_test_typeloader_GUI_Test_Create_Project.coverage" NAME="Unittests for test_typeloader_GUI.Test_Create_Project Coverage Results" MODIFIED="1581350623284" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/tests" />
+    <SUITE FILE_PATH="coverage/typeloader2$temp.coverage" NAME="temp Coverage Results" MODIFIED="1581340726894" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/typeloader2$typeloader_GUI_pyw.coverage" NAME="typeloader_GUI.pyw Coverage Results" MODIFIED="1581432990096" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+  </component>
+</project>

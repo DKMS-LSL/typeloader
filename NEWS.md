@@ -1,5 +1,10 @@
 # Version History
 
+## 2.6.0 (2020-01-12)
+- Added support for HLA-E (#131) and DPA1 & DQA1 (#118)
+- Updated ENA Webin CLI to V2.2.0 (#129)
+- Adjusted the use of the tags "gene" and "pseudogene" in ENA files to the requirements of the new Webin CLI. (#130)
+
 ## V2.5.1 (2019-10-21)
 - During IPD file creation, reject GL strings in non-KIR loci (#123)
 

@@ -465,7 +465,8 @@ def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic,
             report = os.path.join(project_dir, "sequence", submission_alias, "validate", 
                           "{}_{}_flatfile.txt.gz.report".format(s[0], s[1]))
     elif modus == "submit":
-        if "The submission has been completed successfully." in last_line:
+        if "The submission has been completed successfully." in last_line \
+                or "The TEST submission has been completed successfully." in last_line:
             success = True
             output_txt = "Success!\n\n{}\n{}".format(output_list[-2].replace("INFO : ",""),last_line.replace("INFO : ",""))
             ENA_submission_ID = last_line.split("was assigned to the submission: ")[1].strip()
