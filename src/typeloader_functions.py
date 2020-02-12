@@ -306,8 +306,6 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                                   settings, log, newAlleleName)
                 myallele.null_allele = null_allele
                 myalleles = [myallele]
-<<<<<<< HEAD
-
                 generalData = BME.make_globaldata(gene_tag=gene_tag, gene=geneName, allele=newAlleleName,
                                                   product_DE=productName_DE, product_FT=productName_FT,
                                                   function=function, species=flatfile_dic["species"],
@@ -316,15 +314,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                     BE.backend_dict, generalData, enaPosHash, extraInformation, features) + BME.make_footer(
                     BE.backend_dict, sequence)
                 # TODO (future): accept multiple sequences from one fasta file
-=======
-                
-                generalData = BME.make_globaldata(gene_tag = gene_tag, gene = geneName, allele = newAlleleName, product_DE = productName_DE, product_FT = productName_FT, 
-                                                  function = function, species = flatfile_dic["species"], 
-                                                  seqLen = str(len(sequence)), cellline = myallele.local_name, pseudogene = pseudogene)
-                ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, null_allele) + BME.make_genemodel(BE.backend_dict, generalData, enaPosHash, extraInformation, features) + BME.make_footer(BE.backend_dict, sequence)
-                #TODO (future): accept multiple sequences from one fasta file
->>>>>>> 131-HLA-E
-        return True, myalleles, ENA_text
+                return True, myalleles, ENA_text
     except Exception as E:
         log.error(E)
         log.exception(E)
@@ -863,7 +853,6 @@ pass
 # main:
 
 def main(settings, log, mydb):
-<<<<<<< HEAD
     project_name = "20200128_ADMIN_DRB1_test124"
     sample_id_int = 'ID13107882'
     sample_id_ext = "test1"
@@ -892,19 +881,6 @@ def main(settings, log, mydb):
     except:
         print("Could not find IPD file for this submission number!")
 
-=======
-    project = "20190627_ADMIN_mixed_ENA-Test"
-    ENA_ID = "PRJEB33235"
-    samples = [['20190627_ADMIN_mixed_ENA-Test', '1'], ['20190627_ADMIN_mixed_ENA-Test', '2'], ['20190627_ADMIN_mixed_ENA-Test', '3'], ['20190627_ADMIN_mixed_ENA-Test', '4']]
-    input_files= ['\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-HLA01\\DKMS-LSL_IDTest-HLA01_A_1.ena.txt',
-                  '\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-KIR01\\DKMS-LSL_IDTest-KIR01_2DL1_1.ena.txt',
-                  '\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-KIR01\\DKMS-LSL_IDTest-KIR01_2DL4_1.ena.txt',
-                  '\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20190627_ADMIN_mixed_ENA-Test\\IDTest-MIC01\\DKMS-LSL_IDTest-MIC01_MICA_1.ena.txt']
-
-    file_dic, curr_time, analysis_alias = create_ENA_filenames(project, ENA_ID, settings, log)
-    submit_sequences_to_ENA_via_CLI(project, ENA_ID, analysis_alias, curr_time, samples, input_files, file_dic, settings, log)
-    
->>>>>>> 131-HLA-E
 
 #     project = "20190423_STG_MIC_1"
 #     delete_all_samples_from_project(project, settings, log)
