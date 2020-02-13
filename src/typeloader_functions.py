@@ -58,6 +58,7 @@ class Allele:
         self.log = log
         self.newAlleleName = newAlleleName
         self.partner_allele = partner_allele
+        self.null_allele = False
         self.parent = None
         self.make_local_name()
 
@@ -315,7 +316,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                     BE.backend_dict, generalData, enaPosHash, extraInformation, features) + BME.make_footer(
                     BE.backend_dict, sequence)
                 # TODO (future): accept multiple sequences from one fasta file
-                return True, myalleles, ENA_text
+        return True, myalleles, ENA_text
     except Exception as E:
         log.error(E)
         log.exception(E)
@@ -598,7 +599,7 @@ def upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_p
     results = process_sequence_file(project_name, filetype, blastXmlFile,
                                     targetFamily, fasta_filename, allelesFilename,
                                     header_data, settings, log, incomplete_ok=incomplete_ok)
-    if results[0] == False:  # something went wrong
+    if not results[0]:  # something went wrong
         return False, "{}: {}".format(results[1], results[2])
     log.debug("\t=> success")
 
@@ -855,26 +856,40 @@ pass
 
 def main(settings, log, mydb):
     project_name = "20200128_ADMIN_DRB1_test124"
-    sample_id_int = 'ID13107882'
-    sample_id_ext = "test1"
-    raw_path = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\124_DRB1_incorrect_confirmation\end_del3.fa"
+    # sample_id_int = 'ID13107882'
+    sample_id_int = "ID100000"
+    sample_id_ext = "test2"
+    # raw_path = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\124_DRB1_incorrect_confirmation\end_del3.fa"
     customer = "DKMS"
+    raw_path = r"\\nasdd12\daten\data\Typeloader\staging\data_unittest\new_allele_xml\5597571.xml"
     incomplete_ok = True
     # upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_path, customer, settings, mydb, log, incomplete_ok)
         # delete_sample(sample_id_int, 1, project_name, settings, log, parent = None)
 
     from src.typeloader_core import make_imgt_files as MIF
     from src.GUI_forms_submission_IPD import TargetAllele
-    results = MIF.make_imgt_data(r"\\nasdd12\daten\data\Typeloader\admin\projects\20200128_ADMIN_DRB1_test124",
-                                 [('ID13107882', 'DKMS-LSL_ID13107882_DRB1_9', '')],
-                                 {'DKMS-LSL_ID13107882_DRB1_9': {'blast_xml': 'DKMS-LSL_ID13107882_DRB1_9.blast.xml',
-                                                                 'ena_file': 'DKMS-LSL_ID13107882_DRB1_9.ena.txt'}},
-                                 {'DKMS-LSL_ID13107882_DRB1_9': TargetAllele(gene='HLA-DRB1',
-                                                                             target_allele='HLA-DRB1*01:new',
-                                                                             partner_allele='HLA-DRB1*15:02:01:01 or 01:01:01 or list(NULL)')},
-                                 {'DKMS-LSL_ID13107882_DRB1_9': '96901LSB'},
-                                 {'DKMS-LSL_ID13107882_DRB1_9': 'HLA-DRB1'},
-                                 r"\\nasdd12\daten\data\Typeloader\admin\temp\fake_befunde.csv",
+    # results = MIF.make_imgt_data(r"\\nasdd12\daten\data\Typeloader\admin\projects\20200128_ADMIN_DRB1_test124",
+    #                              [('ID13107882', 'DKMS-LSL_ID13107882_DRB1_9', '')],
+    #                              {'DKMS-LSL_ID13107882_DRB1_9': {'blast_xml': 'DKMS-LSL_ID13107882_DRB1_9.blast.xml',
+    #                                                              'ena_file': 'DKMS-LSL_ID13107882_DRB1_9.ena.txt'}},
+    #                              {'DKMS-LSL_ID13107882_DRB1_9': TargetAllele(gene='HLA-DRB1',
+    #                                                                          target_allele='HLA-DRB1*01:new',
+    #                                                                          partner_allele='HLA-DRB1*15:02:01:01 or 01:01:01 or list(NULL)')},
+    #                              {'DKMS-LSL_ID13107882_DRB1_9': '96901LSB'},
+    #                              ,
+    #                              r"\\nasdd12\daten\data\Typeloader\admin\temp\fake_befunde.csv",
+    #                              settings, log)
+    project_dir = r"\\nasdd12\daten\data\Typeloader\admin\projects\20200128_ADMIN_DRB1_test124"
+    samples = [('ID13107882', 'DKMS-LSL_ID13107882_DRB1_9', '')]
+    file_dic = {'DKMS-LSL_ID13107882_DRB1_9': {'blast_xml': 'DKMS-LSL_ID13107882_DRB1_9.blast.xml',
+                                               'ena_file': 'DKMS-LSL_ID13107882_DRB1_9.ena.txt'}}
+    allele_dic = {'DKMS-LSL_ID13107882_DRB1_9': TargetAllele(gene='HLA-DRB1',
+                                                             target_allele='HLA-DRB1*01:new',
+                                                             partner_allele='HLA-DRB1*15:02:01:01')}
+    cellEnaIdMap = {'DKMS-LSL_ID13107882_DRB1_9': '96901LSB'}
+    geneMapENA = {'DKMS-LSL_ID13107882_DRB1_9': 'HLA-DRB1'}
+    befund_csv_file = r"\\nasdd12\daten\data\Typeloader\admin\temp\fake_befunde.csv"
+    results = MIF.make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, geneMapENA, befund_csv_file,
                                  settings, log)
 
     try:
@@ -883,21 +898,6 @@ def main(settings, log, mydb):
         print("Could not find IPD file for this submission number!")
 
 
-#     project = "20190423_STG_MIC_1"
-#     delete_all_samples_from_project(project, settings, log)
-#     csv_file = r"Y:\Projects\typeloader\staging\data_unittest\MIC\bulk_upload_MIC_ok.csv"
-#     csv_file = r"Y:\Projects\typeloader\staging\data_unittest\annotation_positions\bulk_upload_annotations.csv"
-#     report, errors_found = bulk_upload_new_alleles(csv_file, project, settings, mydb, log)
-#     print(report)
-
-#     myfile = r"H:\Projekte\RnD\24_NeueAllele\3_Veröffentlichung\1.2_fastaExport_DR2S\MICA\ID17326884\hapA.pacbio.minimap.fa"
-#     sample_id_int = "1"
-#     success, msg = upload_new_allele_complete(project, sample_id_int, "test", myfile, "DKMS", 
-#                                                   settings, mydb, log, incomplete_ok = True)
-#     if not success:
-#         print("Not successful!", msg)
-#     else:
-#         delete_sample(sample_id_int, 1, project, settings, log)
 
 if __name__ == "__main__":
     from src.typeloader_GUI import create_connection, close_connection

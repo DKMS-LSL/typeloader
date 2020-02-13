@@ -253,16 +253,14 @@ def processAlleles(closestAlleles, allAlleles, hashOfQuerySequences, incomplete_
         missing_bp = hitStart - 1
         alignLength = closestAlleles[alleleQuery]["alignLength"]
         queryLength = closestAlleles[alleleQuery]["queryLength"]
-        
-        
+
         features, coordinates, extraInformation, closestAlleleCdsSequence, closestAlleleSequence = calculateCoordinates(closestAlleleName, allAlleles, differences, len(hashOfQuerySequences[alleleQuery]), missing_bp)
         
         coordinates = shift_coordinates_for_missing_bp(missing_bp, coordinates)
         
         (UTR3start, UTR3end) = coordinates[-1]
         UTR3length = UTR3end - UTR3start + 1
-        print("UTR3length", UTR3length)
-        print(f"UTR3 coordinates: {UTR3start}, {UTR3end}")
+
         if UTR3length <= 0:
             raise MissingUTRError(3)
 
