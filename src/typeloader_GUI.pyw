@@ -37,7 +37,7 @@ from src import patches
 #===========================================================
 # parameters:
 
-from src.__init__ import __version__
+__version__ = general.read_package_variable("__version__")
 from PyQt5.Qt import QDesktopWidget
 #===========================================================
 # classes:
