@@ -442,7 +442,10 @@ def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic,
         output = E.output.decode("utf-8")
         
     output_list = [line.rstrip() for line in output.split("\n") if line] # make list and remove newlines
-    last_line = output_list[-1]
+    if output_list:
+        last_line = output_list[-1]
+    else:
+        last_line = str(output_list)
     s = submission_alias.split("_")
 
     if modus == "validate":
