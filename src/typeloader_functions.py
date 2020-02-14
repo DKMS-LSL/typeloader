@@ -881,14 +881,16 @@ def main(settings, log, mydb):
     #                              settings, log)
     project_dir = r"\\nasdd12\daten\data\Typeloader\admin\projects\20200213_ADMIN_HLA-A_test124"
 
-    samples = [('EC01', 'EC01_A_1', '')]
-    file_dic = {'DKMS-LSL_ID13107882_DRB1_9': {'blast_xml': 'DKMS-LSL_ID13107882_DRB1_9.blast.xml',
-                                               'ena_file': 'DKMS-LSL_ID13107882_DRB1_9.ena.txt'}}
-    allele_dic = {'DKMS-LSL_ID13107882_DRB1_9': TargetAllele(gene='HLA-DRB1',
-                                                             target_allele='HLA-DRB1*01:new',
-                                                             partner_allele='HLA-DRB1*15:02:01:01')}
-    cellEnaIdMap = {'DKMS-LSL_ID13107882_DRB1_9': '96901LSB'}
-    geneMapENA = {'DKMS-LSL_ID13107882_DRB1_9': 'HLA-DRB1'}
+    allele = "DKMS-LSL_EC01_A_3"
+    locus = "HLA-A"
+    samples = [('EC01', allele, '')]
+    file_dic = {f'{allele}': {'blast_xml': f'{allele}.blast.xml',
+                              'ena_file': f'{allele}.ena.txt'}}
+    allele_dic = {f'{allele}': TargetAllele(gene=locus,
+                                            target_allele=f'{locus}*01:new',
+                                            partner_allele=f'{locus}*01:01:01:01')}
+    cellEnaIdMap = {f'{allele}': '96901LSB'}
+    geneMapENA = {f'{allele}': locus}
     befund_csv_file = r"\\nasdd12\daten\data\Typeloader\admin\temp\fake_befunde.csv"
     results = MIF.make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, geneMapENA, befund_csv_file,
                                  settings, log)
@@ -897,6 +899,7 @@ def main(settings, log, mydb):
         print(results[0]['DKMS10009742'].split("CC   ")[1].split("\n")[0])
     except:
         print("Could not find IPD file for this submission number!")
+        print(results[0])
 
 
 

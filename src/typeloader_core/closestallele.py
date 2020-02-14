@@ -33,7 +33,6 @@ def getClosestKnownAlleles(blastXmlFilename, targetFamily, settings, log):
 
     xmlHandle.close()
 
-    print(closestAllelesData)
     return closestAllelesData
 
 
@@ -104,15 +103,11 @@ def parseBlast(xmlRecords, targetFamily, query_fasta_file, settings, log):
         if hsp_query == "" and hsp_subject == "" and hsp_match == "":
             closestAlleles[queryId] = None
         else:
-            # print_me(hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align_len, queryLength)
-
             if hsp_align_len < queryLength:  # incomplete alignment:
                 log.warning("Sequence did not align fully! Probably a mismatch within 3 bp of either sequence end!")
                 results = fix_incomplete_alignment(ref_sequence, query_sequence, hsp_start, hsp_align_len, queryLength,
                                                    hsp_query, hsp_subject, hsp_match, log)
                 (hsp_query, hsp_subject, hsp_match, hsp_align_len, hsp_start) = results
-
-            # print_me(hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align_len, queryLength)
 
             closestAlleles[queryId] = closestAlleleItems(hsp_query, hsp_subject, hsp_match, closestAlleleName,
                                                          concatHSPS,
@@ -184,10 +179,6 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
     r_start = aligned_ref[0][0]
     r_end = aligned_ref[-1][1]
 
-    # print(a.aligned)
-    # print(q_start, q_end)
-    # print(r_start, r_end)
-
     # fix alignments:
 
     # missing_base_num = query_length - hsp_align_len
@@ -237,10 +228,9 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
         else:  # long section missing due to incomplete allele, use next 3 bp for alignment
             missing_bases_ref = ref_seq[-1 * missing_base_num_end_ref:-1 * missing_base_num_end_ref + 3]
         missing_bases_query = query_seq[-1 * missing_base_num_end_query:]
-        # print(missing_bases_ref, missing_bases_query)
 
-        if missing_base_num_end_query == missing_base_num_end_ref:  # no InDel
-            for i in range(missing_base_num_end_ref):
+        if len(missing_bases_ref) == len(missing_bases_query):  # no InDel
+            for i in range(len(missing_bases_ref)):
                 ref_base = missing_bases_ref[i]
                 query_base = missing_bases_query[i]
                 hsp_query += query_base
