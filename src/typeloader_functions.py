@@ -771,7 +771,7 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
     ## 3. validate files via CLI
     log.debug("Validating submission files using ENA's Webin-CLI...")
     cmd_string, msg = EF.make_ENA_CLI_command_string(file_dic["manifest"], file_dic["project_dir"], settings, log)
-    
+
     if not cmd_string:
         log.error("Could not generate command for Webin-CLI!")
         return False, False, "Webin-CLI command problem", msg, []
