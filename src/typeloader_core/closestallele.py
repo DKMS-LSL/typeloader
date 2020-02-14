@@ -146,19 +146,9 @@ def remove_end_gaps(ref, matched, query):
     else:
         return ref, matched, query
 
+
 def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query_length,
                              hsp_query, hsp_subject, hsp_match, log):
-    temp_file = r"\\nasdd12\daten\data\Typeloader\admin\temp\temp.fa"
-    with open(temp_file, "w") as g:
-        g.write(f'ref_seq = "{ref_seq}"\n')
-        g.write(f'query_seq = "{query_seq}"\n')
-        g.write(f'hsp_query = "{hsp_query}"\n')
-        g.write(f'hsp_subject = "{hsp_subject}"\n')
-        g.write(f'hsp_match = "{hsp_match}"\n')
-        g.write(f'hsp_start = {hsp_start}\n')
-        g.write(f'hsp_align_len = {hsp_align_len}\n')
-        g.write(f'queryLength = {query_length}\n')
-
     alignments = make_global_alignment(ref_seq, query_seq, log)
 
     if not alignments:
@@ -173,11 +163,6 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
     # find alignment positions:
     aligned_query = a.aligned[0]
     q_start = aligned_query[0][0]
-    q_end = aligned_query[-1][1]
-
-    aligned_ref = a.aligned[1]
-    r_start = aligned_ref[0][0]
-    r_end = aligned_ref[-1][1]
 
     # fix alignments:
 
