@@ -162,6 +162,7 @@ class LoginForm(QDialog):
         
         self.init_UI()
         self.check_latest_version(self.log)
+        self.check_module_versions()
         
     def init_UI(self):
         layout = QFormLayout(self)
@@ -356,7 +357,15 @@ class LoginForm(QDialog):
                 QMessageBox.warning(self, error, msg)
 
 
-pass
+    def check_module_versions(self):
+        """for 3rd party modules where it matters, check whether the necessary version is installed
+        """
+        import Bio
+        bio_version = Bio.__version__
+        if bio_version < "1.76":  # older versions had an error that causes a memory leak crashing global alignments
+            msg = "Your BioPython version is not up to date! Please update it and then restart TypeLoader!"
+            QMessageBox.warning(self, "Python module out of date!", msg)
+
 
 #===========================================================
 # functions:
@@ -577,8 +586,7 @@ def check_for_reference_updates(log, settings, parent):
             
         QMessageBox.information(parent, "Reference data updated", 
                                        "\n\n".join(msges))
-            
-        
+
      
 def startup(user, curr_time, log):
     """performs startup actions 
