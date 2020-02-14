@@ -1,5 +1,8 @@
 # Version History
 
+## 2.6.1. (2020-01-14)
+- BugFix: if rensponse from ENA's WebinCLI cannot be parsed, display it directly. (#135)
+
 ## 2.6.0 (2020-01-12)
 - Added support for HLA-E (#131) and DPA1 & DQA1 (#118)
 - Updated ENA Webin CLI to V2.2.0 (#129)

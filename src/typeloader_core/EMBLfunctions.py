@@ -452,7 +452,7 @@ def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic,
     if output_list:
         last_line = output_list[-1]
     else:
-        last_line = ""
+        last_line = str(output_list)
 
     s = submission_alias.split("_")
 
