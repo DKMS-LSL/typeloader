@@ -879,8 +879,9 @@ def main(settings, log, mydb):
     #                              ,
     #                              r"\\nasdd12\daten\data\Typeloader\admin\temp\fake_befunde.csv",
     #                              settings, log)
-    project_dir = r"\\nasdd12\daten\data\Typeloader\admin\projects\20200128_ADMIN_DRB1_test124"
-    samples = [('ID13107882', 'DKMS-LSL_ID13107882_DRB1_9', '')]
+    project_dir = r"\\nasdd12\daten\data\Typeloader\admin\projects\20200213_ADMIN_HLA-A_test124"
+
+    samples = [('EC01', 'EC01_A_1', '')]
     file_dic = {'DKMS-LSL_ID13107882_DRB1_9': {'blast_xml': 'DKMS-LSL_ID13107882_DRB1_9.blast.xml',
                                                'ena_file': 'DKMS-LSL_ID13107882_DRB1_9.ena.txt'}}
     allele_dic = {'DKMS-LSL_ID13107882_DRB1_9': TargetAllele(gene='HLA-DRB1',

@@ -33,7 +33,9 @@ def getClosestKnownAlleles(blastXmlFilename, targetFamily, settings, log):
 
     xmlHandle.close()
 
+    print(closestAllelesData)
     return closestAllelesData
+
 
 def print_me(hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align_len, queryLength):
     for item in [hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align_len, queryLength]:
@@ -49,6 +51,7 @@ def print_me(hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align
         else:
             printme.append(item)
         print(printme)
+
 
 def parseBlast(xmlRecords, targetFamily, query_fasta_file, settings, log):
     """
@@ -117,7 +120,6 @@ def parseBlast(xmlRecords, targetFamily, query_fasta_file, settings, log):
 
     if hsp_start != 1:
         log.warning("Incomplete sequence found: first {} bp missing!".format(hsp_start - 1))
-    print(closestAlleles)
     return closestAlleles
 
 
