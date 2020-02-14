@@ -105,10 +105,11 @@ def parseBlast(xmlRecords, targetFamily, query_fasta_file, settings, log):
         else:
             if hsp_align_len < queryLength:  # incomplete alignment:
                 log.warning("Sequence did not align fully! Probably a mismatch within 3 bp of either sequence end!")
+                # print_me(hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align_len, queryLength)
                 results = fix_incomplete_alignment(ref_sequence, query_sequence, hsp_start, hsp_align_len, queryLength,
                                                    hsp_query, hsp_subject, hsp_match, log)
                 (hsp_query, hsp_subject, hsp_match, hsp_align_len, hsp_start) = results
-
+                # print_me(hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align_len, queryLength)
             closestAlleles[queryId] = closestAlleleItems(hsp_query, hsp_subject, hsp_match, closestAlleleName,
                                                          concatHSPS,
                                                          hsp_start, hsp_align_len, queryLength)
@@ -202,7 +203,7 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
             [ref_aligned, match_aligned, query_aligned] = str(a).strip().split("\n")
             hsp_query = query_aligned + hsp_query
             hsp_subject = ref_aligned + hsp_subject
-            hsp_match = match_aligned.replace("-", " ") + hsp_match
+            hsp_match = match_aligned.replace("-", " ").replace(".", " ") + hsp_match
             hsp_align_len += len(query_aligned)
             hsp_start = hsp_start - len(query_aligned)
 
@@ -237,7 +238,7 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
 
             hsp_query += query_aligned
             hsp_subject += ref_aligned
-            hsp_match += match_aligned.replace("-", " ")
+            hsp_match += match_aligned.replace("-", " ").replace(".", " ")
             hsp_align_len += len(query_aligned)
             # ToDo: adjust UTR boundaries afterwards to get the correct number of missing bases
     return hsp_query, hsp_subject, hsp_match, hsp_align_len, hsp_start

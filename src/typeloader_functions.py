@@ -881,9 +881,9 @@ def main(settings, log, mydb):
     #                              settings, log)
     project_dir = r"\\nasdd12\daten\data\Typeloader\admin\projects\20200213_ADMIN_HLA-A_test124"
 
-    allele = "DKMS-LSL_EC01_A_3"
-    locus = "HLA-A"
-    samples = [('EC01', allele, '')]
+    allele = "DKMS-LSL_ID11273358_DRB1_1"
+    locus = "HLA-DRB1"
+    samples = [('ID11273358', allele, '')]
     file_dic = {f'{allele}': {'blast_xml': f'{allele}.blast.xml',
                               'ena_file': f'{allele}.ena.txt'}}
     allele_dic = {f'{allele}': TargetAllele(gene=locus,
