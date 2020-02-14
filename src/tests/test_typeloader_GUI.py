@@ -23,7 +23,6 @@ sys.path.append(mypath)
 sys.path.append(mypath_inner)
 
 import general, db_internal, GUI_login
-from __init__ import __version__
 from xml.etree import ElementTree
 from collections import namedtuple
 
@@ -32,7 +31,8 @@ from collections import namedtuple
 shutil.copyfile(os.path.join(mypath_inner, "typeloader_GUI.pyw"), os.path.join(mypath_inner, "typeloader_GUI.py"))
 
 import typeloader_GUI
-from typeloader_core import errors, EMBLfunctions as EF, make_imgt_files as MIF, backend_make_ena as BME, imgt_text_generator as ITG
+from typeloader_core import errors, EMBLfunctions as EF, make_imgt_files as MIF, backend_make_ena as BME, \
+    imgt_text_generator as ITG, closestallele as CA
 import GUI_forms_new_project as PROJECT
 import GUI_forms_new_allele as ALLELE
 import GUI_forms_new_allele_bulk as BULK
@@ -107,7 +107,7 @@ settings_both = {"reference_dir": "reference_data_unittest",
                 }
 
 log = general.start_log(level="DEBUG")
-
+__version__ = general.read_package_variable("__version__")
 # assemble settings for testing:
 cf = ConfigParser()
 cf.read(os.path.join(mypath_inner, base_config_file))
@@ -191,31 +191,31 @@ class Test_1_Create_Project(unittest.TestCase):
     def tearDownClass(self):
         pass
 
-    # def test_1_reject_invalid(self):
-    #     """make sure invalid entries are rejected properly
-    #     """
-    #     invalid = ['"', "'", "_", "#", "%"] # disallowed characters without spaces
-    #
-    #     for (field, orig_value, whitespace_ok) in self.myvalues:
-    #         if whitespace_ok:
-    #             invalid_chars = invalid
-    #         else:
-    #             invalid_chars = invalid + [" "] # spaces should be rejected, too
-    #
-    #         # check that default value is ok:
-    #         field.setText(orig_value)
-    #         self.form.get_values()
-    #         invalid_msg = self.form.check_all_fields_valid()
-    #         self.assertFalse(invalid_msg)
-    #
-    #         # check that invalid characters are rejected:
-    #         for char in invalid_chars:
-    #             mytext = orig_value + char
-    #             field.setText(mytext)
-    #             self.form.get_values()
-    #             invalid_msg = self.form.check_all_fields_valid()
-    #             self.assertTrue(invalid_msg)
-    #         field.setText(orig_value)
+    def test_1_reject_invalid(self):
+        """make sure invalid entries are rejected properly
+        """
+        invalid = ['"', "'", "_", "#", "%"] # disallowed characters without spaces
+
+        for (field, orig_value, whitespace_ok) in self.myvalues:
+            if whitespace_ok:
+                invalid_chars = invalid
+            else:
+                invalid_chars = invalid + [" "] # spaces should be rejected, too
+
+            # check that default value is ok:
+            field.setText(orig_value)
+            self.form.get_values()
+            invalid_msg = self.form.check_all_fields_valid()
+            self.assertFalse(invalid_msg)
+
+            # check that invalid characters are rejected:
+            for char in invalid_chars:
+                mytext = orig_value + char
+                field.setText(mytext)
+                self.form.get_values()
+                invalid_msg = self.form.check_all_fields_valid()
+                self.assertTrue(invalid_msg)
+            field.setText(orig_value)
 
     def test_2_create_project_success(self):
         """
@@ -356,7 +356,9 @@ class Test_Create_New_Allele(unittest.TestCase):
         Create ENA flatfile from xml
         """
         self.form = ALLELE.NewAlleleForm(log, mydb, self.project_name, curr_settings, None, samples_dic["sample_2"]["id_int"], samples_dic["sample_2"]["id_ext"])
-        self.form.file_widget.field.setText(os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], samples_dic["sample_2"]["data_unittest_dir"], samples_dic["sample_2"]["input"]))
+        xml_file = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], samples_dic["sample_2"]["data_unittest_dir"], samples_dic["sample_2"]["input"])
+        log.info(f"XML raw file: {xml_file}")
+        self.form.file_widget.field.setText(xml_file)
         self.form.upload_btn.setEnabled(True)
         self.form.upload_btn.click()
 
@@ -2151,6 +2153,89 @@ class Test_pretyping_valid(unittest.TestCase):
                     if s.gene in line:
                         self.assertEqual(line, "FT                  /{}".format(s.final_result),
                                          "Error in {}: {}".format(s.name, s.description)) # check result correct
+
+
+class TestEdgecases(unittest.TestCase):
+    """
+    Test whether differences within the first or last 3 bp of a sequence are caught correctly (#124)
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping TestEdgecases because skip_other_tests is set to True")
+        else:
+            self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "outlier_bases")
+            self.project_dir = os.path.join(curr_settings["login_dir"], "projects", project_name)
+            self.sample_id_int = "EC01"
+
+            # read testcases from csv file:
+            self.testcases = []
+            TestCase = namedtuple("TestCase", """nr desc filename exp locus target_family closest_allele exact_match 
+                                                 hit_start align_len query_len del_pos ins_pos mm_pos dels inss mms""")
+            with open(os.path.join(self.mydir, "testcases.csv")) as f:
+                data = csv.reader(f, delimiter=",")
+                for row in data:
+                    if row:
+                        if row[0] != "nr":
+                            nr = row[0]
+                            desc = row[1]
+                            filename = os.path.join(self.mydir, row[2])
+                            exp = row[3]
+                            locus = row[4]
+                            closest = row[5]
+                            exact = True if row[6] == "True" else False  # convert to bool
+                            start = int(row[7])
+                            align_len = int(row[8])
+                            query_len = int(row[9])
+                            del_pos = [] if not row[10] else row[10].replace('"', "").split("|")
+                            del_pos = [int(x) for x in del_pos]
+                            ins_pos = [] if not row[11] else row[11].replace('"', "").split("|")
+                            ins_pos = [int(x) for x in ins_pos]
+                            mm_pos = [] if not row[12] else row[12].replace('"', "").split("|")
+                            mm_pos = [int(x) for x in mm_pos]
+                            dels = [] if not row[13] else row[13].replace('"', "").split("|")
+                            inss = [] if not row[14] else row[14].replace('"', "").split("|")
+                            mms_rough = [] if not row[15] else row[15].replace('"', "").split("|")
+                            mms = []
+                            if mms_rough:
+                                for mystring in mms_rough:  # transform from string to proper tuple
+                                    mms.append(tuple(mystring.replace("('", "").replace("')", "").split("', '")))
+                            target_fam = row[16]
+                            mycase = TestCase(nr=nr, desc=desc, filename=filename, exp=exp, locus=locus, hit_start=start,
+                                              target_family=target_fam, closest_allele=closest, exact_match=exact,
+                                              align_len = align_len, query_len=query_len, del_pos=del_pos, ins_pos=ins_pos,
+                                              mm_pos=mm_pos, dels=dels, inss=inss, mms=mms)
+                            self.testcases.append(mycase)
+
+            log.info(f"Established {len(self.testcases)} testcases from file.")
+
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test_edgecases(self):
+        """
+        testing various cases of changes within 3 bp of either sequence boundary:
+        are mm, ins and del positions in these regions identified and located correctly?
+        """
+        for case in self.testcases:
+            log.info(f"Testing case {case.nr}:{case.desc}...")
+            self.assertTrue(os.path.exists(case.filename))
+
+            mydic = CA.getClosestKnownAlleles(case.filename, case.target_family, curr_settings, log)
+
+            mykey = list(mydic.keys())[0]
+            self.assertEqual(mykey, case.closest_allele)
+            d = mydic[mykey]
+            self.assertEqual(d["name"], case.closest_allele)
+            self.assertEqual(d["exactMatch"], case.exact_match)
+            self.assertEqual(d["differences"]['deletions'], case.dels)
+            self.assertEqual(d["differences"]['insertions'], case.inss)
+            self.assertEqual(d["differences"]['mismatches'], case.mms)
+            self.assertEqual(d["differences"]['deletionPositions'], case.del_pos)
+            self.assertEqual(d["differences"]['insertionPositions'], case.ins_pos)
+            self.assertEqual(d["differences"]['mismatchPositions'], case.mm_pos)
 
 
 class Test_Clean_Stuff(unittest.TestCase):

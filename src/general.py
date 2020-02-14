@@ -15,7 +15,6 @@ contains general functions
 import sys, os, datetime, shutil, platform
 from collections import defaultdict
 from PyQt5.QtGui import QFont
-from __init__ import __version__
 import GUI_stylesheet as stylesheet
 #===========================================================
 # parameters & settings:
@@ -190,6 +189,18 @@ def start_log(include_lines = False, error_to_email = False, info_to_file = Fals
     
     return log
 
+def read_package_variable(key):
+    """Read the value of a variable from the package without importing.
+    source: https://github.com/jacebrowning/template-python-demo/blob/8e8991138ad6fba7f91deb4c716cd80283c116f7/setup.py
+    """
+    init_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '__init__.py')
+    with open(init_path) as f:
+        for line in f:
+            parts = line.strip().split(' ')
+            if parts and parts[0] == key:
+                return parts[-1].strip('"').strip("'")
+    assert 0, "'{0}' not found in '{1}'".format(key, init_path)
+
 def timestamp(date_format = "%Y%m%d_%H-%M"):
     """returns current date and time as short string, useable in file names etc
     """
@@ -285,6 +296,7 @@ def main(log):
 
 if __name__ == "__main__":
     import GUI_login
+    __version__ = read_package_variable("__version__")
     log = start_log(level="DEBUG")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
     settings_dic = GUI_login.get_settings("admin", log)

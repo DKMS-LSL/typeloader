@@ -24,7 +24,6 @@ import general
 #===========================================================
 # parameters:
 
-from __init__ import __version__
 #===========================================================
 # classes:
 
@@ -222,7 +221,7 @@ pass
         
 if __name__ == '__main__':
     log = general.start_log(level="DEBUG")
-    log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
+    log.info("<Start {}>".format(os.path.basename(__file__)))
     
     app = QApplication(sys.argv)
     ex = ConfirmResetWidget([], None, direction = Qt.Vertical, parent= None, stretch = 200)
@@ -232,4 +231,3 @@ if __name__ == '__main__':
     sys.exit(result)
 #     sys.exit(app.exec_())
 
-    

@@ -25,7 +25,6 @@ from GUI_misc import ConfirmResetWidget
 from GUI_forms import ProceedButton
 
 
-from __init__ import __version__
 from PyQt5.Qt import QPushButton
 
 
@@ -497,7 +496,7 @@ pass
 def main():
     import GUI_login
     log = general.start_log(level="DEBUG")
-    log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
+    log.info("<Start {}>".format(os.path.basename(__file__)))
     settings_dic = GUI_login.get_settings("admin", log)
     app = QApplication(sys.argv)
     sys.excepthook = log_uncaught_exceptions

@@ -27,7 +27,6 @@ from typeloader_functions import create_ENA_filenames, submit_sequences_to_ENA_v
 #===========================================================
 # parameters:
 
-from __init__ import __version__
 #===========================================================
 # classes:
 
@@ -450,7 +449,7 @@ if __name__ == '__main__':
     import GUI_login
     sys.excepthook = log_uncaught_exceptions
     log = general.start_log(level="DEBUG")
-    log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
+    log.info("<Start {}>".format(os.path.basename(__file__)))
     settings_dic = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, settings_dic["db_file"])
     

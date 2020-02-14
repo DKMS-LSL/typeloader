@@ -34,7 +34,8 @@ company_config_file = "config_company.ini"
 user_config_file = "config.ini"
 local_patchme_file = os.path.join("_general", "additional.ini")
 
-from __init__ import __version__
+__version__ = general.read_package_variable("__version__")
+
 #===========================================================
 # classes:
 
@@ -717,7 +718,7 @@ pass
 if __name__ == '__main__':
     from typeloader_GUI import create_connection, close_connection, MainGUI, remove_lock
     log = general.start_log(level="DEBUG")
-    log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
+    log.info("<Start {}>".format(os.path.basename(__file__)))
     sys.excepthook = log_uncaught_exceptions
     
 #     generate_inis(log)

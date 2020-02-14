@@ -34,62 +34,60 @@ patientIdPos = 0
 customerPos = 2
 
 def getOtherAlleles(befundFile):
+    with open(befundFile) as befundHandle:
+        header = befundHandle.readline().strip()
+        customer_dic = {}
 
-    befundHandle = open(befundFile)
-    header = befundHandle.readline().strip()
-    customer_dic = {}
+        if "," in header:
+            delimiter=","
+        elif ";" in header:
+            delimiter=";"
+        else:
+            msg = "Could not figure out delimiter of pretyping file. Please use ',' or ';'!"
+            return None, msg
 
-    if "," in header:
-        delimiter=","
-    elif ";" in header:
-        delimiter=";"
-    else:
-        msg = "Could not figure out delimiter of pretyping file. Please use ',' or ';'!"
-        return None, msg
-    
-    parts = header.split(delimiter)
-    usePos = []
-    genes = []
-    for pos in range(len(parts)):
-        col = parts[pos]
-        if col in useGenesList or col in old_columns:
-            genes.append(col)
-            usePos.append(pos)
-    befund = {}
-    for line in befundHandle:
-        if not (len(line.strip())): 
-            continue
-        line = line.replace("'","").replace('"',"") # remove quotes
-        parts = line.strip().split(delimiter)
-        patient = parts[patientIdPos]
-        customer = parts[customerPos]
-        customer_dic[patient] = customer
-        befund[patient] = defaultdict(list)
-        
-        for pos in usePos:
-            befundGeneName = genes[usePos.index(pos)]
-            geneName = befundGeneName.split("_")[0]
-            pretyping = parts[pos]
-            changeName = reduce(lambda x,y: x or y, [befundGeneName.startswith(nameToChange) for nameToChange in changeNamesFor])
-            if changeName:  # old class 2 columns
-                geneName = "HLA-" + befundGeneName[:2] + "B1"
-            else:
-                if geneName in old_columns:
-                    geneName = "HLA-" + befundGeneName[:-1] # rename gene for old columns
-                elif geneName.startswith("KIR"):
-                    geneName = geneName.split("-")[0]
-                elif geneName.startswith("MIC"):
-                    pretyping = pretyping.replace("A","").replace("B","") # MIC pretypings are given as GL strings in one col per locus, unlike HLA
-            if not pretyping:
+        parts = header.split(delimiter)
+        usePos = []
+        genes = []
+        for pos in range(len(parts)):
+            col = parts[pos]
+            if col in useGenesList or col in old_columns:
+                genes.append(col)
+                usePos.append(pos)
+        befund = {}
+        for line in befundHandle:
+            if not (len(line.strip())):
                 continue
-            if pretyping == "+":
-                befund[patient][geneName].append(pretyping)
-            else:
-                for value in pretyping.split("+"):
-                    if value:
-                        befund[patient][geneName].append(value)
+            line = line.replace("'","").replace('"',"") # remove quotes
+            parts = line.strip().split(delimiter)
+            patient = parts[patientIdPos]
+            customer = parts[customerPos]
+            customer_dic[patient] = customer
+            befund[patient] = defaultdict(list)
+
+            for pos in usePos:
+                befundGeneName = genes[usePos.index(pos)]
+                geneName = befundGeneName.split("_")[0]
+                pretyping = parts[pos]
+                changeName = reduce(lambda x,y: x or y, [befundGeneName.startswith(nameToChange) for nameToChange in changeNamesFor])
+                if changeName:  # old class 2 columns
+                    geneName = "HLA-" + befundGeneName[:2] + "B1"
+                else:
+                    if geneName in old_columns:
+                        geneName = "HLA-" + befundGeneName[:-1] # rename gene for old columns
+                    elif geneName.startswith("KIR"):
+                        geneName = geneName.split("-")[0]
+                    elif geneName.startswith("MIC"):
+                        pretyping = pretyping.replace("A","").replace("B","") # MIC pretypings are given as GL strings in one col per locus, unlike HLA
+                if not pretyping:
+                    continue
+                if pretyping == "+":
+                    befund[patient][geneName].append(pretyping)
+                else:
+                    for value in pretyping.split("+"):
+                        if value:
+                            befund[patient][geneName].append(value)
             
-    befundHandle.close()
     return befund, customer_dic
 
 if __name__ == '__main__':

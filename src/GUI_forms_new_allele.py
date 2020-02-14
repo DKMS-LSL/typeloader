@@ -29,7 +29,6 @@ from GUI_misc import settings_ok
 #===========================================================
 # parameters:
 
-from __init__ import __version__
 #===========================================================
 # classes:
 
@@ -311,7 +310,7 @@ class NewAlleleForm(CollapsibleDialog):
             # process file & create Allele objects:
             self.header_data["sample_id_int"] = self.sample_name
             results = typeloader.process_sequence_file(self.project, self.filetype, self.blastXmlFile, self.targetFamily, self.fasta_filename, self.allelesFilename, self.header_data, self.settings, self.log)
-            if results[0] == False: # something went wrong
+            if not results[0]: # something went wrong
                 if results[1] == "Incomplete sequence":
                     reply = QMessageBox.question(self, results[1], results[2], QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                     if reply == QMessageBox.Yes:
@@ -680,7 +679,7 @@ if __name__ == '__main__':
     from typeloader_GUI import create_connection, close_connection
     import GUI_login
     log = general.start_log(level="DEBUG")
-    log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
+    log.info("<Start {}>".format(os.path.basename(__file__)))
     sys.excepthook = log_uncaught_exceptions
     mysettings = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, mysettings["db_file"])

@@ -29,7 +29,6 @@ from GUI_overviews import (InvertedTable, FilterableTable, edit_on_manual_submit
                            TabTableSimple, TabTableRelational, TabTableNonEditable,
                            ComboDelegate, EditFilesButton, DownloadFilesButton,
                            EditFileDialog, DownloadFilesDialog)
-from __init__ import __version__
 
 #===========================================================
 # classes:
@@ -589,7 +588,7 @@ def main():
     from typeloader_GUI import create_connection, close_connection
     import GUI_login
     log = general.start_log(level="DEBUG")
-    log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
+    log.info("<Start {}>".format(os.path.basename(__file__)))
     settings_dic = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, settings_dic["db_file"])
     app = QApplication(sys.argv)
