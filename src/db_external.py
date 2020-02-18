@@ -84,6 +84,8 @@ def query_database(scheme, query, log, return_columns = False):
     conn, cursor = open_connection(scheme, log)
     cursor.execute(query)
 
+    data = None
+    columns = []
     try:
         if return_columns:# generate list of column names:
             desc = cursor.description
@@ -95,8 +97,7 @@ def query_database(scheme, query, log, return_columns = False):
         log.error("\t=> Query failed!")
         log.exception(E)
         log.info(query)
-        sys.exit()
-    
+
     close_connection(conn, cursor, log)
     if return_columns:
         return data, columns
@@ -138,10 +139,61 @@ def query_many(scheme, query, items, log, return_columns = False):
         return final_data, columns
     else:
         return final_data
-    
+
+
+def call_procedure(procname: str,
+                   paramlist: list,
+                   num_output_values: int,
+                   paramlist2: list,
+                   cursor: cx_Oracle.CURSOR,
+                   log
+                   ) -> tuple:
+    """
+    Call a stored procedure procname via the given cursor.
+
+    :param procname: name of the oracle procedure to be called
+    :param paramlist: list of parameters to be passed before the return values
+    :param num_output_values: number of expected return values (all are expected as STRINGS!)
+    :param paramlist2: list of parameters to be passed after the return values
+    :param cursor: cursor to an open oracle connection
+    :param log: logger instance
+
+    :return: tuple (bool for success, return value)
+    """
+    log.debug(f"Calling procedure {procname}...")
+    success = False
+
+    try:
+        res_variables = []  # list of oracle variables for each return value
+        ret_values = []  # list of return values
+        for i in range(num_output_values):
+            res = cursor.var(str)
+            paramlist.append(res)
+            res_variables.append(res)
+        paramlist += paramlist2
+        cursor.callproc(procname, paramlist)
+
+        for res in res_variables:
+            value = res.getvalue()
+            ret_values.append(value)
+
+        log.debug("\tSuccessfully called stored procedure!")
+        success = True
+        return success, ret_values
+
+    except Exception as E:
+        log.error(f"The following exception occurred when executing {procname}: ")
+        log.error(E)
+        log.exception(E)
+        conn = cursor.connection
+        cursor.close()
+        conn.close()
+        return success, None
+
 pass
 #===========================================================
 # specialized TypeLoader functions:
+
 
 def split_GL_string(GL_string):
     """splits GL-string into alleles;
@@ -157,14 +209,59 @@ def split_GL_string(GL_string):
             return alleles
     
 
+def split_2DL5AB(GL, cursor, log):
+    """
+    splits the KIR2DL5 GL-string into 2 separate GL strings for 2DL5A and 2DL5B
+
+    :param GL: GL-string for KIR2DL5, combining both A and B
+    :param cursor: cursor to a connection to the nextype archive
+    :param log: logger instance
+    """
+    log.info("Splitting 2DL5-alleles...")
+
+    proc_name = "GL_STRINGS_MGMT.SPLIT_GL_STRING_2DL5@ngsa"
+    proc_params = [GL]
+    proc_params2 = [2, 'KIR', 'J', 'J', '2DL5', 'J', '2DL5', 'N']
+    success, values = call_procedure(proc_name, proc_params, 2, proc_params2, cursor, log)
+    if success:
+        log.info("\t=> Success!")
+        [part1, part2] = values
+        if "2DL5A" in part1:
+            A = part1
+            B = part2
+        else:
+            A = part2
+            B = part1
+
+        A_alleles = A.replace("2DL5A*", "")
+        B_alleles = B.replace("2DL5B*", "")
+    else:
+        log.info("\t=> Procedure call did not work. :-(")
+        A_alleles = ""
+        B_alleles = ""
+
+    return A_alleles, B_alleles
+
+
+def fill_pretypings_dic(mylocus, alleles, pretypings_dic):
+    """ add data of one locus to pretypings_dic, separated into 4 columns for 4 possible alleles
+    """
+    for i in range(4):
+        col_name = "{}-{}".format(mylocus, i + 1)  # 4 columns per KIR locus
+        if i < len(alleles):
+            pretypings_dic[col_name] = alleles[i]
+        else:
+            pretypings_dic[col_name] = ""
+
+
 def reformat_pretypings(allele_data, gene, cursor, log, fields = 2):
     """reformat the pretypings data from limsrep into the right format for the pretypings file
     """
     pretypings_dic = {}
-    GL_query = """with data as
-        (select :1 gl_string from dual)
-        select gl_strings_mgmt.gl_string@ngsa(gl_string,felder=>{})
-        from data""".format(fields)
+    GL_query = f"""with data as
+                (select :1 gl_string from dual)
+                select gl_strings_mgmt.gl_string@ngsa(gl_string,felder=>{fields})
+                from data"""
     cursor.prepare(GL_query)
     items = []
     KIR_loci = []
@@ -179,7 +276,7 @@ def reformat_pretypings(allele_data, gene, cursor, log, fields = 2):
                 pretypings_dic[locus] = allele1
             elif locus == "KIR":
                 pass
-            else: # KIR
+            else:  # KIR
                 mylocus = "KIR" + locus
                 if locus == "2DS4N":
                     mylocus = "KIR2DS4"
@@ -191,10 +288,14 @@ def reformat_pretypings(allele_data, gene, cursor, log, fields = 2):
                         log.error("KIR2DS4N handling only works correctly if the 2DS4N row is directly preceded by 2DS4. Here, it is preceded by {} insteads. Rejecting!".format(KIR_loci[-1]))
                         raise ValueError("Could not correctly puzzle KIR2DS4 and 2DS4N together. Please contact the TypeLoader staff!")
                         return None
+
+                elif locus == "2DL5":
+                    KIR_loci.append(mylocus)
+
                 else:
                     KIR_loci.append(mylocus)
                     
-                items.append([allele1,])
+                items.append([allele1, ])
             
     # reformat KIR:
     for i, params in enumerate(items):
@@ -203,21 +304,33 @@ def reformat_pretypings(allele_data, gene, cursor, log, fields = 2):
         mydata = cursor.fetchall()
         try:
             GL = mydata[0][0]
-        except:
+        except Exception:
             GL = ""
-        if not GL: # got None as result
+        if not GL:  # got None as result
             GL = ""
-        if "NEW" in GL or "POS" in GL: # only keep "NEW" in target gene, all others should fall back to POS (or 1field) as per request of IPD
+        # only keep "NEW" in target gene, all others should fall back to POS (or 1field) as per request of IPD
+        if "NEW" in GL or "POS" in GL:
             if mylocus != gene:
                 GL = "POS"
-        alleles = split_GL_string(GL)
-        for i in range(4):
-            col_name = "{}-{}".format(mylocus, i+1) # 4 columns per KIR locus
-            if i < len(alleles):
-                pretypings_dic[col_name] = alleles[i]
-            else:
-                pretypings_dic[col_name] = ""
-    
+        if mylocus == "KIR2DL5":
+            alleles = [GL]  # keep GL intact and split later by A and B
+        else:
+            alleles = split_GL_string(GL)
+        fill_pretypings_dic(mylocus, alleles, pretypings_dic)
+
+    # postprocessing for 2DL5A/B:
+    if "KIR2DL5-1" in pretypings_dic:  # if pretypings contain 2DL5
+        GL = pretypings_dic["KIR2DL5-1"]
+        GLs = split_2DL5AB(GL, cursor, log)  # list of GL strings separated by A and B
+        loci = ["KIR2DL5A", "KIR2DL5B"]
+
+        for i in range(len(GLs)):
+            alleles = split_GL_string(GLs[i])
+            fill_pretypings_dic(loci[i], alleles, pretypings_dic)
+
+        for col in ["KIR2DL5-1", "KIR2DL5-2", "KIR2DL5-3", "KIR2DL5-4"]:
+            pretypings_dic.pop(col, None)
+
     return pretypings_dic
     
 
@@ -261,13 +374,16 @@ def get_pretypings_from_limsrep(input_params, local_cf, log):
     
     log.info("Reformatting pretypings...")
     conn, cursor = open_connection(ngsm_scheme, log)
-    pretypings = {}
-    for i, allele_data in enumerate(data_pretypings):
-        [sample_id_int, gene] = input_params[i]
-        if not sample_id_int in not_found:
-            log.info("\t{}...".format(sample_id_int))
-            pretypings[sample_id_int] = reformat_pretypings(allele_data, gene, cursor, log)
-    
+    try:
+        pretypings = {}
+        for i, allele_data in enumerate(data_pretypings):
+            [sample_id_int, gene] = input_params[i]
+            if not sample_id_int in not_found:
+                log.info("\t{}...".format(sample_id_int))
+                pretypings[sample_id_int] = reformat_pretypings(allele_data, gene, cursor, log)
+    except Exception:
+        close_connection(conn, cursor, log)
+        raise
     close_connection(conn, cursor, log)
     log.info("=> reformatting complete!")
     return pretypings, sample_dic, not_found
@@ -281,7 +397,8 @@ def write_pretypings_file(pretypings, samples, output_file, log):
                'HLA-DQB1_1', 'HLA-DQB1_2', 'HLA-DPB1_1', 'HLA-DPB1_2', 'HLA-E_1', 'HLA-E_2', 'MICA', 'MICB', 
                'KIR2DL1-1', 'KIR2DL1-2', 'KIR2DL1-3', 'KIR2DL1-4', 'KIR2DL2-1', 'KIR2DL2-2', 'KIR2DL2-3', 'KIR2DL2-4', 
                'KIR2DL3-1', 'KIR2DL3-2', 'KIR2DL3-3', 'KIR2DL3-4', 'KIR2DL4-1', 'KIR2DL4-2', 'KIR2DL4-3', 'KIR2DL4-4', 
-               'KIR2DL5-1', 'KIR2DL5-2', 'KIR2DL5-3', 'KIR2DL5-4', 'KIR2DP1-1', 'KIR2DP1-2', 'KIR2DP1-3', 'KIR2DP1-4', 
+               'KIR2DL5A-1', 'KIR2DL5A-2', 'KIR2DL5A-3', 'KIR2DL5A-4', 'KIR2DL5B-1', 'KIR2DL5B-2', 'KIR2DL5B-3',
+               'KIR2DL5B-4', 'KIR2DP1-1', 'KIR2DP1-2', 'KIR2DP1-3', 'KIR2DP1-4',
                'KIR2DS1-1', 'KIR2DS1-2', 'KIR2DS1-3', 'KIR2DS1-4', 'KIR2DS2-1', 'KIR2DS2-2', 'KIR2DS2-3', 'KIR2DS2-4', 
                'KIR2DS3-1', 'KIR2DS3-2', 'KIR2DS3-3', 'KIR2DS3-4', 'KIR2DS4-1', 'KIR2DS4-2', 'KIR2DS4-3', 'KIR2DS4-4', 
                'KIR2DS5-1', 'KIR2DS5-2', 'KIR2DS5-3', 'KIR2DS5-4', 'KIR3DL1-1', 'KIR3DL1-2', 'KIR3DL1-3', 'KIR3DL1-4', 
@@ -320,7 +437,6 @@ pass
 #===========================================================
 # main:
 
-
 def read_local_settings(log):
     """reads settings from local config file,
     returns ConfigParser object
@@ -328,7 +444,7 @@ def read_local_settings(log):
     from configparser import ConfigParser
     local_config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config_local.ini")
     log.info("Reading local settings from {}...".format(local_config_file))
-    
+
     if os.path.exists(local_config_file):
         cf = ConfigParser()
         cf.read(local_config_file)
@@ -338,13 +454,23 @@ def read_local_settings(log):
 
 
 def main(log):
-    alleles = [['ID14818837', 'KIR3DL3']]
-    output_file = r"\\nasdd12\daten\data\Typeloader\admin\temp\pretypings.csv"
-    
+    from GUI_login import get_settings
+
+    alleles = [['ID17530942', 'KIR2DL5B']
+               ]
     local_cf = read_local_settings(log)
     pretypings, samples, not_found = get_pretypings_from_limsrep(alleles, local_cf, log)
 
-    write_pretypings_file(pretypings, samples, output_file, log)
+    for sample in pretypings:
+        for col in pretypings[sample]:
+            if col.startswith("KIR2DL5"):
+                print(col, pretypings[sample][col])
+
+    # typing = "00101A/00104A/00601B/00602B/00603B/00801B/00803B/01201A/01202A"
+    # split_2DL5AB(typing, log)
+
+
+    # write_pretypings_file(pretypings, samples, output_file, log)
     
         
 if __name__ == '__main__':

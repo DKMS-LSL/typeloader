@@ -14,7 +14,8 @@ useGenesList = ["HLA-A_1", "HLA-A_2", "HLA-B_1", "HLA-B_2", "HLA-C_1", "HLA-C_2"
                 ,"KIR2DL2-1","KIR2DL2-2","KIR2DL2-3","KIR2DL2-4" \
                 ,"KIR2DL3-1","KIR2DL3-2","KIR2DL3-3","KIR2DL3-4" \
                 ,"KIR2DL4-1","KIR2DL4-2","KIR2DL4-3","KIR2DL4-4" \
-                ,"KIR2DL5-1","KIR2DL5-2","KIR2DL5-3","KIR2DL5-4" \
+                ,"KIR2DL5A-1","KIR2DL5A-2","KIR2DL5A-3","KIR2DL5A-4" \
+                ,"KIR2DL5B-1","KIR2DL5B-2","KIR2DL5B-3","KIR2DL5B-4" \
                 ,"KIR2DP1-1","KIR2DP1-2","KIR2DP1-3","KIR2DP1-4" \
                 ,"KIR2DS1-1","KIR2DS1-2","KIR2DS1-3","KIR2DS1-4" \
                 ,"KIR2DS2-1","KIR2DS2-2","KIR2DS2-3","KIR2DS2-4" \
