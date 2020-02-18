@@ -154,9 +154,9 @@ def make_befund_text(befund, self_name, myallele, closestAllele, geneMap, differ
             myalleles = befund[gene]
         alleles = delimiter.join(myalleles)
         
-        if gene != "KIR":
+        if not gene.startswith("KIR"):
             if "|" in alleles:
-                raise InvalidPretypingError(myallele, myalleles, "", gene, "Pretyping contains '|'! GL-Stings are only accepted for KIR!") 
+                raise InvalidPretypingError(myallele, myalleles, "", gene, "Pretyping contains '|'! GL-Strings are only accepted for KIR!")
          
         if gene == myallele.gene:
             # check for consistency:
@@ -181,15 +181,16 @@ def make_befund_text(befund, self_name, myallele, closestAllele, geneMap, differ
                     return
                 
             else:
-                if self_name.replace(":new","").replace("new","") not in mystring:
+                if self_name.replace(":new", "").replace("new","") not in mystring:
                     log.warning("Invalid Pretyping: allele_name '{}:new' not found in pretyping for target locus. Please adjust pretyping file!".format(self_name))
-                    raise InvalidPretypingError(myallele, myalleles, self_name, gene, "assigned allele name not found in pretyping")
+                    raise InvalidPretypingError(myallele, myalleles, self_name, gene,
+                                                "assigned allele name not found in pretyping")
                     return
             
             if confirmation:
                 alleles = alleles.replace(self_name, closestAllele.split("*")[1])
         
-        befundText += otherAllelesString.replace("{gene}", gene).replace("{alleleNames}",alleles)
+        befundText += otherAllelesString.replace("{gene}", gene).replace("{alleleNames}", alleles)
     check_all_required_loci(befundText, gene, myallele, alleles, self_name, log)
     return befundText
 
