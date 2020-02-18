@@ -2113,12 +2113,12 @@ class Test_pretyping_valid(unittest.TestCase):
 
             # pepare error_dic:
             from typeloader_core import errors
-            self.error_dic = {"Cannot tell which novel allele from pretyping this is" : errors.BothAllelesNovelError,
-                              "no allele marked as new in pretyping" : errors.InvalidPretypingError,
-                              "assigned allele name not found in pretyping" : errors.InvalidPretypingError,
+            self.error_dic = {"Cannot tell which novel allele from pretyping this is": errors.BothAllelesNovelError,
+                              "no allele marked as new in pretyping": errors.InvalidPretypingError,
+                              "assigned allele name not found in pretyping": errors.InvalidPretypingError,
                               "POS is not acceptable pretyping for a target locus": errors.InvalidPretypingError,
-                              "pretyping for HLA-B missing" : errors.InvalidPretypingError,
-                              "Pretyping contains '|'! GL-Stings are only accepted for KIR!" : errors.InvalidPretypingError}
+                              "pretyping for HLA-B missing": errors.InvalidPretypingError,
+                              "Pretyping contains '|'! GL-Strings are only accepted for KIR!": errors.InvalidPretypingError}
 
     @classmethod
     def tearDownClass(self):
