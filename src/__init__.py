@@ -11,7 +11,7 @@ __email__ = "schoene@dkms-lab.de"
 
 __version__ = "2.6.1"
 __status__ = "productive"
-__all__ = ["typeloader_GUI", "general", "db_internal", "GUI_download_files", "GUI_flipped",
+__all__ = ["__init__", "typeloader_GUI", "general", "db_internal", "GUI_download_files", "GUI_flipped",
            "GUI_forms", "GUI_forms_new_allele", "GUI_forms_new_allele_bulk", "GUI_forms_new_project",
            "GUI_forms_submission_ENA", "GUI_forms_submission_IPD", "GUI_functions_local", "GUI_login", "GUI_misc",
            "GUI_navigation", "GUI_overviews", "GUI_reference_fix", "GUI_stylesheet", "GUI_user_manual",
