@@ -117,7 +117,7 @@ def upload_parse_sequence_file(raw_path, settings, log):
 
     # save uploaded file to temp dir:
     try:
-        temp_raw_file = os.path.join(settings["temp_dir"], os.path.basename(raw_path))
+        temp_raw_file = os.path.join(settings["temp_dir"], os.path.basename(raw_path).replace(" ", "_"))
         if filetype == "FASTA":
             if extension != ".fa":
                 temp_raw_file = os.path.splitext(temp_raw_file)[0] + ".fa"

@@ -54,7 +54,7 @@ skip_other_tests = False  # can be set to True to skip all tests except the one 
 project_name = ""  # this will be set in create project
 
 samples_dic =  {# samples to test 
-                "sample_1" : { "input" : "1395777_A.fa",
+                "sample_1" : { "input" : "1395777 A.fa",
                                "input_dir_origin" : "KIR_3DP1",
                                "local_name" : "DKMS-LSL_ID000001_3DP1_1",
                                "cell_line" : "DKMS-LSL_ID000001",
@@ -69,7 +69,7 @@ samples_dic =  {# samples to test
                                "id_int" : "ID000001",
                                "id_ext" : "DEDKM000001",
                                "submission_id" : "1111"},
-                "sample_2" : { "input" : "5597571.xml",
+                "sample_2" : { "input" : "5597571 A.xml",
                                "input_dir_origin" : "A_MM",
                                "local_name" : "DKMS-LSL_ID14278154_A_1",
                                "cell_line" : "DKMS-LSL_ID14278154",
