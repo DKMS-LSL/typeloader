@@ -841,7 +841,9 @@ class IPDSubmissionForm(CollapsibleDialog):
             except Exception as E:
                 self.log.warning("Could not delete IPD_counter lockfile from {}!".format(lock_file))
                 self.log.exception(E)
-                QMessageBox.warning(self, "Error", "Could not remove IPD lockfile, sorry! Please contact your admin!\n{}".repr(E))
+                msg = "Could not remove IPD lockfile, sorry! Please close the IPD-Submission dialog and try again.\n"
+                msg += f"If the problem occurs again, please contact your admin!\n{repr(E)}"
+                QMessageBox.warning(self, "Error", msg)
                 return
             self.reattempt_make_IPD_files()
         else:
