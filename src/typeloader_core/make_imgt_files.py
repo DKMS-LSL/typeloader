@@ -63,15 +63,20 @@ def get_IPD_counter(config_file, lock_file, settings, log):
     """
     log.debug("Getting current count of IPD submissions...")
     if os.path.isfile(lock_file):
-        msg = "Another user is currently creating IPD files.\n"
+        with open(lock_file, "r") as f:
+            user = f.read().strip()
+        if user:
+            msg = f"User {user} is currently creating IPD files.\n"
+        else:
+            msg = "Another user is currently creating IPD files.\n"
         msg += "Please try again in a minute or so, to make sure you don't create files with the same IPD number."
         log.warning(msg)
         return False, msg
 
     if settings["modus"] == "productive":
-        with open(lock_file, "w") as _:  # create lockfile
+        with open(lock_file, "w") as g:  # create lockfile
             log.debug("Creating IPD counter lockfile under {}...".format(lock_file))
-            os.utime(lock_file)
+            g.write(settings["login"])
 
     cf = ConfigParser()
     cf.read(config_file)

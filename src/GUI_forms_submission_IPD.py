@@ -759,7 +759,7 @@ class IPDSubmissionForm(CollapsibleDialog):
                     self.handle_multiple_novel_alleles(results[2])
                     return
                 else:
-                    if results[1].startswith("Another user is currently creating IPD files"):
+                    if "is currently creating IPD files" in results[1]:
                         mbox = IPDCounterLockedDialog(self, "IPD file creation error", results[1], self.settings, self.log)
                         mbox.remove_lock.connect(self.handle_IPDcounter_lock)
                         return
@@ -768,11 +768,11 @@ class IPDSubmissionForm(CollapsibleDialog):
                         print(results)
                         QMessageBox.warning(self, "IPD file creation error", results[1])
                         return
-                    self.log.warning("? Should not pass here")
             else:
                 (self.IPD_file, self.cell_lines, self.customer_dic, resultText, self.imgt_files, success, error) = results
             if error:
-                QMessageBox.warning(self, "IPD file creation error", "An error occurred during the creation of IPD files:\n\n{}".format(repr(error)))
+                QMessageBox.warning(self, "IPD file creation error",
+                                    "An error occurred during the creation of IPD files:\n\n{}".format(repr(error)))
                 return
             if success:
                 if not resultText:
