@@ -20,7 +20,7 @@ from PyQt5.Qt import QWidget, pyqtSlot, pyqtSignal, QDialog, QPushButton
 from PyQt5.QtGui import QIcon
 
 import general, typeloader_functions as typeloader
-from typeloader_core import errors
+from .typeloader_core import errors
 
 from GUI_forms import (CollapsibleDialog, ChoiceSection, 
                        FileButton, ProceedButton, QueryButton, NewProjectButton)
@@ -310,12 +310,12 @@ class NewAlleleForm(CollapsibleDialog):
             # process file & create Allele objects:
             self.header_data["sample_id_int"] = self.sample_name
             results = typeloader.process_sequence_file(self.project, self.filetype, self.blastXmlFile, self.targetFamily, self.fasta_filename, self.allelesFilename, self.header_data, self.settings, self.log)
-            if not results[0]: # something went wrong
+            if not results[0]:  # something went wrong
                 if results[1] == "Incomplete sequence":
                     reply = QMessageBox.question(self, results[1], results[2], QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                     if reply == QMessageBox.Yes:
                         results = typeloader.process_sequence_file(self.project, self.filetype, self.blastXmlFile, self.targetFamily, self.fasta_filename, self.allelesFilename, self.header_data, self.settings, self.log, incomplete_ok=True)
-                        if results[0] == False:
+                        if not results[0]:
                             QMessageBox.warning(self, results[1], results[2])
                             return
                     else:

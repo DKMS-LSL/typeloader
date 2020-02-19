@@ -7,9 +7,6 @@
       <sourceFolder url="file://$MODULE_DIR$/user_manual" type="java-resource" />
       <excludeFolder url="file://$MODULE_DIR$/venv" />
     </content>
-    <content url="file://T:/Skripte/_Module_/pylib3">
-      <sourceFolder url="file://T:/Skripte/_Module_/pylib3" type="java-resource" />
-    </content>
     <orderEntry type="jdk" jdkName="Python 3.6 (typeloader2)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
