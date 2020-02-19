@@ -265,7 +265,12 @@ def reformat_pretypings(allele_data, gene, cursor, log, fields = 2):
     cursor.prepare(GL_query)
     items = []
     KIR_loci = []
-        
+
+    target_is_KIR = False  # is the allele to be submitted a KIR allele?
+    if gene.startswith("KIR"):
+        target_is_KIR = True
+    else:
+        log.debug("Target allele is not a KIR gene => ignoring KIR pretypings!")
     for row in allele_data:
         (locus, allele1, allele2) = row
         if allele1:
@@ -277,6 +282,8 @@ def reformat_pretypings(allele_data, gene, cursor, log, fields = 2):
             elif locus == "KIR":
                 pass
             else:  # KIR
+                if not target_is_KIR:
+                    continue
                 mylocus = "KIR" + locus
                 if locus == "2DS4N":
                     mylocus = "KIR2DS4"
@@ -404,6 +411,7 @@ def write_pretypings_file(pretypings, samples, output_file, log):
                'KIR2DS5-1', 'KIR2DS5-2', 'KIR2DS5-3', 'KIR2DS5-4', 'KIR3DL1-1', 'KIR3DL1-2', 'KIR3DL1-3', 'KIR3DL1-4', 
                'KIR3DL2-1', 'KIR3DL2-2', 'KIR3DL2-3', 'KIR3DL2-4', 'KIR3DL3-1', 'KIR3DL3-2', 'KIR3DL3-3', 'KIR3DL3-4', 
                'KIR3DP1-1', 'KIR3DP1-2', 'KIR3DP1-3', 'KIR3DP1-4', 'KIR3DS1-1', 'KIR3DS1-2', 'KIR3DS1-3', 'KIR3DS1-4']
+
     with open(output_file, "w", newline = "") as g:
         data = csv.writer(g, delimiter=",")
         header = ['sample_ID_int', 'sample_id_ext', 'client'] + columns
