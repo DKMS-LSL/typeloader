@@ -2223,7 +2223,7 @@ class TestEdgecases(unittest.TestCase):
             log.info(f"Testing case {case.nr}:{case.desc}...")
             self.assertTrue(os.path.exists(case.filename))
 
-            mydic = CA.getClosestKnownAlleles(case.filename, case.target_family, curr_settings, log)
+            mydic = CA.get_closest_known_alleles(case.filename, case.target_family, curr_settings, log)
 
             mykey = list(mydic.keys())[0]
             self.assertEqual(mykey, case.closest_allele)

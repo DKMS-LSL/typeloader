@@ -22,22 +22,21 @@ import ntpath
 
 ###################################################
 
-def getClosestKnownAlleles(blastXmlFilename, targetFamily, settings, log):
-    xmlHandle = open(blastXmlFilename)
-    xmlParser = NCBIXML.parse(xmlHandle)
+def get_closest_known_alleles(blast_xml_filename, target_family, settings, log):
+    with open(blast_xml_filename) as xmlHandle:
+        xmlParser = NCBIXML.parse(xmlHandle)
 
-    # get the associated fasta_file
-    query_fasta_file = blastXmlFilename.replace("blast.xml", "fa")
-
-    closestAllelesData = parseBlast(xmlParser, targetFamily, query_fasta_file, settings, log)
-
-    xmlHandle.close()
+        # get the associated fasta file
+        query_fasta_file = blast_xml_filename.replace("blast.xml", "fa")
+        closestAllelesData = parse_blast(xmlParser, target_family, query_fasta_file, settings, log)
 
     return closestAllelesData
 
 
-def print_me(hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align_len, queryLength):
-    for item in [hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align_len, queryLength]:
+def print_me(hsp_query, hsp_subject, hsp_match, concat_HSPs, hsp_start, hsp_align_len, query_length):
+    """little debugging function
+    """
+    for item in [hsp_query, hsp_subject, hsp_match, concat_HSPs, hsp_start, hsp_align_len, query_length]:
         printme = [type(item)]
         try:
             length = len(item)
@@ -45,27 +44,27 @@ def print_me(hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align
             length = None
         printme.append(length)
         if length:
-            # printme.append(item[-100:] + "...")
-            printme.append("..." + item[-100:])
+            # printme.append(item[-100:] + "...")  # print last section
+            printme.append("..." + item[-100:])  # print first section
         else:
             printme.append(item)
         print(printme)
 
 
-def parseBlast(xmlRecords, targetFamily, query_fasta_file, settings, log):
+def parse_blast(xml_records, target_family, query_fasta_file, settings, log):
     """
     Basic description of the XML below
-    For more details on parsing the BLAST XML output - http://biopython.org/DIST/docs/tutorial/Tutorial.html#sec:parsing-blast
+    For more details on parsing the BLAST XML output:
+     see http://biopython.org/DIST/docs/tutorial/Tutorial.html#sec:parsing-blast
 
     Heirarchy of XML output -
 
     Record (corresponding to each query) -> Alignment (individual hits) -> HSP
-
     """
 
     closestAlleles = {}
     hsp_start = 1
-    for xmlRecord in xmlRecords:
+    for xmlRecord in xml_records:
 
         queryId = xmlRecord.query_id
         output_db = xmlRecord.database
@@ -87,18 +86,16 @@ def parseBlast(xmlRecords, targetFamily, query_fasta_file, settings, log):
         hsps = potentialClosestAlleleAlignment.hsps
 
         closestAlleleName = potentialClosestAlleleAlignment.hit_def
-        if closestAlleleName.find(targetFamily) == -1:
-            if closestAlleleName.startswith("MIC") and targetFamily == "HLA":
+        if closestAlleleName.find(target_family) == -1:
+            if closestAlleleName.startswith("MIC") and target_family == "HLA":
                 pass
             else:
                 closestAlleleName = potentialClosestAlleleAlignment.hit_id
 
         ref_sequence = SeqIO.to_dict(SeqIO.parse(output_db, "fasta"))[closestAlleleName].seq
         query_sequence = SeqIO.to_dict(SeqIO.parse(query_fasta_file, "fasta"))[queryId].seq
-        hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align_len = puzzleHspsFromFirstHit(hsps,
-                                                                                                         ref_sequence,
-                                                                                                         query_sequence,
-                                                                                                         query_fasta_file)
+        results = puzzle_HSPs_from_first_hit(hsps, ref_sequence, query_sequence, query_fasta_file)
+        hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align_len = results
 
         if hsp_query == "" and hsp_subject == "" and hsp_match == "":
             closestAlleles[queryId] = None
@@ -110,9 +107,9 @@ def parseBlast(xmlRecords, targetFamily, query_fasta_file, settings, log):
                                                    hsp_query, hsp_subject, hsp_match, log)
                 (hsp_query, hsp_subject, hsp_match, hsp_align_len, hsp_start) = results
                 # print_me(hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align_len, queryLength)
-            closestAlleles[queryId] = closestAlleleItems(hsp_query, hsp_subject, hsp_match, closestAlleleName,
-                                                         concatHSPS,
-                                                         hsp_start, hsp_align_len, queryLength)
+            closestAlleles[queryId] = closest_allele_items(hsp_query, hsp_subject, hsp_match, closestAlleleName,
+                                                           concatHSPS,
+                                                           hsp_start, hsp_align_len, queryLength)
 
     if hsp_start != 1:
         log.warning("Incomplete sequence found: first {} bp missing!".format(hsp_start - 1))
@@ -140,11 +137,14 @@ def make_global_alignment(ref_seq, query_seq, log):
 
 
 def remove_end_gaps(ref, matched, query):
+    """
+    removes end gaps ('-'-characters on the right side) from an alignment incl. its sequences
+    """
     match = re.match('-+', query[::-1])
-    if match:
+    if match:  # end gaps found
         n = len(match.group())  # number of end gaps
         return ref[:-1 * n], matched[:-1 * n], query[:-1 * n]
-    else:
+    else:  # no end gaps found => return everything unchanged
         return ref, matched, query
 
 
@@ -244,14 +244,14 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
     return hsp_query, hsp_subject, hsp_match, hsp_align_len, hsp_start
 
 
-def closestAlleleItems(hsp_query, hsp_subject, hsp_match, closestAlleleName, concatHSPS, hsp_start, hsp_align_len,
-                       queryLength):
+def closest_allele_items(hsp_query, hsp_subject, hsp_match, closest_allele_name, concat_HSPs, hsp_start, hsp_align_len,
+                         query_length):
     # "-" in the query means a deletion, "-" in the hit means an insertion, a gap in the alignment is a mismatch
     deletionPositions = [pos + 1 for pos in range(len(hsp_query)) if hsp_query[pos] == "-"]
     insertionPositions = [pos + 1 for pos in range(len(hsp_subject)) if hsp_subject[pos] == "-"]
-    mismatchPositions = [pos + 1 for pos in range(len(hsp_match)) if ((hsp_match[pos] == " ") \
+    mismatchPositions = [pos + 1 for pos in range(len(hsp_match)) if ((hsp_match[pos] == " ")
                                                                       and ((pos + 1) not in deletionPositions) and (
-                                                                                  (pos + 1) not in insertionPositions))]
+                                                                      (pos + 1) not in insertionPositions))]
     # bases
     deletions = [hsp_subject[deletionPos - 1] for deletionPos in deletionPositions]
     insertions = [hsp_query[insertionPos - 1] for insertionPos in insertionPositions]
@@ -261,29 +261,29 @@ def closestAlleleItems(hsp_query, hsp_subject, hsp_match, closestAlleleName, con
     else:
         exactMatch = False
 
-    mismatches = list(zip([hsp_query[mismatchPos - 1] for mismatchPos in mismatchPositions], \
+    mismatches = list(zip([hsp_query[mismatchPos - 1] for mismatchPos in mismatchPositions],
                           [hsp_subject[mismatchPos - 1] for mismatchPos in mismatchPositions]))
 
     # catch cases with undetected mismatches near end: (BLAST misses these)
-    if hsp_align_len < queryLength:  # if not whole of query sequence could be aligned
+    if hsp_align_len < query_length:  # if not whole of query sequence could be aligned
         mismatches.append(('?', '?'))
         mismatchPositions.append(hsp_align_len + 1)  # up to this point, the alignment worked
         exactMatch = False
 
     differences = {'deletionPositions': deletionPositions, 'insertionPositions': insertionPositions,
-                   'mismatchPositions': mismatchPositions, \
+                   'mismatchPositions': mismatchPositions,
                    'mismatches': mismatches, 'deletions': deletions, 'insertions': insertions}
 
-    closestAllele = {"name": closestAlleleName, "differences": differences,
-                     "exactMatch": exactMatch, "concatHSPS": concatHSPS,
+    closestAllele = {"name": closest_allele_name, "differences": differences,
+                     "exactMatch": exactMatch, "concatHSPS": concat_HSPs,
                      "hitStart": hsp_start,
                      "alignLength": hsp_align_len,
-                     "queryLength": queryLength}
+                     "queryLength": query_length}
 
     return closestAllele
 
 
-def puzzleHspsFromFirstHit(hsps, ref_sequence, query_sequence, query_fasta_file):
+def puzzle_HSPs_from_first_hit(hsps, ref_sequence, query_sequence, query_fasta_file):
     # TODO: (future) Validation of HSP puzzle, until that, take first HSP
     potentialClosestHSP = hsps[0]
     hsp_query = potentialClosestHSP.query
@@ -501,7 +501,7 @@ def puzzleHspsFromFirstHit(hsps, ref_sequence, query_sequence, query_fasta_file)
     filebuff.close()
     """
 
-    return (hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align_len)
+    return hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align_len
 
 
 if __name__ == "__main__":

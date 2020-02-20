@@ -7,7 +7,7 @@
 import re, sys
 from Bio import SeqIO
 from collections import defaultdict
-from .closestallele import getClosestKnownAlleles
+from .closestallele import get_closest_known_alleles
 from .hla_embl_parser import read_dat_file
 from .imgtTransform import changeToImgtCoords
 from .errors import MissingUTRError, IncompleteSequenceWarning
@@ -135,7 +135,7 @@ def getMismatchData(annotations):
 
 def getCoordinates(blastXmlFilename, allelesFilename, targetFamily, settings, log, isENA=True, incomplete_ok = False):
     allAlleles, _ = read_dat_file(allelesFilename, targetFamily, isENA)
-    closestAlleles = getClosestKnownAlleles(blastXmlFilename, targetFamily, settings, log)
+    closestAlleles = get_closest_known_alleles(blastXmlFilename, targetFamily, settings, log)
     seqsFile = blastXmlFilename.replace(".blast.xml",".fa")
 
     try: 

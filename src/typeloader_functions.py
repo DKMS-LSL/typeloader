@@ -235,7 +235,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
     try:
         if filetype == "XML":
             try:
-                closestAlleles = CA.getClosestKnownAlleles(blastXmlFile, targetFamily, settings, log)
+                closestAlleles = CA.get_closest_known_alleles(blastXmlFile, targetFamily, settings, log)
             except errors.IncompleteSequenceWarning as E:
                 return False, "Incomplete sequence", E.msg
             except errors.MissingUTRError as E:
