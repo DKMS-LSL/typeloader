@@ -2238,6 +2238,55 @@ class TestEdgecases(unittest.TestCase):
             self.assertEqual(d["differences"]['mismatchPositions'], case.mm_pos)
 
 
+class TestDeleteOtherAllele(unittest.TestCase):
+    """
+    Test whether deletion of non-chosen partner allele of an XML file in subsequent files works
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping TestDeleteOtherAllele because skip_other_tests is set to True")
+        else:
+            self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "delete_partner")
+
+            self.blast_xml_file = os.path.join(self.mydir, "DKMS-LSL_ID1_E_1.blast.xml")
+            self.fasta_file = os.path.join(self.mydir, "DKMS-LSL_ID1_E_1.fa")
+            self.partner_allele = "E*01:03:02:01-Novel-2"
+
+            self.fasta_ref_file = os.path.join(self.mydir, "DKMS-LSL_ID1_E_1_test.fa")
+            self.blast_ref_file = os.path.join(self.mydir, "DKMS-LSL_ID1_E_1_test.blast.xml")
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test_deletion_of_unchosen_partner_allele(self):
+        """run remove_partner_allele() and check whether partner allele was removed
+        """
+        from itertools import zip_longest
+        typeloader_functions.remove_other_allele(self.blast_xml_file, self.fasta_file, self.partner_allele, log,
+                                                 replace=False)
+        blast_file_out = self.blast_xml_file + "1"
+        fasta_file_out = self.fasta_file + "1"
+
+        log.debug(f"Checking {fasta_file_out}...")
+        self.assertTrue(os.path.isfile(fasta_file_out))
+        diff = compare_2_files(fasta_file_out, self.fasta_ref_file)
+        self.assertEqual(len(diff["added_sings"]), 0)
+        self.assertEqual(len(diff["deleted_sings"]), 0)
+
+        log.debug(f"Checking {blast_file_out}...")
+        self.assertTrue(os.path.isfile(blast_file_out))
+        # compare_2_files() gets stuck in an infinite loop for the blast_xml_files, probably due to XML-ish nature
+        with open(blast_file_out) as f1, open(self.blast_ref_file) as f2:
+            for (line_new, line_ref) in zip_longest(f1, f2):
+                self.assertEqual(line_new, line_ref)
+
+        for new_file in [fasta_file_out, blast_file_out]:
+            os.remove(new_file)
+            self.assertFalse(os.path.isfile(new_file))
+
+
 class Test_Clean_Stuff(unittest.TestCase):
     """
     Remove all directories and files written by  all unit tests

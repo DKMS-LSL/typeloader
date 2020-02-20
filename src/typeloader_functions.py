@@ -186,7 +186,7 @@ def reformat_header_data(header_data, sample_id_ext, log):
         header_data["Spendernummer"] = sample_id_ext
 
 
-def remove_other_allele(blast_xml_file, fasta_file, other_allele_name, log):
+def remove_other_allele(blast_xml_file, fasta_file, other_allele_name, log, replace=True):
     """removes the non-chosen allele from an XML input file and the generated fasta file
     so it will not later create difficulties (#115)
     """
@@ -200,8 +200,9 @@ def remove_other_allele(blast_xml_file, fasta_file, other_allele_name, log):
                 if success != 1:
                     log.error(f'Error while writing sequence {record.id} to {temp}')
 
-    os.remove(fasta_file)
-    shutil.move(temp, fasta_file)
+    if replace:
+        os.remove(fasta_file)
+        shutil.move(temp, fasta_file)
 
     log.debug("\tCleaning XML file...")
     temp = blast_xml_file + "1"
@@ -224,8 +225,9 @@ def remove_other_allele(blast_xml_file, fasta_file, other_allele_name, log):
                 text = ""
         g.write(text)  # write footer
 
-    os.remove(blast_xml_file)
-    shutil.move(temp, blast_xml_file)
+    if replace:
+        os.remove(blast_xml_file)
+        shutil.move(temp, blast_xml_file)
     log.debug("\t=> Done!")
 
 
