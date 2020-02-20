@@ -161,7 +161,8 @@ def getCoordinates(blastXmlFilename, allelesFilename, targetFamily, settings, lo
 #                     print("'{}' : {}".format(key, annotations[cell_line][key]))
 
     for gendxAllele in list(annotations.keys()):
-        if annotations[gendxAllele] == None: continue
+        if not annotations[gendxAllele]:
+            continue
         alleleSeq = str(seqsHash[gendxAllele].seq)
         annotations[gendxAllele]["sequence"] = alleleSeq
         annotations[gendxAllele]["imgtDifferences"]["mmCodons"] = getMismatchData(annotations[gendxAllele])

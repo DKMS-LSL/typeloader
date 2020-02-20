@@ -352,25 +352,18 @@ class NewAlleleForm(CollapsibleDialog):
         
         a1_new = False
         self.allele1_sec = AlleleSection("Allele 1:", self)
-        layout.addWidget(self.allele1_sec,0,0)
+        layout.addWidget(self.allele1_sec, 0, 0)
         
         a2_new = False
         self.allele2_sec = AlleleSection("Allele 2:", self)
-        layout.addWidget(self.allele2_sec,0,1)
+        layout.addWidget(self.allele2_sec, 0, 1)
         
         #ToDo: add closest alleles!
         
-        button_widget = QFrame(self) # contains both-checkbox & proceed-button
+        button_widget = QFrame(self)  # contains both-checkbox & proceed-button
         layout2 = QFormLayout()
         button_widget.setLayout(layout2)
-#         self.both_cbx = QCheckBox(self)
-#         self.both_cbx.clicked.connect(self.select_both)
-#         self.both_lbl = QLabel("Both alleles?")
-#         self.both_lbl.setStyleSheet(general.label_style_main)
-#         layout2.addRow(self.both_lbl, self.both_cbx)
-#         self.msg = QLabel("When selecting this option, please ensure\nyou have entered details for both alleles.")
-#         self.msg.setStyleSheet(general.label_style_normal)
-#         layout2.addRow(self.msg)
+
         layout2.addRow(QLabel("\n\n"))
         
         if a1_new:
@@ -379,23 +372,21 @@ class NewAlleleForm(CollapsibleDialog):
                 self.allele2_sec.checkbox.setChecked(True)
         elif a2_new:
             self.allele2_sec.checkbox.setChecked(True)
-#         self.allele1_sec.checkbox.clicked.connect(self.unselect_both_cbx)
         self.allele1_sec.checkbox.clicked.connect(self.unselect_other_box)
         self.allele2_sec.checkbox.clicked.connect(self.unselect_other_box)
-#         self.allele2_sec.checkbox.clicked.connect(self.unselect_both_cbx)
-        
+
         self.ok_btn = ProceedButton("Proceed", [self.allele1_sec.checkbox, self.allele2_sec.checkbox], self.log,
-                                    only1 = True)
+                                    only1=True)
         self.ok_btn.check_ready()
         self.ok_btn.clicked.connect(self.make_ENA_file)
         self.allele1_sec.selection_changed.connect(self.ok_btn.check_ready)
         self.allele2_sec.selection_changed.connect(self.ok_btn.check_ready)
         
         layout2.addRow(self.ok_btn)
-        layout.addWidget(button_widget, 0 ,3)
-        layout.setColumnStretch(0,1)
-        layout.setColumnStretch(1,1)
-        layout.setColumnStretch(2,0)
+        layout.addWidget(button_widget, 0, 3)
+        layout.setColumnStretch(0, 1)
+        layout.setColumnStretch(1, 1)
+        layout.setColumnStretch(2, 0)
         self.sections.append(("(2) Specify allele details:", mywidget))
     
     @pyqtSlot()
@@ -470,14 +461,14 @@ class NewAlleleForm(CollapsibleDialog):
         try:
             # get GUI data:
             self.allele1.geneName = self.allele1_sec.gene_field.text().strip()
-            self.allele1.alleleName = self.allele1_sec.GenDX_result#.split("-")[0]
+            self.allele1.alleleName = self.allele1_sec.GenDX_result
             self.allele1.newAlleleName = self.allele1_sec.name_field.text().strip()
             self.allele1.productName_DE = self.allele1_sec.product_field.text().strip()
             self.allele1.productName_FT = self.allele1.productName_DE
             self.allele1.partner_allele = self.allele2_sec.name_field.text().strip()
             
             self.allele2.geneName = self.allele2_sec.gene_field.text().strip()
-            self.allele2.alleleName = self.allele2_sec.GenDX_result#.split("-")[0]
+            self.allele2.alleleName = self.allele2_sec.GenDX_result
             self.allele2.newAlleleName = self.allele2_sec.name_field.text().strip()
             self.allele2.productName_DE = self.allele2_sec.product_field.text().strip()
             self.allele2.productName_FT = self.allele2.productName_DE
@@ -491,7 +482,7 @@ class NewAlleleForm(CollapsibleDialog):
                 self.log.debug("Choosing allele 2...")
                 #TODO: (future) implement possibility to add both alleles
             else:
-                QMessageBox.warning(self, "No allele chosen", "Please choose an allele to continue")
+                QMessageBox.warning(self, "No allele chosen", "Please choose an allele to continue!")
                 return
             try:
                 self.ENA_text = typeloader.make_ENA_file(self.blastXmlFile, self.targetFamily, self.myallele, self.settings, self.log)
