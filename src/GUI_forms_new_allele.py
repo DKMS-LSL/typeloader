@@ -227,7 +227,7 @@ class NewAlleleForm(CollapsibleDialog):
         file_btn = FileButton("Choose XML or Fasta file", mypath, self)
         self.file_widget = ChoiceSection("Raw File:", [file_btn], self.tree)
         self.file_widget.choice.connect(self.get_file)
-        mypath = r"H:\Projekte\RnD\24_NeueAllele\3_Veröffentlichung\1.1_xmlExport_NGSengine\HLA-Klasse1\B4_B5\ID11558869.xml"
+        mypath = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\115_both_alleles\ID15777271.xml"
         if self.settings["modus"] == "debugging":
             self.file_widget.field.setText(mypath)
         layout.addWidget(self.file_widget)

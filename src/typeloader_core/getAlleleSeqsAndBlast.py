@@ -113,12 +113,13 @@ def blast_raw_seqs(input_filename, filetype, settings, log):
     kir = settings["gene_kir"]
     hla = settings["gene_hla"]
     
-    log.debug("\tReading fasta...")
-    first_fasta_entry = fasta_generator(fastaFilename)
-    (header, seq) = first_fasta_entry.__next__()
-    (ok, msg) = sanity_check_seq(seq, log)
-    if not ok:
-        return (False, "Non-ATGC-Error", msg)
+    log.debug("\tReading fasta for sanity check...")
+    header = ""
+    for myfasta in fasta_generator(fastaFilename):
+        (header, seq) = myfasta
+        (ok, msg) = sanity_check_seq(seq, log)
+        if not ok:
+            return False, "Non-ATGC-Error", msg
     
     log.debug("\tParsing fasta header...")
     seq_name, header_data = parse_fasta_header(header)
