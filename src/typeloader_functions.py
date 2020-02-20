@@ -15,6 +15,7 @@ contains calls to TypeLoader_core and handling thereof
 import os, shutil
 import string, random, time
 from collections import defaultdict
+from Bio import SeqIO
 
 from src.typeloader_core import (EMBLfunctions as EF, coordinates as COO, backend_make_ena as BME,
                              backend_enaformat as BE, getAlleleSeqsAndBlast as GASB,
@@ -183,6 +184,49 @@ def reformat_header_data(header_data, sample_id_ext, log):
     # store external sample number if given by parameter (needed for testing):
     if sample_id_ext:
         header_data["Spendernummer"] = sample_id_ext
+
+
+def remove_other_allele(blast_xml_file, fasta_file, other_allele_name, log):
+    """removes the non-chosen allele from an XML input file and the generated fasta file
+    so it will not later create difficulties (#115)
+    """
+    log.info("Removing non-chosen partner allele from blast_xml file and generated fasta file...")
+    log.debug("\tCleaning fasta file...")
+    temp = fasta_file + "1"
+    with open(fasta_file, "rU") as f, open(temp, "w") as g:
+        for record in SeqIO.parse(f, "fasta"):
+            if other_allele_name not in record.id:
+                success = SeqIO.write(record, g, 'fasta')
+                if success != 1:
+                    log.error(f'Error while writing sequence {record.id} to {temp}')
+
+    os.remove(fasta_file)
+    shutil.move(temp, fasta_file)
+
+    log.debug("\tCleaning XML file...")
+    temp = blast_xml_file + "1"
+    with open(blast_xml_file, "r") as f, open(temp, "w") as g:
+        header = True
+        for line in f:
+            if line == "<Iteration>\n":
+                header = False
+                text = ""
+                use_me = True
+            if header:
+                g.write(line)
+            else:
+                text += line
+                if other_allele_name in line:
+                    use_me = False
+            if line == "</Iteration>\n":
+                if use_me:
+                    g.write(text)
+                text = ""
+        g.write(text)  # write footer
+
+    os.remove(blast_xml_file)
+    shutil.move(temp, blast_xml_file)
+    log.debug("\t=> Done!")
 
 
 def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_filename, allelesFilename,

@@ -20,7 +20,10 @@ from PyQt5.Qt import QWidget, pyqtSlot, pyqtSignal, QDialog, QPushButton
 from PyQt5.QtGui import QIcon
 
 import general, typeloader_functions as typeloader
-from typeloader_core import errors
+try:
+    from .typeloader_core import errors
+except ImportError:
+    from typeloader_core import errors
 
 from GUI_forms import (CollapsibleDialog, ChoiceSection, 
                        FileButton, ProceedButton, QueryButton, NewProjectButton)
@@ -293,6 +296,7 @@ class NewAlleleForm(CollapsibleDialog):
             else:
                 self.log.debug("\t=> success")
                 self.success_upload, sample_name, self.filetype, self.temp_raw_file, self.blastXmlFile, self.targetFamily, self.fasta_filename, self.allelesFilename, self.header_data = results
+                print(self.blastXmlFile)
                 typeloader.reformat_header_data(self.header_data, self.sample_id_ext, self.log)
                 if not self.sample_name:
                     self.sample_name = sample_name
@@ -476,14 +480,17 @@ class NewAlleleForm(CollapsibleDialog):
 
             if self.allele1_sec.checkbox.checkState():
                 self.myallele = self.allele1
+                other_allele_name = self.allele2.alleleName
                 self.log.debug("Choosing allele 1...")
             elif self.allele2_sec.checkbox.checkState():
                 self.myallele = self.allele2
+                other_allele_name = self.allele1.alleleName
                 self.log.debug("Choosing allele 2...")
                 #TODO: (future) implement possibility to add both alleles
             else:
                 QMessageBox.warning(self, "No allele chosen", "Please choose an allele to continue!")
                 return
+            typeloader.remove_other_allele(self.blastXmlFile, self.fasta_filename, other_allele_name, self.log)
             try:
                 self.ENA_text = typeloader.make_ENA_file(self.blastXmlFile, self.targetFamily, self.myallele, self.settings, self.log)
             except errors.IncompleteSequenceWarning as E:
@@ -677,7 +684,7 @@ if __name__ == '__main__':
     mydb = create_connection(log, mysettings["db_file"])
     
     app = QApplication(sys.argv)
-    ex = NewAlleleForm(log, mydb, "20190319_ADMIN_MIC_shortUTR3", mysettings)
+    ex = NewAlleleForm(log, mydb, "20200219_ADMIN_HLA-E_115both", mysettings)
 #     ex = QueryBox(log, mysettings)
     ex.show()
     
