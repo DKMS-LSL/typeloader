@@ -131,7 +131,7 @@ def upload_parse_sequence_file(raw_path, settings, log):
 
     # read file:
     try:
-        results = GASB.blastRawSeqs(temp_raw_file, filetype, settings, log)
+        results = GASB.blast_raw_seqs(temp_raw_file, filetype, settings, log)
     except ValueError as E:
         msg = E.args[0]
         if msg.startswith("Fasta"):

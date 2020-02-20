@@ -20,7 +20,7 @@ from PyQt5.Qt import QWidget, pyqtSlot, pyqtSignal, QDialog, QPushButton
 from PyQt5.QtGui import QIcon
 
 import general, typeloader_functions as typeloader
-from .typeloader_core import errors
+from typeloader_core import errors
 
 from GUI_forms import (CollapsibleDialog, ChoiceSection, 
                        FileButton, ProceedButton, QueryButton, NewProjectButton)
@@ -482,6 +482,7 @@ class NewAlleleForm(CollapsibleDialog):
             self.allele2.productName_DE = self.allele2_sec.product_field.text().strip()
             self.allele2.productName_FT = self.allele2.productName_DE
             self.allele2.partner_allele = self.allele1_sec.name_field.text().strip()
+
             if self.allele1_sec.checkbox.checkState():
                 self.myallele = self.allele1
                 self.log.debug("Choosing allele 1...")
