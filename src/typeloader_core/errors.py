@@ -25,7 +25,6 @@ class IncompleteSequenceWarning(Exception):
         self.msg += "(Note that IPD requires at least 1 bp per UTR to be contained in genomic sequences.)\n\n"
         self.msg += "Please consider carefully: this might lead to an incorrect closest allele being selected. "
         self.msg += "Also, submitting incomplete sequences decreases the quality of the official IPD databases."
-        print(self.msg)
 
 
 class MissingUTRError(Exception):

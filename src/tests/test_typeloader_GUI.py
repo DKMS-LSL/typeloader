@@ -1692,80 +1692,60 @@ The problem-alleles were NOT added. Please fix them and try again!"""
         self.assertEqual(result, expected_result)
 
 
-#TODO: class Test_incomplete_sequences(unittest.TestCase):
-# class Test_rejection_short_UTR3(unittest.TestCase):
-#     """
-#     test if TypeLoader correctly rejects sequences with incomplete UTR3
-#     """
-#     @classmethod
-#     def setUpClass(self):
-#         if skip_other_tests:
-#             self.skipTest(self, "Skipping Test_rejection_short_UTR3 because skip_other_tests is set to True")
-#         else:
-#             self.mydir = os.path.join(curr_settings["login_dir"], "data_unittest", "rejection")
-#             self.testfile_fa = os.path.join(self.mydir, "UTR3_short.fa")
-#             self.missing_bp_fa = "53"
-#             self.testfile_xml = os.path.join(self.mydir, "UTR3_short.xml")
-#             self.missing_bp_xml = "1"
-#             self.project_name = project_name
-#
-#     @classmethod
-#     def tearDownClass(self):
-#         pass
-#
-#     def test_reject_fasta(self):
-#         """test if FASTA file with incomplete UTR3 is correctly rejected
-#         """
-#         myfile = self.testfile_fa
-#         missing_bp = self.missing_bp_fa
-#
-#         # upload and parse file:
-#         results = typeloader_functions.upload_parse_sequence_file(myfile, curr_settings, log)
-#         (success_upload, _, filetype, _,
-#          blastXmlFile, targetFamily, fasta_filename, allelesFilename,
-#          header_data) = results
-#
-#         self.assertTrue(success_upload) # uploading and parsing should work
-#
-#         # try to create ENA file: (should fail)
-#         results2 = typeloader_functions.process_sequence_file(self.project_name,
-#                                                 filetype, blastXmlFile, targetFamily,
-#                                                 fasta_filename, allelesFilename, header_data,
-#                                                 curr_settings, log)
-#
-#         (success, err_type, msg) = results2
-#         err = "File {} should have been rejected!".format(myfile)
-#         self.assertFalse(success, err)
-#         self.assertEqual(err_type, 'Incomplete sequence', "Should have thrown an 'Incomplete sequence' error")
-#         ref_error = errors.IncompleteSequenceError(missing_bp)
-#         self.assertEqual(msg, ref_error.msg)
-#
-#     def test_reject_XML(self):
-#         """test if XML file with incomplete UTR3 is correctly rejected
-#         """
-#         myfile = self.testfile_xml
-#         missing_bp = self.missing_bp_xml
-#
-#         # upload and parse file:
-#         results = typeloader_functions.upload_parse_sequence_file(myfile, curr_settings, log)
-#         (success_upload, _, filetype, _,
-#          blastXmlFile, targetFamily, fasta_filename, allelesFilename,
-#          header_data) = results
-#
-#         self.assertTrue(success_upload) # uploading and parsing should work
-#
-#         # try to create ENA file: (should fail)
-#         results2 = typeloader_functions.process_sequence_file(self.project_name,
-#                                                 filetype, blastXmlFile, targetFamily,
-#                                                 fasta_filename, allelesFilename, header_data,
-#                                                 curr_settings, log)
-#
-#         (success, err_type, msg) = results2
-#         err = "File {} should have been rejected!".format(myfile)
-#         self.assertFalse(success, err)
-#         self.assertEqual(err_type, 'Incomplete sequence', "Should have thrown an 'Incomplete sequence' error")
-#         ref_error = errors.IncompleteSequenceError(missing_bp)
-#         self.assertEqual(msg, ref_error.msg)
+class TestIncompleteSequences(unittest.TestCase):
+    """
+    test if TypeLoader correctly handles sequences with incomplete UTR3
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping Test_rejection_short_UTR3 because skip_other_tests is set to True")
+        else:
+            self.mydir = os.path.join(curr_settings["login_dir"], "data_unittest", "incomplete_UTR")
+            self.project_name = project_name
+            testcase_file = os.path.join(self.mydir, "bulk_upload_incompletes.csv")
+
+            log.debug(f"Reading testcases from file {testcase_file}...")
+            TestCase = namedtuple("TestCase", "nr file_name sample_id_int incomplete should_succeed exp_error")
+            self.testcases = []
+            with open(testcase_file, "r") as f:
+                data = csv.reader(f, delimiter=",")
+                for row in data:
+                    if row:
+                        if row[0] != "nr":
+                            case = TestCase(nr=row[0], file_name=row[2], sample_id_int=row[3], incomplete=row[6],
+                                            should_succeed=row[7], exp_error=row[8])
+                            self.testcases.append(case)
+            log.debug(f"\t=> found {len(self.testcases)} testcases")
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test_various_cases(self):
+        """testing various combinations of incomplete or missing UTRs and the parameter "incomplete_ok"
+        """
+        for case in self.testcases:
+            log.debug(f"\ttesting {case.file_name}...")
+            raw_path = os.path.join(self.mydir, case.file_name)
+            if case.incomplete == "ok":
+                incomplete_ok = True
+            else:
+                incomplete_ok = False
+
+            if case.should_succeed == "True":
+                exp_success = True
+            else:
+                exp_success = False
+
+            success, msg = typeloader_functions.upload_new_allele_complete(self.project_name, case.sample_id_int,
+                                                                           "test", raw_path, "DKMS", curr_settings,
+                                                                           mydb, log, incomplete_ok=incomplete_ok)
+            self.assertEqual(success, exp_success)
+            if not success:
+                log.debug(f"Expected error should start with '{case.exp_error}'!")
+                log.debug(f"Error encountered: '{msg}'")
+                self.assertTrue(msg.startswith(case.exp_error))
 
 
 class Test_null_alleles(unittest.TestCase):
