@@ -286,7 +286,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 empty_xml = False
                 if E.args:
                     msg = E.args[0]
-                    if msg == "Your XML file was empty":
+                    if msg == "Your XML file was empty":  #TODO: test this (seems to not be caught correctly)
                         empty_xml = True
                 if empty_xml:
                     return False, "BLAST hickup", "The generated blast.xml-file was empty. This was probably a BLAST hickup. Please restart TypeLoader and try again!"
@@ -719,66 +719,68 @@ def bulk_upload_new_alleles(csv_file, project, settings, mydb, log):
 def delete_sample(sample, nr, project, settings, log, parent=None):
     """delete a sample from the database & file system
     """
+    log.info(f"Deleting {sample} allele #{nr} from project {project}...")
+    log.debug("Deleting from database...")
     # delete from database:
-    delete_q_alleles = "delete from alleles where sample_id_int = '{}' and allele_nr = {} and project_name = '{}'".format(
-        sample, nr, project)
+    delete_q_alleles = f"""delete from alleles where sample_id_int = '{sample}' and allele_nr = {nr} 
+                        and project_name = '{project}'"""
     success, _ = db_internal.execute_query(delete_q_alleles, 0, log,
-                                           "Deleting sample {} allele #{} from ALLELES table".format(sample, nr),
+                                           f"Deleting sample {sample} allele #{nr} from ALLELES table",
                                            "Sample Deletion Error", parent)
     if success:
         log.debug("\t=> Successfully deleted sample from table ALLELES")
 
-    more_projects_query = "select project_name from alleles where sample_id_int = '{}'".format(sample)
+    more_projects_query = f"select project_name from alleles where sample_id_int = '{sample}'"
     success, data = db_internal.execute_query(more_projects_query, 1, log,
-                                              "Finding more rows with sample {} in ALLELES table".format(sample),
+                                              f"Finding more rows with sample {sample} in ALLELES table",
                                               "Sample Deletion Error", parent)
 
     single_allele = False
+    files = None
     if success:
         if not data:  # sample was only contained in this project and only had one allele
             single_allele = True
             delete_q_samples = "delete from SAMPLES where sample_id_int = '{}'".format(sample)
             success, _ = db_internal.execute_query(delete_q_samples, 0, log,
-                                                   "Deleting sample {} from SAMPLES table".format(sample),
+                                                   f"Deleting sample {sample} from SAMPLES table",
                                                    "Sample Deletion Error", parent)
             if success:
                 log.debug("\t=> Successfully deleted sample from table SAMPLES")
 
-        files_q = "select raw_file, fasta, blast_xml, ena_file, ena_response_file, ipd_submission_file from FILES where sample_id_int = '{}' and allele_nr = {}".format(
-            sample, nr)
+        files_q = """select raw_file, fasta, blast_xml, ena_file, ena_response_file, ipd_submission_file from FILES 
+                    where sample_id_int = '{}' and allele_nr = {}""".format(sample, nr)
         success, files = db_internal.execute_query(files_q, 6, log,
-                                                   "Getting files of sample {} #{} from FILES table".format(sample, nr),
+                                                   f"Getting files of sample {sample} #{nr} from FILES table",
                                                    "Sample Deletion Error", parent)
         if success:
 
-            delete_q_files = "delete from FILES where sample_id_int = '{}' and allele_nr = {}".format(sample, nr)
+            delete_q_files = f"delete from FILES where sample_id_int = '{sample}' and allele_nr = {nr}"
             success, _ = db_internal.execute_query(delete_q_files, 0, log,
-                                                   "Deleting sample {} from FILES table".format(sample),
+                                                   f"Deleting sample {sample} from FILES table",
                                                    "Sample Deletion Error", parent)
             if success:
                 log.debug("\t=> Successfully deleted sample from table FILES")
 
     # delete from disk space:
-    log.debug(
-        "Attempting to delete sample {} allele #{} of project '{}' from file system...".format(sample, nr, project))
+    log.debug("Deleting from file system...")
     sample_dir = os.path.join(settings["projects_dir"], project, sample)
     if files:
         for myfile in files[0]:
             if myfile:
-                log.debug("\tDeleting {}...".format(myfile))
+                log.debug(f"\tDeleting {myfile}...")
                 try:
                     os.remove(os.path.join(sample_dir, myfile))
                 except Exception:
                     log.debug("\t\t=> Could not delete")
 
     if single_allele:
-        log.debug("\tDeleting sample dir {}...".format(sample_dir))
+        log.debug(f"\tDeleting sample dir {sample_dir}...")
         try:
             os.removedirs(sample_dir)
         except Exception as E:
             log.exception(E)
     log.debug(
-        "=> Sample {} #{} of project {} successfully deleted from database and file system".format(sample, nr, project))
+        f"=> Sample {sample} #{nr} of project {project} successfully deleted from database and file system")
 
 
 def delete_all_samples_from_project(project_name, settings, log, parent=None):
@@ -903,17 +905,18 @@ pass
 def main(settings, log, mydb):
     project_name = "20200128_ADMIN_DRB1_test124"
     # sample_id_int = 'ID13107882'
-    sample_id_int = "ID100000"
-    sample_id_ext = "test2"
+    sample_id_int = "ID_should_not_pass"
+    sample_id_ext = "test3"
     # raw_path = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\124_DRB1_incorrect_confirmation\end_del3.fa"
     customer = "DKMS"
-    raw_path = r"\\nasdd12\daten\data\Typeloader\staging\data_unittest\new_allele_xml\5597571.xml"
-    incomplete_ok = True
-    # upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_path, customer, settings, mydb, log, incomplete_ok)
-        # delete_sample(sample_id_int, 1, project_name, settings, log, parent = None)
+    raw_path = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\125_weird_X_allele\1373616_A.fa"
+    incomplete_ok = False
+    upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_path, customer, settings, mydb, log, incomplete_ok)
+    log.debug("--------------------------------------------")
+    delete_sample(sample_id_int, 1, project_name, settings, log)
 
-    from src.typeloader_core import make_imgt_files as MIF
-    from src.GUI_forms_submission_IPD import TargetAllele
+    # from src.typeloader_core import make_imgt_files as MIF
+    # from src.GUI_forms_submission_IPD import TargetAllele
     # results = MIF.make_imgt_data(r"\\nasdd12\daten\data\Typeloader\admin\projects\20200128_ADMIN_DRB1_test124",
     #                              [('ID13107882', 'DKMS-LSL_ID13107882_DRB1_9', '')],
     #                              {'DKMS-LSL_ID13107882_DRB1_9': {'blast_xml': 'DKMS-LSL_ID13107882_DRB1_9.blast.xml',
@@ -925,27 +928,29 @@ def main(settings, log, mydb):
     #                              ,
     #                              r"\\nasdd12\daten\data\Typeloader\admin\temp\fake_befunde.csv",
     #                              settings, log)
-    project_dir = r"\\nasdd12\daten\data\Typeloader\admin\projects\20200213_ADMIN_HLA-A_test124"
 
-    allele = "DKMS-LSL_ID11273358_DRB1_1"
-    locus = "HLA-DRB1"
-    samples = [('ID11273358', allele, '')]
-    file_dic = {f'{allele}': {'blast_xml': f'{allele}.blast.xml',
-                              'ena_file': f'{allele}.ena.txt'}}
-    allele_dic = {f'{allele}': TargetAllele(gene=locus,
-                                            target_allele=f'{locus}*01:new',
-                                            partner_allele=f'{locus}*01:01:01:01')}
-    cellEnaIdMap = {f'{allele}': '96901LSB'}
-    geneMapENA = {f'{allele}': locus}
-    befund_csv_file = r"\\nasdd12\daten\data\Typeloader\admin\temp\fake_befunde.csv"
-    results = MIF.make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, geneMapENA, befund_csv_file,
-                                 settings, log)
+    # project_dir = r"\\nasdd12\daten\data\Typeloader\admin\projects\20200213_ADMIN_HLA-A_test124"
+    #
+    # allele = "DKMS-LSL_ID11273358_DRB1_1"
+    # locus = "HLA-DRB1"
+    # samples = [('ID11273358', allele, '')]
+    # file_dic = {f'{allele}': {'blast_xml': f'{allele}.blast.xml',
+    #                           'ena_file': f'{allele}.ena.txt'}}
+    # allele_dic = {f'{allele}': TargetAllele(gene=locus,
+    #                                         target_allele=f'{locus}*01:new',
+    #                                         partner_allele=f'{locus}*01:01:01:01')}
+    # cellEnaIdMap = {f'{allele}': '96901LSB'}
+    # geneMapENA = {f'{allele}': locus}
+    # befund_csv_file = r"\\nasdd12\daten\data\Typeloader\admin\temp\fake_befunde.csv"
+    # results = MIF.make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, geneMapENA, befund_csv_file,
+    #                              settings, log)
+    #
+    # try:
+    #     print(results[0]['DKMS10009742'].split("CC   ")[1].split("\n")[0])
+    # except:
+    #     print("Could not find IPD file for this submission number!")
+    #     print(results[0])
 
-    try:
-        print(results[0]['DKMS10009742'].split("CC   ")[1].split("\n")[0])
-    except:
-        print("Could not find IPD file for this submission number!")
-        print(results[0])
 
 
 
