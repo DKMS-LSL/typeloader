@@ -50,7 +50,7 @@ from PyQt5.QtCore import Qt
 # test parameters:
 
 delete_all_stuff_at_the_end = True  # deletes database entries and project directory
-skip_other_tests = False  # can be set to True to skip all tests except the one currently worked at (out-comment it there in setUpClass)
+skip_other_tests = False  # set to True to skip all tests except the current WiP (out-comment it there in setUpClass)
 project_name = ""  # this will be set in create project
 
 samples_dic =  {# samples to test 
@@ -2267,7 +2267,32 @@ class TestDeleteOtherAllele(unittest.TestCase):
             self.assertFalse(os.path.isfile(new_file))
 
 
-class Test_Clean_Stuff(unittest.TestCase):
+class TestRejectionDeviance(unittest.TestCase):
+    """Test whether alleles too different from all known full length alleles are rejected (#138)
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping TestRejectionDeviance because skip_other_tests is set to True")
+        else:
+            self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "deviance")
+            self.myfile = os.path.join(self.mydir, "2DS1_deviant.fa")
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test_rejection(self):
+        """testing whether known deviant allele is rejected correctly
+        """
+        self.assertTrue(os.path.isfile(self.myfile))
+        (_, _, _, _, blastXmlFile, target_family,
+                            _, _, _) = typeloader_functions.upload_parse_sequence_file(self.myfile, curr_settings, log)
+        with self.assertRaises(errors.DevianceError):
+            closestAlleles = CA.get_closest_known_alleles(blastXmlFile, target_family, curr_settings, log)
+
+
+class TestCleanStuff(unittest.TestCase):
     """
     Remove all directories and files written by  all unit tests
     """

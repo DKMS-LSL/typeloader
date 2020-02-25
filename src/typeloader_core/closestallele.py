@@ -154,7 +154,7 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
 
     if not alignments:
         log.error("No alignment found, sorry! Aborting...")
-        return
+        return hsp_query, hsp_subject, hsp_match, hsp_align_len, hsp_start
     if len(alignments) > 1:
         log.warning(f"Found {len(alignments)} possible alignments, choosing one at random (might not be the best one)!")
 
@@ -174,6 +174,13 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
     missing_base_num_end_query = query_seq[-60:][::-1].find(hsp_query[-50:][::-1])  # unaligned bases of the query
 
     if missing_base_num_start_ref > 0:  # problem at sequence start
+        if missing_base_num_start_query > 3:  # different problem; probably #138
+            msg = f"{missing_base_num_start_query} unaligned bases at alignment start: "
+            msg += "This sequence is probably too dissimilar to all known full-length alleles.\n"
+            msg += "TypeLoader currently can't handle this allele, sorry!"
+            log.warning(msg)
+            raise errors.DevianceError(missing_base_num_start_query)
+
         log.debug(f"{missing_base_num_start_ref} bases missing at alignment start (= {missing_base_num_start_query} bases of the query)")
         missing_bases_ref = ref_seq[q_start: q_start + missing_base_num_start_ref]
         missing_bases_query = query_seq[:missing_base_num_start_query]

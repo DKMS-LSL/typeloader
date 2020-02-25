@@ -13,14 +13,14 @@ class IncompleteSequenceWarning(Exception):
     def __init__(self, missing_bp_front, missing_bp_end):
         self.missing_bp_front = missing_bp_front
         self.missing_bp_end = missing_bp_end
-        
+
         missing = []
         if self.missing_bp_front:
             missing.append("the first {} bp (5' end)".format(self.missing_bp_front))
         if self.missing_bp_end:
             missing.append("the last {} bp (3' end)".format(self.missing_bp_end))
         self.missing = " and ".join(missing)
-        
+
         self.msg = "This sequence misses {}!\nDo you want to upload it anyway?\n".format(self.missing)
         self.msg += "(Note that IPD requires at least 1 bp per UTR to be contained in genomic sequences.)\n\n"
         self.msg += "Please consider carefully: this might lead to an incorrect closest allele being selected. "
@@ -64,4 +64,16 @@ class InvalidPretypingError(Exception):
                     self.allele_name = allele_name + ":new"
         self.alleles = ",".join(alleles) # list of both alleles from the pretypings csv
         self.problem = problem
-        
+
+
+class DevianceError(Exception):
+    """raised when TypeLoader encounters a sequence that is too different from all known full-length alleles,
+    which makes BLAST produce nonsense alignments (#138)
+    """
+
+    def __init__(self, unaligned_bp_front):
+        self.unaligned_bp_front = unaligned_bp_front
+
+        self.msg = f"{self.unaligned_bp_front} unaligned bases at alignment start:\n"
+        self.msg += "This sequence is probably too dissimilar to all known full-length alleles.\n\n"
+        self.msg += "TypeLoader currently can't handle this allele, sorry!"

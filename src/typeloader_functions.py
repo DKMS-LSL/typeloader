@@ -242,6 +242,8 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 return False, "Incomplete sequence", E.msg
             except errors.MissingUTRError as E:
                 return False, "Missing UTR", E.msg
+            except errors.DevianceError as E:
+                return False, "Allele too divergent", E.msg
 
             genDxAlleleNames = list(closestAlleles.keys())
             if closestAlleles[genDxAlleleNames[0]] == 0 or closestAlleles[genDxAlleleNames[1]] == 0:
@@ -282,6 +284,8 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 return False, "Incomplete sequence", E.msg
             except errors.MissingUTRError as E:
                 return False, "Missing UTR", E.msg
+            except errors.DevianceError as E:
+                return False, "Allele too divergent", E.msg
             except ValueError as E:
                 empty_xml = False
                 if E.args:
