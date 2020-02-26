@@ -26,7 +26,7 @@ from PyQt5.QtGui import QIcon
 import general, db_internal
 from typeloader_core import make_imgt_files as MIF
 from GUI_forms import (CollapsibleDialog, ChoiceSection, FileChoiceTable,
-                       FileButton, ProceedButton, QueryButton)
+                       FileButton, ProceedButton, QueryButton, check_project_open)
 from GUI_forms_submission_ENA import ProjectInfoTable
 from GUI_misc import settings_ok
 from GUI_functions_local import check_local, check_nonproductive, make_fake_ENA_file, get_pretypings_from_oracledb
@@ -404,13 +404,16 @@ class IPDSubmissionForm(CollapsibleDialog):
     """
     IPD_submitted = pyqtSignal()
     
-    def __init__(self, log, mydb, project, settings, parent = None):
+    def __init__(self, log, mydb, project, settings, parent=None):
         """initiates the IPDSubmissionForm
         """
         self.log = log
         self.log.info("Opening 'IPD Submission' Dialog...")
         self.mydb = mydb
-        self.project = project
+        if check_project_open(project, log, parent=parent):
+            self.project = project
+        else:
+            self.project = ""
         self.settings = settings
         self.label_width = 150
         super().__init__(parent)

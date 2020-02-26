@@ -26,7 +26,7 @@ except ImportError:
     from typeloader_core import errors
 
 from GUI_forms import (CollapsibleDialog, ChoiceSection, 
-                       FileButton, ProceedButton, QueryButton, NewProjectButton)
+                       FileButton, ProceedButton, QueryButton, NewProjectButton, check_project_open)
 from GUI_misc import settings_ok
 
 #===========================================================
@@ -187,16 +187,19 @@ class NewAlleleForm(CollapsibleDialog):
     new_allele = pyqtSignal(str)
     refresh_alleles = pyqtSignal(str, str)
     
-    def __init__(self, log, mydb, current_project, settings, parent = None, sample_ID_int = None, sample_ID_ext = None):
+    def __init__(self, log, mydb, current_project, settings, parent=None, sample_ID_int=None, sample_ID_ext=None):
         self.log = log
         self.mydb = mydb
-        self.current_project = current_project
         self.settings = settings
+        if check_project_open(current_project, log, parent=parent):
+            self.current_project = current_project
+        else:
+            self.current_project = ""
         super().__init__(parent)
         log.debug("Opening 'New Allele' Dialog...")
         self.raw_path = None
         self.project = None
-        self.resize(1000,800)
+        self.resize(1000, 800)
         self.setWindowTitle("Add new target allele")
         self.setWindowIcon(QIcon(general.favicon))
         self.show()
@@ -211,7 +214,8 @@ class NewAlleleForm(CollapsibleDialog):
         if not ok:
             QMessageBox.warning(self, "Missing settings", msg)
             self.close()
-        
+
+
     def define_sections(self):
         """defining the dialog's sections
         """
@@ -692,5 +696,4 @@ if __name__ == '__main__':
     close_connection(log, mydb)
     log.info("<End>")
     sys.exit(result)
-#     sys.exit(app.exec_())
 

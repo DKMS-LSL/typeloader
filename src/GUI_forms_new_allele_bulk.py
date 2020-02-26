@@ -22,7 +22,7 @@ from PyQt5.QtGui import QIcon
 import general, typeloader_functions as typeloader, db_internal
 
 from GUI_forms import (CollapsibleDialog, ChoiceSection, 
-                       FileButton, ProceedButton, QueryButton, NewProjectButton)
+                       FileButton, ProceedButton, QueryButton, NewProjectButton, check_project_open)
 from GUI_misc import settings_ok
 
 #===========================================================
@@ -50,16 +50,19 @@ class NewAlleleBulkForm(CollapsibleDialog):
     """
     refresh_project = pyqtSignal(str)
         
-    def __init__(self, log, mydb, current_project, settings, parent = None):
+    def __init__(self, log, mydb, current_project, settings, parent=None):
         self.log = log
         self.mydb = mydb
-        self.current_project = current_project
+        if check_project_open(current_project, log, parent=parent):
+            self.current_project = current_project
+        else:
+            self.current_project = ""
         self.settings = settings
         super().__init__(parent)
         self.log.debug("Opening 'New Allele Bulk Upload' Dialog...")
         self.raw_path = None
         self.project = None
-        self.resize(800,300)
+        self.resize(800, 300)
         self.setWindowTitle("Add new target alleles (bulk fasta upload)")
         self.setWindowIcon(QIcon(general.favicon))
         
