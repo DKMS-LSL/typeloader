@@ -285,6 +285,15 @@ class NewAlleleForm(CollapsibleDialog):
         """
         try:
             self.project = self.proj_widget.field.text().strip()
+
+            proj_open = check_project_open(self.project, self.log, self)
+            if not proj_open:
+                msg = f"Project {self.project} is currently closed! You cannot add alleles to closed projects.\n"
+                msg += "To add alleles to this project, please open its ProjectView and click the 'Reopen Project' button!"
+                msg += "\nAlternatively, please choose a different project."
+                self.log.warning(msg)
+                QMessageBox.warning(self, "This project is closed!", msg)
+                return False
             
             raw_path = self.file_widget.field.text()
             self.upload_btn.setChecked(False)
@@ -687,7 +696,7 @@ if __name__ == '__main__':
     mydb = create_connection(log, mysettings["db_file"])
     
     app = QApplication(sys.argv)
-    ex = NewAlleleForm(log, mydb, "20200219_ADMIN_HLA-E_115both", mysettings)
+    ex = NewAlleleForm(log, mydb, "20180709_ADMIN_mixed_bla", mysettings)
 #     ex = QueryBox(log, mysettings)
     ex.show()
     

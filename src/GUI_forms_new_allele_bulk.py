@@ -106,7 +106,7 @@ class NewAlleleBulkForm(CollapsibleDialog):
         
         self.proj_widget.choice.connect(self.get_project)
         layout.addWidget(self.proj_widget)
-        
+
         self.upload_btn = ProceedButton("Upload", [self.file_widget.field, self.proj_widget.field], self.log, 0)
         layout.addWidget(self.upload_btn)
         self.file_widget.choice.connect(self.upload_btn.check_ready)
@@ -128,7 +128,7 @@ class NewAlleleBulkForm(CollapsibleDialog):
         """
         self.project = project.strip()
         self.log.debug("Chose project {}...".format(self.project))
-    
+
     @pyqtSlot()
     def confirm_upload(self):
         msg = "Are you really sure you want to upload all these alleles at once?\n"
@@ -145,14 +145,25 @@ class NewAlleleBulkForm(CollapsibleDialog):
     def perform_bulk_upload(self, auto_confirm = False):
         """parses chosen file & uploads all alleles
         """
+        self.project = self.proj_widget.field.text().strip()
+        self.csv_file = self.file_widget.field.text().strip()
+
+        proj_open = check_project_open(self.project, self.log, self)
+        if not proj_open:
+            msg = f"Project {self.project} is currently closed! You cannot add alleles to closed projects.\n"
+            msg += "To add alleles to this project, please open its ProjectView and click the 'Reopen Project' button!"
+            msg += "\nAlternatively, please choose a different project."
+            self.log.warning(msg)
+            QMessageBox.warning(self, "This project is closed!", msg)
+            return False
+
+        self.log.debug("Project is open, continuing...")
+
         if not auto_confirm:
             confirmed = self.confirm_upload()
             if not confirmed:
-                return
-            
-        self.project = self.proj_widget.field.text().strip()
-        self.csv_file = self.file_widget.field.text().strip()
-        
+                return False
+
         try:
             report, self.errors_found = typeloader.bulk_upload_new_alleles(self.csv_file, self.project, 
                                                                            self.settings, self.mydb, self.log)
@@ -162,6 +173,7 @@ class NewAlleleBulkForm(CollapsibleDialog):
             self.log.error(E)
             self.log.exception(E)
             QMessageBox.warning(self, "Unexpected problem!", "An unexpected error occurred during bulk upload:\n\n{}".format(repr(E)))
+            return False
         
         self.ok_btn.setStyleSheet(general.btn_style_ready)
         self.ok_btn.setEnabled(True)

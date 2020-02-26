@@ -203,8 +203,9 @@ class ENASubmissionForm(CollapsibleDialog):
         """proceed to next section
         """
         self.project = self.proj_widget.field.text()
-        self.refresh_section2()
-        self.proceed_sections(0, 1)
+        success = self.refresh_section2()
+        if success:
+            self.proceed_sections(0, 1)
         
     def refresh_section2(self):
         """refreshes data in section2 after project has been changed
@@ -215,6 +216,17 @@ class ENASubmissionForm(CollapsibleDialog):
             self.project_files.refresh(self.project)
         except Exception as E:
             self.log.exception(E)
+
+        proj_open = check_project_open(self.project, self.log, self)
+        if not proj_open:
+            msg = f"Project {self.project} is currently closed! You cannot submit ENA-files from closed projects.\n"
+            msg += "To submit alleles of this project to ENA, please open its ProjectView "
+            msg += "and click the 'Reopen Project' button!"
+            msg += "\nAlternatively, please choose a different project."
+            self.log.warning(msg)
+            QMessageBox.warning(self, "This project is closed!", msg)
+            return False
+        return True
         
     def define_section2(self, initial = True):
         """defining section 2: choose alleles
