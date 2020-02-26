@@ -38,7 +38,7 @@ import GUI_forms_new_allele as ALLELE
 import GUI_forms_new_allele_bulk as BULK
 import GUI_forms_submission_ENA as ENA
 import GUI_forms_submission_IPD as IPD
-import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample
+import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample, GUI_forms
 import typeloader_functions
 from GUI_login import base_config_file
 
@@ -295,6 +295,57 @@ class Test_1_Create_Project(unittest.TestCase):
         self.assertEqual(root[0].attrib["accession"], self.form.accession)
         self.assertEqual(root[1].attrib["alias"], self.form.project_name + "_sub")
         self.assertEqual(root[2][0].text, "Submission has been committed.")
+
+
+class Test_2_ProjectStatus(unittest.TestCase):
+    """ check toggling of project status
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping ProjectStatus Test because skip_other_tests is set to True")
+        else:
+            self.project = project_name
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test1_get_status(self):
+        """test if we can get the status of our new project correctly
+        """
+        project_open = GUI_forms.check_project_open(self.project, log)
+        self.assertEqual(project_open, True)
+
+    def test2_get_status_nonsense(self):
+        """test if we get status 'Open' for a non-existing project
+        (policy: when in doubt, treat as 'Open')
+        """
+        project_open = GUI_forms.check_project_open("bla", log)
+        self.assertEqual(project_open, True)
+
+    def test3_toggle_status_to_closed(self):
+        """test if we can toggle the status of our project to 'Closed'
+        """
+        success, new_status, new_index = typeloader_functions.toggle_project_status(self.project, "Open", log)
+        self.assertEqual(success, True)
+        self.assertEqual(new_status, "Closed")
+        self.assertEqual(new_index, 1)
+
+    def test4_get_status_closed(self):
+        """test if we can get the status correctly if project is closed
+        """
+        project_open = GUI_forms.check_project_open(self.project, log)
+        self.assertEqual(project_open, False)
+
+    def test5_toggle_status_to_open(self):
+        """test if we can toggle the project status back to 'Open'
+        """
+        success, new_status, new_index = typeloader_functions.toggle_project_status(self.project, "Closed", log)
+        self.assertEqual(success, True)
+        self.assertEqual(new_status, "Open")
+        self.assertEqual(new_index, 0)
+
 
 
 class Test_Create_New_Allele(unittest.TestCase):
