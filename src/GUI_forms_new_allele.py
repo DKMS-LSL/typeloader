@@ -300,7 +300,6 @@ class NewAlleleForm(CollapsibleDialog):
             else:
                 self.log.debug("\t=> success")
                 self.success_upload, sample_name, self.filetype, self.temp_raw_file, self.blastXmlFile, self.targetFamily, self.fasta_filename, self.allelesFilename, self.header_data = results
-                print(self.blastXmlFile)
                 typeloader.reformat_header_data(self.header_data, self.sample_id_ext, self.log)
                 if not self.sample_name:
                     self.sample_name = sample_name

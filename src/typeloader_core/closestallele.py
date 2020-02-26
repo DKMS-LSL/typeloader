@@ -12,15 +12,16 @@ This routine makes the following assumptions :
 from Bio.Blast import NCBIXML
 from Bio import SeqIO
 from Bio import Align
-from sys import argv
 import os
 import re
 
-from . import EMBLfunctions as EF
-import ntpath
-
+try:
+    from . import errors
+except ImportError:
+    import errors
 
 ###################################################
+
 
 def get_closest_known_alleles(blast_xml_filename, target_family, settings, log):
     with open(blast_xml_filename) as xmlHandle:

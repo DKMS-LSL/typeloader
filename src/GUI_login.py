@@ -676,8 +676,7 @@ def config_files_missing():
             raise IOError("File {} does not exist! Please create it before trying again!\nAborting...".format(myfile))
             return True
     return False
-    
-    
+
 
 # def generate_inis(log):
 #     from settings_ import user_dic
@@ -711,12 +710,12 @@ def check_root_path(root_path):
     else:
         try:
             os.makedirs(general_dir)
-            print ("Created {}".format(general_dir))
+            print("Created {}".format(general_dir))
             with open(counter_config, "w") as g:
                 g.write("[Counter]\nipd_submissions = 0\n")
-            print ("Created counter config file")
+            print("Created counter config file")
         except OSError as e:
-            if e.errno != errno.EEXIST: # if dir creation fails for any reason except "dir exists already" 
+            if e.errno != errno.EEXIST:  # if dir creation fails for any reason except "dir exists already"
                 raise
 
 pass

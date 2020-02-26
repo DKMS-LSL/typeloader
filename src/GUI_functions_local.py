@@ -164,7 +164,6 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
             befunde = copy.copy(default_dic)
             # overwrite pretyping of target allele:
             if not mygene in gene_dic:
-                print(mygene)
                 gene_dic[mygene] = ["{}_1".format(mygene), "{}_2".format(mygene)]
                 columns += gene_dic[mygene]
                 for col in gene_dic[mygene]:
@@ -175,7 +174,7 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
                         partner_allele = "{}001".format(mygene[-1])
                     befunde[mygene] = "{}+{}".format(target_allele, partner_allele).replace("MICA*","A")
                 else:
-                    print("Cannot generate sensible fake pretyping: {} should have 2 columns!".format(mygene))
+                    log.error("Cannot generate sensible fake pretyping: {} should have 2 columns!".format(mygene))
             else:
                 for i, col in enumerate(gene_dic[mygene]):
                     if i == 0:
