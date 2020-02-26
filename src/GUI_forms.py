@@ -600,14 +600,17 @@ def check_project_open(project_name, log, parent=None):
     success, data = db_internal.execute_query(query, 1, log,
                                               f"retrieving project status of project {project_name} from database",
                                               parent=parent)
-    if success:
+    if success and data:
         project_open = True
         status = data[0][0]
         if status.lower() == "closed":
             project_open = False
         log.info(f"\t=> project status: {status}")
     else:
-        log.warning(data)
+        if success and not data:
+            log.warning(f"\t=> Project {project_name} was not found!")
+        else:
+            log.warning(data)
         project_open = True  # when in doubt, err on the side of giving access to the project
 
     return project_open

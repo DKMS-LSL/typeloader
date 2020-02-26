@@ -97,6 +97,29 @@ class Allele:
 # ===========================================================
 # functions:
 
+
+def toggle_project_status(proj_name, curr_status, log, values=["Open", "Closed"],
+                          texts=["Close Project", "Reopen Project"], parent=None):
+    """toggles the status of a given project between 'Open' and 'Closed';
+    returns success (bool) + the new status (str)
+    """
+    # ToDO: handle "status toggling" if current status unknown
+    if curr_status == values[0]:
+        new_ix = 1
+    else:
+        new_ix = 0
+    new_value = values[new_ix]
+    log.info("Changing state of project '{}' to '{}'...".format(proj_name, new_value))
+    query = f"update PROJECTS set project_status = '{new_value}' where project_name = '{proj_name}'"
+    success, _ = db_internal.execute_query(query, 0, log, "Updating project status", "Update error", parent)
+    if success:
+        log.info(f"\t=> Success (emitting data_changed = '{proj_name}')")
+        return success, new_value, new_ix
+    else:
+        log.warning(f"Could not change status of project {proj_name}!")
+        return success, curr_status, 0
+
+
 def upload_parse_sequence_file(raw_path, settings, log):
     """uploads file from raw_path to temp_dir and parses it
     """
