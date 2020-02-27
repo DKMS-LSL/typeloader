@@ -622,7 +622,7 @@ def get_latest_version(myurl, repo, log):
         log.exception(E)   
              
     if version:
-        log.debug("\t\tlatest version: {}".format(version))
+        log.debug("\t\tlatest version on GitHub: {}".format(version))
         return version, msg
     else:
         log.debug("\t\t!Could not find version on the given page!")
@@ -651,7 +651,7 @@ def check_for_newer_version(myurl, repo, log):
             msg += "Please get the new version from {}!".format(repo)
             return newer_version, error, msg
         else:
-            log.info("\t=> You are currently using the newest version of TypeLoader. :)")
+            log.info("\t=> You are currently using the newest available version of TypeLoader. :)")
             return newer_version, error, False
     
     
