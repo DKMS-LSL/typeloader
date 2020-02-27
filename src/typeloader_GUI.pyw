@@ -243,8 +243,6 @@ class MainGUI(QMainWindow):
         self.toolbar.setMovable(False)
         self.toolbar.setFloatable(False)
 
-#         self.file_menu = self.menubar.addMenu('&Main')
-
         # analyse new sequence:
         self.new_menu = self.menubar.addMenu('&New')
 
@@ -324,6 +322,12 @@ class MainGUI(QMainWindow):
         man_act.setStatusTip("View TypeLoader's User Manual (online)")
         self.options_menu.addAction(man_act)
 
+        log_act = QAction("Download &Log file", self.options_menu)
+        log_act.setShortcut('Ctrl+L')
+        log_act.triggered.connect(self.open_LogDownloadDialog)
+        log_act.setStatusTip("Download a log file to send to the TypeLoader developers.")
+        self.options_menu.addAction(log_act)
+
 #         # generate status report:
 #         report_status_act = QAction('Generate status report', self)
 #         report_status_act.setShortcut('Ctrl+R')
@@ -399,6 +403,11 @@ class MainGUI(QMainWindow):
         """opens the 'ExampleFiles' dialog
         """
         GUI_user_manual.UserManualDialog(self.log, self)
+
+    def open_LogDownloadDialog(self):
+        """opens the 'LogFile' dialog
+        """
+        GUI_download_files.LogFileDialog(self.settings, self.log, self)
 
     def on_projects_changed(self):
         """when a new project has been created or a project been deleted,

@@ -38,7 +38,7 @@ import GUI_forms_new_allele as ALLELE
 import GUI_forms_new_allele_bulk as BULK
 import GUI_forms_submission_ENA as ENA
 import GUI_forms_submission_IPD as IPD
-import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample, GUI_forms
+import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample, GUI_forms, GUI_download_files
 import typeloader_functions
 from GUI_login import base_config_file
 
@@ -345,7 +345,6 @@ class Test_2_ProjectStatus(unittest.TestCase):
         self.assertEqual(success, True)
         self.assertEqual(new_status, "Open")
         self.assertEqual(new_index, 0)
-
 
 
 class Test_Create_New_Allele(unittest.TestCase):
@@ -1511,6 +1510,73 @@ class Test_Views(unittest.TestCase):
         test_tab5_ena(self)
         test_tab6_IPD(self) # #TODO: re-enable as soon as final state of IPD tab is decided upon
         test_tab7_history(self)
+
+
+class TestLogFileDialog(unittest.TestCase):
+    """tests whether logfile can be downloaded
+    """
+    logfile = None
+    target_path = None
+
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping TestLogFileDialog because skip_other_tests is set to True")
+        else:
+            self.dialog = GUI_download_files.LogFileDialog(curr_settings, log)
+            self.logfile = os.path.join(curr_settings["recovery_dir"], "testlog.log")
+            self.target_path = "mytestlog.log"
+            self.log_text = "This is a test logfile"
+            with open(self.logfile, "w") as g:
+                g.write(self.log_text)
+
+    @classmethod
+    def tearDownClass(self):
+        try:
+            for myfile in [self.logfile, self.target_path]:
+                os.remove(myfile)
+        except FileNotFoundError:
+            pass
+
+    def test1_path_rejected(self):
+        """test whether chosen logfile path is rejected if not in the right directory or wrong filetype
+        """
+        msg = self.dialog.get_file("test.log")
+        self.assertEqual(msg, "This file is not a logfile of the user you started this dialog from!")
+
+        msg = self.dialog.get_file(os.path.join(curr_settings["recovery_dir"],"test.db"))
+        self.assertEqual(msg, "This is not a log file! Please choose a file that ends with .log!")
+
+    def test2_path_caught(self):
+        """test whether valid logfile path is caught correctly
+        """
+        self.dialog.get_file(self.logfile)
+        self.assertEqual(self.dialog.file, self.logfile)
+
+    def test3_download_logfile(self):
+        """test if logfile can be downloaded successfully and correctly
+        """
+        # remove target file if existant and assure clean slate:
+        try:
+            os.remove(self.target_path)
+        except FileNotFoundError:
+            pass
+        self.assertFalse(os.path.isfile(self.target_path))
+
+        # download logfile:
+        self.dialog.download_file(self.target_path, suppress_messagebox=True)
+
+        # check downloaded logfile:
+        self.assertTrue(os.path.isfile(self.target_path))
+
+        with open(self.target_path, "r") as f:
+            text = f.read()
+            self.assertEqual(text, self.log_text)
+
+        # check that warning is created:
+        warning = self.dialog.warning
+        self.assertTrue(warning.startswith("Before sending this file to anyone, please open it in a text editor"))
+        # TODO: access the QMessagebox, ensure it is actually shown, and then close it
 
 
 class Test_Make_IMGT_Files_py(unittest.TestCase):
