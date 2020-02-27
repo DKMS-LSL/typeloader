@@ -1636,6 +1636,56 @@ class Test_Make_IMGT_Files_py(unittest.TestCase):
         os.remove(self.ipd_submission_zipfile)
 
 
+class TestMakeIMGTFilesWith5PrimeOverhang(unittest.TestCase):
+    """Test correct handling of fasta file containing a sequence that starts before the reference sequence
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "TestMakeIMGTFilesWith5PrimeOverhang because skip_other_tests is set to True")
+        else:
+            self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "start_overhang")
+            self.fasta_file = os.path.join(self.mydir, "sequence_starting_28bp_before_reference.fa")
+            self.submission_id = "DKMS900001"
+
+            self.project_name = project_name
+            self.project_dir = os.path.join(curr_settings["projects_dir"], self.project_name)
+            self.sample_id_int = "testIMGT2"
+            self.local_name = f'DKMS-LSL_{self.sample_id_int}_2DS3_1'
+            self.pretypings = os.path.join(self.mydir, "fake_befunde.csv")
+
+            self.samples = [(self.sample_id_int, self.local_name, '')]
+            self.file_dic = {self.local_name: {'blast_xml': f'{self.local_name}.blast.xml',
+                                               'ena_file': f'{self.local_name}.ena.txt'}}
+            self.allele_dic = {self.local_name: TargetAllele(gene='KIR2DS3',
+                                                             target_allele='KIR2DS3*0020103:new',
+                                                             partner_allele='KIR2DS3*0010301')}
+            self.ENA_id_map = {self.local_name: '15368J48'}
+            self.ENA_gene_map = {self.local_name: 'KIR2DS3'}
+
+            self.diff_string = "KIR2DS3*002new differs from KIR2DS3*0020103 like so : Mismatches = pos 447 in codon 128"
+            self.diff_string += " (TGC -> TGA);pos 6267 (G -> T);pos 6303 (T -> C);pos 6307 (T -> G);pos 6390 (G -> A);"
+            self.diff_string += "pos 6392 (A -> G);. Deletions = pos 15069 (T). Insertions = pos 15038 (C)."
+
+            typeloader_functions.upload_new_allele_complete(self.project_name, self.sample_id_int, "bla",
+                                                            self.fasta_file, "DKMS", curr_settings, mydb, log)
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test_diff_string_ok(self):
+        """test whether correct IPD diff string is generated, including correct codons
+        """
+        imgt_data, _, _ = MIF.make_imgt_data(self.project_dir, self.samples, self.file_dic, self.allele_dic,
+                                             self.ENA_id_map, self.ENA_gene_map, self.pretypings,
+                                             curr_settings, log)
+        self.assertTrue(imgt_data)
+        cell_line = list(imgt_data.keys())[0]
+        diff_string = imgt_data[cell_line].split("CC")[1].split("XX")[0].strip()
+        self.assertEqual(diff_string, self.diff_string)
+
+
 class Test_EMBL_functions(unittest.TestCase):
     """
     Test EMBL functions

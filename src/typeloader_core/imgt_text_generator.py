@@ -275,7 +275,8 @@ def make_imgt_footer(sequence, sequencewidth=60):
 
 
 def make_imgt_text(submissionId, cellLine, local_name, myallele, enaId, befund, closestAllele, diffToClosest, 
-                   imgtDiff, enafile, sequence, geneMap, missing_bp_start, missing_bp_end, settings, log):
+                   imgtDiff, enafile, sequence, geneMap, missing_bp_start, missing_bp_end,
+                   settings, log):
     
     [locus, self_name] = closestAllele.split("*")
     if locus.startswith("KIR"):

@@ -122,7 +122,13 @@ def update_IPD_counter(new_value, cf, config_file, lock_file, log):
 def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, geneMapENA, befund_csv_file,
                    settings, log):
     log.debug("Making IPD data...")
-
+    # print(project_dir)
+    # print(samples)
+    # print(file_dic)
+    # print(allele_dic)
+    # print(cellEnaIdMap)
+    # print(geneMapENA)
+    # print(befund_csv_file)
     geneMap = {"gene": [settings["gene_hla"], settings["gene_kir"]]}
     (patientBefundMap, customer_dic) = getPatientBefund(befund_csv_file)
     if not patientBefundMap:
@@ -260,8 +266,8 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
             imgt_data[submissionId] = make_imgt_text(submissionId, cell_line, local_name, allele_dic[local_name],
                                                      enaId, befund,
                                                      closestAllele, diffToClosest, imgtDiff,
-                                                     enafile, sequence, geneMap, missing_bp, missing_bp_end, settings,
-                                                     log)
+                                                     enafile, sequence, geneMap, missing_bp, missing_bp_end,
+                                                     settings, log)
         except BothAllelesNovelError as E:
             multi_dic[local_name] = [sample, local_name, E.allele, E.alleles]
         except InvalidPretypingError as E:

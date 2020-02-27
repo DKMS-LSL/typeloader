@@ -97,6 +97,7 @@ def parse_blast(xml_records, target_family, query_fasta_file, settings, log):
         query_sequence = SeqIO.to_dict(SeqIO.parse(query_fasta_file, "fasta"))[queryId].seq
         results = puzzle_HSPs_from_first_hit(hsps, ref_sequence, query_sequence, query_fasta_file)
         hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align_len = results
+        query_start_overhang = 0
 
         if hsp_query == "" and hsp_subject == "" and hsp_match == "":
             closestAlleles[queryId] = None
@@ -106,11 +107,10 @@ def parse_blast(xml_records, target_family, query_fasta_file, settings, log):
                 # print_me(hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align_len, queryLength)
                 results = fix_incomplete_alignment(ref_sequence, query_sequence, hsp_start, hsp_align_len, queryLength,
                                                    hsp_query, hsp_subject, hsp_match, log)
-                (hsp_query, hsp_subject, hsp_match, hsp_align_len, hsp_start) = results
-                # print_me(hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align_len, queryLength)
+                (hsp_query, hsp_subject, hsp_match, hsp_align_len, hsp_start, query_start_overhang) = results
             closestAlleles[queryId] = closest_allele_items(hsp_query, hsp_subject, hsp_match, closestAlleleName,
                                                            concatHSPS,
-                                                           hsp_start, hsp_align_len, queryLength)
+                                                           hsp_start, hsp_align_len, queryLength, query_start_overhang)
 
     if hsp_start != 1:
         log.warning("Incomplete sequence found: first {} bp missing!".format(hsp_start - 1))
@@ -165,14 +165,16 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
     # find alignment positions:
     aligned_query = a.aligned[0]
     q_start = aligned_query[0][0]
+    query_start_overhang = a.aligned[1][0][0]  # relevant if query has longer 5' UTR than reference
 
     # fix alignments:
 
-    # missing_base_num = query_length - hsp_align_len
     missing_base_num_start_ref = hsp_start - 1 - q_start  # unaligned bases of the reference
     missing_base_num_start_query = query_seq.find(hsp_query[:50])  # unaligned bases of the query
     missing_base_num_end_ref = ref_seq[::-1].find(hsp_subject[-50:][::-1])
     missing_base_num_end_query = query_seq[-60:][::-1].find(hsp_query[-50:][::-1])  # unaligned bases of the query
+    start_extended = 0
+    end_extended = 0
 
     if missing_base_num_start_ref > 0:  # problem at sequence start
         if missing_base_num_start_query > 3:  # different problem; probably #138
@@ -204,6 +206,8 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
             hsp_align_len += missing_base_num_start_ref
             hsp_start = hsp_start - missing_base_num_start_ref
 
+            start_extended = missing_base_num_start_ref
+
         else:  # InDel
             alignments = make_global_alignment(missing_bases_ref, missing_bases_query, log)
             a = alignments[0]
@@ -214,6 +218,11 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
             hsp_match = match_aligned.replace("-", " ").replace(".", " ") + hsp_match
             hsp_align_len += len(query_aligned)
             hsp_start = hsp_start - len(query_aligned)
+
+            start_extended = len(query_aligned)
+
+    if start_extended:
+        log.debug(f"\t=> alignment start extended by {start_extended} bp")
 
     if missing_base_num_end_query:  # problem at sequence end
         log.debug(f"{missing_base_num_end_ref} bases missing at alignment end (= {missing_base_num_end_query} bases of the query)")
@@ -236,6 +245,8 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
                     hsp_match += " "
             hsp_align_len += missing_base_num_end_ref
 
+            end_extended = missing_base_num_end_ref
+
         else:  # InDel
             alignments = make_global_alignment(missing_bases_ref, missing_bases_query, log)
             a = alignments[0]
@@ -249,11 +260,20 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
             hsp_match += match_aligned.replace("-", " ").replace(".", " ")
             hsp_align_len += len(query_aligned)
             # ToDo: adjust UTR boundaries afterwards to get the correct number of missing bases
-    return hsp_query, hsp_subject, hsp_match, hsp_align_len, hsp_start
+
+            end_extended = len(query_aligned)
+
+    if end_extended:
+        log.debug(f"\t=> alignment end extended by {end_extended} bp")
+
+    if not start_extended and not end_extended:
+        log.debug("\t=> did not extend alignment after all")
+
+    return hsp_query, hsp_subject, hsp_match, hsp_align_len, hsp_start, query_start_overhang
 
 
 def closest_allele_items(hsp_query, hsp_subject, hsp_match, closest_allele_name, concat_HSPs, hsp_start, hsp_align_len,
-                         query_length):
+                         query_length, query_start_overhang):
     # "-" in the query means a deletion, "-" in the hit means an insertion, a gap in the alignment is a mismatch
     deletionPositions = [pos + 1 for pos in range(len(hsp_query)) if hsp_query[pos] == "-"]
     insertionPositions = [pos + 1 for pos in range(len(hsp_subject)) if hsp_subject[pos] == "-"]
@@ -286,7 +306,8 @@ def closest_allele_items(hsp_query, hsp_subject, hsp_match, closest_allele_name,
                      "exactMatch": exactMatch, "concatHSPS": concat_HSPs,
                      "hitStart": hsp_start,
                      "alignLength": hsp_align_len,
-                     "queryLength": query_length}
+                     "queryLength": query_length,
+                     "queryStartOverhang": query_start_overhang}
 
     return closestAllele
 
