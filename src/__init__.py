@@ -9,7 +9,7 @@ __license__ = "MIT"
 __maintainer__ = "Bianca Schoene"
 __email__ = "schoene@dkms-lab.de"
 
-__version__ = "2.6.1"
+__version__ = "2.7.0"
 __status__ = "productive"
 __all__ = ["__init__", "typeloader_GUI", "general", "db_internal", "GUI_download_files", "GUI_flipped",
            "GUI_forms", "GUI_forms_new_allele", "GUI_forms_new_allele_bulk", "GUI_forms_new_project",
