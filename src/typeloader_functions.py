@@ -20,7 +20,7 @@ from Bio import SeqIO
 from src.typeloader_core import (EMBLfunctions as EF, coordinates as COO, backend_make_ena as BME,
                              backend_enaformat as BE, getAlleleSeqsAndBlast as GASB,
                              closestallele as CA, errors)
-from src import general, db_internal
+import general, db_internal
 # ===========================================================
 # parameters:
 
