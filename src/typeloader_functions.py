@@ -17,14 +17,14 @@ import string, random, time
 from collections import defaultdict
 from Bio import SeqIO
 
-from src.typeloader_core import (EMBLfunctions as EF, coordinates as COO, backend_make_ena as BME,
+from typeloader_core import (EMBLfunctions as EF, coordinates as COO, backend_make_ena as BME,
                              backend_enaformat as BE, getAlleleSeqsAndBlast as GASB,
                              closestallele as CA, errors)
 import general, db_internal
 # ===========================================================
 # parameters:
 
-from src.__init__ import __version__
+from __init__ import __version__
 
 flatfile_dic = {"function_hla": "antigen presenting molecule",
                 "function_kir": "killer-immunoglobulin receptor",
@@ -942,8 +942,8 @@ def main(settings, log, mydb):
     log.debug("--------------------------------------------")
     delete_sample(sample_id_int, 1, project_name, settings, log)
 
-    # from src.typeloader_core import make_imgt_files as MIF
-    # from src.GUI_forms_submission_IPD import TargetAllele
+    # from typeloader_core import make_imgt_files as MIF
+    # from GUI_forms_submission_IPD import TargetAllele
     # results = MIF.make_imgt_data(r"\\nasdd12\daten\data\Typeloader\admin\projects\20200128_ADMIN_DRB1_test124",
     #                              [('ID13107882', 'DKMS-LSL_ID13107882_DRB1_9', '')],
     #                              {'DKMS-LSL_ID13107882_DRB1_9': {'blast_xml': 'DKMS-LSL_ID13107882_DRB1_9.blast.xml',
@@ -982,7 +982,7 @@ def main(settings, log, mydb):
 
 
 if __name__ == "__main__":
-    from src.typeloader_GUI import create_connection, close_connection
+    from typeloader_GUI import create_connection, close_connection
     import GUI_login
 
     log = general.start_log(level="debug")
