@@ -81,7 +81,7 @@ def make_installer_text(myfiles, mydirs, curr_installer_text, log):
 def main(log):
     curr_dir = os.path.dirname(os.path.abspath(__file__))
     files, dirs = find_files_leftover_after_deinstaller(install_path, log)
-    if files:
+    if files or dirs:
         installer_text = read_installer(os.path.join(curr_dir, installer), log)
         make_installer_text(files, dirs, installer_text, log)
     else:
