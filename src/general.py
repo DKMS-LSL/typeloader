@@ -189,12 +189,18 @@ def read_package_variable(key):
     source: https://github.com/jacebrowning/template-python-demo/blob/8e8991138ad6fba7f91deb4c716cd80283c116f7/setup.py
     """
     init_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '__init__.py')
-    with open(init_path) as f:
-        for line in f:
-            parts = line.strip().split(' ')
-            if parts and parts[0] == key:
-                return parts[-1].strip('"').strip("'")
-    assert 0, "'{0}' not found in '{1}'".format(key, init_path)
+    if os.path.isfile(init_path):
+        with open(init_path) as f:
+            for line in f:
+                parts = line.strip().split(' ')
+                if parts and parts[0] == key:
+                    return parts[-1].strip('"').strip("'")
+
+        assert 0, "'{0}' not found in '{1}'".format(key, init_path)  # file found but key not in it
+
+    else:  # compiled version has no .py files anymore
+        from __init__ import __version__
+        return __version__
 
 
 def timestamp(date_format="%Y%m%d_%H-%M"):
