@@ -1,5 +1,14 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: cp1252 -*-
+'''
+Created on ?
+
+GUI_reference_fix.py
+
+a QDialog to replace a broken IPD release with an older working version
+
+@author: Bianca Schoene
+'''
 
 from PyQt5.QtWidgets import (QDialog, QFileDialog, QFormLayout,
                              QLabel, QApplication)
@@ -44,7 +53,7 @@ class ReferenceFixingDialog(QDialog):
         lbl.setStyleSheet(general.label_style_italic)
         layout.addRow(lbl)
         
-        msg = "Clicking this button will download an older, non-broken release for {} and TypeLoader will then use it as its reference."
+        msg = "Clicking this button will download an older, non-broken release from IPD and TypeLoader will then use it as its reference."
         
         layout.addRow(QLabel(""))
         hla_btn = QPushButton("Replace with trusted version!", self)

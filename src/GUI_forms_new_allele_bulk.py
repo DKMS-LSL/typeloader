@@ -22,14 +22,13 @@ from PyQt5.QtGui import QIcon
 import general, typeloader_functions as typeloader, db_internal
 
 from GUI_forms import (CollapsibleDialog, ChoiceSection, 
-                       FileButton, ProceedButton, QueryButton, NewProjectButton)
+                       FileButton, ProceedButton, QueryButton, NewProjectButton, check_project_open)
 from GUI_misc import settings_ok
 
 #===========================================================
 # parameters:
 min_num_prev_alleles = 5 # this many alleles have to be added manually before using bulk upload
 
-from __init__ import __version__
 #===========================================================
 # classes:
 
@@ -51,16 +50,19 @@ class NewAlleleBulkForm(CollapsibleDialog):
     """
     refresh_project = pyqtSignal(str)
         
-    def __init__(self, log, mydb, current_project, settings, parent = None):
+    def __init__(self, log, mydb, current_project, settings, parent=None):
         self.log = log
         self.mydb = mydb
-        self.current_project = current_project
+        if check_project_open(current_project, log, parent=parent):
+            self.current_project = current_project
+        else:
+            self.current_project = ""
         self.settings = settings
         super().__init__(parent)
         self.log.debug("Opening 'New Allele Bulk Upload' Dialog...")
         self.raw_path = None
         self.project = None
-        self.resize(800,300)
+        self.resize(800, 300)
         self.setWindowTitle("Add new target alleles (bulk fasta upload)")
         self.setWindowIcon(QIcon(general.favicon))
         
@@ -104,7 +106,7 @@ class NewAlleleBulkForm(CollapsibleDialog):
         
         self.proj_widget.choice.connect(self.get_project)
         layout.addWidget(self.proj_widget)
-        
+
         self.upload_btn = ProceedButton("Upload", [self.file_widget.field, self.proj_widget.field], self.log, 0)
         layout.addWidget(self.upload_btn)
         self.file_widget.choice.connect(self.upload_btn.check_ready)
@@ -126,7 +128,7 @@ class NewAlleleBulkForm(CollapsibleDialog):
         """
         self.project = project.strip()
         self.log.debug("Chose project {}...".format(self.project))
-    
+
     @pyqtSlot()
     def confirm_upload(self):
         msg = "Are you really sure you want to upload all these alleles at once?\n"
@@ -143,14 +145,25 @@ class NewAlleleBulkForm(CollapsibleDialog):
     def perform_bulk_upload(self, auto_confirm = False):
         """parses chosen file & uploads all alleles
         """
+        self.project = self.proj_widget.field.text().strip()
+        self.csv_file = self.file_widget.field.text().strip()
+
+        proj_open = check_project_open(self.project, self.log, self)
+        if not proj_open:
+            msg = f"Project {self.project} is currently closed! You cannot add alleles to closed projects.\n"
+            msg += "To add alleles to this project, please open its ProjectView and click the 'Reopen Project' button!"
+            msg += "\nAlternatively, please choose a different project."
+            self.log.warning(msg)
+            QMessageBox.warning(self, "This project is closed!", msg)
+            return False
+
+        self.log.debug("Project is open, continuing...")
+
         if not auto_confirm:
             confirmed = self.confirm_upload()
             if not confirmed:
-                return
-            
-        self.project = self.proj_widget.field.text().strip()
-        self.csv_file = self.file_widget.field.text().strip()
-        
+                return False
+
         try:
             report, self.errors_found = typeloader.bulk_upload_new_alleles(self.csv_file, self.project, 
                                                                            self.settings, self.mydb, self.log)
@@ -160,6 +173,7 @@ class NewAlleleBulkForm(CollapsibleDialog):
             self.log.error(E)
             self.log.exception(E)
             QMessageBox.warning(self, "Unexpected problem!", "An unexpected error occurred during bulk upload:\n\n{}".format(repr(E)))
+            return False
         
         self.ok_btn.setStyleSheet(general.btn_style_ready)
         self.ok_btn.setEnabled(True)
@@ -220,7 +234,7 @@ if __name__ == '__main__':
     from typeloader_GUI import create_connection, close_connection
     import GUI_login
     log = general.start_log(level="DEBUG")
-    log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
+    log.info("<Start {}>".format(os.path.basename(__file__)))
     sys.excepthook = log_uncaught_exceptions
     mysettings = GUI_login.get_settings("staging", log)
     mydb = create_connection(log, mysettings["db_file"])

@@ -20,16 +20,18 @@ from PyQt5.Qt import QWidget, pyqtSlot, pyqtSignal, QDialog, QPushButton
 from PyQt5.QtGui import QIcon
 
 import general, typeloader_functions as typeloader
-from typeloader_core import errors
+try:
+    from .typeloader_core import errors
+except ImportError:
+    from typeloader_core import errors
 
 from GUI_forms import (CollapsibleDialog, ChoiceSection, 
-                       FileButton, ProceedButton, QueryButton, NewProjectButton)
+                       FileButton, ProceedButton, QueryButton, NewProjectButton, check_project_open)
 from GUI_misc import settings_ok
 
 #===========================================================
 # parameters:
 
-from __init__ import __version__
 #===========================================================
 # classes:
 
@@ -185,16 +187,19 @@ class NewAlleleForm(CollapsibleDialog):
     new_allele = pyqtSignal(str)
     refresh_alleles = pyqtSignal(str, str)
     
-    def __init__(self, log, mydb, current_project, settings, parent = None, sample_ID_int = None, sample_ID_ext = None):
+    def __init__(self, log, mydb, current_project, settings, parent=None, sample_ID_int=None, sample_ID_ext=None):
         self.log = log
         self.mydb = mydb
-        self.current_project = current_project
         self.settings = settings
+        if check_project_open(current_project, log, parent=parent):
+            self.current_project = current_project
+        else:
+            self.current_project = ""
         super().__init__(parent)
         log.debug("Opening 'New Allele' Dialog...")
         self.raw_path = None
         self.project = None
-        self.resize(1000,800)
+        self.resize(1000, 800)
         self.setWindowTitle("Add new target allele")
         self.setWindowIcon(QIcon(general.favicon))
         self.show()
@@ -209,7 +214,8 @@ class NewAlleleForm(CollapsibleDialog):
         if not ok:
             QMessageBox.warning(self, "Missing settings", msg)
             self.close()
-        
+
+
     def define_sections(self):
         """defining the dialog's sections
         """
@@ -228,7 +234,7 @@ class NewAlleleForm(CollapsibleDialog):
         file_btn = FileButton("Choose XML or Fasta file", mypath, self)
         self.file_widget = ChoiceSection("Raw File:", [file_btn], self.tree)
         self.file_widget.choice.connect(self.get_file)
-        mypath = r"H:\Projekte\RnD\24_NeueAllele\3_Veröffentlichung\1.1_xmlExport_NGSengine\HLA-Klasse1\B4_B5\ID11558869.xml"
+        mypath = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\115_both_alleles\ID15777271.xml"
         if self.settings["modus"] == "debugging":
             self.file_widget.field.setText(mypath)
         layout.addWidget(self.file_widget)
@@ -279,6 +285,15 @@ class NewAlleleForm(CollapsibleDialog):
         """
         try:
             self.project = self.proj_widget.field.text().strip()
+
+            proj_open = check_project_open(self.project, self.log, self)
+            if not proj_open:
+                msg = f"Project {self.project} is currently closed! You cannot add alleles to closed projects.\n"
+                msg += "To add alleles to this project, please open its ProjectView and click the 'Reopen Project' button!"
+                msg += "\nAlternatively, please choose a different project."
+                self.log.warning(msg)
+                QMessageBox.warning(self, "This project is closed!", msg)
+                return False
             
             raw_path = self.file_widget.field.text()
             self.upload_btn.setChecked(False)
@@ -311,12 +326,12 @@ class NewAlleleForm(CollapsibleDialog):
             # process file & create Allele objects:
             self.header_data["sample_id_int"] = self.sample_name
             results = typeloader.process_sequence_file(self.project, self.filetype, self.blastXmlFile, self.targetFamily, self.fasta_filename, self.allelesFilename, self.header_data, self.settings, self.log)
-            if results[0] == False: # something went wrong
+            if not results[0]:  # something went wrong
                 if results[1] == "Incomplete sequence":
                     reply = QMessageBox.question(self, results[1], results[2], QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                     if reply == QMessageBox.Yes:
                         results = typeloader.process_sequence_file(self.project, self.filetype, self.blastXmlFile, self.targetFamily, self.fasta_filename, self.allelesFilename, self.header_data, self.settings, self.log, incomplete_ok=True)
-                        if results[0] == False:
+                        if not results[0]:
                             QMessageBox.warning(self, results[1], results[2])
                             return
                     else:
@@ -353,25 +368,18 @@ class NewAlleleForm(CollapsibleDialog):
         
         a1_new = False
         self.allele1_sec = AlleleSection("Allele 1:", self)
-        layout.addWidget(self.allele1_sec,0,0)
+        layout.addWidget(self.allele1_sec, 0, 0)
         
         a2_new = False
         self.allele2_sec = AlleleSection("Allele 2:", self)
-        layout.addWidget(self.allele2_sec,0,1)
+        layout.addWidget(self.allele2_sec, 0, 1)
         
         #ToDo: add closest alleles!
         
-        button_widget = QFrame(self) # contains both-checkbox & proceed-button
+        button_widget = QFrame(self)  # contains both-checkbox & proceed-button
         layout2 = QFormLayout()
         button_widget.setLayout(layout2)
-#         self.both_cbx = QCheckBox(self)
-#         self.both_cbx.clicked.connect(self.select_both)
-#         self.both_lbl = QLabel("Both alleles?")
-#         self.both_lbl.setStyleSheet(general.label_style_main)
-#         layout2.addRow(self.both_lbl, self.both_cbx)
-#         self.msg = QLabel("When selecting this option, please ensure\nyou have entered details for both alleles.")
-#         self.msg.setStyleSheet(general.label_style_normal)
-#         layout2.addRow(self.msg)
+
         layout2.addRow(QLabel("\n\n"))
         
         if a1_new:
@@ -380,23 +388,21 @@ class NewAlleleForm(CollapsibleDialog):
                 self.allele2_sec.checkbox.setChecked(True)
         elif a2_new:
             self.allele2_sec.checkbox.setChecked(True)
-#         self.allele1_sec.checkbox.clicked.connect(self.unselect_both_cbx)
         self.allele1_sec.checkbox.clicked.connect(self.unselect_other_box)
         self.allele2_sec.checkbox.clicked.connect(self.unselect_other_box)
-#         self.allele2_sec.checkbox.clicked.connect(self.unselect_both_cbx)
-        
+
         self.ok_btn = ProceedButton("Proceed", [self.allele1_sec.checkbox, self.allele2_sec.checkbox], self.log,
-                                    only1 = True)
+                                    only1=True)
         self.ok_btn.check_ready()
         self.ok_btn.clicked.connect(self.make_ENA_file)
         self.allele1_sec.selection_changed.connect(self.ok_btn.check_ready)
         self.allele2_sec.selection_changed.connect(self.ok_btn.check_ready)
         
         layout2.addRow(self.ok_btn)
-        layout.addWidget(button_widget, 0 ,3)
-        layout.setColumnStretch(0,1)
-        layout.setColumnStretch(1,1)
-        layout.setColumnStretch(2,0)
+        layout.addWidget(button_widget, 0, 3)
+        layout.setColumnStretch(0, 1)
+        layout.setColumnStretch(1, 1)
+        layout.setColumnStretch(2, 0)
         self.sections.append(("(2) Specify allele details:", mywidget))
     
     @pyqtSlot()
@@ -471,28 +477,32 @@ class NewAlleleForm(CollapsibleDialog):
         try:
             # get GUI data:
             self.allele1.geneName = self.allele1_sec.gene_field.text().strip()
-            self.allele1.alleleName = self.allele1_sec.GenDX_result#.split("-")[0]
+            self.allele1.alleleName = self.allele1_sec.GenDX_result
             self.allele1.newAlleleName = self.allele1_sec.name_field.text().strip()
             self.allele1.productName_DE = self.allele1_sec.product_field.text().strip()
             self.allele1.productName_FT = self.allele1.productName_DE
             self.allele1.partner_allele = self.allele2_sec.name_field.text().strip()
             
             self.allele2.geneName = self.allele2_sec.gene_field.text().strip()
-            self.allele2.alleleName = self.allele2_sec.GenDX_result#.split("-")[0]
+            self.allele2.alleleName = self.allele2_sec.GenDX_result
             self.allele2.newAlleleName = self.allele2_sec.name_field.text().strip()
             self.allele2.productName_DE = self.allele2_sec.product_field.text().strip()
             self.allele2.productName_FT = self.allele2.productName_DE
             self.allele2.partner_allele = self.allele1_sec.name_field.text().strip()
+
             if self.allele1_sec.checkbox.checkState():
                 self.myallele = self.allele1
+                other_allele_name = self.allele2.alleleName
                 self.log.debug("Choosing allele 1...")
             elif self.allele2_sec.checkbox.checkState():
                 self.myallele = self.allele2
+                other_allele_name = self.allele1.alleleName
                 self.log.debug("Choosing allele 2...")
                 #TODO: (future) implement possibility to add both alleles
             else:
-                QMessageBox.warning(self, "No allele chosen", "Please choose an allele to continue")
+                QMessageBox.warning(self, "No allele chosen", "Please choose an allele to continue!")
                 return
+            typeloader.remove_other_allele(self.blastXmlFile, self.fasta_filename, other_allele_name, self.log)
             try:
                 self.ENA_text = typeloader.make_ENA_file(self.blastXmlFile, self.targetFamily, self.myallele, self.settings, self.log)
             except errors.IncompleteSequenceWarning as E:
@@ -680,13 +690,13 @@ if __name__ == '__main__':
     from typeloader_GUI import create_connection, close_connection
     import GUI_login
     log = general.start_log(level="DEBUG")
-    log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
+    log.info("<Start {}>".format(os.path.basename(__file__)))
     sys.excepthook = log_uncaught_exceptions
     mysettings = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, mysettings["db_file"])
     
     app = QApplication(sys.argv)
-    ex = NewAlleleForm(log, mydb, "20190319_ADMIN_MIC_shortUTR3", mysettings)
+    ex = NewAlleleForm(log, mydb, "20180709_ADMIN_mixed_bla", mysettings)
 #     ex = QueryBox(log, mysettings)
     ex.show()
     
@@ -694,5 +704,4 @@ if __name__ == '__main__':
     close_connection(log, mydb)
     log.info("<End>")
     sys.exit(result)
-#     sys.exit(app.exec_())
 

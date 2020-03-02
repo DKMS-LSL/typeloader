@@ -28,7 +28,6 @@ from GUI_forms_new_project import NewProjectForm
 #===========================================================
 # parameters:
 
-from __init__ import __version__
 #===========================================================
 # classes:
  
@@ -586,7 +585,37 @@ class FileChoiceTable(QTableWidget):
                 box.setChecked(False)
                 self.files_chosen.emit(0)
 
-pass
+
+#===========================================================
+# functions:
+
+def check_project_open(project_name, log, parent=None):
+    """checks whether the current project is open or closed;
+    returns True if open, False if closed
+    """
+    if not project_name:  # if no project given, treat as "Open"
+        return True
+    log.info(f"Checking status of project {project_name}...")
+    query = f"select project_status from projects where project_name = '{project_name}'"
+    success, data = db_internal.execute_query(query, 1, log,
+                                              f"retrieving project status of project {project_name} from database",
+                                              parent=parent)
+    if success and data:
+        project_open = True
+        status = data[0][0]
+        if status.lower() == "closed":
+            project_open = False
+        log.info(f"\t=> project status: {status}")
+    else:
+        if success and not data:
+            log.warning(f"\t=> Project {project_name} was not found!")
+        else:
+            log.warning(data)
+        project_open = True  # when in doubt, err on the side of giving access to the project
+
+    return project_open
+
+
 #===========================================================
 # main:
         
@@ -594,14 +623,14 @@ if __name__ == '__main__':
     from typeloader_GUI import create_connection, close_connection
     import GUI_login
     log = general.start_log(level="DEBUG")
-    log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
+    log.info("<Start {}>".format(os.path.basename(__file__)))
     settings_dic = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, settings_dic["db_file"])
-    
+
     app = QApplication(sys.argv)
     ex = QueryDialog("select project_name from projects")
     ex.show()
-    
+
     result = app.exec_()
     close_connection(log, mydb)
     log.info("<End>")

@@ -20,14 +20,13 @@ from PyQt5.QtGui import QIcon
 
 import general, db_internal
 from GUI_forms import (CollapsibleDialog, ChoiceSection, 
-                       ProceedButton, QueryButton, FileChoiceTable)
+                       ProceedButton, QueryButton, FileChoiceTable, check_project_open)
 from GUI_misc import settings_ok
 from typeloader_functions import create_ENA_filenames, submit_sequences_to_ENA_via_CLI
 
 #===========================================================
 # parameters:
 
-from __init__ import __version__
 #===========================================================
 # classes:
 
@@ -141,11 +140,14 @@ class ENASubmissionForm(CollapsibleDialog):
     ENA_submitted = pyqtSignal()
     change_project = pyqtSignal(str, str)
     
-    def __init__(self, log, mydb, project, settings, parent = None):
+    def __init__(self, log, mydb, project, settings, parent=None):
         self.log = log
         self.log.debug("Opening 'ENA Submission' Dialog...")
         self.mydb = mydb
-        self.project = project
+        if check_project_open(project, log, parent=parent):
+            self.project = project
+        else:
+            self.project = ""
         self.settings = settings
         super().__init__(parent)
         
@@ -201,8 +203,9 @@ class ENASubmissionForm(CollapsibleDialog):
         """proceed to next section
         """
         self.project = self.proj_widget.field.text()
-        self.refresh_section2()
-        self.proceed_sections(0, 1)
+        success = self.refresh_section2()
+        if success:
+            self.proceed_sections(0, 1)
         
     def refresh_section2(self):
         """refreshes data in section2 after project has been changed
@@ -213,6 +216,17 @@ class ENASubmissionForm(CollapsibleDialog):
             self.project_files.refresh(self.project)
         except Exception as E:
             self.log.exception(E)
+
+        proj_open = check_project_open(self.project, self.log, self)
+        if not proj_open:
+            msg = f"Project {self.project} is currently closed! You cannot submit ENA-files from closed projects.\n"
+            msg += "To submit alleles of this project to ENA, please open its ProjectView "
+            msg += "and click the 'Reopen Project' button!"
+            msg += "\nAlternatively, please choose a different project."
+            self.log.warning(msg)
+            QMessageBox.warning(self, "This project is closed!", msg)
+            return False
+        return True
         
     def define_section2(self, initial = True):
         """defining section 2: choose alleles
@@ -450,7 +464,7 @@ if __name__ == '__main__':
     import GUI_login
     sys.excepthook = log_uncaught_exceptions
     log = general.start_log(level="DEBUG")
-    log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
+    log.info("<Start {}>".format(os.path.basename(__file__)))
     settings_dic = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, settings_dic["db_file"])
     

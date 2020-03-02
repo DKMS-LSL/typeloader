@@ -1,5 +1,14 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: cp1252 -*-
+'''
+Created on ?
+
+GUI_views_project.py
+
+classes involved in building the ProjectView for Typeloader
+
+@author: Bianca Schoene
+'''
 
 from PyQt5.QtSql import QSqlQueryModel, QSqlTableModel, QSqlQuery
 from PyQt5.QtWidgets import (QHeaderView, QGridLayout, QWidget, QMessageBox,
@@ -14,7 +23,7 @@ from db_internal import execute_query
 from GUI_overviews import (InvertedTable, FilterableTable, SqlQueryModel_filterable,
                            EditFilesButton, EditFileDialog,
                            DownloadFilesButton, DownloadFilesDialog)
-from __init__ import __version__
+from typeloader_functions import toggle_project_status
 
 #===========================================================
 # classes:
@@ -192,17 +201,10 @@ class ToggleProjectStatusButton(QPushButton):
     def toggle_data(self):
         """toggles the data of one cell between 2 defined states
         """
-        if self.curr_value == self.values[0]:
-            new_ix = 1
-        else:
-            new_ix = 0
-        new_value = self.values[new_ix]
-        self.log.info("Changing state of project '{}' to '{}'...".format(self.proj_name, new_value))
-        query = "update PROJECTS set project_status = '{}' where project_name = '{}'".format(new_value, self.proj_name)
-        success, _ = execute_query(query, 0, self.log, "Updating project status", "Update error", self)
+        success, self.curr_value, new_index = toggle_project_status(self.proj_name, self.curr_value, self.log, values=self.values,
+                                                        texts=self.texts, parent=self)
         if success:
-            self.curr_value = new_value
-            self.setText(self.texts[new_ix])
+            self.setText(self.texts[new_index])
             self.data_changed.emit(self.proj_name)
             self.log.info("\t=> Success (emitting data_changed = '{}')".format(self.proj_name))
             
@@ -397,7 +399,7 @@ def main():
     from typeloader_GUI import create_connection, close_connection
     import GUI_login
     log = general.start_log(level="DEBUG")
-    log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
+    log.info("<Start {}>".format(os.path.basename(__file__)))
     settings_dic = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, settings_dic["db_file"])
     app = QApplication(sys.argv)

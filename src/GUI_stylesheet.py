@@ -1,3 +1,15 @@
+#!/usr/bin/env python3
+# -*- coding: cp1252 -*-
+'''
+Created on ?
+
+GUI_stylesheet.py
+
+defined stylesheet info for a consistent color scheme in line with DKMS CI
+
+@author: Bianca Schoene
+'''
+
 color_dic = {"DKMSred" : "#E2001A",
              "DKMSyellow" : "#FDDB00",
              "DKMSpurple" : "#743BBC",

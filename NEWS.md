@@ -1,5 +1,24 @@
 # Version History
 
+## 2.7.0 (2020-02-27)
+### New Features:
+- KIR2DL5A and 2DL5B are now treated as separate loci, in accordance with IPD's wishes.
+- Ignore KIR pretypings for non-KIR IPD files, because IMGT/HLA cannot handle GL-strings. (#121)
+- If a lock is encountered during IPD submission, it is now shown who created the lock. This enables the user to better decide whether this is a crash leftover and can safely be removed. (#136)
+- If an allele is too different from all officially known alleles to handle correctly, this is now recognized and to the user. (#138) 
+- The 'Options' menu now offers the downloading of logfiles. (#105)
+
+### BugFixes:
+- TypeLoader now handles changes within the first or last 3 bp of the allele correctly. (#124)
+- Cleaner handling of XML input files: (#115)
+  - Apply sanity check to both alleles, not just the first.
+  - After user has chosen which allele to submit, delete the other one from this allele's files.
+  - Thereby, both alleles of one locus of one sample starting with the same first field are now handled correctly.
+- Alleles which start (slightly) before the 5' UTR of the reference allele are now handled correctly. (Previously the codons in the IPD difference strings were off.) (#143)
+- Whitespaces in input-filenames can now be handled. (#134)
+- Some adjustments for communication with the new ENA Webin CLI version. (#135)
+- Safety: Closed projects can no longer be used to add or sumbit alleles. (#58)
+
 ## 2.6.1. (2020-01-14)
 - BugFix: if rensponse from ENA's WebinCLI cannot be parsed, display it directly. (#135)
 
@@ -9,7 +28,7 @@
 - Adjusted the use of the tags "gene" and "pseudogene" in ENA files to the requirements of the new Webin CLI. (#130)
 
 ## V2.5.1 (2019-10-21)
-- Pretypings in GL-string form for non-KIR loci are now rejected. (#123)
+- During IPD file creation, reject GL strings in non-KIR loci (#123)
 
 ## V2.5.0 (2019-09-11)
 ### Bugfixes:

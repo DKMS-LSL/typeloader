@@ -99,7 +99,6 @@ alleles_header_dic = {
     62 : "IPD Submission successful?"
 }
 
-from __init__ import __version__
 #===========================================================
 # classes:
 
@@ -461,7 +460,7 @@ def main(log):
         
 if __name__ == '__main__':
     log = general.start_log(level="DEBUG")
-    log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
+    log.info("<Start {}>".format(os.path.basename(__file__)))
     main(log)
     log.info("<End>")
 

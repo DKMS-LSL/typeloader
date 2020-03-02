@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """GUI_user_manual.py
 
@@ -11,8 +11,6 @@ from PyQt5.QtWidgets import (QDialog, QVBoxLayout,
 from PyQt5.QtGui import QIcon
 
 import general
-
-from __init__ import __version__
 
 #===========================================================
 # classes:
@@ -55,7 +53,7 @@ pass
 
 def main():
     log = general.start_log(level="DEBUG")
-    log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
+    log.info("<Start {}>".format(os.path.basename(__file__)))
     app = QApplication(sys.argv)
     
     ex = UserManualDialog(log)

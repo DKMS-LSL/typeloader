@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+# -*- coding: cp1252 -*-
+'''
+Created on ?
+
+GUI_navigation.py
+
+Navigation area and related code for TypeLoader
+
+@author: Bianca Schoene
+'''
 import sys, os
 from PyQt5 import QtSql
 from PyQt5.QtWidgets import (QGridLayout, QWidget, QMessageBox,
@@ -8,7 +19,6 @@ from PyQt5.Qt import QModelIndex, QTreeView, pyqtSlot, pyqtSignal, \
 from PyQt5.QtGui import QIcon
 
 import general, db_internal
-from __init__ import __version__
 import typeloader_functions
 
 show_extended = True
@@ -596,7 +606,7 @@ def main():
     from typeloader_GUI import create_connection, close_connection, log_uncaught_exceptions
     import GUI_login
     log = general.start_log(level="DEBUG")
-    log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
+    log.info("<Start {}>".format(os.path.basename(__file__)))
     sys.excepthook = log_uncaught_exceptions
     settings_dic = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, settings_dic["db_file"])

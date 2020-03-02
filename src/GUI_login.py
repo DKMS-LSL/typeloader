@@ -34,7 +34,8 @@ company_config_file = "config_company.ini"
 user_config_file = "config.ini"
 local_patchme_file = os.path.join("_general", "additional.ini")
 
-from __init__ import __version__
+__version__ = general.read_package_variable("__version__")
+
 #===========================================================
 # classes:
 
@@ -161,6 +162,7 @@ class LoginForm(QDialog):
         
         self.init_UI()
         self.check_latest_version(self.log)
+        self.check_module_versions()
         
     def init_UI(self):
         layout = QFormLayout(self)
@@ -355,7 +357,15 @@ class LoginForm(QDialog):
                 QMessageBox.warning(self, error, msg)
 
 
-pass
+    def check_module_versions(self):
+        """for 3rd party modules where it matters, check whether the necessary version is installed
+        """
+        import Bio
+        bio_version = Bio.__version__
+        if bio_version < "1.76":  # older versions had an error that causes a memory leak crashing global alignments
+            msg = "Your BioPython version is not up to date! Please update it and then restart TypeLoader!"
+            QMessageBox.warning(self, "Python module out of date!", msg)
+
 
 #===========================================================
 # functions:
@@ -576,8 +586,7 @@ def check_for_reference_updates(log, settings, parent):
             
         QMessageBox.information(parent, "Reference data updated", 
                                        "\n\n".join(msges))
-            
-        
+
      
 def startup(user, curr_time, log):
     """performs startup actions 
@@ -613,7 +622,7 @@ def get_latest_version(myurl, repo, log):
         log.exception(E)   
              
     if version:
-        log.debug("\t\tlatest version: {}".format(version))
+        log.debug("\t\tlatest version on GitHub: {}".format(version))
         return version, msg
     else:
         log.debug("\t\t!Could not find version on the given page!")
@@ -642,7 +651,7 @@ def check_for_newer_version(myurl, repo, log):
             msg += "Please get the new version from {}!".format(repo)
             return newer_version, error, msg
         else:
-            log.info("\t=> You are currently using the newest version of TypeLoader. :)")
+            log.info("\t=> You are currently using the newest available version of TypeLoader. :)")
             return newer_version, error, False
     
     
@@ -667,8 +676,7 @@ def config_files_missing():
             raise IOError("File {} does not exist! Please create it before trying again!\nAborting...".format(myfile))
             return True
     return False
-    
-    
+
 
 # def generate_inis(log):
 #     from settings_ import user_dic
@@ -702,12 +710,12 @@ def check_root_path(root_path):
     else:
         try:
             os.makedirs(general_dir)
-            print ("Created {}".format(general_dir))
+            print("Created {}".format(general_dir))
             with open(counter_config, "w") as g:
                 g.write("[Counter]\nipd_submissions = 0\n")
-            print ("Created counter config file")
+            print("Created counter config file")
         except OSError as e:
-            if e.errno != errno.EEXIST: # if dir creation fails for any reason except "dir exists already" 
+            if e.errno != errno.EEXIST:  # if dir creation fails for any reason except "dir exists already"
                 raise
 
 pass
@@ -717,7 +725,7 @@ pass
 if __name__ == '__main__':
     from typeloader_GUI import create_connection, close_connection, MainGUI, remove_lock
     log = general.start_log(level="DEBUG")
-    log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
+    log.info("<Start {}>".format(os.path.basename(__file__)))
     sys.excepthook = log_uncaught_exceptions
     
 #     generate_inis(log)

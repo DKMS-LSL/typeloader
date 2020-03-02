@@ -15,9 +15,9 @@ contains general functions
 import sys, os, datetime, shutil, platform
 from collections import defaultdict
 from PyQt5.QtGui import QFont
-from __init__ import __version__
 import GUI_stylesheet as stylesheet
-#===========================================================
+
+# ===========================================================
 # parameters & settings:
 
 log_file = r"typeloader_GUI.log"
@@ -31,20 +31,24 @@ label_style_italic = "QLabel {font: italic}"
 label_style_attention = "QLabel {background: DKMSyellow}".replace("DKMSyellow", stylesheet.color_dic["DKMSyellow"])
 
 btn_style_normal = "QPushButton {default}"
-btn_style_clickme = "QPushButton {background: DKMSyellow; font-weight: bold}".replace("DKMSyellow", stylesheet.color_dic["DKMSyellow"])
-btn_style_ready = "QPushButton {background: DKMSgreen; font-weight: bold}".replace("DKMSgreen", stylesheet.color_dic["DKMSgreen"])
-btn_style_local = "QPushButton {background: DKMSlightpink; font-weight: bold}".replace("DKMSlightpink", stylesheet.color_dic["DKMSlightpink"])
+btn_style_clickme = "QPushButton {background: DKMSyellow; font-weight: bold}".replace("DKMSyellow",
+                                                                                      stylesheet.color_dic[
+                                                                                          "DKMSyellow"])
+btn_style_ready = "QPushButton {background: DKMSgreen; font-weight: bold}".replace("DKMSgreen",
+                                                                                   stylesheet.color_dic["DKMSgreen"])
+btn_style_local = "QPushButton {background: DKMSlightpink; font-weight: bold}".replace("DKMSlightpink",
+                                                                                       stylesheet.color_dic[
+                                                                                           "DKMSlightpink"])
 
 groupbox_style_normal = "QGroupBox {default}"
-groupbox_style_inactive = "QGroupBox {background: #F2F2F2}" # light grey background
+groupbox_style_inactive = "QGroupBox {background: #F2F2F2}"  # light grey background
 
 line_style_normal = "QLineEdit {default}"
-line_style_inactive = "QLineEdit {background: #F2F2F2}" # light grey background
+line_style_inactive = "QLineEdit {background: #F2F2F2}"  # light grey background
 line_style_changeme = "QLineEdit {background: DKMSyellow}".replace("DKMSyellow", stylesheet.color_dic["DKMSyellow"])
 
 font_bold = QFont()
 font_bold.setBold(True)
-            
 
 # allele status:
 done = ["ipd accepted", "abandoned", "ipd released", "original result corrected"]
@@ -67,71 +71,73 @@ for (category, mylist) in [("done", lab_done), ("todo", lab_todo), ("pending", l
     for status in mylist:
         lab_status_dic[status] = category
 
-icon_dic = {"done" : os.path.join('icons', 'done4.png'),
-            "pending" : os.path.join('icons', 'pending4.png'),
-            "todo" : os.path.join('icons', 'todo3.png'),
-            "error" : os.path.join('icons', 'error.png')}
+icon_dic = {"done": os.path.join('icons', 'done4.png'),
+            "pending": os.path.join('icons', 'pending4.png'),
+            "todo": os.path.join('icons', 'todo3.png'),
+            "error": os.path.join('icons', 'error.png')}
 
 color_dic = {"done": stylesheet.color_dic["DKMSgreen"],
              "pending": stylesheet.color_dic["grey"],
              "todo": stylesheet.color_dic["DKMSyellow"],
-             "error" : stylesheet.color_dic["DKMSred"],
+             "error": stylesheet.color_dic["DKMSred"],
              "none": stylesheet.color_dic["white"]}
 
-
-field_options = {"goal" : ["novel", "extend", "confirm"],
-                 "allele_status" : [status.replace("ena","ENA").replace("ipd", "IPD") for status in sorted(allele_status_dic.keys())],
-                 "lab_status" : [status.replace("dna","DNA") for status in sorted(lab_status_dic.keys())],
-                 "yesno" : ["yes", "no", ""],
-                 "SR tech" : ["Illumina", ""],
-                 "LR tech" : ["PacBio SRII", "Sequel", "ONT", ""],
-                 "software_old" : ["neXtype", ""],
-                 "software_new" : ["DR2S", "NGSEngine", ""],
-                 "ref_db" : ["IPD-IMGT/HLA", "IPD-KIR", ""],
-                 "new_confirmed" : ["new", "confirmed", ""]
+field_options = {"goal": ["novel", "extend", "confirm"],
+                 "allele_status": [status.replace("ena", "ENA").replace("ipd", "IPD") for status in
+                                   sorted(allele_status_dic.keys())],
+                 "lab_status": [status.replace("dna", "DNA") for status in sorted(lab_status_dic.keys())],
+                 "yesno": ["yes", "no", ""],
+                 "SR tech": ["Illumina", ""],
+                 "LR tech": ["PacBio SRII", "Sequel", "ONT", ""],
+                 "software_old": ["neXtype", ""],
+                 "software_new": ["DR2S", "NGSEngine", ""],
+                 "ref_db": ["IPD-IMGT/HLA", "IPD-KIR", ""],
+                 "new_confirmed": ["new", "confirmed", ""]
                  }
 
 if platform.system() == "Windows":
-    favicon = os.path.join('icons','TypeLoader.ico')
+    favicon = os.path.join('icons', 'TypeLoader.ico')
 else:
-    favicon = os.path.join('icons','TypeLoader_16.png')
+    favicon = os.path.join('icons', 'TypeLoader_16.png')
 
-#TODO: (future) handle status cleanly via db tables!
+# TODO: (future) handle status cleanly via db tables!
 
 # for fasta header
-header_translation_dic = {"locus" : "GENE",
-                          "LIMS_DONOR_ID" : "SAMPLE_ID_INT",
-                          "SAMPLE_ID_EXT" : "Spendernummer",
-                          "notes" : "comment",
-                          "short_read_data" : "sr_data",
-                          "short_read_type" : "sr_tech",
-                          "long_read_phasing" : "lr_phasing",
-                          "short_read_phasing" : "sr_phasing",
-                          "long_read_data" : "lr_data",
-                          "long_read_type" : "lr_tech",
+header_translation_dic = {"locus": "GENE",
+                          "LIMS_DONOR_ID": "SAMPLE_ID_INT",
+                          "SAMPLE_ID_EXT": "Spendernummer",
+                          "notes": "comment",
+                          "short_read_data": "sr_data",
+                          "short_read_type": "sr_tech",
+                          "long_read_phasing": "lr_phasing",
+                          "short_read_phasing": "sr_phasing",
+                          "long_read_data": "lr_data",
+                          "long_read_type": "lr_tech",
                           "software": "new_software",
-                          "version" : "new_version",
-                          "date" : "new_timestamp"
+                          "version": "new_version",
+                          "date": "new_timestamp"
                           }
-#===========================================================
+
+
+# ===========================================================
 # classes:
 
 
-#===========================================================
+# ===========================================================
 # functions:
 
-def start_log(include_lines = False, error_to_email = False, info_to_file = False,
-              debug_to_file = False,
-              elaborate = False, level = "DEBUG"):
+def start_log(include_lines=False, info_to_file="",
+              debug_to_file="",
+              elaborate=False, level="DEBUG"):
     """starts a logger and returns it for logging,
     if log file is wanted, info_to_file should be the log file destination (path/filename);
     default logging level is set to DEBUG
     """
     import logging.handlers, socket
-    
+
     script_name = os.path.basename(__file__)
     log = logging.getLogger(script_name)
-    
+
     # set level:
     level = level.upper()
     if level == "DEBUG":
@@ -147,57 +153,65 @@ def start_log(include_lines = False, error_to_email = False, info_to_file = Fals
     else:
         log.setLevel(logging.DEBUG)
         log.warning("Unknown loglevel '%s'! Using DEBUG instead..." % level)
-    
+
     # define logging format:
     if include_lines:
         formatter = logging.Formatter('%(levelname)s [%(asctime)s] - [ln.%(lineno)d] %(message)s')
     elif elaborate:
-        formatter = logging.Formatter("[%(asctime)s] %(levelname)s [%(filename)s:%(lineno)s - %(funcName)s] %(message)s")
+        formatter = logging.Formatter(
+            "[%(asctime)s] %(levelname)s [%(filename)s:%(lineno)s - %(funcName)s] %(message)s")
     else:
         formatter = logging.Formatter('%(levelname)s [%(asctime)s] - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-        
+
     # establish stream handler (instead of print):
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(formatter)
     log.addHandler(stream_handler)
-    
-    # establish email handler, if needed: (level ERROR)  
-    if error_to_email:    
-        myport = 25
-        myserver = '192.168.2.23'
-        nodename = socket.gethostname()
-        email_adresses = ['schoene@dkms-lab.de']
-        email_handler = logging.handlers.SMTPHandler(mailhost=(myserver, myport),
-                                               fromaddr='%s@%s' % (script_name, nodename),
-                                               toaddrs=email_adresses,
-                                               subject='Error in %s' % script_name)
-        email_handler.setFormatter(formatter)
-        email_handler.setLevel(logging.ERROR)
-        log.addHandler(email_handler)
-    
+
     # establish file handler, if needed: (level INFO)
     if info_to_file:
         file_handler = logging.FileHandler(info_to_file)
         file_handler.setFormatter(formatter)
         file_handler.setLevel(logging.INFO)
         log.addHandler(file_handler)
-    
+
     if debug_to_file:
         log.debug_handler = logging.FileHandler(debug_to_file)
         log.debug_handler.setFormatter(formatter)
         log.debug_handler.setLevel(logging.DEBUG)
         log.addHandler(log.debug_handler)
-    
+
     return log
 
-def timestamp(date_format = "%Y%m%d_%H-%M"):
+
+def read_package_variable(key):
+    """Read the value of a variable from the package without importing.
+    source: https://github.com/jacebrowning/template-python-demo/blob/8e8991138ad6fba7f91deb4c716cd80283c116f7/setup.py
+    """
+    init_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '__init__.py')
+    if os.path.isfile(init_path):
+        with open(init_path) as f:
+            for line in f:
+                parts = line.strip().split(' ')
+                if parts and parts[0] == key:
+                    return parts[-1].strip('"').strip("'")
+
+        assert 0, "'{0}' not found in '{1}'".format(key, init_path)  # file found but key not in it
+
+    else:  # compiled version has no .py files anymore
+        from __init__ import __version__
+        return __version__
+
+
+def timestamp(date_format="%Y%m%d_%H-%M"):
     """returns current date and time as short string, useable in file names etc
     """
     now = datetime.datetime.now()
     timestamp = now.strftime(date_format)
     return timestamp
 
-def get_file_creation_date(myfile, settings, log, time_format = "%Y-%m-%d"):
+
+def get_file_creation_date(myfile, settings, log, time_format="%Y-%m-%d"):
     """returns a file's creation timestamp as string;
     source: https://stackoverflow.com/questions/237079/how-to-get-file-creation-modification-date-times-in-python/39501288#39501288
     """
@@ -212,12 +226,13 @@ def get_file_creation_date(myfile, settings, log, time_format = "%Y-%m-%d"):
             # We're probably on Linux. No easy way to get creation dates here,
             # so we'll settle for when its content was last modified.
             raw_timestamp = stat.st_mtime
-    
+
     timestamp = datetime.datetime.fromtimestamp(raw_timestamp)
     timestamp_string = timestamp.strftime(time_format)
     return timestamp_string
-    
-def confirm(message=None, default=False, log = None):
+
+
+def confirm(message=None, default=False, log=None):
     """prompts for yes or no response from the user. Returns True for yes and
     False for no.
     'default' should be set to the default value assumed by the caller when
@@ -227,10 +242,10 @@ def confirm(message=None, default=False, log = None):
         message = 'Confirm?'
 
     if default:
-        message = '%s [y]|n: ' % (message) # default answer = yes
+        message = '%s [y]|n: ' % (message)  # default answer = yes
     else:
-        message = '%s y|[n]: ' % (message) # default answer = no
-        
+        message = '%s y|[n]: ' % (message)  # default answer = no
+
     while True:
         answer = input(message)
         if log:
@@ -238,12 +253,13 @@ def confirm(message=None, default=False, log = None):
         if not answer:
             return default
         if answer not in ['y', 'Y', 'n', 'N']:
-            print ('Please enter y or n!')
+            print('Please enter y or n!')
             continue
         if answer == 'y' or answer == 'Y':
             return True
         if answer == 'n' or answer == 'N':
             return False
+
 
 def move_rename_file(old_path, new_dir, new_name):
     """moves a file from old_path to new_dir & renames it to <new_name>.<all old extensions>,
@@ -262,6 +278,7 @@ def move_rename_file(old_path, new_dir, new_name):
         shutil.move(old_path, new_path)
     return new_path
 
+
 def read_seq_from_fasta(fasta):
     """retrieves the sequence of a fasta file, returns it as string
     """
@@ -269,26 +286,33 @@ def read_seq_from_fasta(fasta):
         seq = ""
         for line in f:
             if line:
-                if not line.startswith(">"): # ignore header
+                if not line.startswith(">"):  # ignore header
                     seq += line.strip()
     return seq.upper()
 
+
 def delete_sample():
     pass
-    
+
+
 pass
-#===========================================================
+
+
+# ===========================================================
 # main:
 
 def main(log):
     pass
 
+
 if __name__ == "__main__":
     import GUI_login
+
+    __version__ = read_package_variable("__version__")
     log = start_log(level="DEBUG")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
     settings_dic = GUI_login.get_settings("admin", log)
     myfile = os.path.join("tables", "alleles.csv")
-    print (get_file_creation_date(myfile, settings_dic, log))
+    print(get_file_creation_date(myfile, settings_dic, log))
     main(log)
     log.info("<End>")

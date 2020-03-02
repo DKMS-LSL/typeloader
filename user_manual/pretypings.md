@@ -9,7 +9,7 @@ The following loci are the minimum acceptable pretyping profile for IPD submissi
  
  * HLA-A
  * HLA-B
- * HLA-DQB1
+ * HLA-DRB1
  * the gene you are submitting
 
 However, **IPD strongly encourages adding as much genotyping data about the sample as you have.**
@@ -31,7 +31,7 @@ Example file:
 **This is followed by several columns per locus:**
 
 * **HLA loci:** 2 columns per locus (one per allele), "HLA-A\_1", "HLA-A\_2" etc. (genotyping results should be at maximal resolution available and contain no locus)
-* **KIR loci:** 4 columns per locus (one per possible allele), "KIR2DL1-1", "KIR2DL1-2" etc. (genotyping results should be shortened to 2 field (=5 digit) resolution or be given as POS/NEG for absence/presence. If needed, a GL-string for all alleles of a gene can be placed in that gene's first column. Cells that are not needed should be left blank).
+* **KIR loci:** 4 columns per locus (one per possible allele), "KIR2DL1-1", "KIR2DL1-2" etc. (genotyping results should be shortened to 2 field (=5 digit) resolution or be given as POS/NEG for absence/presence. If needed, a GL-string for all alleles of a gene can be placed in that gene's first column. Cells that are not needed should be left blank). **Please list the KIR2DL5 genes separately, i.e., "KIR2DL5A-1", "KIR2DL5A-2"..., "KIR2DL5B-1"... etc.!**
 * **MIC:** 1 column for each gene, called "MICA" and "MICB", each containing **all** alleles for the gene, separated by a "+", each starting with the MIC-letter (e.g., A001+A002, B001+B001)
 
 ![Important](images/icon_important.png) **You can leave out/delete any columns that you don't genotype, as long as the required loci (see above) are provided.**
