@@ -1,5 +1,9 @@
 # Version History
 
+## 2.7.1 (2020-03-09)
+### Bugfix: 
+- handle Webin-CLI replies with non-standard formatting (#147)
+
 ## 2.7.0 (2020-02-27)
 ### New Features:
 - KIR2DL5A and 2DL5B are now treated as separate loci, in accordance with IPD's wishes.
