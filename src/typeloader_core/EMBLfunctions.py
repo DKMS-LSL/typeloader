@@ -405,17 +405,23 @@ def parse_ENA_report(report_file, line_dic, log):
     with open(report_file, "r") as f:
         for line in f:
             log.debug(line.strip())
-            myline = line.split("ERROR: ")[1].split(" [ line: ")
-            line_nr = myline[1].split(" ")[0]
-            (allele_nr, allele) = line_dic[int(line_nr)]
-            if not allele_nr - 1 in problem_samples:
-                problem_samples.append(allele_nr - 1)
-            key = "Sequence {} ({})".format(allele_nr, allele)
-            if not line_nr in affected_lines_dic[key]:
-                affected_lines_dic[key].append(line_nr)
-            if myline[0] not in msg_dic[key]: # remove doubled lines
+            try:
+                myline = line.split("ERROR: ")[1].split(" [ line: ")
+                line_nr = myline[1].split(" ")[0]
+                (allele_nr, allele) = line_dic[int(line_nr)]
+                if not allele_nr - 1 in problem_samples:
+                    problem_samples.append(allele_nr - 1)
+                key = "Sequence {} ({})".format(allele_nr, allele)
+                if line_nr not in affected_lines_dic[key]:
+                    affected_lines_dic[key].append(line_nr)
+            except Exception as E:
+                log.error("Could not parse ENA response as expected (no standard problem):")
+                log.exception(E)
+                myline = [line]
+                key = "general problem"
+            if myline[0] not in msg_dic[key]:  # remove doubled lines
                 msg_dic[key].append(myline[0])
-                
+
     text = ""
     for key in sorted(msg_dic):
         text += " - {}:\n".format(key)
@@ -424,6 +430,7 @@ def parse_ENA_report(report_file, line_dic, log):
         text += "(Problematic lines in concatenated flatfile: {})\n".format(", ".join(affected_lines_dic[key]))
             
     return text, problem_samples
+
 
 def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic, log):
     """calls the command-string via webin-CLI and parses the output
