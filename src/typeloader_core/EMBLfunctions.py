@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 from itertools import groupby
 from xml.dom import minidom
@@ -433,19 +433,27 @@ def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic,
     ENA_submission_ID = None
     problem_samples = []
     report = None
-    
+
+    # check whether Java is installed:
+    return_code = os.system("java -version")
+    if return_code != 0:
+        output_txt = "ERROR: could not find Java on your system!\n\n"
+        output_txt += "Please install Java and then restart TypeLoader!"
+        return False, output_txt, None, []
+
     try:
         output = check_output(cmd_string).decode("utf-8")
     except CalledProcessError as E:
         log.error("ENA's Webin-CLI threw an error after this command:")
         log.error(cmd_string)
         output = E.output.decode("utf-8")
-        
+
     output_list = [line.rstrip() for line in output.split("\n") if line] # make list and remove newlines
     if output_list:
         last_line = output_list[-1]
     else:
         last_line = str(output_list)
+
     s = submission_alias.split("_")
 
     if modus == "validate":

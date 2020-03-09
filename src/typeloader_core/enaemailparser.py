@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # functions to parse the submission email from ENA to get IDs needed for IMGT submission
 
 # Lines to recognise:

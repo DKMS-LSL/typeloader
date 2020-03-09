@@ -75,9 +75,9 @@ The status ``Open`` should be used for projects with contain non-finished allele
 
 Only for open projects can you
 
-  * add new alleles (using the [=> New Allele Dialog](new_allele.md))
-  * submit alleles to ENA
-  * submit alleles to IPD
+  * add new alleles (using the [=> New Allele Dialog](new_allele.md) or [=> Bulk upload](new_allele_bulk.md))
+  * [=> submit alleles to ENA](submission_ena.md)
+  * [=> submit alleles to IPD](submission_ipd.md)
 
 Open projects are listed first in the [=> Navigation Area](navigation.md) (this section is always extended on startup). 
 

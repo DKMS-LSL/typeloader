@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 header = """ID   {submission_id}; Sequence Submission; {sequence length} BP.
 XX
 AC   {submission_id};

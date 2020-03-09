@@ -1,22 +1,22 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from PyQt5.QtWidgets import (QDialog, QFileDialog, QFormLayout,
+from PyQt5.QtWidgets import (QDialog, QFileDialog, QFormLayout, QVBoxLayout,
                              QLabel, QApplication)
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtGui import QIcon
+from PyQt5.Qt import QPushButton, QMessageBox
 
-import sys, os
+import sys, os, shutil
 from shutil import copyfile
 
 import general
-
-from __init__ import __version__
-from PyQt5.Qt import QPushButton, QMessageBox
+from GUI_forms import FileButton, ProceedButton, ChoiceSection
 
 
-#===========================================================
+# ===========================================================
 # classes:
+
 
 class ExampleFileDialog(QDialog):
     """a dialog to download example files
@@ -110,7 +110,112 @@ class ExampleFileDialog(QDialog):
             self.log.error("File not found: {}".format(myfile))
             QMessageBox.warning(self, "File not found", "Sorry, I could not find the file you requested: \n{}".format(myfile))
             self.log.info("\tDownload aborted. :(")
-pass
+
+
+class LogFileDialog(QDialog):
+    """a dialog to download the current log file
+    """
+
+    def __init__(self, settings, log, parent=None):
+        super().__init__(parent)
+        self.settings = settings
+        self.log = log
+        self.parent = parent
+        self.warning = ""
+        self.log_dir = os.path.join(settings["recovery_dir"])
+        self.log.info("Opened LogFileDialog")
+
+        self.setWindowTitle("Download log file")
+        self.setWindowIcon(QIcon(general.favicon))
+        self.resize(300, 100)
+        self.init_UI()
+        self.setModal(True)
+        self.show()
+
+    def init_UI(self):
+        """establish and fill the UI
+        """
+        layout = QVBoxLayout(self)
+        self.setLayout(layout)
+
+        msg = "If you wish to show the TypeLoader developers details about a current problems, "
+        msg += "you can download a log file here.\n"
+        layout.addWidget(QLabel(msg))
+
+        layout.addWidget(QLabel("Use any file that ends with .log.\n"))
+
+        msg2 = "All logfiles are named with the timestamp of the start of the respective TypeLoader session.\n"
+        msg2 += "Usually, you want the latest one (so the file at the bottom of the list).\n"
+        layout.addWidget(QLabel(msg2))
+
+        msg3 = "Before doing this, it is very helpful if you close TypeLoader, reopen it, "
+        msg3 += "and perform only the steps necessary to reproduce your problem!\n"
+        layout.addWidget(QLabel(msg3))
+
+        self.choice_btn = FileButton("Choose log file", default_path=self.log_dir, parent=self, log=self.log)
+        self.file_widget = ChoiceSection("Choose a .log file:", [self.choice_btn], self)
+        self.file_widget.choice.connect(self.get_file)
+        msg = "Click here to select a log file to show the TypeLoader developers details about your latest issue."
+        self.file_widget.setWhatsThis(msg)
+        layout.addWidget(self.file_widget)
+
+        self.dld_btn = ProceedButton("Download log file!", [self.file_widget.field], self.log, parent=self)
+        self.dld_btn.clicked.connect(self.download_file)
+        self.file_widget.field.textChanged.connect(self.dld_btn.check_ready)
+        layout.addWidget(self.dld_btn)
+
+    @pyqtSlot(str)
+    def get_file(self, path, testing=False):
+        """catches path from self.file_widget,
+        stores it as self.file
+        """
+        if os.path.dirname(os.path.abspath(path)) == os.path.abspath(self.log_dir):
+            self.file = path
+            self.log.debug("File chosen for download: {}".format(path))
+            if not self.file.endswith(".log"):
+                msg = "This is not a log file! Please choose a file that ends with .log!"
+                if self.parent:
+                    QMessageBox.warning(self, "Wrong file type", msg)
+                    return
+                else:
+                    return msg
+            self.dld_btn.setEnabled(True)
+        else:  # file not allowed (outside of scope)
+            msg = "This file is not a logfile of the user you started this dialog from!"
+            if self.parent:
+                QMessageBox.warning(self, "Forbidden file", msg)
+                self.dld_btn.setEnabled(False)
+                self.dld_btn.setStyleSheet(general.btn_style_normal)
+                return
+            else:
+                return msg
+
+    @pyqtSlot()
+    def download_file(self, chosen_path="", suppress_messagebox=False):
+        """opens QFileDialog, saves file in chosen location
+        """
+        if self.file:
+            self.log.debug("Downloading logfile from {}...".format(self.file))
+            suggested_path = os.path.join(self.settings["default_saving_dir"], os.path.basename(self.file))
+        if not chosen_path:
+            chosen_path = QFileDialog.getSaveFileName(self, "Download file...", suggested_path)[0]
+        if chosen_path:
+            self.warning = "Before sending this file to anyone, please open it in a text editor and "
+            self.warning += "delete or rephrase anything that looks confidential.\n\n"
+            self.warning += "The TypeLoader developers will NOT be held accountable if you breach any confidentiality "
+            self.warning += "issues by using this feature!"
+
+            self.log.info(self.warning.replace("\n\n", "\n"))
+
+            shutil.copyfile(self.file, chosen_path)
+            self.dld_btn.setChecked(False)
+
+            self.log.info("\t=> logfile downloaded successfully!")
+
+            if not suppress_messagebox:
+                QMessageBox.information(self, "Check for confidential info before sending!", self.warning)
+
+
 #===========================================================
 # functions:
 
@@ -134,12 +239,12 @@ pass
 def main():
     import GUI_login
     log = general.start_log(level="DEBUG")
-    log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
+    log.info("<Start {}>".format(os.path.basename(__file__)))
     settings_dic = GUI_login.get_settings("admin", log)
     app = QApplication(sys.argv)
     sys.excepthook = log_uncaught_exceptions
     
-    ex = ExampleFileDialog(settings_dic, log)
+    ex = LogFileDialog(settings_dic, log)
     ex.show()
     result = app.exec_()
     

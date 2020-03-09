@@ -1,4 +1,5 @@
-#from .backend_enaformat import *
+#!/usr/bin/env python
+
 from .backend_enaformat import *
 from copy import copy
 import textwrap

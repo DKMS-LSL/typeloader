@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import xmltodict
 from sys import argv
 

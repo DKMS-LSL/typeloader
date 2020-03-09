@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: cp1252 -*-
 '''
 Created on 11.09.2015

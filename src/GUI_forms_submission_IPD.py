@@ -26,7 +26,7 @@ from PyQt5.QtGui import QIcon
 import general, db_internal
 from typeloader_core import make_imgt_files as MIF
 from GUI_forms import (CollapsibleDialog, ChoiceSection, FileChoiceTable,
-                       FileButton, ProceedButton, QueryButton)
+                       FileButton, ProceedButton, QueryButton, check_project_open)
 from GUI_forms_submission_ENA import ProjectInfoTable
 from GUI_misc import settings_ok
 from GUI_functions_local import check_local, check_nonproductive, make_fake_ENA_file, get_pretypings_from_oracledb
@@ -34,7 +34,6 @@ from GUI_functions_local import check_local, check_nonproductive, make_fake_ENA_
 #===========================================================
 # parameters:
 
-from __init__ import __version__
 #===========================================================
 # classes:
 
@@ -405,13 +404,16 @@ class IPDSubmissionForm(CollapsibleDialog):
     """
     IPD_submitted = pyqtSignal()
     
-    def __init__(self, log, mydb, project, settings, parent = None):
+    def __init__(self, log, mydb, project, settings, parent=None):
         """initiates the IPDSubmissionForm
         """
         self.log = log
         self.log.info("Opening 'IPD Submission' Dialog...")
         self.mydb = mydb
-        self.project = project
+        if check_project_open(project, log, parent=parent):
+            self.project = project
+        else:
+            self.project = ""
         self.settings = settings
         self.label_width = 150
         super().__init__(parent)
@@ -504,6 +506,16 @@ class IPDSubmissionForm(CollapsibleDialog):
             return
     
         self.project = self.proj_widget.field.text()
+        proj_open = check_project_open(self.project, self.log, self)
+        if not proj_open:
+            msg = f"Project {self.project} is currently closed! You cannot create IPD-files from closed projects.\n"
+            msg += "To submit alleles of this project to IPD, please open its ProjectView "
+            msg += "and click the 'Reopen Project' button!"
+            msg += "\nAlternatively, please choose a different project."
+            self.log.warning(msg)
+            QMessageBox.warning(self, "This project is closed!", msg)
+            return
+
         self.proceed_sections(0, 1)
         
     def define_section2(self):
@@ -734,11 +746,11 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.submit_btn.setChecked(False)
         success = self.get_values()
         if not success:
-            return
-        
+            return False
+
         project_dir = os.path.join(self.settings["projects_dir"], self.project)
         mydir = os.path.join(project_dir, "IPD-submissions", self.subm_id)
-        os.makedirs(mydir, exist_ok = True)
+        os.makedirs(mydir, exist_ok=True)
             
         try:
             for myfile in [self.ENA_reply_file, self.pretypings]:
@@ -755,26 +767,26 @@ class IPDSubmissionForm(CollapsibleDialog):
             if not results[0]:
                 if results[1] == "Invalid pretypings":
                     self.handle_invalid_pretyings(results[2])
-                    return
+                    return False
                 elif results[1] == "Multiple novel alleles in target locus":
                     self.handle_multiple_novel_alleles(results[2])
-                    return
+                    return False
                 else:
-                    if results[1].startswith("Another user is currently creating IPD files"):
+                    if "is currently creating IPD files" in results[1]:
                         mbox = IPDCounterLockedDialog(self, "IPD file creation error", results[1], self.settings, self.log)
                         mbox.remove_lock.connect(self.handle_IPDcounter_lock)
-                        return
+                        return False
                     else:
                         print("MIF.write_imgt_files result:")
                         print(results)
                         QMessageBox.warning(self, "IPD file creation error", results[1])
-                        return
-                    self.log.warning("? Should not pass here")
+                        return False
             else:
                 (self.IPD_file, self.cell_lines, self.customer_dic, resultText, self.imgt_files, success, error) = results
             if error:
-                QMessageBox.warning(self, "IPD file creation error", "An error occurred during the creation of IPD files:\n\n{}".format(repr(error)))
-                return
+                QMessageBox.warning(self, "IPD file creation error",
+                                    "An error occurred during the creation of IPD files:\n\n{}".format(repr(error)))
+                return False
             if success:
                 if not resultText:
                     resultText = "All genes and alleles were resolved"
@@ -782,13 +794,13 @@ class IPDSubmissionForm(CollapsibleDialog):
             else:
                 self.log.info("IPD file creation not successful")
                 QMessageBox.warning(self, "IPD file creation not successful", "Could not create IPD files!")
-                return
+                return False
             
         except Exception as E:
             self.log.error(E)
             self.log.exception(E)
             QMessageBox.warning(self, "IPD file creation error", "An error occured during creation of the IPD files:\n\n{}".format(repr(E)))
-            return
+            return False
         
         self.submission_successful = False
         if os.path.exists(self.IPD_file):
@@ -806,10 +818,11 @@ class IPDSubmissionForm(CollapsibleDialog):
             self.save_to_db()
             self.IPD_submitted.emit()
             self.proceed_to4()
+            return True
         else:
             self.log.error("No IPD-File created!")
             QMessageBox.warning(self, "IPD file creation error", "Creation of the IPD zip file was not successful")
-
+            return False
 
     def handle_multiple_novel_alleles(self, problem_dic):
         """if multiple novel alleles were found for the target locus
@@ -842,7 +855,9 @@ class IPDSubmissionForm(CollapsibleDialog):
             except Exception as E:
                 self.log.warning("Could not delete IPD_counter lockfile from {}!".format(lock_file))
                 self.log.exception(E)
-                QMessageBox.warning(self, "Error", "Could not remove IPD lockfile, sorry! Please contact your admin!\n{}".repr(E))
+                msg = "Could not remove IPD lockfile, sorry! Please close the IPD-Submission dialog and try again.\n"
+                msg += f"If the problem occurs again, please contact your admin!\n{repr(E)}"
+                QMessageBox.warning(self, "Error", msg)
                 return
             self.reattempt_make_IPD_files()
         else:
@@ -995,7 +1010,7 @@ if __name__ == '__main__':
     import GUI_login
     sys.excepthook = log_uncaught_exceptions
     log = general.start_log(level="DEBUG")
-    log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
+    log.info("<Start {}>".format(os.path.basename(__file__)))
     settings_dic = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, settings_dic["db_file"])
     

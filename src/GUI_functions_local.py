@@ -124,7 +124,7 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
     for g in ["MICA", "MICB"]:
         gene_dic[g] = [g]
     kir_columns = []
-    for g in ['KIR2DL1', 'KIR2DL2', 'KIR2DL3', 'KIR2DL4', 'KIR2DL5',
+    for g in ['KIR2DL1', 'KIR2DL2', 'KIR2DL3', 'KIR2DL4', 'KIR2DL5A', 'KIR2DL5B',
               'KIR2DP1',
               'KIR2DS1', 'KIR2DS2', 'KIR2DS3', 'KIR2DS4', 'KIR2DS5',
               'KIR3DL1', 'KIR3DL2', 'KIR3DL3',
@@ -144,10 +144,10 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
         columns += kir_columns
     for col in columns:
         if col.startswith("HLA"):
-            default_dic[col] = "01:01"
+            default_dic[col] = "'01:01'"
         elif col.startswith("KIR"):
             if col[-1] in ["1", "2"]:
-                default_dic[col] = "001"
+                default_dic[col] = "'001'"
             else:
                 default_dic[col] = ""
         elif col == "MICA":
@@ -164,7 +164,6 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
             befunde = copy.copy(default_dic)
             # overwrite pretyping of target allele:
             if not mygene in gene_dic:
-                print(mygene)
                 gene_dic[mygene] = ["{}_1".format(mygene), "{}_2".format(mygene)]
                 columns += gene_dic[mygene]
                 for col in gene_dic[mygene]:
@@ -175,7 +174,7 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
                         partner_allele = "{}001".format(mygene[-1])
                     befunde[mygene] = "{}+{}".format(target_allele, partner_allele).replace("MICA*","A")
                 else:
-                    print("Cannot generate sensible fake pretyping: {} should have 2 columns!".format(mygene))
+                    log.error("Cannot generate sensible fake pretyping: {} should have 2 columns!".format(mygene))
             else:
                 for i, col in enumerate(gene_dic[mygene]):
                     if i == 0:
@@ -218,6 +217,7 @@ def get_pretypings_from_oracledb(project, local_cf, settings, log, parent = None
         log.exception(E)
         log.error("Could not import db_external, probably because cx_Oracle is missing on this computer!")
         return False, None, None
+
     success, alleles = find_alleles_per_project(project, log, parent)
     if not success:
         return False, None, None
@@ -229,6 +229,7 @@ def get_pretypings_from_oracledb(project, local_cf, settings, log, parent = None
         if parent:
             QMessageBox.warning(parent, "Pretypings error", msg)
         return False, None, None
+
     pretypings, samples, not_found = db_external.get_pretypings_from_limsrep(sample_ids, local_cf, log)
     output_file = os.path.join(settings["temp_dir"], "pretypings.csv")
     db_external.write_pretypings_file(pretypings, samples, output_file, log)

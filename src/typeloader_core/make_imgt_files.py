@@ -13,19 +13,19 @@ from .errors import BothAllelesNovelError, InvalidPretypingError
 from os import path
 from functools import reduce
 
-
 alleleFromEnaRegex = re.compile("(DE(.*?)allele(.*))")
+
+
 # geneMap = {"gene":[hla, kir]}
 
 def parse_email(ena_email_file):
-
     # Parse the ENA email to map the cell line numbers (DKMS-LSL-*-*) to the ENA assigned accession numbers
     # 23.01.2018: get targetFamily from ENA response
     cellLineEna, gene = parse_embl_response(ena_email_file)
     return (cellLineEna, gene)
 
-def get_cellLine_patient_map(cellLine_patient_file):
 
+def get_cellLine_patient_map(cellLine_patient_file):
     # This file maps the cell lines to the patient ids
     # sample line in file : DKMS-LSL-C-508	642714.xml
     # we need the patient id to get to the initial BLAST file and for the Befund
@@ -37,20 +37,20 @@ def get_cellLine_patient_map(cellLine_patient_file):
         cellPatientMap[parts[0]] = parts[1].split(".")[0]
     cellLinePatientHandle.close()
 
-#     print(cellPatientMap)
+    #     print(cellPatientMap)
     return cellPatientMap
 
-def getPatientBefund(befundFile):
 
+def getPatientBefund(befundFile):
     # this file comes exported from the LIMS and lists the alleles that have been typed for a given patient
     befund = getOtherAlleles(befundFile)
     return befund
 
-def getNewAlleleNameFromEna(enaFile):
 
+def getNewAlleleNameFromEna(enaFile):
     with open(enaFile) as enaHandle:
         enaText = enaHandle.read()
-    
+
     newAlleleName = alleleFromEnaRegex.search(enaText).expand("\\3").strip()
 
     return newAlleleName
@@ -62,17 +62,23 @@ def get_IPD_counter(config_file, lock_file, settings, log):
     if yes, creates lock_file + returns counter + config-parser object (later needed to update the value)
     """
     log.debug("Getting current count of IPD submissions...")
-    if os.path.isfile(lock_file):
-        msg = "Another user is currently creating IPD files.\n"
-        msg += "Please try again in a minute or so, to make sure you don't create files with the same IPD number."
-        log.warning(msg)
-        return False, msg
-    
+
     if settings["modus"] == "productive":
-        with open(lock_file, "w") as _: # create lockfile
+        if os.path.isfile(lock_file):
+            with open(lock_file, "r") as f:
+                user = f.read().strip()
+            if user:
+                msg = f"User {user} is currently creating IPD files.\n"
+            else:
+                msg = "Another user is currently creating IPD files.\n"
+            msg += "Please try again in a minute or so, to make sure you don't create files with the same IPD number."
+            log.warning(msg)
+            return False, msg
+
+        with open(lock_file, "w") as g:  # create lockfile
             log.debug("Creating IPD counter lockfile under {}...".format(lock_file))
-            os.utime(lock_file)
-    
+            g.write(settings["login"])
+
     cf = ConfigParser()
     cf.read(config_file)
     num = cf.get("Counter", "ipd_submissions")
@@ -84,7 +90,7 @@ def get_IPD_counter(config_file, lock_file, settings, log):
         msg = "ipd_submissions counter must be an integer. '{}' is not!".format(num)
         os.remove(lock_file)
         return False, msg
-        
+
     log.debug("\tCurrent count = {}".format(num))
     return True, (num, cf)
 
@@ -116,18 +122,24 @@ def update_IPD_counter(new_value, cf, config_file, lock_file, log):
 def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, geneMapENA, befund_csv_file,
                    settings, log):
     log.debug("Making IPD data...")
-        
-    geneMap = {"gene":[settings["gene_hla"], settings["gene_kir"]]}
+    # print(project_dir)
+    # print(samples)
+    # print(file_dic)
+    # print(allele_dic)
+    # print(cellEnaIdMap)
+    # print(geneMapENA)
+    # print(befund_csv_file)
+    geneMap = {"gene": [settings["gene_hla"], settings["gene_kir"]]}
     (patientBefundMap, customer_dic) = getPatientBefund(befund_csv_file)
     if not patientBefundMap:
         msg = customer_dic
         log.warning(msg)
         return False, msg, None
-    
+
     imgt_data = {}
 
     cell_lines = {}
-    
+
     config_file = os.path.join(settings["root_path"], "_general", "counter_config.ini")
     lock_file = os.path.join(settings["root_path"], "_general", "ipd_nr.lock")
     success, result = get_IPD_counter(config_file, lock_file, settings, log)
@@ -135,13 +147,13 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
         msg = result
         log.warning(msg)
         return success, msg, None
-    
+
     (submissionCounter, counter_cf) = result
     fixedString = settings["ipd_shortname"]
     variablePartLength = settings["ipd_submission_length"]
-    multi_dic = {} # contains alleles with multiple novel alleles
-    problem_dic = {} # contains alleles with invalid pretypings
-    
+    multi_dic = {}  # contains alleles with multiple novel alleles
+    problem_dic = {}  # contains alleles with invalid pretypings
+
     for (sample, local_name, IPD_ID) in samples:
         enafile = path.join(project_dir, sample, file_dic[local_name]["ena_file"])
         if not path.exists(enafile):
@@ -150,15 +162,15 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
             with contextlib.suppress(FileNotFoundError):
                 os.remove(lock_file)
             return False, msg, None
-        
+
         blastOp = path.join(project_dir, sample, file_dic[local_name]["blast_xml"])
-        if not path.exists(blastOp): 
+        if not path.exists(blastOp):
             msg = "Can't find blast.xml file: {}".format(blastOp)
             log.warning(msg)
             with contextlib.suppress(FileNotFoundError):
                 os.remove(lock_file)
             return False, msg, None
-        try: 
+        try:
             enaId = cellEnaIdMap[local_name]
         except KeyError:
             msg = "Can't find ENA ID for {}".format(local_name)
@@ -166,7 +178,7 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
             with contextlib.suppress(FileNotFoundError):
                 os.remove(lock_file)
             return False, msg, None
-        try: 
+        try:
             gene = geneMapENA[local_name]
         except KeyError:
             msg = "Can't find gene for {}".format(local_name)
@@ -186,11 +198,12 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
             allelesFilename = os.path.join(settings["dat_path"], settings["general_dir"],
                                            settings["reference_dir"], settings["hla_dat"])
         geneMap["targetFamily"] = targetFamily
-        
-        try: 
+
+        try:
             befund = patientBefundMap[sample]
         except KeyError:
-            msg = "Can't find pretyping for {}.\n(Please make sure that the internal donor ID is listed in the first column of your pretypings file.)".format(sample)
+            msg = "Can't find pretyping for {}.\n(Please make sure that the internal donor ID is listed in the first column of your pretypings file.)".format(
+                sample)
             print(patientBefundMap)
             with contextlib.suppress(FileNotFoundError):
                 os.remove(lock_file)
@@ -199,7 +212,8 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
 
         newAlleleStub = getNewAlleleNameFromEna(enafile).split(":")[0]
         try:
-            annotations = getCoordinates(blastOp, allelesFilename, targetFamily, settings, log, isENA=False, incomplete_ok=True)
+            annotations = getCoordinates(blastOp, allelesFilename, targetFamily, settings, log, isENA=False,
+                                         incomplete_ok=True)
         except Exception as E:
             print("Blast output : ", blastOp)
             print(allelesFilename, targetFamily)
@@ -211,9 +225,9 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
             msg = "Encountered a BLAST problem!\n"
             msg += "Please restart TypeLoader to update the reference files."
             return False, msg, None
-        
-        isSameGene = reduce(lambda x,y: x & y, [annotations[genDxAlleleName]["closestAllele"].startswith(newAlleleStub) \
-            for genDxAlleleName in list(annotations.keys())])
+
+        isSameGene = reduce(lambda x, y: x & y, [annotations[genDxAlleleName]["closestAllele"].startswith(newAlleleStub) \
+                                                 for genDxAlleleName in list(annotations.keys())])
 
         for genDxAlleleName in list(annotations.keys()):
             if annotations[genDxAlleleName]["closestAllele"].startswith(newAlleleStub):
@@ -221,42 +235,47 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
                 closestAllele = annotations[genDxAlleleName]["closestAllele"]
                 sequence = annotations[genDxAlleleName]["sequence"]
                 imgtDiff = annotations[genDxAlleleName]["imgtDifferences"]
-                missing_bp = annotations[genDxAlleleName]["missing_bp"] # start of sequence
+                missing_bp = annotations[genDxAlleleName]["missing_bp"]  # start of sequence
                 missing_bp_end = annotations[genDxAlleleName]["missing_bp_end"]
-                if missing_bp_end:
+                alignment_length = annotations[genDxAlleleName]["alignLength"]
+                query_length = annotations[genDxAlleleName]["queryLength"]
+                if missing_bp_end > 0:
                     log.warning("Incomplete sequence found: last {} bp missing!".format(missing_bp_end))
 
                 if isSameGene:
-                    if annotations[genDxAlleleName]["isExactMatch"]: continue
-                    else: break
+                    if annotations[genDxAlleleName]["isExactMatch"]:
+                        continue
+                    else:
+                        break
                 else:
                     break
-        
+
         if IPD_ID:
             submissionId = IPD_ID
         else:
             submissionCounter = submissionCounter + 1
             submissionId = format_submission_id(fixedString, variablePartLength, submissionCounter)
         cell_lines[local_name] = submissionId
-        
-        if sample in local_name: # allele created with V2.2.0 or higher
+
+        if sample in local_name:  # allele created with V2.2.0 or higher
             cell_line = "_".join(local_name.split("_")[:-2])
         else:
             cell_line = local_name
-        
+
         try:
-            imgt_data[submissionId] = make_imgt_text(submissionId, cell_line, local_name, allele_dic[local_name], 
-                                                     enaId, befund,  
-                                                     closestAllele, diffToClosest, imgtDiff, 
-                                                     enafile, sequence, geneMap, missing_bp, missing_bp_end, settings, log)
+            imgt_data[submissionId] = make_imgt_text(submissionId, cell_line, local_name, allele_dic[local_name],
+                                                     enaId, befund,
+                                                     closestAllele, diffToClosest, imgtDiff,
+                                                     enafile, sequence, geneMap, missing_bp, missing_bp_end,
+                                                     settings, log)
         except BothAllelesNovelError as E:
             multi_dic[local_name] = [sample, local_name, E.allele, E.alleles]
         except InvalidPretypingError as E:
             problem_dic[local_name] = [sample, local_name, E.locus, E.allele_name, E.alleles, E.problem]
-    
+
     if settings["modus"] == "productive":
         update_IPD_counter(submissionCounter, counter_cf, config_file, lock_file, log)
-    
+
     if problem_dic:
         log.debug("\t=> encountered a problem in {} samples: please fix".format(len(problem_dic)))
         return False, "Invalid pretypings", problem_dic
@@ -267,6 +286,7 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
         log.debug("\t=> successfully made IPD data")
         return imgt_data, cell_lines, customer_dic
 
+
 def zip_imgt_files(folderpath, submission_id, imgt_files, log):
     """zips all generated IPD files in folderpath 
     into zipfile IPD_submission_<submission_id>.zip
@@ -274,14 +294,15 @@ def zip_imgt_files(folderpath, submission_id, imgt_files, log):
     """
     log.debug("Zipping files for IMGT...")
     zip_name = "{}.zip".format(submission_id)
-    myzip =  os.path.join(folderpath, zip_name)
+    myzip = os.path.join(folderpath, zip_name)
     with ZipFile(myzip, "w") as z:
         for myfile in imgt_files:
             z.write(myfile, os.path.basename(myfile))
     return myzip
 
+
 def write_imgt_files(project_dir, samples, file_dic, allele_dic, ENA_id_map, ENA_gene_map,
-                     befund_csv_file, submission_name, 
+                     befund_csv_file, submission_name,
                      folderpath, settings, log):
     success = True
     error = None
@@ -291,31 +312,31 @@ def write_imgt_files(project_dir, samples, file_dic, allele_dic, ENA_id_map, ENA
     imgt_files = []
     cell_lines = []
     imgt_file_names = None
-    
+
     try:
         log.debug("\tMaking IPD data...")
-        results = make_imgt_data(project_dir, samples, file_dic, allele_dic, ENA_id_map, ENA_gene_map, 
+        results = make_imgt_data(project_dir, samples, file_dic, allele_dic, ENA_id_map, ENA_gene_map,
                                  befund_csv_file, settings, log)
-        if not results[0]: # encountered problem
+        if not results[0]:  # encountered problem
             return results
         else:
             (imgt_data, cell_lines, customer_dic) = results
         log.debug("\tChecking for ambiguities...")
         resultText = ",".join([imgt_data[submissionId].split(":")[1] for submissionId in list(imgt_data.keys()) \
                                if imgt_data[submissionId].startswith("Ambiguous")])
-    
+
         log.debug("\tWriting IPD files...")
         imgt_file_names = {}
         for submissionId in list(imgt_data.keys()):
             if (re.search("CC   Confirmation", imgt_data[submissionId]) != None):
                 imgt_path = path.join(folderpath, "%s_confirmation.txt" % submissionId)
             else:
-                imgt_path = path.join(folderpath, "%s.txt" % submissionId)            
+                imgt_path = path.join(folderpath, "%s.txt" % submissionId)
             imgt_files.append(imgt_path)
             imgt_file_names[submissionId] = os.path.basename(imgt_path)
             with open(imgt_path, "w") as g:
                 g.write(imgt_data[submissionId])
-            
+
         zip_file = zip_imgt_files(folderpath, submission_name, imgt_files, log)
     except Exception as E:
         log.error(E)
@@ -329,7 +350,4 @@ def write_imgt_files(project_dir, samples, file_dic, allele_dic, ENA_id_map, ENA
 
 if __name__ == '__main__':
     pass
-#     ena_email_file, befund_file, cellLine_patient_file, submissionId, imgt_filepath, enaFileLoc = argv[1:]
-#     print(write_imgt_files(ena_email_file, befund_file, cellLine_patient_file, submissionId, imgt_filepath, enaFileLoc))
-#     
-#     get_cellLine_patient_map(cellLine_patient_file)
+

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import re, os
 from os import system
 from collections import defaultdict
@@ -93,35 +95,36 @@ def sanity_check_seq(seq, log):
     return ok, msg
             
 
-def blastRawSeqs(inputFilename, filetype, settings, log):
+def blast_raw_seqs(input_filename, filetype, settings, log):
     """parses raw allele file (fasta or XML)
     """
     if filetype == "XML":
         log.debug("\tConverting xml to fasta...")
-        alleles, xml_data_dic =  getAlleleSequences(inputFilename, log)
-        fastaFilename = inputFilename.replace(".xml",".fa")
+        alleles, xml_data_dic = getAlleleSequences(input_filename, log)
+        fastaFilename = input_filename.replace(".xml", ".fa")
         with open(fastaFilename, "w") as fastaFile:
             for alleleName in list(alleles.keys()):
                 fastaFile.write(">%s\n" % alleleName)
                 fastaFile.write("%s\n" % alleles[alleleName])
     else:
-        fastaFilename = inputFilename
+        fastaFilename = input_filename
         xml_data_dic = {}
 
     kir = settings["gene_kir"]
     hla = settings["gene_hla"]
     
-    log.debug("\tReading fasta...")
-    first_fasta_entry = fasta_generator(fastaFilename)
-    (header, seq) = first_fasta_entry.__next__()
-    (ok, msg) = sanity_check_seq(seq, log)
-    if not ok:
-        return (False, "Non-ATGC-Error", msg)
+    log.debug("\tReading fasta for sanity check...")
+    header = ""
+    for myfasta in fasta_generator(fastaFilename):
+        (header, seq) = myfasta
+        (ok, msg) = sanity_check_seq(seq, log)
+        if not ok:
+            return False, "Non-ATGC-Error", msg
     
     log.debug("\tParsing fasta header...")
     seq_name, header_data = parse_fasta_header(header)
     locus = header_data["locus"]
-    if locus: # if DRS2 fasta file
+    if locus:  # if DRS2 fasta file
         if locus.startswith("KIR"):
             targetFamily = kir
         else:
@@ -154,17 +157,18 @@ def blastRawSeqs(inputFilename, filetype, settings, log):
         BlastXMLFile = blastSequences(fastaFilename, parsedFasta, settings, log)
     except Exception as E:
         log.exception(E)
-        return (False, "Error while trying to BLAST raw sequence", repr("E"))
+        return False, "Error while trying to BLAST raw sequence", repr("E")
     if not BlastXMLFile:
         msg = "BlastXMLFile not generated!\n"
         msg += "Please make sure the BLAST path in your user settings is correct!\n"
         msg += "(Current BLAST path: {})".format(settings["blast_path"])
-        return (False, "Error while trying to BLAST raw sequence", msg)
+        return False, "Error while trying to BLAST raw sequence", msg
         
     with open(versionFilename) as f:
         curr_version = f.read().strip()
         header_data["ref_version"] = curr_version
-    return (BlastXMLFile, targetFamily, fastaFilename, allelesFilename, header_data, xml_data_dic)
+
+    return BlastXMLFile, targetFamily, fastaFilename, allelesFilename, header_data, xml_data_dic
 
 
 if __name__ == '__main__':

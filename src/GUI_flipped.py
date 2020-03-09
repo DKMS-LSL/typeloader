@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 from PyQt5.Qt import (QModelIndex, QIdentityProxyModel, QSqlRelationalDelegate)
 from PyQt5.QtCore import Qt

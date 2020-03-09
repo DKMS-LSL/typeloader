@@ -23,7 +23,6 @@ sys.path.append(mypath)
 sys.path.append(mypath_inner)
 
 import general, db_internal, GUI_login
-from __init__ import __version__
 from xml.etree import ElementTree
 from collections import namedtuple
 
@@ -32,13 +31,14 @@ from collections import namedtuple
 shutil.copyfile(os.path.join(mypath_inner, "typeloader_GUI.pyw"), os.path.join(mypath_inner, "typeloader_GUI.py"))
 
 import typeloader_GUI
-from typeloader_core import errors, EMBLfunctions as EF, make_imgt_files as MIF, backend_make_ena as BME, imgt_text_generator as ITG
+from typeloader_core import errors, EMBLfunctions as EF, make_imgt_files as MIF, backend_make_ena as BME, \
+    imgt_text_generator as ITG, closestallele as CA
 import GUI_forms_new_project as PROJECT
 import GUI_forms_new_allele as ALLELE
 import GUI_forms_new_allele_bulk as BULK
 import GUI_forms_submission_ENA as ENA
 import GUI_forms_submission_IPD as IPD
-import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample
+import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample, GUI_forms, GUI_download_files
 import typeloader_functions
 from GUI_login import base_config_file
 
@@ -50,11 +50,11 @@ from PyQt5.QtCore import Qt
 # test parameters:
 
 delete_all_stuff_at_the_end = True  # deletes database entries and project directory
-skip_other_tests = False  # can be set to True to skip all tests except the one currently worked at (out-comment it there in setUpClass)
+skip_other_tests = False  # set to True to skip all tests except the current WiP (out-comment it there in setUpClass)
 project_name = ""  # this will be set in create project
 
 samples_dic =  {# samples to test 
-                "sample_1" : { "input" : "1395777_A.fa",
+                "sample_1" : { "input" : "1395777 A.fa",
                                "input_dir_origin" : "KIR_3DP1",
                                "local_name" : "DKMS-LSL_ID000001_3DP1_1",
                                "cell_line" : "DKMS-LSL_ID000001",
@@ -69,7 +69,7 @@ samples_dic =  {# samples to test
                                "id_int" : "ID000001",
                                "id_ext" : "DEDKM000001",
                                "submission_id" : "1111"},
-                "sample_2" : { "input" : "5597571.xml",
+                "sample_2" : { "input" : "5597571 A.xml",
                                "input_dir_origin" : "A_MM",
                                "local_name" : "DKMS-LSL_ID14278154_A_1",
                                "cell_line" : "DKMS-LSL_ID14278154",
@@ -107,7 +107,7 @@ settings_both = {"reference_dir": "reference_data_unittest",
                 }
 
 log = general.start_log(level="DEBUG")
-
+__version__ = general.read_package_variable("__version__")
 # assemble settings for testing:
 cf = ConfigParser()
 cf.read(os.path.join(mypath_inner, base_config_file))
@@ -191,31 +191,31 @@ class Test_1_Create_Project(unittest.TestCase):
     def tearDownClass(self):
         pass
 
-    # def test_1_reject_invalid(self):
-    #     """make sure invalid entries are rejected properly
-    #     """
-    #     invalid = ['"', "'", "_", "#", "%"] # disallowed characters without spaces
-    #
-    #     for (field, orig_value, whitespace_ok) in self.myvalues:
-    #         if whitespace_ok:
-    #             invalid_chars = invalid
-    #         else:
-    #             invalid_chars = invalid + [" "] # spaces should be rejected, too
-    #
-    #         # check that default value is ok:
-    #         field.setText(orig_value)
-    #         self.form.get_values()
-    #         invalid_msg = self.form.check_all_fields_valid()
-    #         self.assertFalse(invalid_msg)
-    #
-    #         # check that invalid characters are rejected:
-    #         for char in invalid_chars:
-    #             mytext = orig_value + char
-    #             field.setText(mytext)
-    #             self.form.get_values()
-    #             invalid_msg = self.form.check_all_fields_valid()
-    #             self.assertTrue(invalid_msg)
-    #         field.setText(orig_value)
+    def test_1_reject_invalid(self):
+        """make sure invalid entries are rejected properly
+        """
+        invalid = ['"', "'", "_", "#", "%"] # disallowed characters without spaces
+
+        for (field, orig_value, whitespace_ok) in self.myvalues:
+            if whitespace_ok:
+                invalid_chars = invalid
+            else:
+                invalid_chars = invalid + [" "] # spaces should be rejected, too
+
+            # check that default value is ok:
+            field.setText(orig_value)
+            self.form.get_values()
+            invalid_msg = self.form.check_all_fields_valid()
+            self.assertFalse(invalid_msg)
+
+            # check that invalid characters are rejected:
+            for char in invalid_chars:
+                mytext = orig_value + char
+                field.setText(mytext)
+                self.form.get_values()
+                invalid_msg = self.form.check_all_fields_valid()
+                self.assertTrue(invalid_msg)
+            field.setText(orig_value)
 
     def test_2_create_project_success(self):
         """
@@ -297,6 +297,56 @@ class Test_1_Create_Project(unittest.TestCase):
         self.assertEqual(root[2][0].text, "Submission has been committed.")
 
 
+class Test_2_ProjectStatus(unittest.TestCase):
+    """ check toggling of project status
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping ProjectStatus Test because skip_other_tests is set to True")
+        else:
+            self.project = project_name
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test1_get_status(self):
+        """test if we can get the status of our new project correctly
+        """
+        project_open = GUI_forms.check_project_open(self.project, log)
+        self.assertEqual(project_open, True)
+
+    def test2_get_status_nonsense(self):
+        """test if we get status 'Open' for a non-existing project
+        (policy: when in doubt, treat as 'Open')
+        """
+        project_open = GUI_forms.check_project_open("bla", log)
+        self.assertEqual(project_open, True)
+
+    def test3_toggle_status_to_closed(self):
+        """test if we can toggle the status of our project to 'Closed'
+        """
+        success, new_status, new_index = typeloader_functions.toggle_project_status(self.project, "Open", log)
+        self.assertEqual(success, True)
+        self.assertEqual(new_status, "Closed")
+        self.assertEqual(new_index, 1)
+
+    def test4_get_status_closed(self):
+        """test if we can get the status correctly if project is closed
+        """
+        project_open = GUI_forms.check_project_open(self.project, log)
+        self.assertEqual(project_open, False)
+
+    def test5_toggle_status_to_open(self):
+        """test if we can toggle the project status back to 'Open'
+        """
+        success, new_status, new_index = typeloader_functions.toggle_project_status(self.project, "Closed", log)
+        self.assertEqual(success, True)
+        self.assertEqual(new_status, "Open")
+        self.assertEqual(new_index, 0)
+
+
 class Test_Create_New_Allele(unittest.TestCase):
     """
     create new allele
@@ -356,7 +406,9 @@ class Test_Create_New_Allele(unittest.TestCase):
         Create ENA flatfile from xml
         """
         self.form = ALLELE.NewAlleleForm(log, mydb, self.project_name, curr_settings, None, samples_dic["sample_2"]["id_int"], samples_dic["sample_2"]["id_ext"])
-        self.form.file_widget.field.setText(os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], samples_dic["sample_2"]["data_unittest_dir"], samples_dic["sample_2"]["input"]))
+        xml_file = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], samples_dic["sample_2"]["data_unittest_dir"], samples_dic["sample_2"]["input"])
+        log.info(f"XML raw file: {xml_file}")
+        self.form.file_widget.field.setText(xml_file)
         self.form.upload_btn.setEnabled(True)
         self.form.upload_btn.click()
 
@@ -1460,6 +1512,73 @@ class Test_Views(unittest.TestCase):
         test_tab7_history(self)
 
 
+class TestLogFileDialog(unittest.TestCase):
+    """tests whether logfile can be downloaded
+    """
+    logfile = None
+    target_path = None
+
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping TestLogFileDialog because skip_other_tests is set to True")
+        else:
+            self.dialog = GUI_download_files.LogFileDialog(curr_settings, log)
+            self.logfile = os.path.join(curr_settings["recovery_dir"], "testlog.log")
+            self.target_path = "mytestlog.log"
+            self.log_text = "This is a test logfile"
+            with open(self.logfile, "w") as g:
+                g.write(self.log_text)
+
+    @classmethod
+    def tearDownClass(self):
+        try:
+            for myfile in [self.logfile, self.target_path]:
+                os.remove(myfile)
+        except FileNotFoundError:
+            pass
+
+    def test1_path_rejected(self):
+        """test whether chosen logfile path is rejected if not in the right directory or wrong filetype
+        """
+        msg = self.dialog.get_file("test.log")
+        self.assertEqual(msg, "This file is not a logfile of the user you started this dialog from!")
+
+        msg = self.dialog.get_file(os.path.join(curr_settings["recovery_dir"],"test.db"))
+        self.assertEqual(msg, "This is not a log file! Please choose a file that ends with .log!")
+
+    def test2_path_caught(self):
+        """test whether valid logfile path is caught correctly
+        """
+        self.dialog.get_file(self.logfile)
+        self.assertEqual(self.dialog.file, self.logfile)
+
+    def test3_download_logfile(self):
+        """test if logfile can be downloaded successfully and correctly
+        """
+        # remove target file if existant and assure clean slate:
+        try:
+            os.remove(self.target_path)
+        except FileNotFoundError:
+            pass
+        self.assertFalse(os.path.isfile(self.target_path))
+
+        # download logfile:
+        self.dialog.download_file(self.target_path, suppress_messagebox=True)
+
+        # check downloaded logfile:
+        self.assertTrue(os.path.isfile(self.target_path))
+
+        with open(self.target_path, "r") as f:
+            text = f.read()
+            self.assertEqual(text, self.log_text)
+
+        # check that warning is created:
+        warning = self.dialog.warning
+        self.assertTrue(warning.startswith("Before sending this file to anyone, please open it in a text editor"))
+        # TODO: access the QMessagebox, ensure it is actually shown, and then close it
+
+
 class Test_Make_IMGT_Files_py(unittest.TestCase):
     """
     Test Make_IMGT_Files in typeloader_core
@@ -1515,6 +1634,56 @@ class Test_Make_IMGT_Files_py(unittest.TestCase):
 
         os.remove(self.ipd_submission_file)
         os.remove(self.ipd_submission_zipfile)
+
+
+class TestMakeIMGTFilesWith5PrimeOverhang(unittest.TestCase):
+    """Test correct handling of fasta file containing a sequence that starts before the reference sequence
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "TestMakeIMGTFilesWith5PrimeOverhang because skip_other_tests is set to True")
+        else:
+            self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "start_overhang")
+            self.fasta_file = os.path.join(self.mydir, "sequence_starting_28bp_before_reference.fa")
+            self.submission_id = "DKMS900001"
+
+            self.project_name = project_name
+            self.project_dir = os.path.join(curr_settings["projects_dir"], self.project_name)
+            self.sample_id_int = "testIMGT2"
+            self.local_name = f'DKMS-LSL_{self.sample_id_int}_2DS3_1'
+            self.pretypings = os.path.join(self.mydir, "fake_befunde.csv")
+
+            self.samples = [(self.sample_id_int, self.local_name, '')]
+            self.file_dic = {self.local_name: {'blast_xml': f'{self.local_name}.blast.xml',
+                                               'ena_file': f'{self.local_name}.ena.txt'}}
+            self.allele_dic = {self.local_name: TargetAllele(gene='KIR2DS3',
+                                                             target_allele='KIR2DS3*0020103:new',
+                                                             partner_allele='KIR2DS3*0010301')}
+            self.ENA_id_map = {self.local_name: '15368J48'}
+            self.ENA_gene_map = {self.local_name: 'KIR2DS3'}
+
+            self.diff_string = "KIR2DS3*002new differs from KIR2DS3*0020103 like so : Mismatches = pos 447 in codon 128"
+            self.diff_string += " (TGC -> TGA);pos 6267 (G -> T);pos 6303 (T -> C);pos 6307 (T -> G);pos 6390 (G -> A);"
+            self.diff_string += "pos 6392 (A -> G);. Deletions = pos 15069 (T). Insertions = pos 15038 (C)."
+
+            typeloader_functions.upload_new_allele_complete(self.project_name, self.sample_id_int, "bla",
+                                                            self.fasta_file, "DKMS", curr_settings, mydb, log)
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test_diff_string_ok(self):
+        """test whether correct IPD diff string is generated, including correct codons
+        """
+        imgt_data, _, _ = MIF.make_imgt_data(self.project_dir, self.samples, self.file_dic, self.allele_dic,
+                                             self.ENA_id_map, self.ENA_gene_map, self.pretypings,
+                                             curr_settings, log)
+        self.assertTrue(imgt_data)
+        cell_line = list(imgt_data.keys())[0]
+        diff_string = imgt_data[cell_line].split("CC")[1].split("XX")[0].strip()
+        self.assertEqual(diff_string, self.diff_string)
 
 
 class Test_EMBL_functions(unittest.TestCase):
@@ -1690,80 +1859,60 @@ The problem-alleles were NOT added. Please fix them and try again!"""
         self.assertEqual(result, expected_result)
 
 
-#TODO: class Test_incomplete_sequences(unittest.TestCase):
-# class Test_rejection_short_UTR3(unittest.TestCase):
-#     """
-#     test if TypeLoader correctly rejects sequences with incomplete UTR3
-#     """
-#     @classmethod
-#     def setUpClass(self):
-#         if skip_other_tests:
-#             self.skipTest(self, "Skipping Test_rejection_short_UTR3 because skip_other_tests is set to True")
-#         else:
-#             self.mydir = os.path.join(curr_settings["login_dir"], "data_unittest", "rejection")
-#             self.testfile_fa = os.path.join(self.mydir, "UTR3_short.fa")
-#             self.missing_bp_fa = "53"
-#             self.testfile_xml = os.path.join(self.mydir, "UTR3_short.xml")
-#             self.missing_bp_xml = "1"
-#             self.project_name = project_name
-#
-#     @classmethod
-#     def tearDownClass(self):
-#         pass
-#
-#     def test_reject_fasta(self):
-#         """test if FASTA file with incomplete UTR3 is correctly rejected
-#         """
-#         myfile = self.testfile_fa
-#         missing_bp = self.missing_bp_fa
-#
-#         # upload and parse file:
-#         results = typeloader_functions.upload_parse_sequence_file(myfile, curr_settings, log)
-#         (success_upload, _, filetype, _,
-#          blastXmlFile, targetFamily, fasta_filename, allelesFilename,
-#          header_data) = results
-#
-#         self.assertTrue(success_upload) # uploading and parsing should work
-#
-#         # try to create ENA file: (should fail)
-#         results2 = typeloader_functions.process_sequence_file(self.project_name,
-#                                                 filetype, blastXmlFile, targetFamily,
-#                                                 fasta_filename, allelesFilename, header_data,
-#                                                 curr_settings, log)
-#
-#         (success, err_type, msg) = results2
-#         err = "File {} should have been rejected!".format(myfile)
-#         self.assertFalse(success, err)
-#         self.assertEqual(err_type, 'Incomplete sequence', "Should have thrown an 'Incomplete sequence' error")
-#         ref_error = errors.IncompleteSequenceError(missing_bp)
-#         self.assertEqual(msg, ref_error.msg)
-#
-#     def test_reject_XML(self):
-#         """test if XML file with incomplete UTR3 is correctly rejected
-#         """
-#         myfile = self.testfile_xml
-#         missing_bp = self.missing_bp_xml
-#
-#         # upload and parse file:
-#         results = typeloader_functions.upload_parse_sequence_file(myfile, curr_settings, log)
-#         (success_upload, _, filetype, _,
-#          blastXmlFile, targetFamily, fasta_filename, allelesFilename,
-#          header_data) = results
-#
-#         self.assertTrue(success_upload) # uploading and parsing should work
-#
-#         # try to create ENA file: (should fail)
-#         results2 = typeloader_functions.process_sequence_file(self.project_name,
-#                                                 filetype, blastXmlFile, targetFamily,
-#                                                 fasta_filename, allelesFilename, header_data,
-#                                                 curr_settings, log)
-#
-#         (success, err_type, msg) = results2
-#         err = "File {} should have been rejected!".format(myfile)
-#         self.assertFalse(success, err)
-#         self.assertEqual(err_type, 'Incomplete sequence', "Should have thrown an 'Incomplete sequence' error")
-#         ref_error = errors.IncompleteSequenceError(missing_bp)
-#         self.assertEqual(msg, ref_error.msg)
+class TestIncompleteSequences(unittest.TestCase):
+    """
+    test if TypeLoader correctly handles sequences with incomplete UTR3
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping Test_rejection_short_UTR3 because skip_other_tests is set to True")
+        else:
+            self.mydir = os.path.join(curr_settings["login_dir"], "data_unittest", "incomplete_UTR")
+            self.project_name = project_name
+            testcase_file = os.path.join(self.mydir, "bulk_upload_incompletes.csv")
+
+            log.debug(f"Reading testcases from file {testcase_file}...")
+            TestCase = namedtuple("TestCase", "nr file_name sample_id_int incomplete should_succeed exp_error")
+            self.testcases = []
+            with open(testcase_file, "r") as f:
+                data = csv.reader(f, delimiter=",")
+                for row in data:
+                    if row:
+                        if row[0] != "nr":
+                            case = TestCase(nr=row[0], file_name=row[2], sample_id_int=row[3], incomplete=row[6],
+                                            should_succeed=row[7], exp_error=row[8])
+                            self.testcases.append(case)
+            log.debug(f"\t=> found {len(self.testcases)} testcases")
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test_various_cases(self):
+        """testing various combinations of incomplete or missing UTRs and the parameter "incomplete_ok"
+        """
+        for case in self.testcases:
+            log.debug(f"\ttesting {case.file_name}...")
+            raw_path = os.path.join(self.mydir, case.file_name)
+            if case.incomplete == "ok":
+                incomplete_ok = True
+            else:
+                incomplete_ok = False
+
+            if case.should_succeed == "True":
+                exp_success = True
+            else:
+                exp_success = False
+
+            success, msg = typeloader_functions.upload_new_allele_complete(self.project_name, case.sample_id_int,
+                                                                           "test", raw_path, "DKMS", curr_settings,
+                                                                           mydb, log, incomplete_ok=incomplete_ok)
+            self.assertEqual(success, exp_success)
+            if not success:
+                log.debug(f"Expected error should start with '{case.exp_error}'!")
+                log.debug(f"Error encountered: '{msg}'")
+                self.assertTrue(msg.startswith(case.exp_error))
 
 
 class Test_null_alleles(unittest.TestCase):
@@ -2111,12 +2260,12 @@ class Test_pretyping_valid(unittest.TestCase):
 
             # pepare error_dic:
             from typeloader_core import errors
-            self.error_dic = {"Cannot tell which novel allele from pretyping this is" : errors.BothAllelesNovelError,
-                              "no allele marked as new in pretyping" : errors.InvalidPretypingError,
-                              "assigned allele name not found in pretyping" : errors.InvalidPretypingError,
+            self.error_dic = {"Cannot tell which novel allele from pretyping this is": errors.BothAllelesNovelError,
+                              "no allele marked as new in pretyping": errors.InvalidPretypingError,
+                              "assigned allele name not found in pretyping": errors.InvalidPretypingError,
                               "POS is not acceptable pretyping for a target locus": errors.InvalidPretypingError,
-                              "pretyping for HLA-B missing" : errors.InvalidPretypingError,
-                              "Pretyping contains '|'! GL-Stings are only accepted for KIR!" : errors.InvalidPretypingError}
+                              "pretyping for HLA-B missing": errors.InvalidPretypingError,
+                              "Pretyping contains '|'! GL-Strings are only accepted for KIR!": errors.InvalidPretypingError}
 
     @classmethod
     def tearDownClass(self):
@@ -2153,7 +2302,164 @@ class Test_pretyping_valid(unittest.TestCase):
                                          "Error in {}: {}".format(s.name, s.description)) # check result correct
 
 
-class Test_Clean_Stuff(unittest.TestCase):
+class TestEdgecases(unittest.TestCase):
+    """
+    Test whether differences within the first or last 3 bp of a sequence are caught correctly (#124)
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping TestEdgecases because skip_other_tests is set to True")
+        else:
+            self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "outlier_bases")
+            self.project_dir = os.path.join(curr_settings["login_dir"], "projects", project_name)
+            self.sample_id_int = "EC01"
+
+            # read testcases from csv file:
+            self.testcases = []
+            TestCase = namedtuple("TestCase", """nr desc filename exp locus target_family closest_allele exact_match 
+                                                 hit_start align_len query_len del_pos ins_pos mm_pos dels inss mms""")
+            with open(os.path.join(self.mydir, "testcases.csv")) as f:
+                data = csv.reader(f, delimiter=",")
+                for row in data:
+                    if row:
+                        if row[0] != "nr":
+                            nr = row[0]
+                            desc = row[1]
+                            filename = os.path.join(self.mydir, row[2])
+                            exp = row[3]
+                            locus = row[4]
+                            closest = row[5]
+                            exact = True if row[6] == "True" else False  # convert to bool
+                            start = int(row[7])
+                            align_len = int(row[8])
+                            query_len = int(row[9])
+                            del_pos = [] if not row[10] else row[10].replace('"', "").split("|")
+                            del_pos = [int(x) for x in del_pos]
+                            ins_pos = [] if not row[11] else row[11].replace('"', "").split("|")
+                            ins_pos = [int(x) for x in ins_pos]
+                            mm_pos = [] if not row[12] else row[12].replace('"', "").split("|")
+                            mm_pos = [int(x) for x in mm_pos]
+                            dels = [] if not row[13] else row[13].replace('"', "").split("|")
+                            inss = [] if not row[14] else row[14].replace('"', "").split("|")
+                            mms_rough = [] if not row[15] else row[15].replace('"', "").split("|")
+                            mms = []
+                            if mms_rough:
+                                for mystring in mms_rough:  # transform from string to proper tuple
+                                    mms.append(tuple(mystring.replace("('", "").replace("')", "").split("', '")))
+                            target_fam = row[16]
+                            mycase = TestCase(nr=nr, desc=desc, filename=filename, exp=exp, locus=locus, hit_start=start,
+                                              target_family=target_fam, closest_allele=closest, exact_match=exact,
+                                              align_len = align_len, query_len=query_len, del_pos=del_pos, ins_pos=ins_pos,
+                                              mm_pos=mm_pos, dels=dels, inss=inss, mms=mms)
+                            self.testcases.append(mycase)
+
+            log.info(f"Established {len(self.testcases)} testcases from file.")
+
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test_edgecases(self):
+        """
+        testing various cases of changes within 3 bp of either sequence boundary:
+        are mm, ins and del positions in these regions identified and located correctly?
+        """
+        for case in self.testcases:
+            log.info(f"Testing case {case.nr}:{case.desc}...")
+            self.assertTrue(os.path.exists(case.filename))
+
+            mydic = CA.get_closest_known_alleles(case.filename, case.target_family, curr_settings, log)
+
+            mykey = list(mydic.keys())[0]
+            self.assertEqual(mykey, case.closest_allele)
+            d = mydic[mykey]
+            self.assertEqual(d["name"], case.closest_allele)
+            self.assertEqual(d["exactMatch"], case.exact_match)
+            self.assertEqual(d["differences"]['deletions'], case.dels)
+            self.assertEqual(d["differences"]['insertions'], case.inss)
+            self.assertEqual(d["differences"]['mismatches'], case.mms)
+            self.assertEqual(d["differences"]['deletionPositions'], case.del_pos)
+            self.assertEqual(d["differences"]['insertionPositions'], case.ins_pos)
+            self.assertEqual(d["differences"]['mismatchPositions'], case.mm_pos)
+
+
+class TestDeleteOtherAllele(unittest.TestCase):
+    """
+    Test whether deletion of non-chosen partner allele of an XML file in subsequent files works
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping TestDeleteOtherAllele because skip_other_tests is set to True")
+        else:
+            self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "delete_partner")
+
+            self.blast_xml_file = os.path.join(self.mydir, "DKMS-LSL_ID1_E_1.blast.xml")
+            self.fasta_file = os.path.join(self.mydir, "DKMS-LSL_ID1_E_1.fa")
+            self.partner_allele = "E*01:03:02:01-Novel-2"
+
+            self.fasta_ref_file = os.path.join(self.mydir, "DKMS-LSL_ID1_E_1_test.fa")
+            self.blast_ref_file = os.path.join(self.mydir, "DKMS-LSL_ID1_E_1_test.blast.xml")
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test_deletion_of_unchosen_partner_allele(self):
+        """run remove_partner_allele() and check whether partner allele was removed
+        """
+        from itertools import zip_longest
+        typeloader_functions.remove_other_allele(self.blast_xml_file, self.fasta_file, self.partner_allele, log,
+                                                 replace=False)
+        blast_file_out = self.blast_xml_file + "1"
+        fasta_file_out = self.fasta_file + "1"
+
+        log.debug(f"Checking {fasta_file_out}...")
+        self.assertTrue(os.path.isfile(fasta_file_out))
+        diff = compare_2_files(fasta_file_out, self.fasta_ref_file)
+        self.assertEqual(len(diff["added_sings"]), 0)
+        self.assertEqual(len(diff["deleted_sings"]), 0)
+
+        log.debug(f"Checking {blast_file_out}...")
+        self.assertTrue(os.path.isfile(blast_file_out))
+        # compare_2_files() gets stuck in an infinite loop for the blast_xml_files, probably due to XML-ish nature
+        with open(blast_file_out) as f1, open(self.blast_ref_file) as f2:
+            for (line_new, line_ref) in zip_longest(f1, f2):
+                self.assertEqual(line_new, line_ref)
+
+        for new_file in [fasta_file_out, blast_file_out]:
+            os.remove(new_file)
+            self.assertFalse(os.path.isfile(new_file))
+
+
+class TestRejectionDeviance(unittest.TestCase):
+    """Test whether alleles too different from all known full length alleles are rejected (#138)
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping TestRejectionDeviance because skip_other_tests is set to True")
+        else:
+            self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "deviance")
+            self.myfile = os.path.join(self.mydir, "2DS1_deviant.fa")
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test_rejection(self):
+        """testing whether known deviant allele is rejected correctly
+        """
+        self.assertTrue(os.path.isfile(self.myfile))
+        (_, _, _, _, blastXmlFile, target_family,
+                            _, _, _) = typeloader_functions.upload_parse_sequence_file(self.myfile, curr_settings, log)
+        with self.assertRaises(errors.DevianceError):
+            closestAlleles = CA.get_closest_known_alleles(blastXmlFile, target_family, curr_settings, log)
+
+
+class TestCleanStuff(unittest.TestCase):
     """
     Remove all directories and files written by  all unit tests
     """
