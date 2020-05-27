@@ -671,6 +671,7 @@ class Test_Send_To_ENA(unittest.TestCase):
             i = 0
             for line in f:
                 if i == 0:
+
                     self.assertEqual(line, "STUDY\t{}\n".format(project_id))
                 elif i == 1:
                     self.assertEqual(line, "NAME\t{}\n".format(curr_alias))
@@ -1053,7 +1054,7 @@ class Test_Views(unittest.TestCase):
 
         self.assertEqual(model.headerData(36, Qt.Horizontal, Qt.DisplayRole), "ENA Submission ID") # will continually change, therefore not testing content
         self.assertEqual(model.headerData(37, Qt.Horizontal, Qt.DisplayRole), "ENA Acception Date")
-        self.assertEqual(model.data(model.index(0, 37)), "2019-04-24")
+        self.assertEqual(model.data(model.index(0, 37)), "2020-05-26")
         self.assertEqual(model.data(model.index(1, 37)), "")
         self.assertEqual(model.headerData(38, Qt.Horizontal, Qt.DisplayRole), "ENA Accession Nr")
         self.assertEqual(model.data(model.index(0, 38)), "LT986596")
@@ -1410,7 +1411,7 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.headerData(43, Qt.Vertical, Qt.DisplayRole), "Submission successful?")
             self.assertEqual(model.data(model.index(43, 0), Qt.DisplayRole), "yes")
             self.assertEqual(model.headerData(44, Qt.Vertical, Qt.DisplayRole), "ENA Acception Date")
-            self.assertEqual(model.data(model.index(44, 0), Qt.DisplayRole), "2019-04-24")
+            self.assertEqual(model.data(model.index(44, 0), Qt.DisplayRole), "2020-05-26")
             self.assertEqual(model.headerData(45, Qt.Vertical, Qt.DisplayRole), "ENA Accession Nr")
             self.assertEqual(model.data(model.index(45, 0), Qt.DisplayRole), "LT986596")
 

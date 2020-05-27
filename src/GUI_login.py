@@ -267,10 +267,10 @@ class LoginForm(QDialog):
                 self.address = dialog.address
                 self.email = dialog.email
             
-                if self.login == "admin":
-                    QMessageBox.warning(self, "User creation error", 
-                            "Username 'admin' is restricted. Please use something else!")
-                    return
+                # if self.login == "admin":
+                #     QMessageBox.warning(self, "User creation error",
+                #             "Username 'admin' is restricted. Please use something else!")
+                #     return
                 
                 success = create_user_space(self.root_path, self.login, self.name, 
                                             self.short, self.email, self.address, self.log)
@@ -556,7 +556,7 @@ def check_for_reference_updates(log, settings, parent):
     
     update_me = []
     for db_name in db_list:
-        new_version_found, _ = update_reference.check_database(db_name, reference_local_path, log, 
+        new_version_found, _ = update_reference.check_database(db_name, reference_local_path, log,
                                                            skip_if_updated_today = False)
         if new_version_found:
             update_me.append(db_name.upper())
@@ -673,6 +673,7 @@ def config_files_missing():
     """
     for myfile in [base_config_file, company_config_file]: 
         if not os.path.isfile(myfile):
+            print(os.path.abspath(myfile))
             raise IOError("File {} does not exist! Please create it before trying again!\nAborting...".format(myfile))
             return True
     return False
