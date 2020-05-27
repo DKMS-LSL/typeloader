@@ -254,13 +254,17 @@ def make_parsed_files(target, ref_dir, log, restricted_to=None, target_dir=None)
     fa_file = os.path.join(myref_dir, f"parsed{target}.fa")
     dump_file = os.path.join(myref_dir, f"parsed{target}.dump")
     version_file = os.path.join(myref_dir, f"curr_version_{target}.txt")
+    allelename_file = os.path.join(ref_dir, f"{target}_allelenames.dump")
     
     log.debug("\t\tReading alleles from {}...".format(ipd_file))
     alleles, version = read_dat_file(ipd_file, target.upper(), log)
-    
+    log.debug(f"\t\t\t=> found {len(alleles)} alleles")
+
+    allele_names = []
     log.debug("\t\tWriting {}...".format(fa_file))
     with open(fa_file, "w") as fasta_file:
         for allele_name in list(alleles.keys()):
+            allele_names.append(allele_name)
             allele_data = alleles[allele_name]
             if restricted_to:
                 if allele_name in restricted_to:
@@ -285,8 +289,12 @@ def make_parsed_files(target, ref_dir, log, restricted_to=None, target_dir=None)
                     pass
     
     log.debug("\t\tWriting {}...".format(dump_file))
-    with open(dump_file, "wb") as alleleDumpFile:
-        dump(alleles, alleleDumpFile)
+    with open(dump_file, "wb") as g:
+        dump(alleles, g)
+
+    log.debug("\t\tWriting {}...".format(allelename_file))
+    with open(allelename_file, "wb") as g:
+        dump(allele_names, g)
 
     log.debug("\t\tWriting {}...".format(version_file))
     with open(version_file, "w") as g:
