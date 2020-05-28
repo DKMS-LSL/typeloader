@@ -637,6 +637,16 @@ class ChoiceTableWidget(QWidget):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
+        filter_widget = QWidget()
+        filter_layout = QHBoxLayout()
+        filter_widget.setLayout(filter_layout)
+        self.filter_fld = QLineEdit()
+        filter_layout.addWidget(self.filter_fld)
+        filter_btn = QPushButton("Filter!")
+        filter_btn.clicked.connect(self.filter_table)
+        filter_layout.addWidget(filter_btn)
+        layout.addWidget(filter_widget)
+
         self.table = ChoiceTable(self.header, self.data, self.log, self.parent)
         self.table.chosen_items.connect(self.update_chosen_item_nr)
         layout.addWidget(self.table)
@@ -663,6 +673,27 @@ class ChoiceTableWidget(QWidget):
         self.log.debug(f"Currently {n} items selected")
         self.count_field.setText(str(n))
         self.chosen_items.emit(chosen_items)
+
+    @pyqtSlot()
+    def filter_table(self):
+        """hide all rows not containing the pattern in self.filter_fld;
+        if pattern is empty, show all rows
+        """
+        pattern = self.filter_fld.text().strip()
+        if pattern:
+            for i in range(self.table.rowCount()):
+                txt = self.table.item(i, 0).text()
+                print(pattern, txt)
+                if pattern in txt:
+                    self.table.setRowHidden(i, False)
+                else:
+                    self.table.setRowHidden(i, True)
+        else:
+            for i in range(self.table.rowCount()):
+                self.table.setRowHidden(i, False)
+
+
+
 
 
 class ChoiceTable(QTableWidget):

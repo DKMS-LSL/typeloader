@@ -702,8 +702,8 @@ class ChooseReferenceAllelesDialog(CollapsibleDialog):
 
         #FIXME: remove after development!
         self.proceed_sections(0, 3)
-        # self.target_field.setText("HLA")
-        # self.fill_allele_table()
+        self.target_field.setText("HLA")
+        self.fill_allele_table()
         self.chosen_alleles = ["HLA-B*07:386N", "HLA-B*35:03:01:01"]
         self.fill_list_with_chosen_alleles()
 
