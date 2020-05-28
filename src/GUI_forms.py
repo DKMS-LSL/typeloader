@@ -14,7 +14,7 @@ components for forms and dialogs
 
 import sys, os
 from PyQt5.QtSql import QSqlQueryModel, QSqlQuery
-from PyQt5.QtWidgets import (QApplication, QListView, QGroupBox, QGridLayout, 
+from PyQt5.QtWidgets import (QApplication, QListView, QGroupBox, QGridLayout,
                              QFileDialog, QLabel, QPushButton, QLineEdit, QDialog, 
                              QTreeWidgetItem, QVBoxLayout, QHBoxLayout, QFrame,
                              QTableWidget, QWidget, QCheckBox, QTableWidgetItem)
@@ -30,7 +30,20 @@ from GUI_forms_new_project import NewProjectForm
 
 #===========================================================
 # classes:
- 
+
+def log_uncaught_exceptions(cls, exception, tb):
+    """reimplementation of sys.excepthook;
+    catches uncaught exceptions, logs them and exits the app
+    """
+    import traceback
+    from PyQt5.QtCore import QCoreApplication
+    log.critical('{0}: {1}'.format(cls, exception))
+    log.exception(msg = "Uncaught Exception", exc_info = (cls, exception, tb))
+    #TODO: (future) maybe find a way to display the traceback only once, both in console and logfile?
+    sys.__excepthook__(cls, exception, traceback)
+    QCoreApplication.exit(1)
+
+
 class QueryDialog(QDialog):
     """a dialog to choose an item from a query
     """
@@ -108,16 +121,19 @@ class ProceedButton(QPushButton):
     => they need to contain text to be accepted;
     section is the section number this Button belongs to
     """
-    proceed = pyqtSignal(int)
+    proceed = pyqtSignal(int, int)
      
-    def __init__(self, text = "", items = [], log = None, section = 0, parent = None,
-                 only1 = False):
+    def __init__(self, text="", items=None, log=None, section=0, parent=None,
+                 only1=False):
         """constructor
         """
         super().__init__(text, parent)
         self.text = text
         self.log = log
-        self.items = items
+        if items:
+            self.items = items
+        else:
+            self.items = []
         self.section = section
         self.setEnabled(False)
         self.setCheckable(True)
@@ -134,9 +150,15 @@ class ProceedButton(QPushButton):
             self.setEnabled(True)
          
     @pyqtSlot()
-    def check_ready(self, debugging = False):
+    def check_ready(self, debugging=False):
         """checks all items: if all evaluate to True, enables proceeding 
         """
+        if not self.items:
+            self.log.debug("Always ready (no fields to check)!")
+            self.setEnabled(True)
+            self.setStyleSheet(general.btn_style_ready)
+            return
+
         self.log.debug("Ready for proceeding?")
         ready = True
         active_fields = 0
@@ -167,15 +189,17 @@ class ProceedButton(QPushButton):
                         text = item.text()
                     if not text:
                         ready = False
+                    elif text == "0":
+                        ready = False
                     if debugging:
                         print("text:", text)
-        
+
         if active_fields == 0: # if nothing selected
             ready = False
         elif self.only1: # if only one should be selected
             if active_fields != 1:
                 ready = False
-        
+
         if ready:
             self.log.debug("\tReady!")
             self.setEnabled(True)
@@ -200,13 +224,14 @@ class ProceedButton(QPushButton):
         self.log.debug("Proceed to section {}!".format(self.section + 1))
         self.check_ready()
         self.setChecked(True)
-        self.proceed.emit(self.section + 1)
+        self.proceed.emit(self.section, self.section + 1)
          
  
 class ChoiceButton(QPushButton):
     """a QPushButton to open a dialog, select something with it, 
     and emit the chosen item as signal done;
     reimplement the open_dialog() method for individual kinds of ChoiceButtons
+    (if used as-is, the button will simply emit its text when clicked)
     """
     done = pyqtSignal(str)
      
@@ -222,23 +247,23 @@ class ChoiceButton(QPushButton):
     def open_dialog(self):
         """reimplement for individual buttons
         """
-        pass
+        self.done.emit(self.text)
          
     @pyqtSlot(str)
-    def change_to_normal(self, _ = None):
+    def change_to_normal(self, _=None):
         """sets button to normal look once it has been used
         (accepts an optional unused argument so it can be connected to signals emitting a single object)
         """
         self.setStyleSheet(general.btn_style_normal)
-         
+
     @pyqtSlot(str)
     def emit_choice(self, choice):
         """emits choice made with dialog
         """
         if choice:
             self.done.emit(choice)
-            self.change_to_normal("")
-         
+            self.change_to_normal()
+
          
 class FileButton(ChoiceButton):
     """a QPushButton to select and a file;
@@ -265,8 +290,7 @@ class FileButton(ChoiceButton):
         except Exception as E:
             if self.log:
                 self.log.exception(E)
-                
-     
+
      
 class QueryButton(ChoiceButton):
     """a QPushButton to select something from a query;
@@ -391,14 +415,15 @@ class ChoiceSection(QGroupBox):
     which is displayed in the field & emitted as signal choice 
     """
     choice = pyqtSignal(str)
-    def __init__(self, field_text, btns, parent=None, label_width = None):
+
+    def __init__(self, field_text, btns, parent=None, label_width=None, log=None):
         super().__init__(parent)
         self.field_text = field_text
         self.buttons = btns
         self.label_width = label_width
+        self.log = log
         self.init_UI()
-        #TODO: add log to log choice
-         
+
     def init_UI(self):
         grid = QGridLayout()
         self.setLayout(grid)
@@ -431,11 +456,13 @@ class ChoiceSection(QGroupBox):
             btn = self.button_dic[i]
             btn.done.connect(self.field.setText)
             btn.done.connect(self.choice.emit)
-            #TODO: log choice
+            btn.done.connect(self.log_btn_usage)
+
             for j in self.button_dic:
                 if i != j:
                     btn2 = self.button_dic[j]
                     btn.done.connect(btn2.change_to_normal)
+            btn.done.connect(btn.change_to_normal)
      
     @pyqtSlot()
     def reactivate(self):
@@ -444,6 +471,13 @@ class ChoiceSection(QGroupBox):
         for i in self.button_dic:
             btn = self.button_dic[i]
             btn.setStyleSheet(general.btn_style_clickme)
+
+    @pyqtSlot(str)
+    def log_btn_usage(self, txt):
+        if self.log:
+            self.log.debug(f"User clicked button {txt} => emitted as Choice")
+        else:
+            print(txt)
 
 
 class FileChoiceTable(QTableWidget):
@@ -482,23 +516,23 @@ class FileChoiceTable(QTableWidget):
         """sets a new filter for use in self.get_data()
         """
         self.myfilter = myfilter
-        
+
     def get_data(self):
         """get alleles from database
         """
-        success, data = db_internal.execute_query(self.query + self.myfilter, self.num_columns, 
-                                                  self.log, "retrieving data for FileChoiceTable from database", 
+        success, data = db_internal.execute_query(self.query + self.myfilter, self.num_columns,
+                                                  self.log, "retrieving data for FileChoiceTable from database",
                                                   "Database error", self)
         if success:
             self.data = data
         self.log.debug("Emitting 'files = {}'".format(len(self.data)))
         self.files.emit(len(self.data))
-    
+
     def fill_UI(self):
         """fills table with data
         """
         self.get_data()
-        
+
         if self.keep_choices: # if table is refreshed just to update data before re-attempt, don't repopulate
             self.count_chosen()
             return
@@ -586,6 +620,107 @@ class FileChoiceTable(QTableWidget):
                 self.files_chosen.emit(0)
 
 
+class ChoiceTableWidget(QWidget):
+    """a QWidget containing a ChoiceTable plus connected widgits
+    """
+    chosen_items = pyqtSignal(list)
+
+    def __init__(self, header, data, log, parent=None):
+        super().__init__()
+        self.header = header
+        self.data = data
+        self.log = log
+        self.parent = parent
+        self.init_UI()
+
+    def init_UI(self):
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        self.table = ChoiceTable(self.header, self.data, self.log, self.parent)
+        self.table.chosen_items.connect(self.update_chosen_item_nr)
+        layout.addWidget(self.table)
+
+        # add counter:
+        counter_widget = QWidget()
+        counter_layout = QHBoxLayout()
+        counter_widget.setLayout(counter_layout)
+        layout.addWidget(counter_widget)
+
+        self.count_field = QLineEdit(self)
+        self.count_field.setText("0")
+        self.count_field.setReadOnly(True)
+        self.count_field.setFixedWidth(50)
+
+        counter_layout.addWidget(QLabel("Number of selected alleles:"))
+        counter_layout.addWidget(self.count_field)
+
+    @pyqtSlot(list)
+    def update_chosen_item_nr(self, chosen_items):
+        """when the table emits chosen_items, update the number in self.count_field
+        """
+        n = len(chosen_items)
+        self.log.debug(f"Currently {n} items selected")
+        self.count_field.setText(str(n))
+        self.chosen_items.emit(chosen_items)
+
+
+class ChoiceTable(QTableWidget):
+    """displays items so user can choose some of them
+    """
+    chosen_items = pyqtSignal(list)
+
+    def __init__(self, header, data, log, parent=None):
+        super().__init__()
+        self.log = log
+        if parent:
+            self.settings = parent.settings
+        else:
+            import GUI_login
+            self.settings = GUI_login.get_settings("admin", self.log)
+        self.header = header
+        self.data = data
+        self.chosen_data = []
+        self.init_UI()
+        self.fill_UI()
+
+    def init_UI(self):
+        self.log.debug(f"Creating ChoiceTable with {len(self.data)} items")
+        self.setColumnCount(len(self.header))
+        self.setHorizontalHeaderLabels(self.header)
+        self.horizontalHeader().setStretchLastSection(True)
+        self.verticalHeader().hide()
+        self.setSelectionMode(self.MultiSelection)
+        self.setSortingEnabled(True)
+        self.clicked.connect(self.remember_chosen)
+
+    def fill_UI(self):
+        """fills table with data
+        """
+        rows = len(self.data)
+        self.setRowCount(rows)
+
+        for (i, item) in enumerate(self.data):
+            cell = QTableWidgetItem(str(item))
+            self.setItem(i, 0, cell)
+
+        self.resizeColumnsToContents()
+
+    @pyqtSlot()
+    def remember_chosen(self):
+        """when any item is clicked, toggles its presence in self.chosen_data and emits
+        the updated list via chosen_items
+        """
+        txt = self.currentItem().text()
+
+        if txt in self.chosen_data:
+            self.chosen_data.remove(txt)
+        else:
+            self.chosen_data.append(txt)
+
+        self.chosen_items.emit(self.chosen_data)
+
+
 #===========================================================
 # functions:
 
@@ -622,13 +757,15 @@ def check_project_open(project_name, log, parent=None):
 if __name__ == '__main__':
     from typeloader_GUI import create_connection, close_connection
     import GUI_login
+
+    sys.excepthook = log_uncaught_exceptions
     log = general.start_log(level="DEBUG")
     log.info("<Start {}>".format(os.path.basename(__file__)))
     settings_dic = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, settings_dic["db_file"])
 
     app = QApplication(sys.argv)
-    ex = QueryDialog("select project_name from projects")
+    ex = ChoiceTableWidget(["Allele"], ["bla", "foo", "blubb"], log, parent=None)
     ex.show()
 
     result = app.exec_()
