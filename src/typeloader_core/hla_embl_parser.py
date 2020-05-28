@@ -264,8 +264,10 @@ def make_parsed_files(target, ref_dir, log, restricted_to=None, target_dir=None)
     log.debug("\t\tWriting {}...".format(fa_file))
     with open(fa_file, "w") as fasta_file:
         for allele_name in list(alleles.keys()):
-            allele_names.append(allele_name)
             allele_data = alleles[allele_name]
+            if allele_data.intron_dic:  # allele is not a CDS-only allele
+                allele_names.append(allele_name)
+
             if restricted_to:
                 if allele_name in restricted_to:
                     log.debug(f"\t\t\tAdding {allele_name} to database...")
@@ -299,6 +301,7 @@ def make_parsed_files(target, ref_dir, log, restricted_to=None, target_dir=None)
     log.debug("\t\tWriting {}...".format(version_file))
     with open(version_file, "w") as g:
         g.write(version)
+
     return version
 
 if __name__ == '__main__':
