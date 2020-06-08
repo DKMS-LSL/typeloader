@@ -155,7 +155,7 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
 
     if not alignments:
         log.error("No alignment found, sorry! Aborting...")
-        return hsp_query, hsp_subject, hsp_match, hsp_align_len, hsp_start
+        return hsp_query, hsp_subject, hsp_match, hsp_align_len, hsp_start, None
     if len(alignments) > 1:
         log.warning(f"Found {len(alignments)} possible alignments, choosing one at random (might not be the best one)!")
 
