@@ -291,6 +291,12 @@ def make_parsed_files(target, ref_dir, log, restricted_to=None, target_dir=None)
                     pass
     
     log.debug("\t\tWriting {}...".format(dump_file))
+    if restricted_to:  # limit dump file to chosen alleles
+        alleles2 = {}
+        for allele in alleles:
+            if allele in restricted_to:
+                alleles2[allele] = alleles[allele]
+        alleles = alleles2
     with open(dump_file, "wb") as g:
         dump(alleles, g)
 

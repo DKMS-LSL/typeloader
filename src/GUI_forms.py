@@ -631,6 +631,10 @@ class ChoiceTableWidget(QWidget):
         self.data = data
         self.log = log
         self.parent = parent
+        if self.parent:
+            self.settings = parent.settings
+        else:
+            self.settings = None
         self.init_UI()
 
     def init_UI(self):
@@ -641,13 +645,18 @@ class ChoiceTableWidget(QWidget):
         filter_layout = QHBoxLayout()
         filter_widget.setLayout(filter_layout)
         self.filter_fld = QLineEdit()
+        self.filter_fld.returnPressed.connect(self.filter_table)
         filter_layout.addWidget(self.filter_fld)
-        filter_btn = QPushButton("Filter!")
-        filter_btn.clicked.connect(self.filter_table)
-        filter_layout.addWidget(filter_btn)
+        self.filter_btn = QPushButton("Filter!")
+        self.filter_btn.clicked.connect(self.filter_table)
+        filter_layout.addWidget(self.filter_btn)
+        unselect_all_btn = QPushButton("Unselect all!")
+        unselect_all_btn.clicked.connect(self.unselect_all)
+        filter_layout.addWidget(unselect_all_btn)
+
         layout.addWidget(filter_widget)
 
-        self.table = ChoiceTable(self.header, self.data, self.log, self.parent)
+        self.table = ChoiceTable(self.header, self.data, self.log, self)
         self.table.chosen_items.connect(self.update_chosen_item_nr)
         layout.addWidget(self.table)
 
@@ -683,7 +692,6 @@ class ChoiceTableWidget(QWidget):
         if pattern:
             for i in range(self.table.rowCount()):
                 txt = self.table.item(i, 0).text()
-                print(pattern, txt)
                 if pattern in txt:
                     self.table.setRowHidden(i, False)
                 else:
@@ -692,8 +700,15 @@ class ChoiceTableWidget(QWidget):
             for i in range(self.table.rowCount()):
                 self.table.setRowHidden(i, False)
 
-
-
+    @pyqtSlot()
+    def unselect_all(self):
+        """unselect all rows and reset table to clean state
+        """
+        self.table.clearSelection()
+        self.table.chosen_data = []
+        self.filter_fld.setText("")
+        self.filter_table()
+        self.update_chosen_item_nr([])
 
 
 class ChoiceTable(QTableWidget):

@@ -185,7 +185,7 @@ def make_restricted_db(db_name, ref_path, restricted_to, target_dir, blast_path,
     else:
         use_dbname = db_name
 
-    os.makedirs(target_dir, exist_ok = True)
+    os.makedirs(target_dir, exist_ok=True)
 
     log.debug("\tCreating parsed files...")
     hla_embl_parser.make_parsed_files(use_dbname, ref_path, log,
@@ -198,7 +198,7 @@ def make_restricted_db(db_name, ref_path, restricted_to, target_dir, blast_path,
         log.info("Success!")
     else:
         log.error(msg)
-    return success
+    return success, msg
 
 
 def start_log(include_lines = False, error_to_email = False, info_to_file = False,
