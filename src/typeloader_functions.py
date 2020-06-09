@@ -256,8 +256,8 @@ def remove_other_allele(blast_xml_file, fasta_file, other_allele_name, log, repl
     log.debug("\t=> Done!")
 
 
-def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_filename, allelesFilename,
-                          header_data, settings, log, incomplete_ok=False):
+def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_filename,
+                          allelesFilename, header_data, settings, log, incomplete_ok=False):
     log.debug("Processing sequence file...")
     try:
         if filetype == "XML":

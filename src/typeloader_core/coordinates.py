@@ -4,7 +4,8 @@
 # The closest known allele is determined using getclosestKnownAllele from closestallele.py
 
 
-import re, sys
+import re
+import os
 from Bio import SeqIO
 from collections import defaultdict
 from .closestallele import get_closest_known_alleles
@@ -134,10 +135,15 @@ def getMismatchData(annotations):
     return mmCodons
 
 
-def getCoordinates(blastXmlFilename, allelesFilename, targetFamily, settings, log, isENA=True, incomplete_ok = False):
+def getCoordinates(blastXmlFilename, allelesFilename, targetFamily, settings, log, isENA=True,
+                   incomplete_ok=False):
+    if "restricted_db" in allelesFilename:
+        allelesFilename = os.path.join(settings["root_path"], settings["general_dir"],
+                                       settings["reference_dir"],
+                                       os.path.basename(allelesFilename))
     allAlleles, _ = read_dat_file(allelesFilename, targetFamily, isENA)
     closestAlleles = get_closest_known_alleles(blastXmlFilename, targetFamily, settings, log)
-    seqsFile = blastXmlFilename.replace(".blast.xml",".fa")
+    seqsFile = blastXmlFilename.replace(".blast.xml", ".fa")
 
     try: 
         seqsHandle = open(seqsFile)
