@@ -230,44 +230,84 @@ def write_fasta(alleles, output_fasta, no_UTR = False, verbose = False):
     if verbose:
         print("\tFertig!")
 
-def make_parsed_files(target, ref_dir, log):
+
+def make_parsed_files(target, ref_dir, log, restricted_to=None, target_dir=None):
     """creates the parsed reference files from IPD's files
+
+    :param target: designates target database, either 'KIR' or 'hla'
+    :param ref_dir: path where to create the reference files (if not restricted_to)
+    :param log: logger instance
+    :param restricted_to: if used, a list of allele names; then the created database will only
+                          contain the listed alleles
+    :param target_dir: path where to create the databases; only used if restricted_to is not None
     """
-    ipd_download_file = os.path.join(ref_dir, "{}.dat".format(target))
-    fa_filename = os.path.join(ref_dir, "parsed{}.fa".format(target))
-    dump_filename = os.path.join(ref_dir, "parsed{}.dump".format(target))
-    version_file = os.path.join(ref_dir, "curr_version_{}.txt".format(target.lower()))
+    if restricted_to:
+        if not target_dir:
+            raise ValueError("Please specify a target_dir for the restricted reference database!")
+        myref_dir = target_dir
+        if not os.path.isdir(myref_dir):
+            os.mkdir(myref_dir)
+    else:
+        myref_dir = ref_dir
+
+    ipd_file = os.path.join(ref_dir, f"{target}.dat")
+    fa_file = os.path.join(myref_dir, f"parsed{target}.fa")
+    dump_file = os.path.join(myref_dir, f"parsed{target}.dump")
+    version_file = os.path.join(myref_dir, f"curr_version_{target}.txt")
+    allelename_file = os.path.join(ref_dir, f"{target}_allelenames.dump")
     
-    log.debug("\t\tReading alleles from {}...".format(ipd_download_file))
-    alleles, version = read_dat_file(ipd_download_file, target.upper(), log)
-    
-    log.debug("\t\tWriting {}...".format(fa_filename))
-    with open(fa_filename, "w") as fasta_file:
+    log.debug("\t\tReading alleles from {}...".format(ipd_file))
+    alleles, version = read_dat_file(ipd_file, target.upper(), log)
+    log.debug(f"\t\t\t=> found {len(alleles)} alleles")
+
+    allele_names = []
+    log.debug("\t\tWriting {}...".format(fa_file))
+    with open(fa_file, "w") as fasta_file:
         for allele_name in list(alleles.keys()):
             allele_data = alleles[allele_name]
-            if (target == "hla"):
-                if allele_name.startswith("MIC"): # take only full length MIC alleles
-                    if ((len(allele_data.UTR3) > 0) & (len(allele_data.UTR5) > 0)):
+            if allele_data.intron_dic:  # allele is not a CDS-only allele
+                allele_names.append(allele_name)
+
+            if restricted_to:
+                if allele_name in restricted_to:
+                    log.debug(f"\t\t\tAdding {allele_name} to database...")
+                    fasta_file.write(">%s\n" % allele_name)
+                    fasta_file.write("%s\n" % allele_data.seq)
+            else:
+                if target == "hla":
+                    if allele_name.startswith("MIC"): # take only full length MIC alleles
+                        if len(allele_data.UTR3) > 0 and len(allele_data.UTR5) > 0:
+                            fasta_file.write(">%s\n" % allele_name)
+                            fasta_file.write("%s\n" % allele_data.seq)
+                    else:
+                        fasta_file.write(">%s\n" % allele_name)
+                        fasta_file.write("%s\n" % allele_data.seq)
+                elif target == "KIR":
+                    # take only full length KIR alleles
+                    if len(allele_data.UTR3) > 0 and len(allele_data.UTR5) > 0:
                         fasta_file.write(">%s\n" % allele_name)
                         fasta_file.write("%s\n" % allele_data.seq)
                 else:
-                    fasta_file.write(">%s\n" % allele_name)
-                    fasta_file.write("%s\n" % allele_data.seq)
-            elif (target == "KIR"):
-                # take only full length KIR alleles
-                if ((len(allele_data.UTR3) > 0) & (len(allele_data.UTR5) > 0)):
-                    fasta_file.write(">%s\n" % allele_name)
-                    fasta_file.write("%s\n" % allele_data.seq)
-            else: 
-                pass
+                    pass
     
-    log.debug("\t\tWriting {}...".format(dump_filename))
-    with open(dump_filename, "wb") as alleleDumpFile:
-        dump(alleles, alleleDumpFile)
-        
+    log.debug("\t\tWriting {}...".format(dump_file))
+    if restricted_to:  # limit dump file to chosen alleles
+        alleles2 = {}
+        for allele in alleles:
+            if allele in restricted_to:
+                alleles2[allele] = alleles[allele]
+        alleles = alleles2
+    with open(dump_file, "wb") as g:
+        dump(alleles, g)
+
+    log.debug("\t\tWriting {}...".format(allelename_file))
+    with open(allelename_file, "wb") as g:
+        dump(allele_names, g)
+
     log.debug("\t\tWriting {}...".format(version_file))
     with open(version_file, "w") as g:
         g.write(version)
+
     return version
 
 if __name__ == '__main__':

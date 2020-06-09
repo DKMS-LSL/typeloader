@@ -144,8 +144,7 @@ def update_database(db_name, reference_local_path, blast_path, log):
     """updates a reference database
     """
     log.info("Retrieving new database version for {}...".format(db_name))
-    update_msg = None
-    if db_name == "kir": 
+    if db_name == "kir":
         use_dbname = "KIR"  # biological databases and consistency in naming are arch enemies 
     else:
         use_dbname = db_name
@@ -175,6 +174,31 @@ def update_database(db_name, reference_local_path, blast_path, log):
           
     log.info(update_msg)
     return update_msg
+
+
+def make_restricted_db(db_name, ref_path, restricted_to, target_dir, blast_path, log):
+    """creates a limited version of the given database, restricted to the given alleles
+    """
+    log.info(f"Create local reference version of {db_name} restricted to {', '.join(restricted_to)}...")
+    if db_name == "kir":
+        use_dbname = "KIR"  # biological databases and consistency in naming are arch enemies
+    else:
+        use_dbname = db_name
+
+    os.makedirs(target_dir, exist_ok=True)
+
+    log.debug("\tCreating parsed files...")
+    hla_embl_parser.make_parsed_files(use_dbname, ref_path, log,
+                                      restricted_to=restricted_to,
+                                      target_dir=target_dir)
+
+    success, msg = make_blast_db(use_dbname, target_dir, blast_path, log)
+
+    if success:
+        log.info("Success!")
+    else:
+        log.error(msg)
+    return success, msg
 
 
 def start_log(include_lines = False, error_to_email = False, info_to_file = False,
@@ -269,6 +293,9 @@ def main():
 if __name__ == '__main__':
     log = start_log(level="DEBUG")
     log.info("<Start>")
-    blast_path = r"Y:\Projects\typeloader\blast-2.7.1+\bin"
-    reference_local_path = r"\\nasdd12\daten\data\Typeloader\_general\reference_data_unittest"
-    update_msg = update_database("KIR", reference_local_path, blast_path, log)
+    blast_path = r"C:\Daten\local_tools\blast\bin"
+    reference_local_path = r"C:\Daten\local_data\TypeLoader\_general\reference_data"
+    restricted_to = ["HLA-B*07:386N", "HLA-B*35:03:01:01"]
+    target_dir = r"C:\Daten\local_data\TypeLoader\_general\ref_data_restricted"
+    make_restricted_db("hla", reference_local_path, restricted_to, target_dir, blast_path, log)
+    # update_msg = update_database("hla", reference_local_path, blast_path, log)

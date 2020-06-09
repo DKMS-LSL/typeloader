@@ -23,6 +23,8 @@ If TypeLoader does not find the sample's ID in the raw file (it can be provided 
 
 Here, you enter the sample's internal ID (sample identifier within your lab - this is the main ID TypeLoader will use to identify the sample) and external ID (e.g., the sample identifier provided by the client) and click "Done" to proceed.
 
+**If you get a popup dialog called "Manual choice of reference alleles necessary", please see [=> here](new_allele_restricted_reference.md) for the next steps necessary before you can continue with uploading your allele.**
+
 ##  (2) Specifying allele details (for XML files) 
 If the uploaded file is a GenDX NGSEngine file, it contains multiple alleles of one locus. TypeLoader will ask you to specify which allele you want to upload:
 
@@ -71,7 +73,7 @@ All of these can later be edited in the AlleleView.
 Once TypeLoader finishes this step, the dialog is closed. Now you can find the allele in the [=> Navigation Area](navigation.md) and view and edit its data in its [=> Sample View](view_sample.md).
 
 ##  Adding multiple alleles of one sample 
-You can add multiple alleles of one sample one by one by specifying the same internal sample ID (the external sample ID of subsequent alleles of the same internal sample ID is ignored, to make sure to keep internal and external ID consistent ith each other).
+You can add multiple alleles of one sample one by one by specifying the same internal sample ID (the external sample ID of subsequent alleles of the same internal sample ID is ignored, to make sure to keep internal and external ID consistent with each other).
 
 These alleles can be entered from the same raw XML file by uploading one allele, then uploading the same file again but choosing the other allele. Alternatively, a different raw file can also be used.
 

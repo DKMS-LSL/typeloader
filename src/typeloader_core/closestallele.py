@@ -106,7 +106,7 @@ def parse_blast(xml_records, target_family, query_fasta_file, settings, log):
                 log.warning("Sequence did not align fully! Probably a mismatch within 3 bp of either sequence end!")
                 # print_me(hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align_len, queryLength)
                 results = fix_incomplete_alignment(ref_sequence, query_sequence, hsp_start, hsp_align_len, queryLength,
-                                                   hsp_query, hsp_subject, hsp_match, log)
+                                                   hsp_query, hsp_subject, hsp_match, closestAlleleName, log)
                 (hsp_query, hsp_subject, hsp_match, hsp_align_len, hsp_start, query_start_overhang) = results
             closestAlleles[queryId] = closest_allele_items(hsp_query, hsp_subject, hsp_match, closestAlleleName,
                                                            concatHSPS,
@@ -150,12 +150,12 @@ def remove_end_gaps(ref, matched, query):
 
 
 def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query_length,
-                             hsp_query, hsp_subject, hsp_match, log):
+                             hsp_query, hsp_subject, hsp_match, closest_allele_name, log):
     alignments = make_global_alignment(ref_seq, query_seq, log)
 
     if not alignments:
         log.error("No alignment found, sorry! Aborting...")
-        return hsp_query, hsp_subject, hsp_match, hsp_align_len, hsp_start
+        return hsp_query, hsp_subject, hsp_match, hsp_align_len, hsp_start, None
     if len(alignments) > 1:
         log.warning(f"Found {len(alignments)} possible alignments, choosing one at random (might not be the best one)!")
 
@@ -178,11 +178,12 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
 
     if missing_base_num_start_ref > 0:  # problem at sequence start
         if missing_base_num_start_query > 3:  # different problem; probably #138
-            msg = f"{missing_base_num_start_query} unaligned bases at alignment start: "
+            msg = f"{missing_base_num_start_query} unaligned bases at alignment start "
+            msg += f"when aligned to closest found allele {closest_allele_name}: "
             msg += "This sequence is probably too dissimilar to all known full-length alleles.\n"
             msg += "TypeLoader currently can't handle this allele, sorry!"
             log.warning(msg)
-            raise errors.DevianceError(missing_base_num_start_query)
+            raise errors.DevianceError(missing_base_num_start_query, closest_allele_name)
 
         log.debug(f"{missing_base_num_start_ref} bases missing at alignment start (= {missing_base_num_start_query} bases of the query)")
         missing_bases_ref = ref_seq[q_start: q_start + missing_base_num_start_ref]

@@ -67,13 +67,13 @@ class InvalidPretypingError(Exception):
 
 
 class DevianceError(Exception):
-    """raised when TypeLoader encounters a sequence that is too different from all known full-length alleles,
-    which makes BLAST produce nonsense alignments (#138)
+    """raised when TypeLoader encounters a sequence that is too different from all known full-length
+    alleles, which makes BLAST produce nonsense alignments (#138)
     """
-
-    def __init__(self, unaligned_bp_front):
+    def __init__(self, unaligned_bp_front, reference_allele):
         self.unaligned_bp_front = unaligned_bp_front
 
-        self.msg = f"{self.unaligned_bp_front} unaligned bases at alignment start:\n"
+        self.msg = f"{self.unaligned_bp_front} unaligned bases at alignment start "
+        self.msg += f"when aligned to closest found allele {reference_allele}:\n\n"
         self.msg += "This sequence is probably too dissimilar to all known full-length alleles.\n\n"
         self.msg += "TypeLoader currently can't handle this allele, sorry!"

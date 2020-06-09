@@ -14,10 +14,12 @@ widgits for adding new sequences or new projects to TypeLoader
 
 import sys, os
 
-from PyQt5.QtWidgets import (QApplication, QGroupBox, QMessageBox, QGridLayout, QFormLayout, QTextEdit,
-                             QLabel, QLineEdit, QCheckBox, QHBoxLayout, QFrame)
+from PyQt5.QtWidgets import (QApplication, QGroupBox, QMessageBox,
+                             QGridLayout, QFormLayout, QVBoxLayout,
+                             QTextEdit, QLabel, QLineEdit, QCheckBox, QHBoxLayout, QFrame)
 from PyQt5.Qt import QWidget, pyqtSlot, pyqtSignal, QDialog, QPushButton
 from PyQt5.QtGui import QIcon
+from pickle import load
 
 import general, typeloader_functions as typeloader
 try:
@@ -25,8 +27,9 @@ try:
 except ImportError:
     from typeloader_core import errors
 
-from GUI_forms import (CollapsibleDialog, ChoiceSection, 
-                       FileButton, ProceedButton, QueryButton, NewProjectButton, check_project_open)
+from GUI_forms import (CollapsibleDialog, ChoiceSection, ChoiceButton, ChoiceTableWidget,
+                       FileButton, ProceedButton, QueryButton, NewProjectButton,
+                       check_project_open)
 from GUI_misc import settings_ok
 
 #===========================================================
@@ -46,7 +49,8 @@ def log_uncaught_exceptions(cls, exception, tb):
     #TODO: (future) maybe find a way to display the traceback only once, both in console and logfile?
     sys.__excepthook__(cls, exception, traceback)
     QCoreApplication.exit(1)
-    
+
+
 class QueryBox(QDialog):
     """requests data from user that is not given via the file
     """
@@ -187,7 +191,8 @@ class NewAlleleForm(CollapsibleDialog):
     new_allele = pyqtSignal(str)
     refresh_alleles = pyqtSignal(str, str)
     
-    def __init__(self, log, mydb, current_project, settings, parent=None, sample_ID_int=None, sample_ID_ext=None):
+    def __init__(self, log, mydb, current_project, settings, parent=None, sample_ID_int=None,
+                 sample_ID_ext=None, testing=False):
         self.log = log
         self.mydb = mydb
         self.settings = settings
@@ -199,6 +204,8 @@ class NewAlleleForm(CollapsibleDialog):
         log.debug("Opening 'New Allele' Dialog...")
         self.raw_path = None
         self.project = None
+        self.parent = parent
+        self.testing = testing
         self.resize(1000, 800)
         self.setWindowTitle("Add new target allele")
         self.setWindowIcon(QIcon(general.favicon))
@@ -209,12 +216,15 @@ class NewAlleleForm(CollapsibleDialog):
         self.sample_id_ext = sample_ID_ext
         self.unsaved_changes = False
         self.upload_btn.check_ready()
+
+        self.dialog = None
+        self.restricted_db_path = None
+        self.chosen_alleles = None
         
         ok, msg = settings_ok("new", self.settings, self.log)
         if not ok:
             QMessageBox.warning(self, "Missing settings", msg)
             self.close()
-
 
     def define_sections(self):
         """defining the dialog's sections
@@ -234,7 +244,7 @@ class NewAlleleForm(CollapsibleDialog):
         file_btn = FileButton("Choose XML or Fasta file", mypath, self)
         self.file_widget = ChoiceSection("Raw File:", [file_btn], self.tree)
         self.file_widget.choice.connect(self.get_file)
-        mypath = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\115_both_alleles\ID15777271.xml"
+        mypath = r"H:/Projekte/Bioinformatik/Typeloader Projekt/Issues/149_rejected/ID17972780.xml"
         if self.settings["modus"] == "debugging":
             self.file_widget.field.setText(mypath)
         layout.addWidget(self.file_widget)
@@ -278,10 +288,11 @@ class NewAlleleForm(CollapsibleDialog):
         self.header_data["LIMS_DONOR_ID"] = sample_ID_int
         self.sample_name = sample_ID_int
         self.header_data["Spendernummer"] = sample_ID_ext
+        self.sample_id_ext = sample_ID_ext
     
     @pyqtSlot(int)
-    def upload_file(self, _):
-        """uploads & parses chosen file & gathers allele data from input file
+    def upload_file(self, _=None):
+        """uploads & parses chosen file
         """
         try:
             self.project = self.proj_widget.field.text().strip()
@@ -300,29 +311,43 @@ class NewAlleleForm(CollapsibleDialog):
         
             # upload file to temp dir & parse it:
             self.log.debug("Uploading '{}' to temp dir...".format(os.path.basename(raw_path)))
-            results = typeloader.upload_parse_sequence_file(raw_path, self.settings, self.log)
-            if results[0] == False: # something went wrong
-                QMessageBox.warning(self, results[1], results[2])
-                if results[1] == "Unknown file format!":
-                    self.file_widget.reactivate()
+            success, results = typeloader.handle_new_allele_parsing(self.project, None, None,
+                                                                    raw_path, None, self.settings,
+                                                                    self.log,
+                                                                    self.restricted_db_path)
+            if not success:
+                msg = results
+                self.log.warning("Could not upload new allele")
+                self.log.warning(msg)
+                if ":" in msg:
+                    s = msg.split(":")
+                    QMessageBox.warning(self, s[0], ":".join(s[1:]))
+                    if s[0] == "Unknown file format!":
+                        self.file_widget.reactivate()
+                if "Did you maybe specify a wrong gene family?" in msg:
+                    self.restricted_db_path = None
                 return
-            else:
-                self.log.debug("\t=> success")
-                self.success_upload, sample_name, self.filetype, self.temp_raw_file, self.blastXmlFile, self.targetFamily, self.fasta_filename, self.allelesFilename, self.header_data = results
-                typeloader.reformat_header_data(self.header_data, self.sample_id_ext, self.log)
-                if not self.sample_name:
-                    self.sample_name = sample_name
-                self.header_data["sample_id_int"] = self.sample_name
-                
-                if not self.sample_name:
-                    self.log.debug("Asking for sample info...")
-                    self.qbox = QueryBox(self.log, self.settings, self)
-                    self.qbox.sample_data.connect(self.get_sample_data_from_queryBox)
-                    self.qbox.exec_()
+
+            self.log.debug("\t=> success")
+            self.success_upload = True
+            (self.header_data, self.filetype, sample_name, self.targetFamily,
+             self.temp_raw_file, self.blastXmlFile, self.fasta_filename, self.allelesFilename) = results
+
+            if not self.sample_name:
+                self.sample_name = sample_name
+            self.header_data["sample_id_int"] = self.sample_name
+            if self.sample_id_ext:
+                self.header_data["Spendernummer"] = self.sample_id_ext
+
+            if not self.sample_name:
+                self.log.debug("Asking for sample info...")
+                self.qbox = QueryBox(self.log, self.settings, self)
+                self.qbox.sample_data.connect(self.get_sample_data_from_queryBox)
+                self.qbox.exec_()
             if not self.sample_name:
                 QMessageBox.warning(self, "No sample name", "Cannot proceed without sample IDs. Please retry!")
                 return
-            
+
             # process file & create Allele objects:
             self.header_data["sample_id_int"] = self.sample_name
             results = typeloader.process_sequence_file(self.project, self.filetype, self.blastXmlFile, self.targetFamily, self.fasta_filename, self.allelesFilename, self.header_data, self.settings, self.log)
@@ -336,29 +361,83 @@ class NewAlleleForm(CollapsibleDialog):
                             return
                     else:
                         return
+                elif results[1] in ["Allele too divergent", "Too many possible alignments"]:
+                    if self.restricted_db_path:
+                        msg = "The file you're trying to upload could still not be handled "
+                        msg += "with the given allele(s) as reference.\n\n"
+                        msg += "Do you want to try again?"
+                        reply = QMessageBox.question(self, "Allele still too divergent", msg,
+                                                     QMessageBox.Yes | QMessageBox.No,
+                                                     QMessageBox.No)
+                        if reply == QMessageBox.No:
+                            self.dialog.close()
+                            return
+                        else:
+                            self.restricted_db_path = None
+                            self.chosen_alleles = None
+                            if self.dialog:
+                                self.dialog.close()
+
+                    self.dialog = ChooseReferenceAllelesDialog(self.log, self.settings, self)
+                    self.dialog.restricted_db_path.connect(self.catch_restricted_db_path)
+                    self.dialog.restricted_alleles.connect(self.catch_chosen_alleles_for_restricted_db)
+                    if not self.testing:
+                        self.dialog.exec_()
+                    return
                 else:
                     QMessageBox.warning(self, results[1], results[2])
                     return
                 
             self.success_parsing, self.myalleles, self.ENA_text = results
-            if self.filetype == "XML":
-                self.allele1 = self.myalleles[0]
-                self.allele2 = self.myalleles[1]
-                self.fill_section2()
-                self.proceed_sections(0, 1)
-                
-            else: # Fasta File: move instantly to section 3:
-                self.myallele = self.myalleles[0]
-                self.ENA_widget.setText(self.ENA_text)
-                self.name_lbl.setText(self.myallele.newAlleleName)
-                self.proceed_sections(0, 2)
-            
+            if self.success_parsing:
+                if self.filetype == "XML":
+                    self.allele1 = self.myalleles[0]
+                    self.allele2 = self.myalleles[1]
+                    self.fill_section2()
+                    self.proceed_sections(0, 1)
+
+                else: # Fasta File: move instantly to section 3:
+                    self.myallele = self.myalleles[0]
+                    self.ENA_widget.setText(self.ENA_text)
+                    self.name_lbl.setText(self.myallele.newAlleleName)
+                    self.proceed_sections(0, 2)
+            else:
+                QMessageBox.warning(self, results[1], results[2])
         except Exception as E:
             self.log.error(E)
             self.log.exception(E)
-            self.close()    
-    
-      
+            self.close()
+
+    @pyqtSlot(str)
+    def catch_restricted_db_path(self, restricted_db_path):
+        """if a restricted db is created, store its path, then re-try allele upload
+
+        :param restricted_db_path: path to the directory containing the restricted db
+        :return: nothing
+        """
+        self.restricted_db_path = restricted_db_path
+        if not restricted_db_path:
+            self.log.debug("No restricted reference database was created")
+            self.dialog.close()
+            self.dialog = None
+        else:
+            self.log.debug(f"A restricted reference database was created under {restricted_db_path}")
+            self.log.debug("Re-attempting file upload...")
+            self.upload_file()
+
+    @pyqtSlot(list)
+    def catch_chosen_alleles_for_restricted_db(self, chosen_alleles):
+        """if a restricted db is created, store the alleles chosen,
+        so they can later be stored as comment in the database
+
+        :param chosen_alleles: list of allele names chosen for the restricted db
+        """
+        if chosen_alleles:
+            self.log.debug(f'Storing chosen reference alleles: {" & ".join(chosen_alleles)}')
+            self.chosen_alleles = chosen_alleles
+        else:
+            self.log.debug("No reference alleles chosen")
+
     def define_section2(self):
         """defining section 2: Specify allele details
         """
@@ -409,7 +488,6 @@ class NewAlleleForm(CollapsibleDialog):
     def fill_section2(self):
         """fill fields in section 2 from results of parsing the file of section 1
         """
-        
         self.allele1_sec.lbl1.setText("GenDX: " + self.allele1.gendx_result)
         self.allele1_sec.GenDX_result = self.allele1.gendx_result
         self.allele1_sec.gene_field.setText(self.allele1.gene)
@@ -640,9 +718,11 @@ class NewAlleleForm(CollapsibleDialog):
                                                                     QMessageBox.No, QMessageBox.No)
                 if reply == QMessageBox.Yes:
                     # save sample files:
-                    results = typeloader.save_new_allele(self.project, self.sample_name, self.myallele.local_name, 
-                                                         self.ENA_text, self.filetype, self.temp_raw_file, 
+                    results = typeloader.save_new_allele(self.project, self.sample_name,
+                                                         self.myallele.local_name, self.ENA_text,
+                                                         self.filetype, self.temp_raw_file,
                                                          self.blastXmlFile, self.fasta_filename,
+                                                         self.restricted_db_path,
                                                          self.settings, self.log)
                     (success, err_type, msg, files) = results
                     if not success:
@@ -653,11 +733,18 @@ class NewAlleleForm(CollapsibleDialog):
                     
                     # save to db & emit signals:
                     [self.raw_file, self.fasta_filename, self.blastXmlFile, self.ena_path] = files
-                    (success, err_type, msg) = typeloader.save_new_allele_to_db(self.myallele, self.project, 
-                                                                                self.filetype, self.raw_file, 
-                                                                                self.fasta_filename, self.blastXmlFile,
-                                                                                self.header_data, self.targetFamily,
-                                                                                self.ena_path, self.settings, self.mydb, self.log)
+                    (success, err_type, msg) = typeloader.save_new_allele_to_db(self.myallele,
+                                                                                self.project,
+                                                                                self.filetype,
+                                                                                self.raw_file,
+                                                                                self.fasta_filename,
+                                                                                self.blastXmlFile,
+                                                                                self.header_data,
+                                                                                self.targetFamily,
+                                                                                self.ena_path,
+                                                                                self.chosen_alleles,
+                                                                                self.settings,
+                                                                                self.mydb, self.log)
                     if success:
                         self.new_allele.emit(self.sample_name)
                         self.refresh_alleles.emit(self.project, self.sample_name)
@@ -680,9 +767,248 @@ class NewAlleleForm(CollapsibleDialog):
                 self.proceed_sections(2, 0)
         except Exception as E:
             self.log.exception(E)
-    
 
-pass
+
+class ChooseReferenceAllelesDialog(CollapsibleDialog):
+    """a dialog offering to create a resticted reference db containing only the chosen alleles
+    """
+    restricted_db_path = pyqtSignal(str)
+    restricted_alleles = pyqtSignal(list)
+
+    def __init__(self, log, settings, parent=None):
+        self.settings = settings
+        self.log = log
+        super().__init__(parent)
+
+        self.setMinimumWidth(600)
+        self.setMinimumHeight(600)
+        self.setWindowTitle("Manual choice of reference alleles necessary")
+        self.setWindowIcon(QIcon(general.favicon))
+
+        self.chosen_alleles = []
+
+    def define_sections(self):
+        self.log.debug("Opening ChooseReferenceAllelesDialog...")
+        self.define_section1()
+        self.define_section2()
+        self.define_section3()
+        self.define_section4()
+
+    def define_section1(self):
+        """defines section 1, where the user is informed about the situation and asked whether to
+        proceed with a restricted database, or abort
+        """
+        mywidget = QWidget(self)
+        layout = QVBoxLayout()
+        mywidget.setLayout(layout)
+
+        intro_txt1 = "TypeLoader cannot find a suitable reference gene in the reference database.\n"
+        intro_txt1 += "This may be because this allele is too dissimilar to all known "
+        intro_txt1 += "reference alleles."
+        intro_txt2 = "Do you know the correct reference alleles for the alleles contained in this "
+        intro_txt2 += "file? \nIf yes, you can proceed to select them and retry with a reference "
+        intro_txt2 += "database\nrestricted to the chosen alleles."
+        layout.addWidget(QLabel(intro_txt1))
+        layout.addWidget(QLabel(intro_txt2))
+
+        self.proceed_btn1 = ProceedButton("Proceed", log=self.log, section=0)
+        self.proceed_btn1.proceed.connect(self.proceed_sections)
+        abort_btn = ChoiceButton("Abort")
+        abort_btn.clicked.connect(self.abort)
+        choice_row = QWidget()
+        choice_layout = QHBoxLayout()
+        choice_row.setLayout(choice_layout)
+        choice_layout.addWidget(self.proceed_btn1)
+        choice_layout.addWidget(abort_btn)
+        layout.addWidget(choice_row)
+
+        self.sections.append(("Try again with restricted reference database?", mywidget))
+
+    def define_section2(self):
+        """defines section 2, where the user can choose which gene system the allele belongs to
+        """
+        mywidget = QWidget(self)
+        layout = QVBoxLayout()
+        mywidget.setLayout(layout)
+
+        intro_lbl = QLabel("Which gene family does this alle belong to?")
+        intro_lbl.setStyleSheet(general.label_style_2nd)
+        layout.addWidget(intro_lbl)
+        self.hla_btn = ChoiceButton("HLA", self)
+        kir_btn = ChoiceButton("KIR", self)
+        mic_btn = ChoiceButton("MIC", self)
+        mysec = ChoiceSection("Please choose a gene family", [self.hla_btn, kir_btn, mic_btn], self,
+                              log=self.log)
+        self.target_field = mysec.field
+        layout.addWidget(mysec)
+
+        self.proceed_btn2 = ProceedButton("Proceed", [self.target_field], self.log, 1, self)
+        layout.addWidget(self.proceed_btn2)
+        self.proceed_btn2.proceed.connect(self.proceed_sections)
+        self.proceed_btn2.clicked.connect(self.fill_allele_table)
+        self.target_field.textChanged.connect(self.proceed_btn2.check_ready)
+
+        self.sections.append(("Choose gene family", mywidget))
+
+    def define_section3(self):
+        """defines section 3, where the user can select which alleles to add to the restricted
+        reference
+        """
+        mywidget = QWidget(self)
+        layout = QVBoxLayout()
+        mywidget.setLayout(layout)
+
+        intro1 = "Please select all alleles that should be used as a reference.\n"
+        intro_lbl1 = QLabel(intro1)
+        intro_lbl1.setStyleSheet(general.label_style_2nd)
+        layout.addWidget(intro_lbl1)
+
+        intro2 = "Make sure there is a suitable reference allele for each allele in your file!"
+        intro2 += "\n\n(Note that only full-length alleles are available as reference alleles.)"
+        layout.addWidget(QLabel(intro2))
+
+        self.allele_table = ChoiceTableWidget(["Alleles"], [], self.log, None)
+        self.allele_table.chosen_items.connect(self.catch_chosen_alleles)
+        layout.addWidget(self.allele_table)
+
+        self.proceed_btn3 = ProceedButton("Proceed", [self.allele_table.count_field], self.log, 2,
+                                          self)
+        self.allele_table.table.clicked.connect(self.proceed_btn3.check_ready)
+        self.proceed_btn3.proceed.connect(self.proceed_sections)
+        self.proceed_btn3.clicked.connect(self.fill_list_with_chosen_alleles)
+
+        layout.addWidget(self.proceed_btn3)
+
+        self.sections.append(("Choose reference alleles", mywidget))
+
+    def define_section4(self):
+        mywidget = QWidget(self)
+        layout = QVBoxLayout()
+        mywidget.setLayout(layout)
+
+        intro = "You have chosen the following reference alleles:"
+        layout.addWidget(QLabel(intro))
+
+        self.chosen_alleles_widget = QTextEdit()
+        self.chosen_alleles_widget.setFixedHeight(100)
+        layout.addWidget(self.chosen_alleles_widget)
+
+        q_text = "Do you want to create a restricted reference using only these alleles "
+        q_text2 = "and reattempt uploading your allele using this reference?"
+        layout.addWidget(QLabel(q_text))
+        layout.addWidget(QLabel(q_text2))
+
+        btn_widget = QWidget()
+        btn_layout = QHBoxLayout()
+        btn_widget.setLayout(btn_layout)
+        layout.addWidget(btn_widget)
+
+        self.proceed_btn4 = ProceedButton("Proceed", log=self.log, section=3)
+        btn_layout.addWidget(self.proceed_btn4)
+        self.proceed_btn4.clicked.connect(self.create_restricted_ref_and_retry)
+
+        return_btn = QPushButton("Return to allele choice section")
+        return_btn.clicked.connect(self.return_to_allele_choice)
+        btn_layout.addWidget(return_btn)
+
+        self.sections.append(("Create and run restricted reference", mywidget))
+
+    def fill_allele_table(self):
+        """populates the allele table in section 3 with allele names according to the target chosen in
+        section 2
+        """
+        file_dic = {"HLA": "hla_allelenames.dump",
+                    "MIC": "hla_allelenames.dump",
+                    "KIR": "KIR_allelenames.dump"}
+        target_dic = {"HLA": "hla",
+                      "MIC": "hla",
+                      "KIR": "kir"}
+
+        target = self.target_field.text()
+        if target not in file_dic:
+            msg = f"'{target}' is not a gene system known to TypeLoader!\n"
+            msg += "Please return to the previous section and choose one of the given gene systems."
+            QMessageBox.warning(self, "Unknown gene system", msg)
+            return None
+
+        self.target_family = target_dic[target]
+        allele_name_file = file_dic[target]
+        allele_name_file = os.path.join(self.settings["root_path"],
+                                        self.settings["general_dir"],
+                                        self.settings["reference_dir"],
+                                        allele_name_file)
+        with open(allele_name_file, "rb") as f:
+            allele_names = load(f)
+
+        allele_names_restricted = [a for a in allele_names if a.startswith(target)]
+        self.allele_table.table.data = allele_names_restricted
+        self.allele_table.table.fill_UI()
+
+    @pyqtSlot()
+    def fill_list_with_chosen_alleles(self):
+        self.log.debug(f"You have chosen {len(self.chosen_alleles)} alleles. Proceed?")
+        txt = ""
+        for allele in sorted(self.chosen_alleles):
+            txt += f" - {allele}\n"
+        self.chosen_alleles_widget.setText(txt[:-1])
+
+    @pyqtSlot(list)
+    def catch_chosen_alleles(self, items):
+        self.log.debug(f"Caught {len(items)} chosen alleles: {' & '.join(items)}")
+        self.chosen_alleles = items
+
+    @pyqtSlot()
+    def create_restricted_ref_and_retry(self):
+        # create restricted db:
+        from typeloader_core import update_reference
+        self.log.debug("Deleting old restricted database, if necessary...")
+        for (dirpath, subdirs, files) in os.walk(os.path.join(self.settings["temp_dir"],
+                                                              "restricted_db")):
+            for f in files:
+                myfile = os.path.join(dirpath, f)
+                os.remove(myfile)
+
+        self.log.debug("Creating restricted database...")
+        ref_path_official = os.path.join(self.settings["root_path"], self.settings["general_dir"],
+                                         self.settings["reference_dir"])
+        restricted_db_dir = os.path.join(self.settings["temp_dir"], "restricted_db")
+        blast_path = os.path.dirname(self.settings["blast_path"])
+        success, msg = update_reference.make_restricted_db(self.target_family,
+                                                           ref_path_official,
+                                                           self.chosen_alleles,
+                                                           restricted_db_dir,
+                                                           blast_path,
+                                                           self.log)
+        if not success:
+            QMessageBox.warning(self, "Error while creating restricted db",
+                                "Could not create the restricted reference database\n\n" + msg)
+            self.abort()
+
+        self.log.debug(f"Successfully created restricted db under {restricted_db_dir}")
+        self.restricted_db_path.emit(restricted_db_dir)
+        self.restricted_alleles.emit(self.chosen_alleles)
+        self.log.debug("Closing ChooseReferenceAllelesDialog")
+        self.close()
+
+    @pyqtSlot()
+    def return_to_allele_choice(self):
+        self.log.debug("Returning to allele choice section...")
+        self.proceed_sections(3, 2)
+
+    @pyqtSlot()
+    def abort(self):
+        """if user chooses to abort, display a message, then close the dialog
+        """
+        self.log.info("User chose to abort ChooseReferenceAllelesDialog")
+        msg = "Sorry, TypeLoader apparently can't currently handle this allele."
+        msg += "\nAborting upload..."
+        QMessageBox.information(self, "Can't handle divergent allele", msg)
+        self.restricted_db_path.emit(None)
+        self.restricted_alleles.emit([])
+        self.log.info(msg)
+        self.close()
+
+
 #===========================================================
 # main:
         
@@ -696,8 +1022,9 @@ if __name__ == '__main__':
     mydb = create_connection(log, mysettings["db_file"])
     
     app = QApplication(sys.argv)
-    ex = NewAlleleForm(log, mydb, "20180709_ADMIN_mixed_bla", mysettings)
-#     ex = QueryBox(log, mysettings)
+    abort_msg = "TypeLoader currently can't handle this allele out of the box, sorry!"
+    ex = NewAlleleForm(log, mydb, "20200526_ADMIN_HLA-B_NEB1", mysettings)
+    # ex = ChooseReferenceAllelesDialog(abort_msg, log, mysettings)
     ex.show()
     
     result = app.exec_()
