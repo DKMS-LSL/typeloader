@@ -288,6 +288,7 @@ class NewAlleleForm(CollapsibleDialog):
         self.header_data["LIMS_DONOR_ID"] = sample_ID_int
         self.sample_name = sample_ID_int
         self.header_data["Spendernummer"] = sample_ID_ext
+        self.sample_id_ext = sample_ID_ext
     
     @pyqtSlot(int)
     def upload_file(self, _=None):
