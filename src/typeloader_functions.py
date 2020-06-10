@@ -219,7 +219,11 @@ def remove_other_allele(blast_xml_file, fasta_file, other_allele_name, log, repl
     log.debug("\tCleaning fasta file...")
     temp = fasta_file + "1"
     with open(fasta_file, "rU") as f, open(temp, "w") as g:
-        for record in SeqIO.parse(f, "fasta"):
+        records = list(SeqIO.parse(f, "fasta"))
+        if len(records) == 1:  # only one allele present
+            log.debug("\t\t=> only one allele found, no cleaning necessary.")
+            return
+        for record in records:
             if other_allele_name not in record.id:
                 success = SeqIO.write(record, g, 'fasta')
                 if success != 1:
