@@ -2578,7 +2578,7 @@ class TestRestrictedReference(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         if skip_other_tests:
-            self.skipTest(self, "Skipping TestRejectionDeviance because skip_other_tests is set to True")
+            self.skipTest(self, "Skipping TestRestrictedReference because skip_other_tests is set to True")
         else:
             self.project_name = project_name
             self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "restricted_db")
@@ -2761,6 +2761,58 @@ class TestRestrictedReference(unittest.TestCase):
 
         temp_restricted_db_dir = os.path.join(curr_settings["temp_dir"], "restricted_db")
         self.assertFalse(os.listdir(temp_restricted_db_dir))  # should be empty
+
+
+class TestHomozygousXML(unittest.TestCase):
+    """test whether TypeLoader can handle an XML input file with only 1 allele
+    """
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping TestHomozygousXML because skip_other_tests is set to True")
+        else:
+            self.project_name = project_name
+            self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"],
+                                      "homozygous_xml")
+            self.myfile = os.path.join(self.mydir, "input_file.xml")
+            self.filetype = "XML"
+            self.sample_id_int = "accept_me"
+            self.sample_id_ext = "please"
+            self.customer = "me"
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test_xml_file_handled(self):
+        """test creating ENA flatfile from homozygous XML file
+        """
+        self.form = ALLELE.NewAlleleForm(log, mydb, self.project_name, curr_settings, None,
+                                         self.sample_id_int, self.sample_id_ext,
+                                         testing=True, incomplete_ok=True)
+        log.info(f"XML raw file: {self.myfile}")
+        self.form.file_widget.field.setText(self.myfile)
+        self.form.upload_btn.setEnabled(True)
+        self.form.upload_btn.click()
+
+        self.form.allele1_sec.checkbox.setChecked(True)  # choose second allele
+
+        self.assertEqual(self.form.allele1_sec.gene_field.text(), "HLA-B")
+        self.assertEqual(self.form.allele1_sec.GenDX_result, "B*51:01:42-Novel-")
+        self.assertEqual(self.form.allele1_sec.name_field.text(), "HLA-B*51:new")
+        self.assertEqual(self.form.allele1_sec.product_field.text(), "MHC class I antigen")
+
+        self.form.ok_btn.click()
+        self.form.save_btn.click()
+
+        new_ena_file_path = os.path.join(curr_settings["projects_dir"], self.project_name,
+                                         self.sample_id_int,
+                                         f"{curr_settings['cell_line_token']}_{self.sample_id_int}_B_1.ena.txt")
+        reference_file_path = os.path.join(self.mydir, "result.ena.txt")
+
+        diff_ena_files = compare_2_files(new_ena_file_path, reference_file_path)
+        self.assertEqual(len(diff_ena_files["added_sings"]), 0)
+        self.assertEqual(len(diff_ena_files["deleted_sings"]), 0)
 
 
 class TestCleanStuff(unittest.TestCase):

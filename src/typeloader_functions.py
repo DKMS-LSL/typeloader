@@ -219,7 +219,11 @@ def remove_other_allele(blast_xml_file, fasta_file, other_allele_name, log, repl
     log.debug("\tCleaning fasta file...")
     temp = fasta_file + "1"
     with open(fasta_file, "rU") as f, open(temp, "w") as g:
-        for record in SeqIO.parse(f, "fasta"):
+        records = list(SeqIO.parse(f, "fasta"))
+        if len(records) == 1:  # only one allele present
+            log.debug("\t\t=> only one allele found, no cleaning necessary.")
+            return
+        for record in records:
             if other_allele_name not in record.id:
                 success = SeqIO.write(record, g, 'fasta')
                 if success != 1:
@@ -273,11 +277,12 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 return False, "Too many possible alignments", str(E)
 
             genDxAlleleNames = list(closestAlleles.keys())
-            if closestAlleles[genDxAlleleNames[0]] == 0 or closestAlleles[genDxAlleleNames[1]] == 0:
-                # No BLAST hit at position 1
-                msg = "No BLAST hit at position 1"
-                log.warning(msg)
-                return False, "Problem in XML file", msg
+            for allele in genDxAlleleNames[:2]:
+                if closestAlleles[allele] == 0:
+                    # No BLAST hit at position 1
+                    msg = "No BLAST hit at position 1"
+                    log.warning(msg)
+                    return False, "Problem in XML file", msg
 
             closestAlleleNames = [closestAlleles[genDxAlleleName]["name"] for genDxAlleleName in genDxAlleleNames]
             geneNames = [alleleName.split("*")[0] for alleleName in genDxAlleleNames]
@@ -296,9 +301,13 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
             allele1 = Allele(gendx_result, gene, name, product, targetFamily, header_data["sample_id_int"], settings,
                              log)
 
-            (gendx_result, gene, name, product) = (genDxAlleleNames[1], geneNames[1], alleleNames[1], products[1])
-            allele2 = Allele(gendx_result, gene, name, product, targetFamily, header_data["sample_id_int"], settings,
-                             log)
+            if len(genDxAlleleNames) > 1:
+                (gendx_result, gene, name, product) = (genDxAlleleNames[1], geneNames[1],
+                                                       alleleNames[1], products[1])
+                allele2 = Allele(gendx_result, gene, name, product, targetFamily,
+                                 header_data["sample_id_int"], settings, log)
+            else:
+                allele2 = Allele("", "", "", "", "", header_data["sample_id_int"], settings, log)
 
             myalleles = [allele1, allele2]
             ENA_text = ""
@@ -412,7 +421,6 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log, incomplete_
     annotations = COO.getCoordinates(blastXmlFile, allelesFilename, targetFamily, settings, log, isENA=True,
                                      incomplete_ok=incomplete_ok)
     posHash, sequences = EF.get_coordinates_from_annotation(annotations)
-
     currentPosHash = posHash[allele.alleleName]
     sequence = sequences[allele.alleleName]
     enaPosHash = BME.transform(currentPosHash)

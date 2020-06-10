@@ -30,7 +30,6 @@ def get_closest_known_alleles(blast_xml_filename, target_family, settings, log):
         # get the associated fasta file
         query_fasta_file = blast_xml_filename.replace("blast.xml", "fa")
         closestAllelesData = parse_blast(xmlParser, target_family, query_fasta_file, settings, log)
-
     return closestAllelesData
 
 
@@ -66,7 +65,6 @@ def parse_blast(xml_records, target_family, query_fasta_file, settings, log):
     closestAlleles = {}
     hsp_start = 1
     for xmlRecord in xml_records:
-
         queryId = xmlRecord.query_id
         output_db = xmlRecord.database
         if output_db.endswith("parsedKIR.fa"):
@@ -83,6 +81,7 @@ def parse_blast(xml_records, target_family, query_fasta_file, settings, log):
             log.error("No alignments found: probably not a supported locus!")
             raise ValueError(
                 "No fitting result found in reference. Maybe this allele belongs to a gene not supported by TypeLoader?")
+
         potentialClosestAlleleAlignment = alignments[0]
         hsps = potentialClosestAlleleAlignment.hsps
 
@@ -114,6 +113,7 @@ def parse_blast(xml_records, target_family, query_fasta_file, settings, log):
 
     if hsp_start != 1:
         log.warning("Incomplete sequence found: first {} bp missing!".format(hsp_start - 1))
+
     return closestAlleles
 
 

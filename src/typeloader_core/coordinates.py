@@ -153,19 +153,19 @@ def getCoordinates(blastXmlFilename, allelesFilename, targetFamily, settings, lo
 
     seqsHash = SeqIO.to_dict(SeqIO.parse(seqsHandle, "fasta"))
     annotations = processAlleles(closestAlleles, allAlleles, seqsHash, incomplete_ok)
-#     for cell_line in annotations:
-#         for key in annotations[cell_line]:
-#             item = annotations[cell_line][key]
-#             if isinstance(item, dict):
-#                 print("'{}' : {}".format(key, "{"))
-#                 for key2 in item:
-#                     print("\t'{}' : {}".format(key2, item[key2]))
-#                 print("\t}")
-#             else:
-#                 if key == 'closestAlleleSequence':
-#                     print("'{}' : {}...".format(key, annotations[cell_line][key][:20]))
-#                 else:
-#                     print("'{}' : {}".format(key, annotations[cell_line][key]))
+    # for cell_line in annotations:
+    #     for key in annotations[cell_line]:
+    #         item = annotations[cell_line][key]
+    #         if isinstance(item, dict):
+    #             print("'{}' : {}".format(key, "{"))
+    #             for key2 in item:
+    #                 print("\t'{}' : {}".format(key2, item[key2]))
+    #             print("\t}")
+    #         else:
+    #             if key == 'closestAlleleSequence':
+    #                 print("'{}' : {}...".format(key, annotations[cell_line][key][:20]))
+    #             else:
+    #                 print("'{}' : {}".format(key, annotations[cell_line][key]))
 
     for gendxAllele in list(annotations.keys()):
         if not annotations[gendxAllele]:

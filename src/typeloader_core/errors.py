@@ -77,3 +77,10 @@ class DevianceError(Exception):
         self.msg += f"when aligned to closest found allele {reference_allele}:\n\n"
         self.msg += "This sequence is probably too dissimilar to all known full-length alleles.\n\n"
         self.msg += "TypeLoader currently can't handle this allele, sorry!"
+
+
+class FileFormatError(Exception):
+    """raised when TypeLoader encounters a sequence input file that it cannot parse
+    """
+    def __init__(self, msg):
+        self.msg = f"Sorry, TypeLoader cannot handle this input file!\n\n{msg}"

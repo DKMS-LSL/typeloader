@@ -24,9 +24,10 @@ def getAlleleSequences(xmlFile, log):
     xmlData = parseXML(xmlFile)
     alleleNames = getAlleleNames(xmlData)
     data_dic = get_additional_XML_info(xmlData, log)
-    
+
     for alleleName in alleleNames:
-        alleles[alleleName] = sequenceFromHaplotype(xmlData, getHaplotypeIds(xmlData, alleleName))
+        haplotype_list = getHaplotypeIds(xmlData, alleleName)
+        alleles[alleleName] = sequenceFromHaplotype(xmlData, haplotype_list)
 
     return alleles, data_dic
 
