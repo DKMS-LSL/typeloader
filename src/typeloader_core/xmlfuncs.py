@@ -138,26 +138,32 @@ def get_additional_XML_info(parsedXML, log):
 def getHaplotypeIds(parsedXML, alleleName):
     try:
         matches = parsedXML["sample"]["matches"]["match"]
+        # print(1)
     except:
         pass
 
     try:
         matches = parsedXML["Sample"]["Matches"]["Match"]
+        # print(2)
     except:
         pass
 
     try:
         matches = parsedXML["ProjectXml"]["Samples"]["Sample"]["Loci"]["Locus"]["Matching"]["Matches"]["Match"]
+        # print(3)
     except:
         pass
 
     try:
         matches = parsedXML["Locus"]["Matching"]["Matches"]["Match"]
+        # print(4)
     except:
         pass
 
-    for match in matches:
+    if not isinstance(matches, list):  # homozygous sample contains only one allele
+        matches = [matches]
 
+    for match in matches:
         try:
             currAlleleName = match["@id"]
         except:
@@ -173,19 +179,26 @@ def getHaplotypeIds(parsedXML, alleleName):
 
         if (currAlleleName == scrubbedAlleleName) and (phasing == phasingStatus):
             try:
-                return [haplotype for haplotype in match["haplotypecombination"]["haplotypeId"]]
+                haplotype_list = match["haplotypecombination"]["haplotypeId"]
             except:
                 pass
 
             try:
-                return [haplotype for haplotype in match["Haplotypecombination"]["HaplotypeId"]]
+                haplotype_list = match["Haplotypecombination"]["HaplotypeId"]
             except:
                 pass
 
             try:
-                return [haplotype for haplotype in match["HaplotypeCombination"]["HaplotypeID"]]
+                haplotype_list = match["HaplotypeCombination"]["HaplotypeID"]
             except:
-                return
+                pass
+
+    if haplotype_list:
+        if not isinstance(haplotype_list, list):  # homozygous allele has only 1 haplotype
+            haplotype_list = [haplotype_list]
+        return [haplotype for haplotype in haplotype_list]
+    else:
+        return
 
 
 def sequenceFromHaplotype(parsedXML, haplotypeList):
@@ -208,6 +221,9 @@ def sequenceFromHaplotype(parsedXML, haplotypeList):
         haplotypes = parsedXML["ProjectXml"]["Samples"]["Sample"]["Loci"]["Locus"]["Haplotypes"]["Haplotype"]
     except:
         pass
+
+    if not isinstance(haplotypes, list):  # homozygous sample contains only one allele
+        haplotypes = [haplotypes]
 
     haplotypeSeqs = []
 
