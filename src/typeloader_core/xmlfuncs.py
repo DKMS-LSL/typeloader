@@ -2,6 +2,7 @@
 
 import xmltodict
 from sys import argv
+from .errors import FileFormatError
 
 
 def change_utf_decl(xmlFileName):
@@ -136,6 +137,9 @@ def get_additional_XML_info(parsedXML, log):
 
 
 def getHaplotypeIds(parsedXML, alleleName):
+    matches = None
+    haplotype_list = None
+
     try:
         matches = parsedXML["sample"]["matches"]["match"]
         # print(1)
@@ -159,6 +163,9 @@ def getHaplotypeIds(parsedXML, alleleName):
         # print(4)
     except:
         pass
+
+    if not matches:
+        raise FileFormatError("The structure of this XML file is unfamiliar.")
 
     if not isinstance(matches, list):  # homozygous sample contains only one allele
         matches = [matches]
@@ -202,6 +209,7 @@ def getHaplotypeIds(parsedXML, alleleName):
 
 
 def sequenceFromHaplotype(parsedXML, haplotypeList):
+    haplotypes = None
     try:
         haplotypes = parsedXML["sample"]["haplotypes"]["haplotype"]
     except:
@@ -221,6 +229,9 @@ def sequenceFromHaplotype(parsedXML, haplotypeList):
         haplotypes = parsedXML["ProjectXml"]["Samples"]["Sample"]["Loci"]["Locus"]["Haplotypes"]["Haplotype"]
     except:
         pass
+
+    if not haplotypes:
+        raise FileFormatError("The structure of this XML file is unfamiliar.")
 
     if not isinstance(haplotypes, list):  # homozygous sample contains only one allele
         haplotypes = [haplotypes]
