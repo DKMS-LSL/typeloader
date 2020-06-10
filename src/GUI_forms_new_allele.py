@@ -214,6 +214,7 @@ class NewAlleleForm(CollapsibleDialog):
         self.myallele = None
         self.sample_name = sample_ID_int
         self.sample_id_ext = sample_ID_ext
+        self.homozygous = False
         self.unsaved_changes = False
         self.upload_btn.check_ready()
 
@@ -232,7 +233,7 @@ class NewAlleleForm(CollapsibleDialog):
         self.define_section1()
         self.define_section2()
         self.define_section3()
-    
+
     def define_section1(self):
         """defining section 1: choose file to upload and project
         """
@@ -244,7 +245,7 @@ class NewAlleleForm(CollapsibleDialog):
         file_btn = FileButton("Choose XML or Fasta file", mypath, self)
         self.file_widget = ChoiceSection("Raw File:", [file_btn], self.tree)
         self.file_widget.choice.connect(self.get_file)
-        mypath = r"H:/Projekte/Bioinformatik/Typeloader Projekt/Issues/149_rejected/ID17972780.xml"
+        mypath = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\148_XML_with_1allele\ID10770715.xml"
         if self.settings["modus"] == "debugging":
             self.file_widget.field.setText(mypath)
         layout.addWidget(self.file_widget)
@@ -393,8 +394,8 @@ class NewAlleleForm(CollapsibleDialog):
                 if self.filetype == "XML":
                     self.allele1 = self.myalleles[0]
                     self.allele2 = self.myalleles[1]
-                    self.fill_section2()
                     self.proceed_sections(0, 1)
+                    self.fill_section2()
 
                 else: # Fasta File: move instantly to section 3:
                     self.myallele = self.myalleles[0]
@@ -495,15 +496,38 @@ class NewAlleleForm(CollapsibleDialog):
         self.allele1_sec.product_field.setText(self.allele1.product)
         if "Novel" in self.allele1.gendx_result:
             self.allele1_sec.checkbox.setChecked(True)
-        
-        self.allele2_sec.lbl1.setText("GenDX: " + self.allele2.gendx_result)
+
+        if self.allele2.gendx_result:
+            gendx_result2 = "GenDX: " + self.allele2.gendx_result
+            self.homozygous = False
+        else:  # homozygous sample has no second allele
+            gendx_result2 = ""
+            self.homozygous = True
+        self.allele2_sec.lbl1.setText(gendx_result2)
         self.allele2_sec.GenDX_result = self.allele2.gendx_result
         self.allele2_sec.gene_field.setText(self.allele2.gene)
         self.allele2_sec.name_field.setText(self.allele2.name)
         self.allele2_sec.product_field.setText(self.allele2.product)
         if "Novel" in self.allele2.gendx_result:
             self.allele2_sec.checkbox.setChecked(True)
-        
+        if self.homozygous:
+            self.allele2_sec.checkbox.setChecked(False)
+            self.allele2_sec.checkbox.setEnabled(False)
+
+        if self.homozygous:
+            msg = "This XML file contains only one allele. This is probably because of an allelic "
+            msg += "dropout in your sample, which might lead to erroneous sequences!\n\n"
+            msg += "Are you really sure you want to upload this file anyway?"
+            self.log.warning(msg.replace("\n\n", " "))
+            reply = QMessageBox.question(self, "Homozygous sample", msg,
+                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.No:
+                self.log.info("User chose to abort.")
+                self.proceed_sections(1, 0)
+            else:
+                self.log.info("User chose to continue.")
+
+
     @pyqtSlot()
     def select_both(self):
         """select or deselect both alleles at once using the "both" checkbox
@@ -525,6 +549,8 @@ class NewAlleleForm(CollapsibleDialog):
     def unselect_other_box(self):
         """enforce that only one allele can be accepted at once
         """
+        if self.homozygous:
+            return
         if self.sender() == self.allele1_sec.checkbox:
             if self.allele1_sec.isSelected:
                 self.allele2_sec.checkbox.setChecked(False)
@@ -596,7 +622,7 @@ class NewAlleleForm(CollapsibleDialog):
                         return
                 else:
                     return
-            
+
             except errors.MissingUTRError as E:
                 QMessageBox.warning(self, "Missing UTR", E.msg)
                 return
