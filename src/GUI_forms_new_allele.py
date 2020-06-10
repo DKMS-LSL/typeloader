@@ -192,7 +192,7 @@ class NewAlleleForm(CollapsibleDialog):
     refresh_alleles = pyqtSignal(str, str)
     
     def __init__(self, log, mydb, current_project, settings, parent=None, sample_ID_int=None,
-                 sample_ID_ext=None, testing=False):
+                 sample_ID_ext=None, testing=False, incomplete_ok=False):
         self.log = log
         self.mydb = mydb
         self.settings = settings
@@ -206,6 +206,7 @@ class NewAlleleForm(CollapsibleDialog):
         self.project = None
         self.parent = parent
         self.testing = testing
+        self.incomplete_ok = incomplete_ok
         self.resize(1000, 800)
         self.setWindowTitle("Add new target allele")
         self.setWindowIcon(QIcon(general.favicon))
@@ -519,13 +520,14 @@ class NewAlleleForm(CollapsibleDialog):
             msg += "dropout in your sample, which might lead to erroneous sequences!\n\n"
             msg += "Are you really sure you want to upload this file anyway?"
             self.log.warning(msg.replace("\n\n", " "))
-            reply = QMessageBox.question(self, "Homozygous sample", msg,
-                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            if reply == QMessageBox.No:
-                self.log.info("User chose to abort.")
-                self.proceed_sections(1, 0)
-            else:
-                self.log.info("User chose to continue.")
+            if not self.testing:
+                reply = QMessageBox.question(self, "Homozygous sample", msg,
+                                             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if reply == QMessageBox.No:
+                    self.log.info("User chose to abort.")
+                    self.proceed_sections(1, 0)
+                else:
+                    self.log.info("User chose to continue.")
 
 
     @pyqtSlot()
@@ -610,8 +612,14 @@ class NewAlleleForm(CollapsibleDialog):
             try:
                 self.ENA_text = typeloader.make_ENA_file(self.blastXmlFile, self.targetFamily, self.myallele, self.settings, self.log)
             except errors.IncompleteSequenceWarning as E:
-                reply = QMessageBox.question(self, "Incomplete Sequence", E.msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-                if reply == QMessageBox.Yes:
+                if self.incomplete_ok and self.testing:
+                    proceed = True
+                else:
+                    proceed = False
+                    reply = QMessageBox.question(self, "Incomplete Sequence", E.msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                    if reply == QMessageBox.Yes:
+                        proceed = True
+                if proceed:
                     try:
                         self.ENA_text = typeloader.make_ENA_file(self.blastXmlFile, self.targetFamily, self.myallele, self.settings, self.log, incomplete_ok = True)
                     except errors.MissingUTRError as E:
