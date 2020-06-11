@@ -809,9 +809,10 @@ class ChooseReferenceAllelesDialog(CollapsibleDialog):
     restricted_db_path = pyqtSignal(str)
     restricted_alleles = pyqtSignal(list)
 
-    def __init__(self, log, settings, parent=None):
+    def __init__(self, log, settings, filetype, parent=None):
         self.settings = settings
         self.log = log
+        self.filetype = filetype
         super().__init__(parent)
 
         self.setMinimumWidth(600)
@@ -993,6 +994,24 @@ class ChooseReferenceAllelesDialog(CollapsibleDialog):
 
     @pyqtSlot()
     def create_restricted_ref_and_retry(self):
+        # check whether length of chosen alleles makes sense:
+        if self.filetype == "XML":
+            n = len(self.chosen_alleles)
+            if n < 2:
+                msg = f"You have chosen only {n} allele although you are trying to upload "
+                msg += "an XML file.\n"
+                msg += "GenDX XML files usually contain 2 alleles. "
+                msg += "You need to provide a reference allele for each of those.\n\n"
+                msg += "Are you sure you have selected all necessary reference alleles?"
+                reply = QMessageBox.question(self, "Only 1 reference allele for XML file", msg,
+                                             QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+                                             )
+                if reply == QMessageBox.No:
+                    self.proceed_btn4.setEnabled(True)
+                    self.proceed_btn4.check_ready()
+                    self.return_to_allele_choice()
+                    return
+
         # create restricted db:
         from typeloader_core import update_reference
         self.log.debug("Deleting old restricted database, if necessary...")
