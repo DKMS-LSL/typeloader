@@ -16,6 +16,7 @@ import gzip
 import pycurl
 import re
 
+
 def check_fasta_valid(fasta):
     """checks whether the file opened as fasta conforms to basic fasta format
     """
@@ -37,6 +38,7 @@ def check_fasta_valid(fasta):
         raise ValueError("FASTA files must contain a valid nucleotide sequence after the header!")
     fasta.seek(0)
 
+
 def fasta_generator(fasta_file):
     """reads a fasta file,
     returns the header and sequence of the first entry
@@ -52,18 +54,19 @@ def fasta_generator(fasta_file):
             seq = "".join(s.strip() for s in next(tupple_out))
             yield header, seq
 
+
 def get_coordinates_from_annotation(annotations):
     posHash = {}
     sequences = {}
 
     for dr2sAllele in list(annotations.keys()):
         # the number of exon and introns = key of dictionairy, value = positions
-        posHash[dr2sAllele] = {"utr":[],"exons":{},"introns":{},"pseudoexons":{}}
+        posHash[dr2sAllele] = {"utr": [], "exons": {}, "introns": {}, "pseudoexons": {}}
         features, coordinates, sequence = annotations[dr2sAllele]["features"], annotations[dr2sAllele]["coordinates"], \
-                                                            annotations[dr2sAllele]["sequence"]
+                                          annotations[dr2sAllele]["sequence"]
         for featureIndex in range(len(features)):
             feature = features[featureIndex]
-            if feature == "utr5" or feature == "utr3": 
+            if feature == "utr5" or feature == "utr3":
                 posHash[dr2sAllele]["utr"].append(coordinates[featureIndex])
             elif feature[1] == "e":
                 posHash[dr2sAllele]["exons"][feature[0]] = coordinates[featureIndex]
@@ -71,12 +74,13 @@ def get_coordinates_from_annotation(annotations):
                 posHash[dr2sAllele]["pseudoexons"][feature[0]] = coordinates[featureIndex]
             elif feature[1] == "i":
                 posHash[dr2sAllele]["introns"][feature[0]] = coordinates[featureIndex]
-            else: 
+            else:
                 print("Should not go in here")
 
         sequences[dr2sAllele] = sequence
 
     return (posHash, sequences)
+
 
 def write_log(file, level, text):
     logging.basicConfig(filename=file, level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
@@ -92,12 +96,13 @@ def write_log(file, level, text):
         logging.critical(text)
     return None
 
+
 ## write an XML
 def write_file(data_string, path, log, pretty=True):
     try:
         file_helper = open(path, 'w')
         if (os.path.splitext(path)[1] == ".xml" and pretty):
-            #only for self-created files
+            # only for self-created files
             pretty_string = prettify(data_string)
             file_helper.write(pretty_string)
         else:
@@ -110,6 +115,7 @@ def write_file(data_string, path, log, pretty=True):
         log.info("Wrote " + path + " to disk")
         return True
 
+
 def submit_project_ENA(submission_xml, type_xml, filetype, embl_server, proxy, output_filename, userpwd):
     with open(output_filename, "wb") as g:
         c = pycurl.Curl()
@@ -119,10 +125,13 @@ def submit_project_ENA(submission_xml, type_xml, filetype, embl_server, proxy, o
                 ("{}".format(filetype), (c.FORM_FILE, type_xml))]
         c.setopt(c.HTTPPOST, data)
         c.setopt(pycurl.PROXY, proxy)
-        c.setopt(pycurl.SSL_VERIFYPEER, 0) #FIXME: (future) use certificates! https://stackoverflow.com/questions/8332643/pycurl-and-ssl-cert   
+        c.setopt(pycurl.SSL_VERIFYPEER,
+                 0)  # FIXME: (future) use certificates! https://stackoverflow.com/questions/8332643/pycurl-and-ssl-cert
         c.setopt(pycurl.SSL_VERIFYHOST, 0)
         c.setopt(pycurl.USERPWD, userpwd)
         c.setopt(c.WRITEFUNCTION, g.write)
+        print(data)
+        print(embl_server)
         try:
             c.perform()
             err = None
@@ -130,8 +139,9 @@ def submit_project_ENA(submission_xml, type_xml, filetype, embl_server, proxy, o
             err = E
         finally:
             c.close()
-        
+
     return err
+
 
 ## create a readable XML
 def prettify(elem):
@@ -139,8 +149,9 @@ def prettify(elem):
     """
     rough_string = ElementTree.tostring(elem, "unicode")
     reparsed = minidom.parseString(rough_string)
-    pretty = reparsed.toprettyxml(indent='\t', encoding='utf-8').decode("utf-8") 
+    pretty = reparsed.toprettyxml(indent='\t', encoding='utf-8').decode("utf-8")
     return pretty
+
 
 def generate_project_xml(title, description, alias, center_name):
     xml_root = Element('PROJECT_SET')
@@ -155,6 +166,7 @@ def generate_project_xml(title, description, alias, center_name):
     xml_sequencing_project = SubElement(xml_submission_project, 'SEQUENCING_PROJECT')
     return xml_root
 
+
 def generate_submission_project_xml(alias, center_name, project_xml_filename):
     xml_root = Element('SUBMISSION')
     xml_root.set('alias', alias)
@@ -165,6 +177,7 @@ def generate_submission_project_xml(alias, center_name, project_xml_filename):
     xml_add.set('source', os.path.basename(project_xml_filename))
     xml_add.set('schema', 'project')
     return xml_root
+
 
 def generate_analysis_xml(title, description, alias, accession, center_name, concat_FF_zip, md5_checksum):
     xml_root = Element('ANALYSIS_SET')
@@ -188,6 +201,7 @@ def generate_analysis_xml(title, description, alias, accession, center_name, con
     xml_file.set('filetype', 'flatfile')
     return xml_root
 
+
 def generate_submission_ff_xml(alias, center_name, analysis_xml_filename):
     xml_root = Element('SUBMISSION')
     xml_root.set('alias', alias)
@@ -199,12 +213,17 @@ def generate_submission_ff_xml(alias, center_name, analysis_xml_filename):
     xml_add.set('schema', 'analysis')
     return xml_root
 
+
 def get_study_info(search_dir, search_string, err_file):
     ## extract alias for seaching study information
-    search_alias = subprocess.Popen(shlex.split('find ' + search_dir + ' -type f -name \'*_output.xml\' '), stdout = subprocess.PIPE, stderr=subprocess.PIPE)
-    search_alias_pipe1 = subprocess.Popen(shlex.split('xargs grep -H ' + search_string), stdin=search_alias.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    search_alias_pipe2 = subprocess.Popen(shlex.split('awk {\'print $4\'} '), stdin=search_alias_pipe1.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    search_alias_pipe3 = subprocess.Popen(shlex.split('cut -d \\" -f2'), stdin=search_alias_pipe2.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    search_alias = subprocess.Popen(shlex.split('find ' + search_dir + ' -type f -name \'*_output.xml\' '),
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    search_alias_pipe1 = subprocess.Popen(shlex.split('xargs grep -H ' + search_string), stdin=search_alias.stdout,
+                                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    search_alias_pipe2 = subprocess.Popen(shlex.split('awk {\'print $4\'} '), stdin=search_alias_pipe1.stdout,
+                                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    search_alias_pipe3 = subprocess.Popen(shlex.split('cut -d \\" -f2'), stdin=search_alias_pipe2.stdout,
+                                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     search_out, search_error = search_alias_pipe3.communicate()
     title = ""
     description = ""
@@ -212,11 +231,13 @@ def get_study_info(search_dir, search_string, err_file):
         study_xml = search_dir + search_out.strip() + ".xml"
         title, description = parse_study_xml(study_xml)
     else:
-        write_log(err_file, "ERROR", " You choose a directory, whose accession number isn't in a study xml file: " + search_string)
+        write_log(err_file, "ERROR",
+                  " You choose a directory, whose accession number isn't in a study xml file: " + search_string)
         search_out = "[ There is no valid accession number, please do no further progression ]"
     return (search_out.strip(), title, description)
 
-def parse_register_EMBL_xml(filename, filetype, samples = None):
+
+def parse_register_EMBL_xml(filename, filetype, samples=None):
     with open(filename, "r") as f:
         xml_data = f.read()
     problem_samples = []
@@ -235,7 +256,8 @@ def parse_register_EMBL_xml(filename, filetype, samples = None):
             errors = []
             if "NodeList" in str(type(error)):
                 for i in range(len(error)):
-                    mytext = error[i].toprettyxml(encoding="UTF8").decode("UTF8").replace("&quot;",'"').replace("</ERROR>","").replace("<ERROR>","")
+                    mytext = error[i].toprettyxml(encoding="UTF8").decode("UTF8").replace("&quot;", '"').replace(
+                        "</ERROR>", "").replace("<ERROR>", "")
                     if mytext:
                         splitted = mytext.split('filetype:"flatfile". ')
                         if len(splitted) == 2:
@@ -249,7 +271,7 @@ def parse_register_EMBL_xml(filename, filetype, samples = None):
                                     problem_samples.append(nr - 1)
                                     [_, _, _, local_name] = samples[nr - 1]
                                     mytext = mytext.replace(found, "{} ({})".format(found, local_name))
-                                    
+
                                 except Exception as E:
                                     errors.append(repr(E))
                             errors.append(mytext)
@@ -260,20 +282,31 @@ def parse_register_EMBL_xml(filename, filetype, samples = None):
         if "ExpatError" in str(type(E)):
             parse_dic = {}
             for element in xml_data[1:-1].split(","):
-                [key, value] = element.replace('"','').split(":")
+                [key, value] = element.replace('"', '').split(":")
                 parse_dic[key] = value
-            error = parse_dic["error"]
-            info = parse_dic["message"]
-            status = parse_dic["status"]
-            if error == "Not Found" and info == "Not Found" and status == 404:
-                error = "Could not reach ENA server! Please check EMBL server connection!"
-                info = "known error"
-        else:
-            error = E
+
+            parseable_reply = True
             info = ""
+            for key in ["error", "message", "status"]:
+                if key not in parse_dic:
+                    parseable_reply = False
+            if not parseable_reply:
+                error = xml_data.split("<body>")[1].split("</body>")[0]
+                error += "\n\nI cannot parse this, but apparently there's a problem."
+                error += "\nCheck EMBL server connection?"
+            else:
+                error = parse_dic["error"]
+                info = parse_dic["message"]
+                status = parse_dic["status"]
+                if error == "Not Found" and info == "Not Found" and status == 404:
+                    error = "Could not reach ENA server! Please check EMBL server connection!"
+                    info = "known error"
+        else:
+            error = "Cannot understand ENA's reply"
         successful = False
         accession_number = ""
     return (successful, accession_number, info, error, problem_samples)
+
 
 def parse_study_xml(xml_data):
     title = ""
@@ -281,24 +314,25 @@ def parse_study_xml(xml_data):
     curr_xml = minidom.parse(xml_data)
     title_element = curr_xml.getElementsByTagName('TITLE')[0]
     if (len(title_element.childNodes) > 0): title = title_element.childNodes[0].data
-    desc_element =  curr_xml.getElementsByTagName('DESCRIPTION')[0]
+    desc_element = curr_xml.getElementsByTagName('DESCRIPTION')[0]
     if (len(desc_element.childNodes) > 0):
         description = desc_element.childNodes[0].data
     return (title, description)
+
 
 def connect_ftp(command, file, username, password, ftp_server, log, modus):
     log.info("Initiating FTP connection...")
     filename = os.path.basename(file)
     try:
         ftp = ftplib.FTP(ftp_server)
-        ftp.login(user = username, passwd = password)
+        ftp.login(user=username, passwd=password)
         if modus in ["debugging", "testing", "staging"]:
             ftp.debug(2)
         if (command == "delete"):
             ftp.delete(filename)
             log.info("\tsuccessful FTP deletion: " + file)
         if (command == "push"):
-            open_file = open(file,'rb')
+            open_file = open(file, 'rb')
             ftp.storbinary('STOR ' + filename, open_file)
             open_file.close()
             log.info("\tsuccessful FTP push: " + file)
@@ -322,9 +356,9 @@ def concatenate_flatfile(files, concat_FF_zip, log):
     returns True if that file has any content, else False
     """
     log.debug("Concatenating {} files...".format(len(files)))
-    line_dic = {} # format: {line number in flatfile : (nr of depicted sequence, local_name of depicted sequence)}
-    i = 0 # line number in flatfile
-    j = 0 # sequence number in flatfile
+    line_dic = {}  # format: {line number in flatfile : (nr of depicted sequence, local_name of depicted sequence)}
+    i = 0  # line number in flatfile
+    j = 0  # sequence number in flatfile
     with gzip.open(concat_FF_zip, "wt") as g:
         for file in files:
             sequence = os.path.basename(file).split(".")[0]
@@ -340,7 +374,8 @@ def concatenate_flatfile(files, concat_FF_zip, log):
         return True, line_dic
     else:
         return False, None
-    
+
+
 def make_md5(concat_FF, log):
     with open(concat_FF, 'rb') as fh:
         m = hashlib.md5()
@@ -360,37 +395,38 @@ def make_manifest(manifest_file, ENA_ID, submission_alias, flatfile, log):
         g.write("NAME\t{}\n".format(submission_alias))
         g.write("FLATFILE\t{}\n".format(os.path.basename(flatfile)))
     log.debug("\tmanifest file written to {}".format(manifest_file))
-    
+
 
 def make_ENA_CLI_command_string(manifest_file, project_dir, settings, log):
     import glob
     # find webin-cli:
     log.debug("Locating ENA's Webin-CLI client...")
     TL_src_dir = os.path.dirname(os.path.dirname(__file__))
-    CLI_path = os.path.join(TL_src_dir, "ENA_Webin_CLI") # should work if executed from Python
-    CLI_files = glob.glob(os.path.join(CLI_path, "webin-cli*.jar")) 
-    if not CLI_files: 
-        CLI_path2 = os.path.join(os.path.dirname(TL_src_dir), "ENA_Webin_CLI") # should work if executed from .exe
+    CLI_path = os.path.join(TL_src_dir, "ENA_Webin_CLI")  # should work if executed from Python
+    CLI_files = glob.glob(os.path.join(CLI_path, "webin-cli*.jar"))
+    if not CLI_files:
+        CLI_path2 = os.path.join(os.path.dirname(TL_src_dir), "ENA_Webin_CLI")  # should work if executed from .exe
         CLI_files = glob.glob(os.path.join(CLI_path2, "webin-cli*.jar"))
-        if not CLI_files: 
+        if not CLI_files:
             log.error("ENA Webin-CLI not found in {}!".format(CLI_path))
             return False, "ENA Webin-CLI client not found!"
-    
-    CLI_file = sorted(CLI_files)[-1] # if multiple versions found, use highest version
+
+    CLI_file = sorted(CLI_files)[-1]  # if multiple versions found, use highest version
     log.debug("\t=> found: {}".format(CLI_file))
-    
+
     # create command:
     log.debug("Creating command for Webin-CLI...")
-    cmd = ['java', '-jar', '"{}"'.format(CLI_file), '-context', 'sequence', '-manifest', manifest_file, 
-           '-userName', settings["ftp_user"], '-password', settings["ftp_pwd"], '-centerName', '"{}"'.format(settings["xml_center_name"]),
+    cmd = ['java', '-jar', '"{}"'.format(CLI_file), '-context', 'sequence', '-manifest', manifest_file,
+           '-userName', settings["ftp_user"], '-password', settings["ftp_pwd"], '-centerName',
+           '"{}"'.format(settings["xml_center_name"]),
            '-inputDir', '"{}"'.format(project_dir), '-outputDir', '"{}"'.format(project_dir)]
-    
-    if settings["use_ena_server"] != "PROD": # use TEST server
+
+    if settings["use_ena_server"] != "PROD":  # use TEST server
         cmd.append("-test")
-        
+
     cmd = " ".join(cmd)
     log.debug("\t=> done")
-    
+
     return cmd, None
 
 
@@ -401,7 +437,7 @@ def parse_ENA_report(report_file, line_dic, log):
     problem_samples = []
     msg_dic = defaultdict(list)
     affected_lines_dic = defaultdict(list)
-    
+
     with open(report_file, "r") as f:
         for line in f:
             log.debug(line.strip())
@@ -428,7 +464,7 @@ def parse_ENA_report(report_file, line_dic, log):
         for line in msg_dic[key]:
             text += line + "\n"
         text += "(Problematic lines in concatenated flatfile: {})\n".format(", ".join(affected_lines_dic[key]))
-            
+
     return text, problem_samples
 
 
@@ -455,7 +491,7 @@ def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic,
         log.error(cmd_string)
         output = E.output.decode("utf-8")
 
-    output_list = [line.rstrip() for line in output.split("\n") if line] # make list and remove newlines
+    output_list = [line.rstrip() for line in output.split("\n") if line]  # make list and remove newlines
     if output_list:
         last_line = output_list[-1]
     else:
@@ -466,23 +502,24 @@ def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic,
     if modus == "validate":
         if last_line == 'INFO : The submission has been validated successfully.':
             success = True
-            output_txt = last_line.replace("INFO : ","")
-        else: # validation failed
+            output_txt = last_line.replace("INFO : ", "")
+        else:  # validation failed
             output_txt = "ERROR: ENA rejected your files (validation failed):\n\n"
-            report = os.path.join(project_dir, "sequence", submission_alias, "validate", 
-                          "{}_{}_flatfile.txt.gz.report".format(s[0], s[1]))
+            report = os.path.join(project_dir, "sequence", submission_alias, "validate",
+                                  "{}_{}_flatfile.txt.gz.report".format(s[0], s[1]))
     elif modus == "submit":
         if "The submission has been completed successfully." in last_line \
                 or "The TEST submission has been completed successfully." in last_line:
             success = True
-            output_txt = "Success!\n\n{}\n{}".format(output_list[-2].replace("INFO : ",""),last_line.replace("INFO : ",""))
+            output_txt = "Success!\n\n{}\n{}".format(output_list[-2].replace("INFO : ", ""),
+                                                     last_line.replace("INFO : ", ""))
             ENA_submission_ID = last_line.split("was assigned to the submission: ")[1].strip()
         else:
             output_txt = "ERROR: ENA rejected your files (submission failed):\n\n"
-            report = os.path.join(project_dir, "sequence", submission_alias, "validate", 
-                          "{}_{}_flatfile.txt.gz.report".format(s[0], s[1]))
-    
-    if not success: 
+            report = os.path.join(project_dir, "sequence", submission_alias, "validate",
+                                  "{}_{}_flatfile.txt.gz.report".format(s[0], s[1]))
+
+    if not success:
         log.error("\n".join(output_list))
         if report:
             try:
@@ -494,25 +531,25 @@ def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic,
         else:
             output_txt = "ERROR: ENA rejected your files:\n\n" + "\n".join(output_list)
 
-        output_txt += "\nThe complete submission has been rejected." 
-    
+        output_txt += "\nThe complete submission has been rejected."
+
     else:
         if " -test " in cmd_string:
             output_txt += "\n\nThis submission is a TEST submission and will be discarded within 24 hours."
-    
-    output_txt = output_txt.replace("  ","\n") # break weird long lines in ENA-reply
-    
+
+    output_txt = output_txt.replace("  ", "\n")  # break weird long lines in ENA-reply
+
     return success, output_txt, ENA_submission_ID, problem_samples
-            
-    
+
+
 if __name__ == "__main__":
     log = logging.getLogger()
     manifest_file = r"\\nasdd12\daten\data\Typeloader\admin\projects\20190625_ADMIN_mixed_ENA-Test2\PRJEB33198_20190625155412_manifest.txt"
     project_dir = r"\\nasdd12\daten\data\Typeloader\admin\projects\20190625_ADMIN_mixed_ENA-Test2"
-    settings = {"ftp_user" : "submission@dkms-lab.de",
-                "ftp_pwd" : "DKMS2805",
-                "xml_center_name" : "DKMS LIFE SCIENCE LAB",
+    settings = {"ftp_user": "submission@dkms-lab.de",
+                "ftp_pwd": "DKMS2805",
+                "xml_center_name": "DKMS LIFE SCIENCE LAB",
                 "use_ena_server": "TEST"}
     cmd, msg = make_ENA_CLI_command_string(manifest_file, project_dir, settings, log)
-    
+
     handle_webin_CLI(cmd + " -validate", log)

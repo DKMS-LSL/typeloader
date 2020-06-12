@@ -267,10 +267,10 @@ class LoginForm(QDialog):
                 self.address = dialog.address
                 self.email = dialog.email
             
-                if self.login == "admin":
-                    QMessageBox.warning(self, "User creation error", 
-                            "Username 'admin' is restricted. Please use something else!")
-                    return
+                # if self.login == "admin":
+                #     QMessageBox.warning(self, "User creation error",
+                #             "Username 'admin' is restricted. Please use something else!")
+                #     return
                 
                 success = create_user_space(self.root_path, self.login, self.name, 
                                             self.short, self.email, self.address, self.log)
@@ -376,12 +376,16 @@ def make_new_settings(root_path, user, user_name, short_name, email, address,
     """
     log.info("Establishing user settings for new user {}...".format(user))
     user_ini = os.path.join(root_path, user, user_config_file)
-    
+
+    assert os.path.isfile(raw_config_file), "config_raw.ini is missing from $INSTDIR"
+    assert os.path.isfile(company_config_file), "config_company.ini is missing from $INSTDIR"
+    assert os.path.isfile(base_config_file), "config_base.ini is missing from $INSTDIR"
+
     # concatenate raw user config with company config:
     with open(user_ini, "w") as g:
-        config = ConfigParser() # user config, to be created
+        config = ConfigParser()  # user config, to be created
         
-        config_read = ConfigParser()
+        config_read = ConfigParser()  # read source config
         for myfile in [raw_config_file, company_config_file]:
             print(os.path.abspath(myfile))
             config_read.read(myfile)
@@ -556,7 +560,7 @@ def check_for_reference_updates(log, settings, parent):
     
     update_me = []
     for db_name in db_list:
-        new_version_found, _ = update_reference.check_database(db_name, reference_local_path, log, 
+        new_version_found, _ = update_reference.check_database(db_name, reference_local_path, log,
                                                            skip_if_updated_today = False)
         if new_version_found:
             update_me.append(db_name.upper())
@@ -673,6 +677,7 @@ def config_files_missing():
     """
     for myfile in [base_config_file, company_config_file]: 
         if not os.path.isfile(myfile):
+            print(os.path.abspath(myfile))
             raise IOError("File {} does not exist! Please create it before trying again!\nAborting...".format(myfile))
             return True
     return False

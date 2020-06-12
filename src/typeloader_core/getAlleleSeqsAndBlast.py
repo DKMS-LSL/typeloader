@@ -24,9 +24,10 @@ def getAlleleSequences(xmlFile, log):
     xmlData = parseXML(xmlFile)
     alleleNames = getAlleleNames(xmlData)
     data_dic = get_additional_XML_info(xmlData, log)
-    
+
     for alleleName in alleleNames:
-        alleles[alleleName] = sequenceFromHaplotype(xmlData, getHaplotypeIds(xmlData, alleleName))
+        haplotype_list = getHaplotypeIds(xmlData, alleleName)
+        alleles[alleleName] = sequenceFromHaplotype(xmlData, haplotype_list)
 
     return alleles, data_dic
 
@@ -95,7 +96,7 @@ def sanity_check_seq(seq, log):
     return ok, msg
             
 
-def blast_raw_seqs(input_filename, filetype, settings, log):
+def blast_raw_seqs(input_filename, filetype, settings, log, use_given_reference=False):
     """parses raw allele file (fasta or XML)
     """
     if filetype == "XML":
@@ -134,8 +135,12 @@ def blast_raw_seqs(input_filename, filetype, settings, log):
             targetFamily = kir
         else:
             targetFamily = hla
-     
-    reference_path = os.path.join(settings["dat_path"], settings["general_dir"], settings["reference_dir"])
+
+    if use_given_reference:
+        reference_path = use_given_reference
+    else:
+        reference_path = os.path.join(settings["dat_path"], settings["general_dir"],
+                                      settings["reference_dir"])
     parsed_kir = settings["parsed_kir"]
     parsed_hla = settings["parsed_hla"]
     hla_dat = settings["hla_dat"]
@@ -164,10 +169,15 @@ def blast_raw_seqs(input_filename, filetype, settings, log):
         msg += "(Current BLAST path: {})".format(settings["blast_path"])
         return False, "Error while trying to BLAST raw sequence", msg
         
-    with open(versionFilename) as f:
-        curr_version = f.read().strip()
-        header_data["ref_version"] = curr_version
-
+    try:
+        with open(versionFilename) as f:
+            curr_version = f.read().strip()
+            header_data["ref_version"] = curr_version
+    except Exception as E:
+        log.error(E)
+        msg = f"Could not read the reference file:\n\n{str(E)}\n\n"
+        msg += "Did you maybe specify a wrong gene family?"
+        return False, "Error while opening reference file", msg
     return BlastXMLFile, targetFamily, fastaFilename, allelesFilename, header_data, xml_data_dic
 
 

@@ -12,7 +12,11 @@ A cross-plattform GUI for Typeloader
 
 # import modules:
 
-import sys, os, ctypes, time, platform
+import sys
+import os
+import ctypes
+import time
+import platform
 from functools import partial
 from datetime import datetime
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QDialog,

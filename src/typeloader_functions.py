@@ -120,7 +120,7 @@ def toggle_project_status(proj_name, curr_status, log, values=["Open", "Closed"]
         return success, curr_status, 0
 
 
-def upload_parse_sequence_file(raw_path, settings, log):
+def upload_parse_sequence_file(raw_path, settings, log, use_given_reference=False):
     """uploads file from raw_path to temp_dir and parses it
     """
     log.debug("Uploading file {} to temp location...".format(raw_path))
@@ -155,7 +155,8 @@ def upload_parse_sequence_file(raw_path, settings, log):
 
     # read file:
     try:
-        results = GASB.blast_raw_seqs(temp_raw_file, filetype, settings, log)
+        results = GASB.blast_raw_seqs(temp_raw_file, filetype, settings, log,
+                                      use_given_reference=use_given_reference)
     except ValueError as E:
         msg = E.args[0]
         if msg.startswith("Fasta"):
@@ -165,7 +166,8 @@ def upload_parse_sequence_file(raw_path, settings, log):
     if results[0] == False:  # something went wrong
         return results
 
-    (blastXmlFile, targetFamily, fasta_filename, allelesFilename, header_data, xml_data_dic) = results
+    (blastXmlFile, targetFamily, fasta_filename, allelesFilename,
+     header_data, xml_data_dic) = results
 
     sample_name = None
     if header_data:
@@ -217,7 +219,11 @@ def remove_other_allele(blast_xml_file, fasta_file, other_allele_name, log, repl
     log.debug("\tCleaning fasta file...")
     temp = fasta_file + "1"
     with open(fasta_file, "rU") as f, open(temp, "w") as g:
-        for record in SeqIO.parse(f, "fasta"):
+        records = list(SeqIO.parse(f, "fasta"))
+        if len(records) == 1:  # only one allele present
+            log.debug("\t\t=> only one allele found, no cleaning necessary.")
+            return
+        for record in records:
             if other_allele_name not in record.id:
                 success = SeqIO.write(record, g, 'fasta')
                 if success != 1:
@@ -254,8 +260,8 @@ def remove_other_allele(blast_xml_file, fasta_file, other_allele_name, log, repl
     log.debug("\t=> Done!")
 
 
-def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_filename, allelesFilename,
-                          header_data, settings, log, incomplete_ok=False):
+def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_filename,
+                          allelesFilename, header_data, settings, log, incomplete_ok=False):
     log.debug("Processing sequence file...")
     try:
         if filetype == "XML":
@@ -267,13 +273,16 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 return False, "Missing UTR", E.msg
             except errors.DevianceError as E:
                 return False, "Allele too divergent", E.msg
+            except OverflowError as E:
+                return False, "Too many possible alignments", str(E)
 
             genDxAlleleNames = list(closestAlleles.keys())
-            if closestAlleles[genDxAlleleNames[0]] == 0 or closestAlleles[genDxAlleleNames[1]] == 0:
-                # No BLAST hit at position 1
-                msg = "No BLAST hit at position 1"
-                log.warning(msg)
-                return False, "Problem in XML file", msg
+            for allele in genDxAlleleNames[:2]:
+                if closestAlleles[allele] == 0:
+                    # No BLAST hit at position 1
+                    msg = "No BLAST hit at position 1"
+                    log.warning(msg)
+                    return False, "Problem in XML file", msg
 
             closestAlleleNames = [closestAlleles[genDxAlleleName]["name"] for genDxAlleleName in genDxAlleleNames]
             geneNames = [alleleName.split("*")[0] for alleleName in genDxAlleleNames]
@@ -292,9 +301,13 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
             allele1 = Allele(gendx_result, gene, name, product, targetFamily, header_data["sample_id_int"], settings,
                              log)
 
-            (gendx_result, gene, name, product) = (genDxAlleleNames[1], geneNames[1], alleleNames[1], products[1])
-            allele2 = Allele(gendx_result, gene, name, product, targetFamily, header_data["sample_id_int"], settings,
-                             log)
+            if len(genDxAlleleNames) > 1:
+                (gendx_result, gene, name, product) = (genDxAlleleNames[1], geneNames[1],
+                                                       alleleNames[1], products[1])
+                allele2 = Allele(gendx_result, gene, name, product, targetFamily,
+                                 header_data["sample_id_int"], settings, log)
+            else:
+                allele2 = Allele("", "", "", "", "", header_data["sample_id_int"], settings, log)
 
             myalleles = [allele1, allele2]
             ENA_text = ""
@@ -319,7 +332,8 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                     return False, "BLAST hickup", "The generated blast.xml-file was empty. This was probably a BLAST hickup. Please restart TypeLoader and try again!"
                 else:
                     return False, "Input File Error", repr(E)
-
+            except OverflowError as E:
+                return False, "Too many possible alignments", str(E)
             alleles = [allele for allele in annotations.keys()]
             # take the first sequence in fasta file
             alleleName = alleles[0]
@@ -393,7 +407,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
     except Exception as E:
         log.error(E)
         log.exception(E)
-        return False, "Error while processing the sequence file", repr(E), None
+        return False, "Error while processing the sequence file", repr(E)
 
 
 def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log, incomplete_ok=False):
@@ -407,7 +421,6 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log, incomplete_
     annotations = COO.getCoordinates(blastXmlFile, allelesFilename, targetFamily, settings, log, isENA=True,
                                      incomplete_ok=incomplete_ok)
     posHash, sequences = EF.get_coordinates_from_annotation(annotations)
-
     currentPosHash = posHash[allele.alleleName]
     sequence = sequences[allele.alleleName]
     enaPosHash = BME.transform(currentPosHash)
@@ -461,7 +474,7 @@ def move_files_to_sample_dir(project, sample_name, local_name, filetype,
 
 
 def save_new_allele(project, sample_name, local_name, ENA_text,
-                    filetype, temp_raw_file, blastXmlFile, fasta_filename,
+                    filetype, temp_raw_file, blastXmlFile, fasta_filename, restricted_db_path,
                     settings, log):
     """saves files of new target allele and writes ENA file
     """
@@ -491,6 +504,18 @@ def save_new_allele(project, sample_name, local_name, ENA_text,
         msg = "Could not write the ENA file for {}\n\n{}".format(local_name, repr(E))
         return (False, "ENA file creation error", msg, None)
 
+    if restricted_db_path:
+        log.debug("Saving restricted database into sample's directory...")
+        target_dir = os.path.join(sample_dir, f"{local_name}_restricted_db")
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+
+        for (dirpath, subdirs, files) in os.walk(os.path.join(settings["temp_dir"],
+                                                              "restricted_db")):
+            for f in files:
+                myfile = os.path.join(dirpath, f)
+                shutil.move(myfile, os.path.join(target_dir, f))
+
     files = [raw_file, fasta_filename, blastXmlFile, ena_path]
     return (True, None, None, files)
 
@@ -498,7 +523,7 @@ def save_new_allele(project, sample_name, local_name, ENA_text,
 def save_new_allele_to_db(allele, project,
                           filetype, raw_file, fasta_filename, blastXmlFile,
                           header_data, targetFamily,
-                          ena_path, settings, mydb, log):
+                          ena_path, restricted_alleles, settings, mydb, log):
     """save new allele to internal database
     """
     try:
@@ -530,6 +555,12 @@ def save_new_allele_to_db(allele, project,
         else:
             null_allele = 'no'
         update_queries = []
+        if restricted_alleles:
+            msg = f"Uploaded using a reference restricted to {' & '.join(restricted_alleles)}"
+            if header_data["comment"]:
+                header_data["comment"] = msg + " ; " + header_data["comment"]
+            else:
+                header_data["comment"] = msg
         # update ALLELES table:
         update_alleles_query = """INSERT INTO alleles 
         (sample_id_int, allele_nr, project_name, project_nr, local_name, GENE, 
@@ -650,25 +681,51 @@ def parse_bulk_csv(csv_file, settings, log):
     return alleles, error_dic, i
 
 
-def upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_path, customer,
-                               settings, mydb, log, incomplete_ok=False):
-    """adds one new target sequence to TypeLoader
+def handle_new_allele_parsing(project_name, sample_id_int, sample_id_ext, raw_path, customer,
+                              settings, log, use_restricted_db=False):
+    """handles step one of the uploading of one new allele to TL;
+    called by NewAlleleForm and upload_new_allele_complete()
     """
     log.info("Uploading {} to project {}...".format(sample_id_int, project_name))
-    results = upload_parse_sequence_file(raw_path, settings, log)
-    if results[0] == False:  # something went wrong
+    results = upload_parse_sequence_file(raw_path, settings, log,
+                                         use_given_reference=use_restricted_db)
+    if not results[0]:  # something went wrong
         return False, "{}: {}".format(results[1], results[2])
     log.debug("\t=> success")
 
-    (_, _, filetype, temp_raw_file, blastXmlFile,
+    (_, sample_name, filetype, temp_raw_file, blastXmlFile,
      targetFamily, fasta_filename, allelesFilename, header_data) = results
     reformat_header_data(header_data, sample_id_ext, log)
     if customer:
         header_data["Customer"] = customer
+    if sample_id_int:
+        header_data["sample_id_int"] = sample_id_int
+    if sample_id_ext:
+        header_data["sample_id_ext"] = sample_id_ext
 
-    # process raw file:
-    sample_name = sample_id_int
-    header_data["sample_id_int"] = sample_id_int
+    results = (header_data, filetype, sample_name, targetFamily,
+               temp_raw_file, blastXmlFile, fasta_filename, allelesFilename)
+    return True, results
+
+
+def upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_path, customer,
+                               settings, mydb, log, incomplete_ok=False, use_restricted_db=False):
+    """adds one new target sequence to TypeLoader
+    """
+    success, results = handle_new_allele_parsing(project_name, sample_id_int, sample_id_ext,
+                                                 raw_path, customer, settings, log,
+                                                 use_restricted_db)
+    if not success:
+        log.warning("Could not upload target file")
+        log.warning(results)
+        return False, results
+
+    (header_data, filetype, sample_name, targetFamily,
+     temp_raw_file, blastXmlFile, fasta_filename, allelesFilename) = results
+
+    if sample_id_int:
+        sample_name = sample_id_int
+        header_data["sample_id_int"] = sample_id_int
     results = process_sequence_file(project_name, filetype, blastXmlFile,
                                     targetFamily, fasta_filename, allelesFilename,
                                     header_data, settings, log, incomplete_ok=incomplete_ok)
@@ -682,7 +739,7 @@ def upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_p
     myallele.make_local_name()
     # save allele files:
     results = save_new_allele(project_name, sample_name, myallele.local_name, ENA_text,
-                              filetype, temp_raw_file, blastXmlFile, fasta_filename,
+                              filetype, temp_raw_file, blastXmlFile, fasta_filename, False,
                               settings, log)
     (success, err_type, msg, files) = results
 
@@ -695,7 +752,7 @@ def upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_p
                                                      filetype, raw_file,
                                                      fasta_filename, blastXmlFile,
                                                      header_data, targetFamily,
-                                                     ena_path, settings, mydb, log)
+                                                     ena_path, None, settings, mydb, log)
     if success:
         log.debug("Allele uploaded successfully")
         return True, myallele.local_name
@@ -923,7 +980,40 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
     return ena_results, True, None, None, problem_samples
 
 
-pass
+def upload_allele_with_restricted_db(project_name, sample_id_int, sample_id_ext, raw_path,
+                                     customer, reference_alleles,
+                                     settings, mydb, log):
+    """re-attempts upload of a target allele file, using a restricted reference database.
+    This can become necessary if TL cannot automatically find a goo reference allele. (#149)
+
+    :param project_name: name of the project where the target allele should go
+    :param sample_id_int: internal sample ID for the target allele
+    :param sample_id_ext: external sample ID for the target allele
+    :param raw_path: path where the file to be uploaded is located
+    :param customer: customer of the target allele (optional field)
+    :param reference_alleles: list of reference alleles to use in the restricted database
+    :param settings: the current user's settings (dictionary)
+    :param mydb: db connection the the user's TL database
+    :param log: logger
+    :return: success (bool), msg (allele_name if successfull, else error message)
+    """
+    from typeloader_core import update_reference
+    ref_path_orig = os.path.join(settings["root_path"], settings["general_dir"],
+                                 settings["reference_dir"])
+    target_dir = os.path.join(settings["temp_dir"], "restricted_db")
+    success, restricted_db = update_reference.make_restricted_db("restricted", ref_path_orig,
+                                                                reference_alleles, target_dir,
+                                                                settings["blast_path"], log)
+    if not success:
+        msg = "Creating restricted database did not work! Aborting..."
+        log.error(msg)
+        return False, "Error while trying to create restricted reference database", msg
+
+    success, msg = upload_new_allele_complete(project_name, sample_id_int,
+                                              sample_id_ext, raw_path, customer,
+                                              settings, mydb, log,
+                                              use_restricted_db=restricted_db)
+    return success, msg
 
 
 # ===========================================================
