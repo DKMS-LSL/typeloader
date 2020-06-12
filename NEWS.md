@@ -1,5 +1,13 @@
 # Version History
 
+## 2.8.0 (2020-06-10)
+### New Features:
+- Homozygous XML files are now accepted as input (#148)
+- Alleles whose closest known allele is not found automatically due to reference database inconsistencies can now be added via a restricted reference with reference alleles chosen by the user. (#149)
+
+### Bugfix:
+- handle unexpected replies from ENA during project creation (#151)
+
 ## 2.7.1 (2020-03-09)
 ### Bugfix: 
 - handle Webin-CLI replies with non-standard formatting (#147)

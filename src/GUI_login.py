@@ -376,12 +376,16 @@ def make_new_settings(root_path, user, user_name, short_name, email, address,
     """
     log.info("Establishing user settings for new user {}...".format(user))
     user_ini = os.path.join(root_path, user, user_config_file)
-    
+
+    assert os.path.isfile(raw_config_file), "config_raw.ini is missing from $INSTDIR"
+    assert os.path.isfile(company_config_file), "config_company.ini is missing from $INSTDIR"
+    assert os.path.isfile(base_config_file), "config_base.ini is missing from $INSTDIR"
+
     # concatenate raw user config with company config:
     with open(user_ini, "w") as g:
-        config = ConfigParser() # user config, to be created
+        config = ConfigParser()  # user config, to be created
         
-        config_read = ConfigParser()
+        config_read = ConfigParser()  # read source config
         for myfile in [raw_config_file, company_config_file]:
             print(os.path.abspath(myfile))
             config_read.read(myfile)
