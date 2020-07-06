@@ -49,7 +49,7 @@ from PyQt5.QtCore import Qt, QTimer, QModelIndex
 # test parameters:
 
 delete_all_stuff_at_the_end = True  # deletes database entries and project directory
-skip_other_tests = False # set to True to skip all tests except the current WiP (out-comment it there in setUpClass)
+skip_other_tests = False  # set to True to skip all tests except the current WiP (out-comment it there in setUpClass)
 project_name = ""  # this will be set in create project
 
 samples_dic = {  # samples to test
@@ -2766,6 +2766,7 @@ class TestRestrictedReference(unittest.TestCase):
 class TestHomozygousXML(unittest.TestCase):
     """test whether TypeLoader can handle an XML input file with only 1 allele
     """
+
     @classmethod
     def setUpClass(self):
         if skip_other_tests:
@@ -2841,6 +2842,25 @@ class TestCleanStuff(unittest.TestCase):
             delete_written_samples(True, "IPD_SUBMISSIONS", log)
 
             shutil.rmtree(os.path.join(curr_settings["projects_dir"], project_name))
+
+
+class TestPlaySound(unittest.TestCase):
+    """Play sound when finished
+    """
+
+    @classmethod
+    def setUpClass(self):
+        pass
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test_play_souund(self):
+        """test that sound was played
+         """
+        played = general.play_sound()
+        self.assertTrue(played)
 
 
 # ===========================================================

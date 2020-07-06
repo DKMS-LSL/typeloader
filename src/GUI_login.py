@@ -585,9 +585,12 @@ def check_for_reference_updates(log, settings, parent):
             except Exception as E:
                 log.error("Reference update failed!")
                 log.exception(E)
+                general.play_sound()
                 QMessageBox.warning(parent, "Reference update failed",
                                     "Could not update the reference database(s). Please try again!\n\n{}".repr(E))
-            
+                return
+
+        general.play_sound()
         QMessageBox.information(parent, "Reference data updated", 
                                        "\n\n".join(msges))
 

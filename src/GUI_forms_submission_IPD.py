@@ -805,8 +805,9 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.submission_successful = False
         if os.path.exists(self.IPD_file):
             if os.path.getsize(self.IPD_file):
-                self.submission_successful = True 
-        
+                self.submission_successful = True
+        general.play_sound()
+
         if self.submission_successful:
             self.log.info("=> Successfully made IPD-file: {}".format(self.IPD_file))
             self.download_btn.setEnabled(True)

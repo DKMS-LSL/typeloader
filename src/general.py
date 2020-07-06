@@ -118,7 +118,7 @@ header_translation_dic = {"locus": "GENE",
                           "date": "new_timestamp"
                           }
 
-
+soundfile = os.path.join(os.path.dirname(__file__), "sound_done.mp3")
 # ===========================================================
 # classes:
 
@@ -295,7 +295,19 @@ def delete_sample():
     pass
 
 
-pass
+def play_sound():
+    """plays a sound when called, to get user's attention after a long job finishes;
+    does nothing if playsound isn't installed
+    :return: nothing
+    """
+    try:
+        from playsound import playsound
+        playsound(soundfile)
+        return True
+
+    except ImportError:
+        return False
+
 
 
 # ===========================================================

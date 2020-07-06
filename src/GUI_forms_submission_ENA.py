@@ -335,12 +335,13 @@ class ENASubmissionForm(CollapsibleDialog):
                 if not success:
                     self.submission_successful = False
                     self.cleanup_submission_failed()
-                self.proceed_sections(1,2)
-            
+                self.proceed_sections(1, 2)
+
             else:
                 QMessageBox.warning(self, err_type, msg)
                 self.submission_successful = False
                 self.cleanup_submission_failed()
+            general.play_sound()
                 
         except Exception as E:
             self.log.exception(E)
@@ -348,7 +349,7 @@ class ENASubmissionForm(CollapsibleDialog):
                                 "An error occured during ENA submission:\n\n{}".format(repr(E)))
             self.submission_successful = False
             self.cleanup_submission_failed()
-                                        
+
     def cleanup_submission_failed(self):
         """deletes old files after submission failed
         """
