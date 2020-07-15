@@ -165,13 +165,13 @@ def update_database(db_name, reference_local_path, blast_path, log):
     success, msg = make_blast_db(use_dbname, ref_path_temp, blast_path, log)
     
     if success:
-        update_msg = """IPD has released a new version of {} ({}). I have updated my {} reference data accordingly.""".format(db_name.upper(), version, db_name.upper())
+        update_msg = f"Updated the reference data for {db_name.upper()} to version {version}."
         move_files(ref_path_temp, reference_local_path, db_name, log)
     else:
         log.error(msg)
-        update_msg = """IPD has released a new version of {} ({}), but I could not process it (see below). I'll continue to use the old files for now.
-        {}""".format(db_name.upper(), version, msg)
-          
+        update_msg = f"Tried to update the reference data for {db_name.upper()} to version {version}, "
+        update_msg += f"but could not process it (see below). We'll continue to use the old files for now.\n\n{msg}"
+
     log.info(update_msg)
     return update_msg
 

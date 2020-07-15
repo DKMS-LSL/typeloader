@@ -19,7 +19,7 @@ from Bio import SeqIO
 
 from typeloader_core import (EMBLfunctions as EF, coordinates as COO, backend_make_ena as BME,
                              backend_enaformat as BE, getAlleleSeqsAndBlast as GASB,
-                             closestallele as CA, errors)
+                             closestallele as CA, errors, update_reference)
 import general, db_internal
 # ===========================================================
 # parameters:
@@ -96,6 +96,33 @@ class Allele:
 
 # ===========================================================
 # functions:
+
+
+def perform_reference_update(db_name, reference_local_path, blast_path, log):
+    """call trigger reference update of a database
+
+    :param db_name: HLA or KIR
+    :param reference_local_path: path to 'reference_data' dir
+    :param blast_path: path to BLASTN
+    :param log: logger instance
+    :return: success (bool), error_type (str or None), message (str)
+    """
+    db_name = db_name.lower()
+    if db_name not in ["hla", "kir"]:
+        return False, "Unknown reference type", \
+               f"'{db_name}' is an unknown reference. Please select 'hla' or 'kir'!"
+
+    blast_dir = os.path.dirname(blast_path)
+    try:
+        update_msg = update_reference.update_database(db_name, reference_local_path, blast_dir, log)
+    except Exception as E:
+        log.error("Reference update failed!")
+        log.exception(E)
+        general.play_sound()
+        msg = f"Could not update the reference database(s). Please try again!\n\nError: {repr(E)}"
+        return False, "Reference update failed", msg
+
+    return True, None, update_msg
 
 
 def toggle_project_status(proj_name, curr_status, log, values=["Open", "Closed"],
@@ -1020,17 +1047,24 @@ def upload_allele_with_restricted_db(project_name, sample_id_int, sample_id_ext,
 # main:
 
 def main(settings, log, mydb):
-    project_name = "20200128_ADMIN_DRB1_test124"
-    # sample_id_int = 'ID13107882'
-    sample_id_int = "ID_should_not_pass"
-    sample_id_ext = "test3"
-    # raw_path = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\124_DRB1_incorrect_confirmation\end_del3.fa"
-    customer = "DKMS"
-    raw_path = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\125_weird_X_allele\1373616_A.fa"
-    incomplete_ok = False
-    upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_path, customer, settings, mydb, log, incomplete_ok)
-    log.debug("--------------------------------------------")
-    delete_sample(sample_id_int, 1, project_name, settings, log)
+    reference_local_path = r"C:\Daten\local_data\TypeLoader\_general\reference_data"
+    blast_path = settings["blast_path"]
+    success, err_type, msg = perform_reference_update("kir", reference_local_path, blast_path, log)
+    print(success)
+    print(err_type)
+    print(msg)
+    general.play_sound()
+    # project_name = "20200128_ADMIN_DRB1_test124"
+    # # sample_id_int = 'ID13107882'
+    # sample_id_int = "ID_should_not_pass"
+    # sample_id_ext = "test3"
+    # # raw_path = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\124_DRB1_incorrect_confirmation\end_del3.fa"
+    # customer = "DKMS"
+    # raw_path = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\125_weird_X_allele\1373616_A.fa"
+    # incomplete_ok = False
+    # upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_path, customer, settings, mydb, log, incomplete_ok)
+    # log.debug("--------------------------------------------")
+    # delete_sample(sample_id_int, 1, project_name, settings, log)
 
     # from typeloader_core import make_imgt_files as MIF
     # from GUI_forms_submission_IPD import TargetAllele

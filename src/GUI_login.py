@@ -22,6 +22,7 @@ from PyQt5.QtGui import QIcon
 
 import general, db_internal
 from authuser import user
+from typeloader_functions import perform_reference_update
 from typeloader_core import update_reference
 from GUI_forms import ProceedButton
 from PyQt5.Qt import QMessageBox
@@ -555,44 +556,37 @@ def dump_db(curr_time, settings_dic, log):
 
 def check_for_reference_updates(log, settings, parent):
     db_list = ["hla", "kir"]
-    blast_path = os.path.dirname(settings["blast_path"])
+    blast_path = settings["blast_path"]
     reference_local_path = os.path.join(settings["root_path"], settings["general_dir"], settings["reference_dir"])
-    
+
     update_me = []
     for db_name in db_list:
         new_version_found, _ = update_reference.check_database(db_name, reference_local_path, log,
-                                                           skip_if_updated_today = False)
+                                                               skip_if_updated_today = False)
         if new_version_found:
             update_me.append(db_name.upper())
-    
+
     if update_me:
         targets = " and ".join(update_me)
         msg = "Found new reference version for {}. Should I update now?\n".format(targets)
-        msg += "(This should take about a minute, please wait after clicking Yes.)"
-        reply = QMessageBox.question(parent, "New reference found",
-                          msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
-        
+        msg += "(This should take about a minute or so, please wait after clicking Yes.)"
+        reply = QMessageBox.question(parent, "New reference found", msg,
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+
         if reply == QMessageBox.No:
             log.info("User chose not to update the database.")
             return
-        
+
         msges = []
         for db_name in update_me:
-            db_name = db_name.lower()
-            try:
-                update_msg = update_reference.update_database(db_name, reference_local_path, blast_path, log)
-                msges.append(update_msg)
-            except Exception as E:
-                log.error("Reference update failed!")
-                log.exception(E)
-                general.play_sound()
-                QMessageBox.warning(parent, "Reference update failed",
-                                    "Could not update the reference database(s). Please try again!\n\n{}".repr(E))
-                return
+            success, err_type, msg = perform_reference_update(db_name, reference_local_path, blast_path, log)
+            if not success:
+                QMessageBox.warning(parent, err_type, msg)
+            else:
+                msges.append(msg)
 
-        general.play_sound()
-        QMessageBox.information(parent, "Reference data updated", 
-                                       "\n\n".join(msges))
+        if msges:
+            QMessageBox.information(parent, "Reference data updated", "\n\n".join(msges))
 
      
 def startup(user, curr_time, log):
