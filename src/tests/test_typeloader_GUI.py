@@ -2887,7 +2887,7 @@ class TestPlaySound(unittest.TestCase):
     def tearDownClass(self):
         pass
 
-    def test_play_souund(self):
+    def test_play_sound(self):
         """test that sound was played
          """
         played = general.play_sound()
