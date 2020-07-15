@@ -34,6 +34,7 @@ import GUI_forms_new_project, GUI_forms_new_allele, GUI_forms_new_allele_bulk
 import GUI_forms_submission_ENA, GUI_forms_submission_IPD
 import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample
 import GUI_views_settings
+import GUI_mini_dialogs
 import GUI_download_files, GUI_user_manual
 from GUI_misc import UnderConstruction
 import patches
@@ -333,6 +334,12 @@ class MainGUI(QMainWindow):
         log_act.setStatusTip("Download a log file to send to the TypeLoader developers.")
         self.options_menu.addAction(log_act)
 
+        ref_act = QAction("Update &Reference", self.options_menu)
+        ref_act.setShortcut('Ctrl+R')
+        ref_act.triggered.connect(self.open_RefreshReferenceDialog)
+        ref_act.setStatusTip("Manually trigger a refresh of TypeLoader's reference files.")
+        self.options_menu.addAction(ref_act)
+
 #         # generate status report:
 #         report_status_act = QAction('Generate status report', self)
 #         report_status_act.setShortcut('Ctrl+R')
@@ -413,6 +420,11 @@ class MainGUI(QMainWindow):
         """opens the 'LogFile' dialog
         """
         GUI_download_files.LogFileDialog(self.settings, self.log, self)
+
+    def open_RefreshReferenceDialog(self):
+        """opens the 'RefreshReference' dialog
+        """
+        GUI_mini_dialogs.RefreshReferenceDialog(self.settings, self.log, self)
 
     def on_projects_changed(self):
         """when a new project has been created or a project been deleted,

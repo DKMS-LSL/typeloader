@@ -26,6 +26,58 @@ from GUI_login import handle_reference_update
 # classes:
 
 
+class RefreshReferenceDialog(QDialog):
+    """a dialog to allow manually refreshing the reference database
+    """
+    def __init__(self, settings, log, parent=None):
+        super().__init__(parent)
+        self.settings = settings
+        self.log = log
+        self.parent = parent
+        self.log.info("Opened RefreshReferenceDialog")
+
+        self.setWindowTitle("Refresh reference")
+        self.setWindowIcon(QIcon(general.favicon))
+        self.resize(300, 100)
+        self.init_UI()
+        self.setModal(True)
+        self.show()
+
+    def init_UI(self):
+        """establish and fill the UI
+        """
+        layout = QVBoxLayout(self)
+        self.setLayout(layout)
+
+        msg = "Would you like to re-create any of TypeLoader's reference files?\n"
+        msg += "(This will take a minute or so. Please wait after clicking.)\n"
+        layout.addWidget(QLabel(msg))
+
+        for text in ["HLA", "KIR", "Both"]:
+            btn = QPushButton(text, self)
+            btn.clicked.connect(self.update_reference)
+            layout.addWidget(btn)
+
+    @pyqtSlot()
+    def update_reference(self):
+        """catches button clicked and updates reference accordingly
+        """
+        text = self.sender().text()
+        if text in ["HLA", "KIR"]:
+            update_me = [text]
+        elif text == "Both":
+            update_me = ["HLA", "KIR"]
+
+        self.log.info(f"User chose to update {' and '.join(update_me)}.")
+        blast_path = self.settings["blast_path"]
+        reference_local_path = os.path.join(self.settings["root_path"],
+                                            self.settings["general_dir"],
+                                            self.settings["reference_dir"])
+
+        handle_reference_update(update_me, reference_local_path, blast_path, self, self.log)
+        self.close()
+
+
 # ===========================================================
 # functions:
 
@@ -57,6 +109,8 @@ def main():
     app = QApplication(sys.argv)
     sys.excepthook = log_uncaught_exceptions
 
+    ex = RefreshReferenceDialog(settings_dic, log)
+    ex.show()
     result = app.exec_()
 
     log.info("<End>")
