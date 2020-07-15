@@ -39,8 +39,9 @@ import GUI_forms_new_allele_bulk as BULK
 import GUI_forms_submission_ENA as ENA
 import GUI_forms_submission_IPD as IPD
 import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample, GUI_forms, GUI_download_files
+import GUI_mini_dialogs
 import typeloader_functions
-from GUI_login import base_config_file
+from GUI_login import base_config_file, check_update_needed
 
 from PyQt5.QtWidgets import (QApplication)
 from PyQt5.QtCore import Qt, QTimer, QModelIndex
@@ -2842,6 +2843,36 @@ class TestCleanStuff(unittest.TestCase):
             delete_written_samples(True, "IPD_SUBMISSIONS", log)
 
             shutil.rmtree(os.path.join(curr_settings["projects_dir"], project_name))
+
+
+class TestUpdateReference(unittest.TestCase):
+    """test whether reference updates work
+    """
+
+    @classmethod
+    def setUpClass(self):
+        self.form = GUI_mini_dialogs.RefreshReferenceDialog(curr_settings, log, None)
+        self.target = "KIR"
+        self.reference_local_path = os.path.join(curr_settings["root_path"],
+                                                 curr_settings["general_dir"],
+                                                 curr_settings["reference_dir"])
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test01_ref_update_kir_noerrors(self):
+        """test that KIR is updated successfully;
+        only tests that no errors occured
+         """
+        self.form.btn_dic[self.target].click()
+        self.assertEqual(self.form.updated, [self.target])
+
+    def test02_ref_update_kir_check_ok(self):
+        """test that after the update, the .dat file checksum is equal to that in the reference repo
+         """
+        update_me = check_update_needed(self.reference_local_path, log, skip_if_updated_today=False)
+        self.assertEqual(update_me, [])
 
 
 class TestPlaySound(unittest.TestCase):

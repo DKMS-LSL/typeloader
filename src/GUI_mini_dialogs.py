@@ -29,11 +29,16 @@ from GUI_login import handle_reference_update
 class RefreshReferenceDialog(QDialog):
     """a dialog to allow manually refreshing the reference database
     """
-    def __init__(self, settings, log, parent=None):
+    def __init__(self, settings, log, parent=None, testing=False):
         super().__init__(parent)
         self.settings = settings
         self.log = log
-        self.parent = parent
+        if testing:
+            self.parent = parent
+        else:
+            self.parent = None
+        self.btn_dic = {}
+        self.updated = []
         self.log.info("Opened RefreshReferenceDialog")
 
         self.setWindowTitle("Refresh reference")
@@ -56,6 +61,7 @@ class RefreshReferenceDialog(QDialog):
         for text in ["HLA", "KIR", "Both"]:
             btn = QPushButton(text, self)
             btn.clicked.connect(self.update_reference)
+            self.btn_dic[text] = btn
             layout.addWidget(btn)
 
     @pyqtSlot()
@@ -74,7 +80,7 @@ class RefreshReferenceDialog(QDialog):
                                             self.settings["general_dir"],
                                             self.settings["reference_dir"])
 
-        handle_reference_update(update_me, reference_local_path, blast_path, self, self.log)
+        self.updated = handle_reference_update(update_me, reference_local_path, blast_path, self.parent, self.log)
         self.close()
 
 

@@ -388,7 +388,7 @@ def make_new_settings(root_path, user, user_name, short_name, email, address,
         
         config_read = ConfigParser()  # read source config
         for myfile in [raw_config_file, company_config_file]:
-            print(os.path.abspath(myfile))
+            log.debug(os.path.abspath(myfile))
             config_read.read(myfile)
             for section in config_read.sections():
                 if not config.has_section(section):
@@ -562,18 +562,24 @@ def handle_reference_update(update_me, reference_local_path, blast_path, parent,
     :param blast_path: path for blastn
     :param log: logger instance
     :param parent: parent which should raise the resulting QMessageBox
-    :return: nothing
+    :return: list of successfully updated references
     """
     msges = []
+    updated = []
     for db_name in update_me:
         success, err_type, msg = perform_reference_update(db_name, reference_local_path, blast_path, log)
         if not success:
-            QMessageBox.warning(parent, err_type, msg)
+            if parent:
+                QMessageBox.warning(parent, err_type, msg)
         else:
             msges.append(msg)
+            updated.append(db_name)
 
     if msges:
-        QMessageBox.information(parent, "Reference data updated", "\n\n".join(msges))
+        if parent:
+            QMessageBox.information(parent, "Reference data updated", "\n\n".join(msges))
+
+    return updated
 
 
 def check_update_needed(reference_local_path, log, skip_if_updated_today=False):
