@@ -39,7 +39,7 @@ def local_file_from_today(local_ref_file, log):
     return False
 
 
-def get_remote_md5checksum(db_name, log):
+def get_remote_md5checksum(db_name, IPD_db_name, log):
     """retrieves MD5 checksum from IPD's checksum_file 
     """
     log.debug("\tGetting checksum of current remote file...")
@@ -48,7 +48,7 @@ def get_remote_md5checksum(db_name, log):
     checksum_data = checksum_response.read().decode("utf-8")
 
     # The checksum_data are in lines of the form MD5 (hla.dat) = 2dde3a26abf52c11a70aae7fa8f14666\n
-    pattern = ".*%s.dat\) = (.*)\n" % db_name
+    pattern = ".*%s.dat\) = (.*)\n" % IPD_db_name
     datFile_regex = re.compile(pattern)
     match = datFile_regex.search(checksum_data)
     if match:
@@ -56,7 +56,7 @@ def get_remote_md5checksum(db_name, log):
         log.debug("\t=> {}".format(md5))
     else:
         md5 = None
-        msg = "Could not find MD5 checksum of remote {} file!".format(db_name)
+        msg = "Could not find MD5 checksum of remote {} file!".format(IPD_db_name)
         log.error(msg)
     return md5
 
@@ -120,8 +120,8 @@ def check_database(db_name, reference_local_path, log, skip_if_updated_today=Tru
             if local_file_from_today(local_reference_file, log):
                 return False, "Reference file was already updated today"
         local_md5 = get_local_md5checksum(local_reference_file, log)
-        
-        remote_md5 = get_remote_md5checksum(db_name, log)
+
+        remote_md5 = get_remote_md5checksum(db_name, use_dbname, log)
         if not remote_md5:
             log.info("Aborting attempt to update the {} reference".format(db_name))
             return False, "Could not reach IPD's checksum file"
