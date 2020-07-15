@@ -552,9 +552,40 @@ def dump_db(curr_time, settings_dic, log):
     db_file = os.path.join(settings_dic["login_dir"], settings_dic["db_filename"])
     db_file_temp = os.path.join(settings_dic["recovery_dir"], "{}_data.db".format(curr_time))
     shutil.copy(db_file, db_file_temp)
-    
+
+
+def handle_reference_update(update_me, reference_local_path, blast_path, parent, log):
+    """performs the reference update for all references given in upate_me, passes results to user as QMessageBox
+
+    :param update_me: list of references to update (can contain "HLA", "KIR" or both)
+    :param reference_local_path: path to local "reference_data" dir
+    :param blast_path: path for blastn
+    :param log: logger instance
+    :param parent: parent which should raise the resulting QMessageBox
+    :return: nothing
+    """
+    msges = []
+    for db_name in update_me:
+        success, err_type, msg = perform_reference_update(db_name, reference_local_path, blast_path, log)
+        if not success:
+            QMessageBox.warning(parent, err_type, msg)
+        else:
+            msges.append(msg)
+
+    if msges:
+        QMessageBox.information(parent, "Reference data updated", "\n\n".join(msges))
+
 
 def check_for_reference_updates(log, settings, parent):
+    """checks whether either of the references need an update
+    (checks MD5 checksum of the .dat files against the reference repo on GitHub),
+    if yes, offers the user to update these references
+
+    :param log: logger instance
+    :param settings: user settings
+    :param parent: parent widget from where this function is called
+    :return: nothing
+    """
     db_list = ["hla", "kir"]
     blast_path = settings["blast_path"]
     reference_local_path = os.path.join(settings["root_path"], settings["general_dir"], settings["reference_dir"])
@@ -577,18 +608,9 @@ def check_for_reference_updates(log, settings, parent):
             log.info("User chose not to update the database.")
             return
 
-        msges = []
-        for db_name in update_me:
-            success, err_type, msg = perform_reference_update(db_name, reference_local_path, blast_path, log)
-            if not success:
-                QMessageBox.warning(parent, err_type, msg)
-            else:
-                msges.append(msg)
+    handle_reference_update(update_me, reference_local_path, blast_path, parent, log)
 
-        if msges:
-            QMessageBox.information(parent, "Reference data updated", "\n\n".join(msges))
 
-     
 def startup(user, curr_time, log):
     """performs startup actions 
     (between 'login accepted' and 'main window start')
