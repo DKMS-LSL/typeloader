@@ -39,12 +39,15 @@ import GUI_download_files, GUI_user_manual
 from GUI_misc import UnderConstruction
 import patches
 
-#===========================================================
+# ===========================================================
 # parameters:
 
 __version__ = general.read_package_variable("__version__")
+
 from PyQt5.Qt import QDesktopWidget
-#===========================================================
+
+
+# ===========================================================
 # classes:
 
 class MainGUI(QMainWindow):
@@ -77,7 +80,7 @@ class MainGUI(QMainWindow):
 
         self.make_stack()
         self.make_leftlist()
-        self.display(2) # index of initially displayed stack-item
+        self.display(2)  # index of initially displayed stack-item
 
         self.add_menu()
 
@@ -95,10 +98,10 @@ class MainGUI(QMainWindow):
         geometry = desktop.availableGeometry(desktop.primaryScreen())
         self.settings["screen_width"] = geometry.width()
         self.settings["screen_height"] = geometry.height()
-        self.navigation.setMaximumWidth(self.settings["screen_width"]/6.0)
-        self.navigation.setMinimumWidth(self.settings["screen_width"]/7.0)
+        self.navigation.setMaximumWidth(self.settings["screen_width"] / 6.0)
+        self.navigation.setMinimumWidth(self.settings["screen_width"] / 7.0)
 
-        self.grid.addWidget(self.navigation, 0,0)
+        self.grid.addWidget(self.navigation, 0, 0)
         self.navigation.changed_allele.connect(self.change_allele)
         self.navigation.changed_projects.connect(self.change_project)
         self.navigation.change_view.connect(self.display)
@@ -110,8 +113,8 @@ class MainGUI(QMainWindow):
         to mainGUI
         """
         self.log.debug("Creating stack widgets for main area...")
-        self.Stack = QStackedWidget (self)
-        self.grid.addWidget(self.Stack, 0,1)
+        self.Stack = QStackedWidget(self)
+        self.grid.addWidget(self.Stack, 0, 1)
         self.stacked_widgits = {}
 
         self.log.debug("\tCreating stack item 0: Under Construction")
@@ -184,7 +187,7 @@ class MainGUI(QMainWindow):
         self.Stack.addWidget(myframe)
         return myframe
 
-    def refresh_navigation(self, project = None):
+    def refresh_navigation(self, project=None):
         """re-create the model of the navigation area plus expand and select current project
         """
         self.navigation.create_model()
@@ -193,7 +196,7 @@ class MainGUI(QMainWindow):
         if self.current_project:
             self.navigation.expand_project(self.current_project)
 
-    def change_project(self, project, status = "Open"):
+    def change_project(self, project, status="Open"):
         """changes current project to project
         and filters ProjectView to it
         """
@@ -205,7 +208,8 @@ class MainGUI(QMainWindow):
             self.view_project.widget.filter(project)
             self.view_project.sub_lbl.setText(project)
             self.view_project.widget.refresh()
-#             self.refresh_navigation()
+
+    #             self.refresh_navigation()
 
     def change_allele(self, sample, nr, project):
         """changes current sample to sample
@@ -232,9 +236,9 @@ class MainGUI(QMainWindow):
             QMessageBox.warning(self, "Unsaved changes", message)
         else:
             self.log.info("Displaying View #{}: {}".format(i, self.stacked_widgits[i]))
-            if i == 1: # AllelesOverview
+            if i == 1:  # AllelesOverview
                 if not self.view_ov_alleles.widget.header_fixed:
-                    self.view_ov_alleles.widget.add_headers() # very slow => should only happen on demand
+                    self.view_ov_alleles.widget.add_headers()  # very slow => should only happen on demand
                     general.play_sound()
             self.Stack.setCurrentIndex(i)
             if i == 0:
@@ -340,13 +344,13 @@ class MainGUI(QMainWindow):
         ref_act.setStatusTip("Manually trigger a refresh of TypeLoader's reference files.")
         self.options_menu.addAction(ref_act)
 
-#         # generate status report:
-#         report_status_act = QAction('Generate status report', self)
-#         report_status_act.setShortcut('Ctrl+R')
-#         report_status_act.setStatusTip('Generates a status report file')
-#         report_status_act.triggered.connect(partial(self.display, 0)) #TODO: (future) implement report_status_samples_act & connect
-#         self.file_menu.addAction(report_status_act)
-#         self.toolbar.addAction(report_status_act)
+    #         # generate status report:
+    #         report_status_act = QAction('Generate status report', self)
+    #         report_status_act.setShortcut('Ctrl+R')
+    #         report_status_act.setStatusTip('Generates a status report file')
+    #         report_status_act.triggered.connect(partial(self.display, 0)) #TODO: (future) implement report_status_samples_act & connect
+    #         self.file_menu.addAction(report_status_act)
+    #         self.toolbar.addAction(report_status_act)
 
     def open_new_project_dialog(self):
         """opens the 'New Project' dialog & connects its signals to the rest-GUI
@@ -355,7 +359,7 @@ class MainGUI(QMainWindow):
         dialog.project_changed.connect(self.change_project)
         dialog.refresh_projects.connect(self.on_projects_changed)
 
-    def open_new_allele_dialog(self, project = None):
+    def open_new_allele_dialog(self, project=None):
         """opens the 'New Allele' dialog & connects its signals to the rest-GUI
         """
         try:
@@ -366,18 +370,19 @@ class MainGUI(QMainWindow):
         except Exception as E:
             self.log.exception(E)
 
-    def open_new_allele_bulk_dialog(self, project = None):
+    def open_new_allele_bulk_dialog(self, project=None):
         """opens the 'NewAllele' dialog & connects its signals to the rest-GUI
         """
         try:
             if project:
                 self.current_project = project
-            dialog = GUI_forms_new_allele_bulk.NewAlleleBulkForm(self.log, self.mydb, self.current_project, self.settings, self)
+            dialog = GUI_forms_new_allele_bulk.NewAlleleBulkForm(self.log, self.mydb, self.current_project,
+                                                                 self.settings, self)
             dialog.refresh_project.connect(self.refresh_navigation)
         except Exception as E:
             self.log.exception(E)
 
-    def open_ENA_submission_dialog(self, project = None):
+    def open_ENA_submission_dialog(self, project=None):
         """opens the 'ENA submission' dialog & connects it to the rest-GUI
         """
         self.log.debug("Opening ENA Submission dialog...")
@@ -389,7 +394,7 @@ class MainGUI(QMainWindow):
         except Exception as E:
             self.log.exception(E)
 
-    def open_IPD_submission_dialog(self, project = None):
+    def open_IPD_submission_dialog(self, project=None):
         """opens the 'IPD submission' dialog & connects it to the rest-GUI
         """
         self.log.debug("Opening IPD Submission dialog...")
@@ -472,8 +477,8 @@ class MainGUI(QMainWindow):
 
         self.log.debug("Asking for confirmation before closing...")
         reply = QMessageBox.question(self, 'Message',
-            "Quit Typeloader?", QMessageBox.Yes |
-            QMessageBox.No, QMessageBox.No)
+                                     "Quit Typeloader?", QMessageBox.Yes |
+                                     QMessageBox.No, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
             self.log.debug("Closing TypeLoader...")
@@ -482,9 +487,11 @@ class MainGUI(QMainWindow):
             self.log.debug("Not closing TypeLoader.")
             event.ignore()
 
+
 pass
 
-#===========================================================
+
+# ===========================================================
 # functions:
 
 def log_uncaught_exceptions(cls, exception, tb):
@@ -494,8 +501,8 @@ def log_uncaught_exceptions(cls, exception, tb):
     import traceback
     from PyQt5.QtCore import QCoreApplication
     log.critical('{0}: {1}'.format(cls, exception))
-    log.exception(msg = "Uncaught Exception", exc_info = (cls, exception, tb))
-    #TODO: (future) maybe find a way to display the traceback only once, both in console and logfile?
+    log.exception(msg="Uncaught Exception", exc_info=(cls, exception, tb))
+    # TODO: (future) maybe find a way to display the traceback only once, both in console and logfile?
     sys.__excepthook__(cls, exception, traceback)
     QCoreApplication.exit(1)
 
@@ -580,7 +587,7 @@ def remove_lock(settings_dic, log):
         log.debug("\t=> done")
 
 
-#===========================================================
+# ===========================================================
 # main:
 
 if __name__ == '__main__':
@@ -590,7 +597,8 @@ if __name__ == '__main__':
     curr_time = time.strftime("%Y%m%d_%H%M%S")
 
     if platform.system() == "Windows":
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(__version__) # use favicon as TaskBar icon in Windows
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            __version__)  # use favicon as TaskBar icon in Windows
 
     app = QApplication(sys.argv)
     app.setStyle(QStyleFactory.create("Fusion"))
@@ -600,12 +608,13 @@ if __name__ == '__main__':
     try:
         root_path = cf.get("Paths", "root_path")
     except NoSectionError:
-        print("{} must contain parameter 'root_path' in section [Paths]!\nAborting...".format(GUI_login.base_config_file))
+        print(
+            "{} must contain parameter 'root_path' in section [Paths]!\nAborting...".format(GUI_login.base_config_file))
         sys.exit(1)
 
     GUI_login.check_root_path(root_path)
     mylog = os.path.join(root_path, "_general", "{}.log".format(curr_time))
-    log = general.start_log(level="DEBUG", debug_to_file = mylog)
+    log = general.start_log(level="DEBUG", debug_to_file=mylog)
     log.info("<Start>")
 
     sys.excepthook = log_uncaught_exceptions
@@ -621,7 +630,7 @@ if __name__ == '__main__':
     ok = False
     settings_dic = None
 
-    if login.exec_() == QDialog.Accepted: # if login successful:
+    if login.exec_() == QDialog.Accepted:  # if login successful:
         try:
             splash_pix = QPixmap(os.path.join('icons', 'TypeLoaderSplash.png'))
             splash = QSplashScreen(splash_pix, Qt.WindowStaysOnTopHint)
@@ -646,7 +655,8 @@ if __name__ == '__main__':
                 log.error(E)
                 log.exception(E)
                 try:
-                    QMessageBox.warning(ex, "Reference error", "Could not update the reference file, probably due to a temporary connection hickup. Please restart TypeLoader to try again.")
+                    QMessageBox.warning(ex, "Reference error",
+                                        "Could not update the reference file, probably due to a temporary connection hickup. Please restart TypeLoader to try again.")
                 except Exception as E2:
                     log.info("Could not open QMessagebox")
                     log.exception(E2)
