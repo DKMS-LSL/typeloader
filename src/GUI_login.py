@@ -576,6 +576,25 @@ def handle_reference_update(update_me, reference_local_path, blast_path, parent,
         QMessageBox.information(parent, "Reference data updated", "\n\n".join(msges))
 
 
+def check_update_needed(reference_local_path, log, skip_if_updated_today=False):
+    """check whether any of the references need to be updated (use MD5 check on .dat files)
+
+    :param log: logger instance
+    :param reference_local_path: path where "reference_data" is stored
+    :return: list of databases that need updating (as capitalized strings)
+    """
+    db_list = ["hla", "kir"]
+
+    update_me = []
+    for db_name in db_list:
+        new_version_found, _ = update_reference.check_database(db_name, reference_local_path, log,
+                                                               skip_if_updated_today=skip_if_updated_today)
+        if new_version_found:
+            update_me.append(db_name.upper())
+
+    return update_me
+
+
 def check_for_reference_updates(log, settings, parent):
     """checks whether either of the references need an update
     (checks MD5 checksum of the .dat files against the reference repo on GitHub),
@@ -586,16 +605,10 @@ def check_for_reference_updates(log, settings, parent):
     :param parent: parent widget from where this function is called
     :return: nothing
     """
-    db_list = ["hla", "kir"]
     blast_path = settings["blast_path"]
     reference_local_path = os.path.join(settings["root_path"], settings["general_dir"], settings["reference_dir"])
 
-    update_me = []
-    for db_name in db_list:
-        new_version_found, _ = update_reference.check_database(db_name, reference_local_path, log,
-                                                               skip_if_updated_today = False)
-        if new_version_found:
-            update_me.append(db_name.upper())
+    update_me = check_update_needed(reference_local_path, log)
 
     if update_me:
         targets = " and ".join(update_me)
