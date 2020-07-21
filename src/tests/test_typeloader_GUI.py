@@ -2850,6 +2850,34 @@ class TestUpdateReference(unittest.TestCase):
         self.assertEqual(update_me, [])
 
 
+class TestCleanStuff(unittest.TestCase):
+    """
+    Remove all directories and files written by  all unit tests
+    """
+
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping final cleanup because skip_other_tests is set to True")
+
+    @classmethod
+    def tearDownClass(self):
+        typeloader_GUI.close_connection(log, mydb)
+
+    def test_clean_everything(self):
+        os.remove(os.path.join(mypath_inner, "typeloader_GUI.py"))
+
+        if delete_all_stuff_at_the_end:
+            delete_written_samples(True, "ALLELES", log)
+            delete_written_samples(True, "FILES", log)
+            delete_written_samples(True, "SAMPLES", log)
+            delete_written_samples(True, "PROJECTS", log)
+            delete_written_samples(True, "ENA_SUBMISSIONS", log)
+            delete_written_samples(True, "IPD_SUBMISSIONS", log)
+
+            shutil.rmtree(os.path.join(curr_settings["projects_dir"], project_name))
+
+
 class TestPlaySound(unittest.TestCase):
     """Play sound when finished
     """
