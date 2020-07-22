@@ -1007,6 +1007,43 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
     return ena_results, True, None, None, problem_samples
 
 
+def submit_alleles_to_ENA(project_name, ENA_ID, samples, files, settings, log):
+    """handles submission of a set of allele files to ENA
+
+    :param project_name: name of the project the alleles belong to
+    :param ENA_ID: ENA's internal ID (PRJEB-ID) of the project
+    :param samples: list of alleles to submit, format: [[project_name, str(allele_nr)]]
+    :param files: list of corresponding ENA files, format: ['project_dir/sample_id_int/allele_name.ena.txt']
+    :param settings: the user's settings_dic
+    :param log: logger instance
+    :return:
+            - success (bool)
+            - file_dic with affected files, format:
+                {'concat_FF_zip': 'project_dir\\PRJEB..._timestamp_flatfile.txt.gz',
+                'manifest': 'project_dir\\PRJEB..._timestamp_manifest.txt',
+                'project_dir': 'project_dir'}
+            - ena_results: tuple with results of processing by ENA's CLI, format:
+            ('PRJEB..._timestamp', 'timestamp_sent', 'timestamp_answer', 'ERZ...', 'error_type', 'msg from ENA')
+            - problem_samples: list of alleles that did not go through, format [int(allele_nr)]
+            - err_type, string of the class of error (if any), for the title of the QMessagebox
+            - msg: string with the final message for the user, whether positive or negative
+    """
+    file_dic, curr_time, analysis_alias = create_ENA_filenames(project_name, ENA_ID, settings, log)
+
+    ena_results, success, err_type, msg, problem_samples = submit_sequences_to_ENA_via_CLI(
+        project_name,
+        ENA_ID,
+        analysis_alias,
+        curr_time,
+        samples,
+        files,
+        file_dic,
+        settings,
+        log)
+
+    return success, file_dic, ena_results, problem_samples, err_type, msg
+
+
 def upload_allele_with_restricted_db(project_name, sample_id_int, sample_id_ext, raw_path,
                                      customer, reference_alleles,
                                      settings, mydb, log):
