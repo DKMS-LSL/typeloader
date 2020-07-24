@@ -327,10 +327,6 @@ class ENASubmissionForm(CollapsibleDialog):
 
         try:
             self.submission_successful = True
-            print(self.project_name)
-            print(ENA_ID)
-            print(self.samples)
-            print(files)
             results = submit_alleles_to_ENA(self.project_name, ENA_ID, self.samples, files, self.settings, self.log)
             success, self.file_dic, self.ena_results, self.problem_samples, err_type, msg = results
 
