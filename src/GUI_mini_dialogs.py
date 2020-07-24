@@ -60,6 +60,7 @@ class RefreshReferenceDialog(QDialog):
 
         for text in ["HLA", "KIR", "Both"]:
             btn = QPushButton(text, self)
+            btn.setCheckable(True)
             btn.clicked.connect(self.update_reference)
             self.btn_dic[text] = btn
             layout.addWidget(btn)
@@ -80,7 +81,9 @@ class RefreshReferenceDialog(QDialog):
                                             self.settings["general_dir"],
                                             self.settings["reference_dir"])
 
-        self.updated = handle_reference_update(update_me, reference_local_path, blast_path, self.parent, self.log)
+        self.updated = handle_reference_update(update_me, reference_local_path, blast_path,
+                                               self.parent, self.log)
+        self.sender().setChecked(False)
         self.close()
 
 
