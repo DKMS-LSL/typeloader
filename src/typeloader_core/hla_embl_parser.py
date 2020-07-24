@@ -186,7 +186,9 @@ def read_dat_file(dat_file, target, log, isENA = False, verbose = False):
                 myAllele = Allele(allele_ID, locus, allele, seq, length, UTR5, UTR3, exon_dic, intron_dic, exonpos_dic, intronpos_dic, utrpos_dic, pseudo_exon_dic, exon_num_dic, intron_num_dic, target)
                 if target == "HLA": # HLA.dat contains other loci, too - MIC, TAP...
                     usable = False
-                    usable_loci = ["HLA-A*", "HLA-B*", "HLA-C*", "HLA-E*", "HLA-DPB1*", "HLA-DQB1*", "HLA-DRB", "MICA", "MICB", "HLA-DPA1", "HLA-DQA1"]
+                    usable_loci = ["HLA-A*", "HLA-B*", "HLA-C*", "HLA-E*", "HLA-DPB1*", "HLA-DQB1*",
+                                   "HLA-DRB", "MICA", "MICB", "HLA-DPA1", "HLA-DQA1",
+                                   "HLA-F", "HLA-G", "HLA-H", "HLA-K", "HLA-J"]
                     for loc in usable_loci:
                         if allele.startswith(loc): # HLA.dat contains other loci, too - MIC, TAP...
                             usable = True
