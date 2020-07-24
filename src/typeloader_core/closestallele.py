@@ -177,7 +177,7 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
     end_extended = 0
 
     if missing_base_num_start_ref > 0:  # problem at sequence start
-        if missing_base_num_start_query > 3:  # different problem; probably #138
+        if missing_base_num_start_query > 3 or missing_base_num_start_query < 0:  # different problem; probably #138
             msg = f"{missing_base_num_start_query} unaligned bases at alignment start "
             msg += f"when aligned to closest found allele {closest_allele_name}: "
             msg += "This sequence is probably too dissimilar to all known full-length alleles.\n"
