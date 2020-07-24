@@ -35,15 +35,21 @@
 - [ ] Deinstall TypeLoader and remove the directory at TypeLoader's data-path, including all content. Then reinstall it with the the new installer, create a new test user and perform a ``Basic Feature Check``. This should confirm that the new version works for first-time users.
 - [ ] If any changes need to be made, commit them to the release branch and copy it back to LSL. 
 - [ ] Once everything works, run another test_suite and make sure everything is committed to the release branch. 
+- [ ] Move the new installer from ``src`` to ``installer\windows``.
 
 ## Wrap up the new release
-- [ ] Once users are happy, merge release branch back into ``master``
-- [ ] merge ``master`` into ``productive``
-- [ ] Tag the merge commit with the new version number
+- [ ] Once users are happy, merge release branch back into ``master`` (``--no-ff``)
+- [ ] merge ``master`` into ``productive`` (``--no-ff``)
+- [ ] merge productive back into master to get all heads to the same commit (fast-forward is fine, so **don't use --no-ff** or you will get another merge commit!)
+- [ ] tag the merge commit with the new version number
 - [ ] push ``master`` to GitLab
 - [ ] push ``productive`` to GitLab
 - [ ] In the productive repo, pull from GitLab & checkout ``productive``
 - [ ] If external release:
-  - [ ] push ``productive`` to GitHub
-  - [ ] create GitHub release including the new installer
+  - [ ] push ``master`` and ``productive`` to GitHub
+  - [ ] create ``GitHub`` release including the new installer
   - [ ] announce the new release to the TypeLoader stakeholders
+- [ ] Delete release branch
+  - [ ] from ``GitLab``
+  - [ ] from productive repo
+  - [ ] from local development repo
