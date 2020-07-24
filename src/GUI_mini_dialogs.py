@@ -34,9 +34,9 @@ class RefreshReferenceDialog(QDialog):
         self.settings = settings
         self.log = log
         if testing:
-            self.parent = parent
-        else:
             self.parent = None
+        else:
+            self.parent = parent
         self.btn_dic = {}
         self.updated = []
         self.log.info("Opened RefreshReferenceDialog")
