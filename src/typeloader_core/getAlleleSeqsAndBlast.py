@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-import re, os
-from os import system
+import re
+import os
+from subprocess import run, PIPE
 from collections import defaultdict
-from sys import argv
 from .EMBLfunctions import fasta_generator
 from .xmlfuncs import *
 
@@ -35,14 +35,27 @@ def blastSequences(inputFastaFile, parsedFasta, settings, log,
                    blastOutputFormat = "5"): # 5 corresponds to XML BLAST output
     blast = settings["blast_path"]
     database = parsedFasta
-    blastXmlOutputFile = inputFastaFile.replace(".fasta",".blast.xml").replace(".fa",".blast.xml")
-    blast_command = '"%s" -query %s -parse_deflines -db %s -dust no -soft_masking false -outfmt %s -out %s' % (blast, inputFastaFile, database, blastOutputFormat, blastXmlOutputFile)
-    _ = system(blast_command)
+    blastXmlOutputFile = inputFastaFile.replace(".fasta", ".blast.xml").replace(".fa", ".blast.xml")
+    blast_command = [blast,
+                     "-query", inputFastaFile,
+                     "-parse_deflines",
+                     "-db", database,
+                     "-dust", "no",
+                     "-soft_masking", "false",
+                     "-outfmt", blastOutputFormat,
+                     "-out", blastXmlOutputFile]
     log.debug("Blast command:")
-    log.debug(blast_command)
+    log.debug(" ".join(blast_command))
+
+    result = run(blast_command, stdout=PIPE, stderr=PIPE, universal_newlines=True)
+    if result.stdout:
+        log.info(result.stdout)
+    if result.returncode != 0:
+        log.error(result.stderr)
+        log.error(f"Blast did not succeed; return code: {result.returncode}")
+
     if not os.path.isfile(blastXmlOutputFile):
         log.error("BlastXMLFile not generated!")
-        log.debug(blast_command)
         return False
     return blastXmlOutputFile
 

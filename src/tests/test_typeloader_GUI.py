@@ -361,7 +361,6 @@ class Test_Create_New_Allele(unittest.TestCase):
         if skip_other_tests:
             self.skipTest(self, "Skipping Create New Allele because skip_other_tests is set to True")
         else:
-            # if True:
             self.project_name = project_name  # "20180710_SA_A_1292"
 
             self.new_sample_dir_path_1 = os.path.join(curr_settings["projects_dir"], self.project_name,
@@ -2630,7 +2629,7 @@ class TestRestrictedReference(unittest.TestCase):
         """test that allele does not work with a restricted db containing only alleles from wrong
         target family
         """
-        myref = self.restricted_db_wrong_target
+        myref = self.restricted_db_wrong_target  # contains only KIR
         success, results1 = typeloader_functions.handle_new_allele_parsing(project_name,
                                                                            self.sample_id_int,
                                                                            self.sample_id_ext,
