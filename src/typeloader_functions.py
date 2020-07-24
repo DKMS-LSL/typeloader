@@ -1007,6 +1007,43 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
     return ena_results, True, None, None, problem_samples
 
 
+def submit_alleles_to_ENA(project_name, ENA_ID, samples, files, settings, log):
+    """handles submission of a set of allele files to ENA
+
+    :param project_name: name of the project the alleles belong to
+    :param ENA_ID: ENA's internal ID (PRJEB-ID) of the project
+    :param samples: list of alleles to submit, format: [[project_name, str(allele_nr)]]
+    :param files: list of corresponding ENA files, format: ['project_dir/sample_id_int/allele_name.ena.txt']
+    :param settings: the user's settings_dic
+    :param log: logger instance
+    :return:
+            - success (bool)
+            - file_dic with affected files, format:
+                {'concat_FF_zip': 'project_dir\\PRJEB..._timestamp_flatfile.txt.gz',
+                'manifest': 'project_dir\\PRJEB..._timestamp_manifest.txt',
+                'project_dir': 'project_dir'}
+            - ena_results: tuple with results of processing by ENA's CLI, format:
+            ('PRJEB..._timestamp', 'timestamp_sent', 'timestamp_answer', 'ERZ...', 'error_type', 'msg from ENA')
+            - problem_samples: list of alleles that did not go through, format [int(allele_nr)]
+            - err_type, string of the class of error (if any), for the title of the QMessagebox
+            - msg: string with the final message for the user, whether positive or negative
+    """
+    file_dic, curr_time, analysis_alias = create_ENA_filenames(project_name, ENA_ID, settings, log)
+
+    ena_results, success, err_type, msg, problem_samples = submit_sequences_to_ENA_via_CLI(
+        project_name,
+        ENA_ID,
+        analysis_alias,
+        curr_time,
+        samples,
+        files,
+        file_dic,
+        settings,
+        log)
+
+    return success, file_dic, ena_results, problem_samples, err_type, msg
+
+
 def upload_allele_with_restricted_db(project_name, sample_id_int, sample_id_ext, raw_path,
                                      customer, reference_alleles,
                                      settings, mydb, log):
@@ -1047,62 +1084,14 @@ def upload_allele_with_restricted_db(project_name, sample_id_int, sample_id_ext,
 # main:
 
 def main(settings, log, mydb):
-    reference_local_path = r"C:\Daten\local_data\TypeLoader\_general\reference_data"
-    blast_path = settings["blast_path"]
-    success, err_type, msg = perform_reference_update("kir", reference_local_path, blast_path, log)
-    print(success)
-    print(err_type)
-    print(msg)
+    project_name = '20200722_SA_X_732741'
+    ENA_ID = "PRJEB39495"
+    samples = [['20200722_SA_X_732741', '1'], ['20200722_SA_X_732741', '2']]
+    files = ['C:\\Daten\\local_data\\TypeLoader\\staging\\projects\\20200722_SA_X_732741\\ID000001\\DKMS-LSL_ID000001_3DP1_1.ena.txt', 'C:\\Daten\\local_data\\TypeLoader\\staging\\projects\\20200722_SA_X_732741\\ID14278154\\DKMS-LSL_ID14278154_A_1.ena.txt']
+
+    submit_alleles_to_ENA(project_name, ENA_ID, samples, files, settings, log)
+
     general.play_sound()
-    # project_name = "20200128_ADMIN_DRB1_test124"
-    # # sample_id_int = 'ID13107882'
-    # sample_id_int = "ID_should_not_pass"
-    # sample_id_ext = "test3"
-    # # raw_path = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\124_DRB1_incorrect_confirmation\end_del3.fa"
-    # customer = "DKMS"
-    # raw_path = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\125_weird_X_allele\1373616_A.fa"
-    # incomplete_ok = False
-    # upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_path, customer, settings, mydb, log, incomplete_ok)
-    # log.debug("--------------------------------------------")
-    # delete_sample(sample_id_int, 1, project_name, settings, log)
-
-    # from typeloader_core import make_imgt_files as MIF
-    # from GUI_forms_submission_IPD import TargetAllele
-    # results = MIF.make_imgt_data(r"\\nasdd12\daten\data\Typeloader\admin\projects\20200128_ADMIN_DRB1_test124",
-    #                              [('ID13107882', 'DKMS-LSL_ID13107882_DRB1_9', '')],
-    #                              {'DKMS-LSL_ID13107882_DRB1_9': {'blast_xml': 'DKMS-LSL_ID13107882_DRB1_9.blast.xml',
-    #                                                              'ena_file': 'DKMS-LSL_ID13107882_DRB1_9.ena.txt'}},
-    #                              {'DKMS-LSL_ID13107882_DRB1_9': TargetAllele(gene='HLA-DRB1',
-    #                                                                          target_allele='HLA-DRB1*01:new',
-    #                                                                          partner_allele='HLA-DRB1*15:02:01:01 or 01:01:01 or list(NULL)')},
-    #                              {'DKMS-LSL_ID13107882_DRB1_9': '96901LSB'},
-    #                              ,
-    #                              r"\\nasdd12\daten\data\Typeloader\admin\temp\fake_befunde.csv",
-    #                              settings, log)
-
-    # project_dir = r"\\nasdd12\daten\data\Typeloader\admin\projects\20200213_ADMIN_HLA-A_test124"
-    #
-    # allele = "DKMS-LSL_ID11273358_DRB1_1"
-    # locus = "HLA-DRB1"
-    # samples = [('ID11273358', allele, '')]
-    # file_dic = {f'{allele}': {'blast_xml': f'{allele}.blast.xml',
-    #                           'ena_file': f'{allele}.ena.txt'}}
-    # allele_dic = {f'{allele}': TargetAllele(gene=locus,
-    #                                         target_allele=f'{locus}*01:new',
-    #                                         partner_allele=f'{locus}*01:01:01:01')}
-    # cellEnaIdMap = {f'{allele}': '96901LSB'}
-    # geneMapENA = {f'{allele}': locus}
-    # befund_csv_file = r"\\nasdd12\daten\data\Typeloader\admin\temp\fake_befunde.csv"
-    # results = MIF.make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, geneMapENA, befund_csv_file,
-    #                              settings, log)
-    #
-    # try:
-    #     print(results[0]['DKMS10009742'].split("CC   ")[1].split("\n")[0])
-    # except:
-    #     print("Could not find IPD file for this submission number!")
-    #     print(results[0])
-
-
 
 
 if __name__ == "__main__":
@@ -1111,7 +1100,7 @@ if __name__ == "__main__":
 
     log = general.start_log(level="debug")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
-    settings_dic = GUI_login.get_settings("admin", log)
+    settings_dic = GUI_login.get_settings("staging", log)
     mydb = create_connection(log, settings_dic["db_file"])
     main(settings_dic, log, mydb)
     close_connection(log, mydb)
