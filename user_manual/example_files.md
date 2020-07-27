@@ -9,11 +9,11 @@ TypeLoader provides a set of example files. With these, you can
 ![Pic](images/icon_important.png) **Please ONLY use these example files in your [=> TEST account](users_test.md)!** Do **NOT submit** IPD-files generated from them **to IPD!**
 
 ## How to get them
-Use the menu (`Options` => `Download example files`) or press CTRL+D:
+Use the menu (`Options` => `Download example files`) or press `CTRL+D`:
 
 ![important](images/example_files_dialog.png)
 
-Then, simply click the `Download!` button for any file you would like to download.
+Then, simply click the `Download!` button for any file you would like to download (or use the "All sample files" button to download a .zip archive with all files).
 
 The files for IPD submission can be used in the [=> IPD Submission dialog](submission_ipd.md) to create IPD submission files for all provided example sequences.
 
