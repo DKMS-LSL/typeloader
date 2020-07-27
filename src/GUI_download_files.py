@@ -92,6 +92,17 @@ class ExampleFileDialog(QDialog):
             "This file contains a list of previously identified alleles for all loci for each sample to be submitted to IPD. It can be used as input for IPD file creation of the example sequences.")
         layout.addRow(QLabel("Pretypings file:"), pretypings_btn)
 
+        layout.addRow(QLabel(""))
+
+        all_btn = QPushButton("Download!", self)
+        self.btn_dic[all_btn] = ("all (zipped)", "sample_files.zip")
+        all_btn.clicked.connect(self.download_file)
+        all_btn.setWhatsThis(
+            "This is a zip file with all listed sample files.")
+        lbl = QLabel("All sample files (zipped):")
+        lbl.setStyleSheet(general.label_style_2nd)
+        layout.addRow(lbl, all_btn)
+
     @pyqtSlot()
     def download_file(self):
         """downloads the example file corresponding to the sending button from TypeLoader
@@ -101,6 +112,7 @@ class ExampleFileDialog(QDialog):
         myfile = os.path.join("sample_files", filename)
         if not os.path.exists(myfile):
             myfile = os.path.join(self.settings["root_path"], "_general", "sample_files", filename)
+
         if os.path.exists(myfile):
             suggested_path = os.path.join(self.settings["default_saving_dir"], myfile)
             chosen_path = \
@@ -256,7 +268,7 @@ def main():
     app = QApplication(sys.argv)
     sys.excepthook = log_uncaught_exceptions
 
-    ex = LogFileDialog(settings_dic, log)
+    ex = ExampleFileDialog(settings_dic, log)
     ex.show()
     result = app.exec_()
 
