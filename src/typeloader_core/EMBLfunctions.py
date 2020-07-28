@@ -468,11 +468,10 @@ def parse_ENA_report(report_file, line_dic, log):
     return text, problem_samples
 
 
-def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic, log):
+def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic, log, timeout=None):
     """calls the command-string via webin-CLI and parses the output
     """
-    print(cmd_string)
-    from subprocess import check_output, CalledProcessError
+    from subprocess import check_output, CalledProcessError, TimeoutExpired
     success = False
     ENA_submission_ID = None
     problem_samples = []
@@ -486,11 +485,16 @@ def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic,
         return False, output_txt, None, []
 
     try:
-        output = check_output(cmd_string).decode("utf-8")
+        output = check_output(cmd_string, timeout=timeout).decode("utf-8")
     except CalledProcessError as E:
         log.error("ENA's Webin-CLI threw an error after this command:")
         log.error(cmd_string)
         output = E.output.decode("utf-8")
+    except TimeoutExpired:
+        log.error(f"Timeout expired: gave up after {timeout} seconds!")
+        output_txt = f"Sorry, could not reach ENA within the given timeout threshold ({timeout} seconds).\n\n"
+        output_txt += "Either increase the threshold via Settings => Preferences, or try again later."
+        return False, output_txt, None, []
 
     output_list = [line.rstrip() for line in output.split("\n") if line]  # make list and remove newlines
     if output_list:

@@ -501,6 +501,13 @@ def get_settings(user, log, cf = None):
         elif settings_dic[key] == "a short acronym of your company; use only letters or hyphens!":
             settings_dic[key] = ""
     settings_dic["TL_version"] = __version__
+
+    if "timeout_ena" not in settings_dic:
+        settings_dic["timeout_ena"] = "300"
+        cf.set("Pref", "timeout_ena", "300")
+        with open(user_cf_file, "w") as g:
+            cf.write(g)
+
     log.info("\t=>Success")
     return settings_dic
     
