@@ -121,8 +121,10 @@ def submit_project_ENA(submission_xml, type_xml, filetype, embl_server, proxy, o
         c = pycurl.Curl()
         c.setopt(c.URL, embl_server)
         c.setopt(c.POST, 1)
-        data = [("SUBMISSION", (c.FORM_FILE, submission_xml)),
-                ("{}".format(filetype), (c.FORM_FILE, type_xml))]
+        data = [("SUBMISSION",
+                 (c.FORM_FILE, submission_xml)),
+                ("{}".format(filetype),
+                 (c.FORM_FILE, type_xml))]
         c.setopt(c.HTTPPOST, data)
         c.setopt(pycurl.PROXY, proxy)
         c.setopt(pycurl.SSL_VERIFYPEER,
@@ -130,8 +132,6 @@ def submit_project_ENA(submission_xml, type_xml, filetype, embl_server, proxy, o
         c.setopt(pycurl.SSL_VERIFYHOST, 0)
         c.setopt(pycurl.USERPWD, userpwd)
         c.setopt(c.WRITEFUNCTION, g.write)
-        print(data)
-        print(embl_server)
         try:
             c.perform()
             err = None
@@ -471,6 +471,7 @@ def parse_ENA_report(report_file, line_dic, log):
 def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic, log):
     """calls the command-string via webin-CLI and parses the output
     """
+    print(cmd_string)
     from subprocess import check_output, CalledProcessError
     success = False
     ENA_submission_ID = None
