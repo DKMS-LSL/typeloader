@@ -298,7 +298,7 @@ def delete_sample():
 def play_sound():
     """plays a sound when called, to get user's attention after a long job finishes;
     does nothing if playsound isn't installed
-    :return: nothing
+    :return: bool (True if sound was played, False if it wasn't because playsound is not installed)
     """
     try:
         from playsound import playsound

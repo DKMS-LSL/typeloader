@@ -984,12 +984,14 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
     ## 4. submit files via CLI
     log.debug("Submitting files...")
     submission_cmd = cmd_string + " -submit"
+    timeout = int(settings["timeout_ena"])
     successful_transmit, ENA_response, analysis_accession_number, problem_samples = EF.handle_webin_CLI(submission_cmd,
                                                                                                         "submit",
                                                                                                         submission_alias,
                                                                                                         file_dic[
                                                                                                             "project_dir"],
-                                                                                                        line_dic, log)
+                                                                                                        line_dic, log,
+                                                                                                        timeout=timeout)
     submission_accession_number = None  # used to be contained in ENA's reply, but has been deprecated with the start of Webin-CLI
 
     if not successful_transmit:

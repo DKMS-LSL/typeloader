@@ -242,7 +242,10 @@ class SettingTab(QTabWidget):
                                           "hint": "When uploading new allele sequence files, TypeLoader will initially look here."},
                       "default_saving_dir" : {"section" : "Paths",
                                               "lbl_text" : "Default Saving Location",
-                                              "hint": "When downloading files from TypeLoader, TypeLoader will initially offer to save them here."}
+                                              "hint": "When downloading files from TypeLoader, TypeLoader will initially offer to save them here."},
+                      "timeout_ena": {"section": "Pref",
+                                      "lbl_text": "ENA timeout after x seconds",
+                                      "hint": "When submitting files to ENA, abort after this many seconds of no response from ENA."}
         }
     
     def init_UI(self):
@@ -412,6 +415,14 @@ class UserSettingsDialog(QDialog):
                 QMessageBox.warning(self, "{} rejected".format(mydic[field]), 
                                     "Your {} is too long.\nPlease restrict yourself to max. 10 characters!".format(mydic[field]))
                 return False
+
+        if field == "timeout_ena":
+            pattern = "[^0-9]+"
+            if re.search(pattern, value):
+                QMessageBox.warning(self,
+                                    "ENA timeout value rejected",
+                                    "The ENA timeout threshold must be a number of seconds!")
+
         return True
             
     @pyqtSlot()
