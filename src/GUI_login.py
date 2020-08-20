@@ -22,6 +22,7 @@ from PyQt5.QtGui import QIcon
 
 import general, db_internal
 from authuser import user
+from typeloader_functions import perform_reference_update
 from typeloader_core import update_reference
 from GUI_forms import ProceedButton
 from PyQt5.Qt import QMessageBox
@@ -387,7 +388,7 @@ def make_new_settings(root_path, user, user_name, short_name, email, address,
         
         config_read = ConfigParser()  # read source config
         for myfile in [raw_config_file, company_config_file]:
-            print(os.path.abspath(myfile))
+            log.debug(os.path.abspath(myfile))
             config_read.read(myfile)
             for section in config_read.sections():
                 if not config.has_section(section):
@@ -500,6 +501,13 @@ def get_settings(user, log, cf = None):
         elif settings_dic[key] == "a short acronym of your company; use only letters or hyphens!":
             settings_dic[key] = ""
     settings_dic["TL_version"] = __version__
+
+    if "timeout_ena" not in settings_dic:
+        settings_dic["timeout_ena"] = "300"
+        cf.set("Pref", "timeout_ena", "300")
+        with open(user_cf_file, "w") as g:
+            cf.write(g)
+
     log.info("\t=>Success")
     return settings_dic
     
@@ -551,47 +559,84 @@ def dump_db(curr_time, settings_dic, log):
     db_file = os.path.join(settings_dic["login_dir"], settings_dic["db_filename"])
     db_file_temp = os.path.join(settings_dic["recovery_dir"], "{}_data.db".format(curr_time))
     shutil.copy(db_file, db_file_temp)
-    
 
-def check_for_reference_updates(log, settings, parent):
+
+def handle_reference_update(update_me, reference_local_path, blast_path, parent, log):
+    """performs the reference update for all references given in upate_me, passes results to user as QMessageBox
+
+    :param update_me: list of references to update (can contain "HLA", "KIR" or both)
+    :param reference_local_path: path to local "reference_data" dir
+    :param blast_path: path for blastn
+    :param log: logger instance
+    :param parent: parent which should raise the resulting QMessageBox
+    :return: list of successfully updated references
+    """
+    msges = []
+    updated = []
+    for db_name in update_me:
+        success, err_type, msg = perform_reference_update(db_name, reference_local_path, blast_path, log)
+        if not success:
+            if parent:
+                QMessageBox.warning(parent, err_type, msg)
+        else:
+            msges.append(msg)
+            updated.append(db_name)
+
+    if msges:
+        if parent:
+            QMessageBox.information(parent, "Reference data updated", "\n\n".join(msges))
+
+    return updated
+
+
+def check_update_needed(reference_local_path, log, skip_if_updated_today=False):
+    """check whether any of the references need to be updated (use MD5 check on .dat files)
+
+    :param log: logger instance
+    :param reference_local_path: path where "reference_data" is stored
+    :return: list of databases that need updating (as capitalized strings)
+    """
     db_list = ["hla", "kir"]
-    blast_path = os.path.dirname(settings["blast_path"])
-    reference_local_path = os.path.join(settings["root_path"], settings["general_dir"], settings["reference_dir"])
-    
+
     update_me = []
     for db_name in db_list:
         new_version_found, _ = update_reference.check_database(db_name, reference_local_path, log,
-                                                           skip_if_updated_today = False)
+                                                               skip_if_updated_today=skip_if_updated_today)
         if new_version_found:
             update_me.append(db_name.upper())
-    
+
+    return update_me
+
+
+def check_for_reference_updates(log, settings, parent):
+    """checks whether either of the references need an update
+    (checks MD5 checksum of the .dat files against the reference repo on GitHub),
+    if yes, offers the user to update these references
+
+    :param log: logger instance
+    :param settings: user settings
+    :param parent: parent widget from where this function is called
+    :return: nothing
+    """
+    blast_path = settings["blast_path"]
+    reference_local_path = os.path.join(settings["root_path"], settings["general_dir"], settings["reference_dir"])
+
+    update_me = check_update_needed(reference_local_path, log)
+
     if update_me:
         targets = " and ".join(update_me)
         msg = "Found new reference version for {}. Should I update now?\n".format(targets)
-        msg += "(This should take about a minute, please wait after clicking Yes.)"
-        reply = QMessageBox.question(parent, "New reference found",
-                          msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
-        
+        msg += "(This should take about a minute or so, please wait after clicking Yes.)"
+        reply = QMessageBox.question(parent, "New reference found", msg,
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+
         if reply == QMessageBox.No:
             log.info("User chose not to update the database.")
             return
-        
-        msges = []
-        for db_name in update_me:
-            db_name = db_name.lower()
-            try:
-                update_msg = update_reference.update_database(db_name, reference_local_path, blast_path, log)
-                msges.append(update_msg)
-            except Exception as E:
-                log.error("Reference update failed!")
-                log.exception(E)
-                QMessageBox.warning(parent, "Reference update failed",
-                                    "Could not update the reference database(s). Please try again!\n\n{}".repr(E))
-            
-        QMessageBox.information(parent, "Reference data updated", 
-                                       "\n\n".join(msges))
 
-     
+    handle_reference_update(update_me, reference_local_path, blast_path, parent, log)
+
+
 def startup(user, curr_time, log):
     """performs startup actions 
     (between 'login accepted' and 'main window start')

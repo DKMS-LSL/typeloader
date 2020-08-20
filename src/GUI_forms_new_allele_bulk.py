@@ -179,6 +179,7 @@ class NewAlleleBulkForm(CollapsibleDialog):
         self.ok_btn.setEnabled(True)
         self.proceed_sections(0, 1)
         self.refresh_project.emit(self.project)
+        general.play_sound()
         return True
         
         
@@ -236,7 +237,7 @@ if __name__ == '__main__':
     log = general.start_log(level="DEBUG")
     log.info("<Start {}>".format(os.path.basename(__file__)))
     sys.excepthook = log_uncaught_exceptions
-    mysettings = GUI_login.get_settings("staging", log)
+    mysettings = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, mysettings["db_file"])
     
     app = QApplication(sys.argv)

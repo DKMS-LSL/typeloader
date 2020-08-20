@@ -1,5 +1,17 @@
 # Version History
 
+## 2.8.1 (2020-07-27)
+### New Features:
+- Added support for non-classical HLA genes HLA-F, -G, -H, -K, -J (#155)
+- New option: rebuild reference manually (#156)
+- Play an unobtrusive sound when long jobs finish (#158) 
+- Support for ENA Webin-CLI 3.0.1 (#154)
+- Example files now have a "download all" option (#160)
+
+### Bugfixes:
+- BLAST output is now caught in the log (#157)
+- Fixed Bug in broken-reference-recognition of KIR
+
 ## 2.8.0 (2020-06-10)
 ### New Features:
 - Homozygous XML files are now accepted as input (#148)

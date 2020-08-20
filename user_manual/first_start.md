@@ -14,6 +14,8 @@ Just click "Yes" and wait until another Popup appears to tell you that TypeLoade
 
 After the reference data has been downloaded and processed successfully, you can get familiar with TypeLoader.
 
+(If you encounter or suspect a broken reference at any later time, you can always [=> build a fresh reference](reference.md).)
+
 ## Register with ENA
 If you have not registered with ENA, yet, you should do this now (follow the instructions on [ENA's 'Register Submission Account' page](https://ena-docs.readthedocs.io/en/latest/reg_01.html) and [=> configure your settings accordingly](settings.md) (tab "Company & Communications Settings"). **Otherwise, TypeLoader will not be able to work.**
 

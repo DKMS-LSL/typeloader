@@ -39,8 +39,9 @@ import GUI_forms_new_allele_bulk as BULK
 import GUI_forms_submission_ENA as ENA
 import GUI_forms_submission_IPD as IPD
 import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample, GUI_forms, GUI_download_files
+import GUI_mini_dialogs
 import typeloader_functions
-from GUI_login import base_config_file
+from GUI_login import base_config_file, check_update_needed
 
 from PyQt5.QtWidgets import (QApplication)
 from PyQt5.QtCore import Qt, QTimer, QModelIndex
@@ -49,7 +50,7 @@ from PyQt5.QtCore import Qt, QTimer, QModelIndex
 # test parameters:
 
 delete_all_stuff_at_the_end = True  # deletes database entries and project directory
-skip_other_tests = False # set to True to skip all tests except the current WiP (out-comment it there in setUpClass)
+skip_other_tests = False  # set to True to skip all tests except the current WiP (out-comment it there in setUpClass)
 project_name = ""  # this will be set in create project
 
 samples_dic = {  # samples to test
@@ -360,7 +361,6 @@ class Test_Create_New_Allele(unittest.TestCase):
         if skip_other_tests:
             self.skipTest(self, "Skipping Create New Allele because skip_other_tests is set to True")
         else:
-            # if True:
             self.project_name = project_name  # "20180710_SA_A_1292"
 
             self.new_sample_dir_path_1 = os.path.join(curr_settings["projects_dir"], self.project_name,
@@ -778,7 +778,7 @@ class Test_Send_To_ENA(unittest.TestCase):
             text = f.read()
             s = [line for line in text.split("\n") if line]
             # check penultimate line:
-            self.assertTrue("Files have been uploaded to webin.ebi.ac.uk." in s[-2])
+            self.assertTrue("Files have been uploaded to webin2.ebi.ac.uk." in s[-2])
             # check last line:
             s2 = s[-1].split(
                 "The TEST submission has been completed successfully. This was a TEST submission and no data was submitted. The following analysis accession was assigned to the submission: ")
@@ -2629,7 +2629,7 @@ class TestRestrictedReference(unittest.TestCase):
         """test that allele does not work with a restricted db containing only alleles from wrong
         target family
         """
-        myref = self.restricted_db_wrong_target
+        myref = self.restricted_db_wrong_target  # contains only KIR
         success, results1 = typeloader_functions.handle_new_allele_parsing(project_name,
                                                                            self.sample_id_int,
                                                                            self.sample_id_ext,
@@ -2766,6 +2766,7 @@ class TestRestrictedReference(unittest.TestCase):
 class TestHomozygousXML(unittest.TestCase):
     """test whether TypeLoader can handle an XML input file with only 1 allele
     """
+
     @classmethod
     def setUpClass(self):
         if skip_other_tests:
@@ -2815,6 +2816,39 @@ class TestHomozygousXML(unittest.TestCase):
         self.assertEqual(len(diff_ena_files["deleted_sings"]), 0)
 
 
+class TestUpdateReference(unittest.TestCase):
+    """test whether reference updates work
+    """
+
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping reference update test because skip_other_tests is set to True")
+
+        self.form = GUI_mini_dialogs.RefreshReferenceDialog(curr_settings, log, None)
+        self.target = "KIR"
+        self.reference_local_path = os.path.join(curr_settings["root_path"],
+                                                 curr_settings["general_dir"],
+                                                 curr_settings["reference_dir"])
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test01_ref_update_kir_noerrors(self):
+        """test that KIR is updated successfully;
+        only tests that no errors occured
+         """
+        self.form.btn_dic[self.target].click()
+        self.assertEqual(self.form.updated, [self.target])
+
+    def test02_ref_update_kir_check_ok(self):
+        """test that after the update, the .dat file checksum is equal to that in the reference repo
+         """
+        update_me = check_update_needed(self.reference_local_path, log, skip_if_updated_today=False)
+        self.assertEqual(update_me, [])
+
+
 class TestCleanStuff(unittest.TestCase):
     """
     Remove all directories and files written by  all unit tests
@@ -2841,6 +2875,25 @@ class TestCleanStuff(unittest.TestCase):
             delete_written_samples(True, "IPD_SUBMISSIONS", log)
 
             shutil.rmtree(os.path.join(curr_settings["projects_dir"], project_name))
+
+
+class TestPlaySound(unittest.TestCase):
+    """Play sound when finished
+    """
+
+    @classmethod
+    def setUpClass(self):
+        pass
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test_play_sound(self):
+        """test that sound was played
+         """
+        played = general.play_sound()
+        self.assertTrue(played)
 
 
 # ===========================================================

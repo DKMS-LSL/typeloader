@@ -114,27 +114,30 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
     # write fake pretyping file:
     log.info("Writing fake pretyping-file...")
     fake_file_befunde = os.path.join(settings["login_dir"], "temp", "fake_befunde.csv")
-    columns = ["HLA-A_1", "HLA-A_2", "HLA-B_1", "HLA-B_2", "HLA-C_1", "HLA-C_2", "HLA-DRB1_1", 
-               "HLA-DRB1_2", "HLA-DQB1_1", "HLA-DQB1_2", "HLA-DPB1_1", "HLA-DPB1_2", 
-               "HLA-E_1", "HLA-E_2", "MICA", "MICB"]
+    columns = []
     
     gene_dic = {}
-    for g in ["HLA-A", "HLA-B", "HLA-C", "HLA-DRB1", "HLA-DQB1", "HLA-DPB1", "HLA-E"]:
-        gene_dic[g] = ["{}_1".format(g), "{}_2".format(g)]
+    for g in ["HLA-A", "HLA-B", "HLA-C", "HLA-DRB1", "HLA-DQB1", "HLA-DPB1", "HLA-E",
+              "HLA-F", "HLA-G", "HLA-H", "HLA-J", "HLA-K"
+              ]:
+        mycolumns = [f"{g}_1", f"{g}_2"]
+        gene_dic[g] = mycolumns
+        columns += mycolumns
     for g in ["MICA", "MICB"]:
         gene_dic[g] = [g]
+        columns.append(g)
     kir_columns = []
     for g in ['KIR2DL1', 'KIR2DL2', 'KIR2DL3', 'KIR2DL4', 'KIR2DL5A', 'KIR2DL5B',
               'KIR2DP1',
               'KIR2DS1', 'KIR2DS2', 'KIR2DS3', 'KIR2DS4', 'KIR2DS5',
               'KIR3DL1', 'KIR3DL2', 'KIR3DL3',
               'KIR3DP1', 'KIR3DS1']:
-        l = []
-        for i in range(1,5):
-            l.append('{}-{}'.format(g, i))
-        gene_dic[g] = l
-        kir_columns += l
-    
+        mycolumns = []
+        for i in range(1, 5):
+            mycolumns.append(f'{g}-{i}')
+        gene_dic[g] = mycolumns
+        kir_columns += mycolumns
+
     if not mygene in gene_dic: #not one of our standard-genes
         gene_dic[mygene] = ["{}_1".format(mygene), "{}_2".format(mygene)]
         columns += gene_dic[mygene]
