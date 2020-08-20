@@ -18,7 +18,7 @@ from configparser import ConfigParser
 
 module_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 mypath = os.path.join(module_path)
-mypath_inner = os.path.join(mypath, "src")
+mypath_inner = os.path.join(mypath, "typeloader2")
 sys.path.append(mypath)
 sys.path.append(mypath_inner)
 

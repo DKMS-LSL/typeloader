@@ -20,4 +20,5 @@ typeloader2/typeLoader_GUI.py
 typeloader2/ENA_Webin_CLI/test_data/*
 typeloader2/ENA_Webin_CLI/java
 /.idea
-/venv
+/.venv
+*.egg-info*
