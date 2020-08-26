@@ -778,7 +778,7 @@ class Test_Send_To_ENA(unittest.TestCase):
             text = f.read()
             s = [line for line in text.split("\n") if line]
             # check penultimate line:
-            self.assertTrue("Files have been uploaded to webin2.ebi.ac.uk." in s[-2])
+            self.assertTrue("Files have been uploaded to webin" in s[-2] and "ebi.ac.uk." in s[-2])
             # check last line:
             s2 = s[-1].split(
                 "The TEST submission has been completed successfully. This was a TEST submission and no data was submitted. The following analysis accession was assigned to the submission: ")
