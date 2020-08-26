@@ -12,7 +12,6 @@ __email__ = "schoene@dkms-lab.de"
 __version__ = "2.8.1"
 __status__ = "productive"
 __all__ = ["__init__",
-           "typeloader_GUI",
            "db_external",
            "db_internal",
            "general",

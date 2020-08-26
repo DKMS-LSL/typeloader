@@ -24,8 +24,6 @@ import general, db_internal
 # ===========================================================
 # parameters:
 
-from __init__ import __version__
-
 flatfile_dic = {"function_hla": "antigen presenting molecule",
                 "function_kir": "killer-immunoglobulin receptor",
                 "productname_hla_i": "MHC class I antigen",
@@ -1101,7 +1099,7 @@ if __name__ == "__main__":
     import GUI_login
 
     log = general.start_log(level="debug")
-    log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
+    log.info("<Start {}>".format(os.path.basename(__file__)))
     settings_dic = GUI_login.get_settings("staging", log)
     mydb = create_connection(log, settings_dic["db_file"])
     main(settings_dic, log, mydb)
