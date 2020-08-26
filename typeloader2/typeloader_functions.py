@@ -383,9 +383,15 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 enaPosHash = BME.transform(currentPosHash)
                 null_allele, msg = BME.is_null_allele(sequence, enaPosHash)
                 if null_allele:
+                    if geneName == "HLA-E" and msg == "Attention! Number of exon bases not divisible by 3  => null allele!":
+                        null_allele = False
+                        msg2 = "Null-allele-check for 'number of exon bases must be divisable by 3' is currently "
+                        msg2 += "disabled for HLA-E (#162)"
+                        log.info(msg2)
+                if null_allele:
                     log.info(msg)
 
-                    # set productName and function
+                # set productName and function
                 gene_tag = "gene"
                 if targetFamily == settings["gene_kir"]:  # if KIR
                     productName_FT = geneName + " " + flatfile_dic["productname_kir_short"]
@@ -456,6 +462,12 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log, incomplete_
         allele.null_allele = False  # whole locus is already pseudogene
     else:
         allele.null_allele, msg = BME.is_null_allele(sequence, enaPosHash)
+        if allele.null_allele:
+            if allele.geneName == "HLA-E" and msg == "Attention! Number of exon bases not divisible by 3  => null allele!":
+                allele.null_allele = False
+                msg2 = "Null-allele-check for 'number of exon bases must be divisable by 3' is currently "
+                msg2 += "disabled for HLA-E (#162)"
+                log.info(msg2)
         if allele.null_allele:
             log.info(msg)
         allele.productName_FT = allele.productName_FT + " null allele" if allele.null_allele else allele.productName_FT
