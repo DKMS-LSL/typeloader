@@ -169,6 +169,39 @@ class Test_0_Clean_Stuff_initial(unittest.TestCase):
             pass
 
 
+class TestUpdateReference(unittest.TestCase):
+    """test whether reference updates work
+    """
+
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping reference update test because skip_other_tests is set to True")
+
+        self.form = GUI_mini_dialogs.RefreshReferenceDialog(curr_settings, log, None)
+        self.target = "KIR"
+        self.reference_local_path = os.path.join(curr_settings["root_path"],
+                                                 curr_settings["general_dir"],
+                                                 curr_settings["reference_dir"])
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test01_ref_update_kir_noerrors(self):
+        """test that KIR is updated successfully;
+        only tests that no errors occured
+         """
+        self.form.btn_dic[self.target].click()
+        self.assertEqual(self.form.updated, [self.target])
+
+    def test02_ref_update_kir_check_ok(self):
+        """test that after the update, the .dat file checksum is equal to that in the reference repo
+         """
+        update_me = check_update_needed(self.reference_local_path, log, skip_if_updated_today=False)
+        self.assertEqual(update_me, [])
+
+
 class Test_1_Create_Project(unittest.TestCase):
     """ create project
     """
@@ -2814,39 +2847,6 @@ class TestHomozygousXML(unittest.TestCase):
         diff_ena_files = compare_2_files(new_ena_file_path, reference_file_path)
         self.assertEqual(len(diff_ena_files["added_sings"]), 0)
         self.assertEqual(len(diff_ena_files["deleted_sings"]), 0)
-
-
-class TestUpdateReference(unittest.TestCase):
-    """test whether reference updates work
-    """
-
-    @classmethod
-    def setUpClass(self):
-        if skip_other_tests:
-            self.skipTest(self, "Skipping reference update test because skip_other_tests is set to True")
-
-        self.form = GUI_mini_dialogs.RefreshReferenceDialog(curr_settings, log, None)
-        self.target = "KIR"
-        self.reference_local_path = os.path.join(curr_settings["root_path"],
-                                                 curr_settings["general_dir"],
-                                                 curr_settings["reference_dir"])
-
-    @classmethod
-    def tearDownClass(self):
-        pass
-
-    def test01_ref_update_kir_noerrors(self):
-        """test that KIR is updated successfully;
-        only tests that no errors occured
-         """
-        self.form.btn_dic[self.target].click()
-        self.assertEqual(self.form.updated, [self.target])
-
-    def test02_ref_update_kir_check_ok(self):
-        """test that after the update, the .dat file checksum is equal to that in the reference repo
-         """
-        update_me = check_update_needed(self.reference_local_path, log, skip_if_updated_today=False)
-        self.assertEqual(update_me, [])
 
 
 class TestCleanStuff(unittest.TestCase):
