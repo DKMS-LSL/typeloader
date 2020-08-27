@@ -1,5 +1,15 @@
 # Version History
 
+## 2.8.2 (2020-08-26)
+### New Features:
+- Support for ENA Webin-CLI 3.1.0 (#154)
+- Timeout after ENA server can't be reached for a certain time. Threshold can be set via Settings => Preferences (#161)
+- Whitespaces in pretypings file are now removed (#165)
+
+### Backend:
+- Disabled "number of CDS bases must be divisable by 3" check for null alleles for HLA-E, to accomodate for a possible IMGT bug that previously made all HLA-E alleles null-alleles (#162)
+- Converted to poetry project 
+
 ## 2.8.1 (2020-07-27)
 ### New Features:
 - Added support for non-classical HLA genes HLA-F, -G, -H, -K, -J (#155)
