@@ -16,7 +16,7 @@ for myfile in os.listdir("tables"):
         os.remove(os.path.join("tables", myfile))
 
 build_exe_options = {"includes": ["authuser", "typeloader_core"],
-                     "include_files": ["config_raw.ini", "LICENSE.txt",
+                     "include_files": ["config_raw.ini", "LICENSE.txt", "sound_done.mp3",
                                        'icons/', 'tables/', 'blastn/', "sample_files/", "ENA_Webin_CLI/"],
                      "excludes": ["tkinter", "unittest"]}
 
@@ -25,11 +25,11 @@ if sys.platform == "win32":
     base = "Win32GUI"
 
 setup(name="TypeLoader",
-      version="2.8.1",
+      version="2.8.2",
       description="TypeLoader",
       options={"build_exe": build_exe_options},
       executables=[Executable("typeloader_GUI.pyw",
                               base=base,
                               icon=os.path.join("icons", "TypeLoader.ico"),
-                              targetName="TypeLoader.exe")],
-      install_requires=['PyQt5'])
+                              targetName="TypeLoader.exe")]
+      )

@@ -15,9 +15,10 @@ config_company.ini
 config_local.ini
 user.pickle
 log.txt
-src/TypeLoader_Setup.exe
-src/typeLoader_GUI.py
-src/ENA_Webin_CLI/test_data/*
-src/ENA_Webin_CLI/java
+typeloader2/TypeLoader_Setup.exe
+typeloader2/typeLoader_GUI.py
+typeloader2/ENA_Webin_CLI/test_data/*
+typeloader2/ENA_Webin_CLI/java
 /.idea
-/venv
+/.venv
+*.egg-info*

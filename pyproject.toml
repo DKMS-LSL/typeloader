@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "typeloader2"
+version = "2.8.2"
+description = "full-length allele submission handler for KLA, KIR, and other immunogenetically relevant genes"
+authors = ["Bianca Schöne <schoene@dkms-lab.de>",
+"Vineeth Surendranath <surendranath@dkms-lab.de>",
+"Markus Fuhrmann <fuhrmann@dkms-lab.de"]
+maintainers = ["Bianca Schöne <schoene@dkms-lab.de>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/DKMS-LSL/typeloader"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+PyQt5 = "^5.15.0"
+Biopython = "^1.77"
+pycurl = "^7.43.0"
+xmltodict = "^0.12.0"
+playsound = "^1.2.2"
+cx_Freeze = "6.1"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

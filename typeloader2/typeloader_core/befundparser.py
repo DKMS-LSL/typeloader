@@ -53,7 +53,7 @@ def getOtherAlleles(befundFile):
         usePos = []
         genes = []
         for pos in range(len(parts)):
-            col = parts[pos]
+            col = parts[pos].strip()
             if col in useGenesList or col in old_columns:
                 genes.append(col)
                 usePos.append(pos)
@@ -71,7 +71,7 @@ def getOtherAlleles(befundFile):
             for pos in usePos:
                 befundGeneName = genes[usePos.index(pos)]
                 geneName = befundGeneName.split("_")[0]
-                pretyping = parts[pos]
+                pretyping = parts[pos].strip()
                 changeName = reduce(lambda x,y: x or y, [befundGeneName.startswith(nameToChange) for nameToChange in changeNamesFor])
                 if changeName:  # old class 2 columns
                     geneName = "HLA-" + befundGeneName[:2] + "B1"
@@ -89,11 +89,12 @@ def getOtherAlleles(befundFile):
                 else:
                     for value in pretyping.split("+"):
                         if value:
-                            befund[patient][geneName].append(value)
-            
+                            befund[patient][geneName].append(value.strip())
+
+    print(befund["ID15020714"])
     return befund, customer_dic
 
 if __name__ == '__main__':
 
-    from sys import argv
-    print(list(getOtherAlleles(argv[1]).keys()))
+    befundFile = r"C:\Daten\local_data\TL_issue_data\Befunde_DR_10.csv"
+    getOtherAlleles(befundFile)

@@ -119,6 +119,7 @@ header_translation_dic = {"locus": "GENE",
                           }
 
 soundfile = os.path.join(os.path.dirname(__file__), "sound_done.mp3")
+soundfile_2 = soundfile = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname((__file__)))), "sound_done.mp3")
 # ===========================================================
 # classes:
 
@@ -301,12 +302,21 @@ def play_sound():
     :return: bool (True if sound was played, False if it wasn't because playsound is not installed)
     """
     try:
-        from playsound import playsound
-        playsound(soundfile)
+        import playsound
+        playsound.playsound(soundfile)
         return True
 
     except ImportError:
         return False
+
+    except playsound.PlaysoundException:
+        try:
+            playsound.playsound(os.path.basename(soundfile))
+            return True
+
+        except playsound.PlaysoundException:
+            playsound.playsound(soundfile_2)
+            return True
 
 
 
