@@ -91,7 +91,6 @@ def getOtherAlleles(befundFile):
                         if value:
                             befund[patient][geneName].append(value.strip())
 
-    print(befund["ID15020714"])
     return befund, customer_dic
 
 if __name__ == '__main__':
