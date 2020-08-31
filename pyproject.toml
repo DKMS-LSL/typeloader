@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "typeloader2"
-version = "2.8.2"
+version = "2.8.2.1"
 description = "full-length allele submission handler for KLA, KIR, and other immunogenetically relevant genes"
 authors = ["Bianca Schöne <schoene@dkms-lab.de>",
 "Vineeth Surendranath <surendranath@dkms-lab.de>",
@@ -18,6 +18,7 @@ pycurl = "^7.43.0"
 xmltodict = "^0.12.0"
 playsound = "^1.2.2"
 cx_Freeze = "6.1"
+cx_Oracle = "^8.0.0"
 
 [tool.poetry.dev-dependencies]
 
