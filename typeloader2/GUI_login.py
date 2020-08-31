@@ -349,7 +349,7 @@ class LoginForm(QDialog):
         if not, opens an infobox
         """
         github_repo = r"https://github.com/DKMS-LSL/typeloader"
-        github_init = r"https://raw.githubusercontent.com/DKMS-LSL/typeloader/master/src/__init__.py"
+        github_init = r"https://raw.githubusercontent.com/DKMS-LSL/typeloader/master/typeloader2/__init__.py"
         newer_version, error, msg = check_for_newer_version(github_init, github_repo, log)
         if error:
             if newer_version:
@@ -655,7 +655,7 @@ def get_latest_version(myurl, repo, log):
     version = None
     msg = None
     try:
-        with urllib.request.urlopen(myurl, timeout=5) as url:
+        with urllib.request.urlopen(myurl, timeout=10) as url:
             html = url.read()
             content = html.decode("UTF-8", "ignore")
         for line in content.split("\n"):
@@ -674,7 +674,7 @@ def get_latest_version(myurl, repo, log):
         log.debug("\t\tlatest version on GitHub: {}".format(version))
         return version, msg
     else:
-        log.debug("\t\t!Could not find version on the given page!")
+        log.debug(f"\t\t!Could not find version on {myurl}!")
         msg = "Could not get current version from {}.".format(repo)
         msg += "\nPlease check if there is a new version available!"
         return version, msg
