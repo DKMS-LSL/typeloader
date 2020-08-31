@@ -22,3 +22,4 @@ typeloader2/ENA_Webin_CLI/java
 /.idea
 /.venv
 *.egg-info*
+/.runtest/
