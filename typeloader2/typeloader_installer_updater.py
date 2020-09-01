@@ -12,6 +12,8 @@ This script updates `typeloader_installer.nsi`, the NIS script to create the Typ
 import os
 from collections import defaultdict
 import pathlib
+import subprocess
+import shutil
 import general
 
 # ===========================================================
@@ -29,6 +31,25 @@ IGNORE_FILES = [pathlib.Path(BUILD_DIR, "config_base.ini"),
 # ===========================================================
 # functions:
 
+def rebuild_exe(log):
+    log.info("Re-building TypeLoader.exe...")
+
+    # # rename old build dir:
+    # build_dir = pathlib.Path(BUILD_DIR)
+    # build_dir_old = pathlib.Path(f"{BUILD_DIR}_old")
+    # if build_dir.exists():
+    #     if build_dir_old.exists():
+    #         shutil.rmtree(build_dir_old)
+    #     log.info("\tRenaming old build-dir...")
+    #     build_dir.rename(build_dir_old)
+
+    # # re-build:
+    # log.info("\tActivating poetry shell...")
+    # subprocess.call(["poetry", "shell"], shell=True)
+    #
+    # log.info("\tRe-building...")
+    # subprocess.call(["python", "setup.py", "build"], shell=True)
+    # log.info("\t\t=> Success!")
 
 def read_script(nsi_file, log):
     """reads the existing .nsi script and retrieves which files are already covered
@@ -205,6 +226,12 @@ def adjust_installer(missing_files, deprecated_files, log):
 # main:
 
 def main(log):
+    # rebuild = general.confirm("Should I completely rebuild the TypeLoader.exe?")
+    # if rebuild:
+    #     rebuild_exe(log)
+    # else:
+    #     log.info("\t=> User chose not to re-build")
+
     missing_files, deprecated_files, = check_old_script_for_consistency_with_new_files(log)
     adjust_installer(missing_files, deprecated_files, log)
 
