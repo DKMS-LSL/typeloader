@@ -3,7 +3,8 @@
 """
 Created on 2020-08-31
 
-This script updates `typeloader_installer.nsi`, the NIS script to create the TypeLoader installer
+This script re-builds TypeLoader.exe and updates `typeloader_installer.nsi`,
+the NIS script to create the TypeLoader Windows installer.
 
 @author: Bianca Schoene
 """
@@ -32,24 +33,39 @@ IGNORE_FILES = [pathlib.Path(BUILD_DIR, "config_base.ini"),
 # functions:
 
 def rebuild_exe(log):
+    """renames old BUILD_DIR, if it exists,
+    then calls setup.py via poetry to create a fresh build
+    """
     log.info("Re-building TypeLoader.exe...")
 
-    # # rename old build dir:
-    # build_dir = pathlib.Path(BUILD_DIR)
-    # build_dir_old = pathlib.Path(f"{BUILD_DIR}_old")
-    # if build_dir.exists():
-    #     if build_dir_old.exists():
-    #         shutil.rmtree(build_dir_old)
-    #     log.info("\tRenaming old build-dir...")
-    #     build_dir.rename(build_dir_old)
+    # rename old build dir:
+    build_dir = pathlib.Path(BUILD_DIR)
+    build_dir_old = pathlib.Path(f"{BUILD_DIR}_old")
+    if build_dir.exists():
+        if build_dir_old.exists():
+            shutil.rmtree(build_dir_old)
+        log.info("\tRenaming old build-dir...")
+        build_dir.rename(build_dir_old)
 
-    # # re-build:
-    # log.info("\tActivating poetry shell...")
-    # subprocess.call(["poetry", "shell"], shell=True)
-    #
-    # log.info("\tRe-building...")
-    # subprocess.call(["python", "setup.py", "build"], shell=True)
-    # log.info("\t\t=> Success!")
+    # re-build:
+    log.info("\tRe-building...")
+    subprocess.call(["poetry", "run", "python", "setup.py", "build"], shell=True)
+    log.info("\t\t=> Success!")
+
+
+def gather_files(build_dir, log):
+    """collects all files in the current BUILD_DIR,
+    returns them as a defaultdict[filepath] = True (False as default value)
+    """
+    log.info(f"Searching for files in {build_dir}...")
+    found_files = defaultdict(lambda: False)
+    for root, dirs, files in os.walk(build_dir):
+        for filename in files:
+            myfile = pathlib.Path(root, filename)
+            found_files[myfile] = True
+    log.info(f"\t=> found {len(found_files)} files")
+    return found_files
+
 
 def read_script(nsi_file, log):
     """reads the existing .nsi script and retrieves which files are already covered
@@ -65,20 +81,6 @@ def read_script(nsi_file, log):
 
     log.info(f"\t=> found {len(files)} files")
     return files
-
-
-def gather_files(build_dir, log):
-    """collects all files in the current BUILD_DIR,
-    returns them as a defaultdict[filepath] = True (False as default value)
-    """
-    log.info(f"Searching for files in {build_dir}...")
-    found_files = defaultdict(lambda: False)
-    for root, dirs, files in os.walk(build_dir):
-        for filename in files:
-            myfile = pathlib.Path(root, filename)
-            found_files[myfile] = True
-    log.info(f"\t=> found {len(found_files)} files")
-    return found_files
 
 
 def check_all_files_contained(files_found, files_listed, log):
@@ -222,18 +224,44 @@ def adjust_installer(missing_files, deprecated_files, log):
     log.info(f"\t=> removed {removed_files} deprecated file(s)")
 
 
+def wrap_up(changes, log):
+    """ties up loose all ends
+    """
+    log.info("Wrapping up...")
+    log.info("\tReplacing installer-script with updated version...")
+    pathlib.Path(INSTALLER_SCRIPT).unlink()
+    pathlib.Path(INSTALLER_SCRIPT_NEW).rename(INSTALLER_SCRIPT)
+
+    build_dir_old = pathlib.Path(f"{BUILD_DIR}_old")
+    if build_dir_old.exists():
+        log.info("\tRemoving old build-dir...")
+        shutil.rmtree(build_dir_old, ignore_errors=True)
+
+    if changes:
+        log.info("Successfully updated!")
+    else:
+        log.info("No changes were necessary! The old installer script is still good to go. :-)")
+
+    log.info(f"Please open {INSTALLER_SCRIPT} in HM NIS Edit and compile the script.")
+    log.info("Then test the new installer thoroughly before deploying!")
+
+
 # ===========================================================
 # main:
 
 def main(log):
-    # rebuild = general.confirm("Should I completely rebuild the TypeLoader.exe?")
-    # if rebuild:
-    #     rebuild_exe(log)
-    # else:
-    #     log.info("\t=> User chose not to re-build")
+    rebuild = general.confirm("Should I completely rebuild the TypeLoader.exe?")
+    if rebuild:
+        rebuild_exe(log)
+    else:
+        log.info("\t=> User chose not to re-build")
 
     missing_files, deprecated_files, = check_old_script_for_consistency_with_new_files(log)
+    changes = False
+    if missing_files or deprecated_files:
+        changes = True
     adjust_installer(missing_files, deprecated_files, log)
+    wrap_up(changes, log)
 
 
 if __name__ == "__main__":
