@@ -15,17 +15,30 @@ for myfile in os.listdir("tables"):
     if "dummy" in myfile:
         os.remove(os.path.join("tables", myfile))
 
-build_exe_options = {"includes": ["authuser", "typeloader_core"],
-                     "include_files": ["config_raw.ini", "LICENSE.txt", "sound_done.mp3",
-                                       'icons/', 'tables/', 'blastn/', "sample_files/", "ENA_Webin_CLI/"],
-                     "excludes": ["tkinter", "unittest"]}
+build_exe_options = {"includes": ["authuser",
+                                  "typeloader_core",
+                                  ],
+                     "include_files": ["config_raw.ini",
+                                       "config_base.ini",
+                                       "config_company.ini",
+                                       "LICENSE.txt",
+                                       "sound_done.mp3",
+                                       'icons/',
+                                       'tables/',
+                                       'blastn/',
+                                       "sample_files/",
+                                       "ENA_Webin_CLI/",
+                                       ],
+                     "excludes": ["tkinter",
+                                  "unittest",
+                                  ]}
 
 base = None
 if sys.platform == "win32":
     base = "Win32GUI"
 
 setup(name="TypeLoader",
-      version="2.8.2",
+      version="2.8.2.1",
       description="TypeLoader",
       options={"build_exe": build_exe_options},
       executables=[Executable("typeloader_GUI.pyw",

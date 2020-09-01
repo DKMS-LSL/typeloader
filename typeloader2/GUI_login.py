@@ -700,7 +700,7 @@ def check_for_newer_version(myurl, repo, log):
             msg += "Please get the new version from {}!".format(repo)
             return newer_version, error, msg
         else:
-            log.info("\t=> You are currently using the newest available version of TypeLoader. :)")
+            log.info(f"\t=> You are currently using {__version__}, the newest available version of TypeLoader. :)")
             return newer_version, error, False
     
     
