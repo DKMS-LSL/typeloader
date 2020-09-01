@@ -8,7 +8,7 @@
 ## Make internal release
 - [ ] create release branch, checkout
 - [ ] update ``NEWS.md``
-- [ ] bump version in ``src/__init__.py``
+- [ ] bump version in ``typeloader2/__init__.py``
 - [ ] commit everything
 - [ ] push release branch to ``GitLab``
 - [ ] in productive repo (``T:\Skripte\TypeLoader2``), pull from ``GitLab`` and checkout release branch
@@ -20,28 +20,24 @@
 ## Optionally: Make external release
 - [ ] checkout the release branch in your local development repo
 - [ ] update the version number in ``setup.py``
-- [ ] using the command line, cd to the ``src`` folder of your local development repo 
-⇒ type ``python setup.py build``
-- [ ] open ``build\exe.win32-3.7\TypeLoader.exe`` and perform a ``Basic Feature Check``
-- [ ] using ``typeloader_installer_updater.py``, update the installer script. Scroll through the changes (compare old file with new side-by-side) and make sure they look good. Especially watch out for
-  - header section still ok
-  - consecutive ``SetOutPath`` statements (can happen if all files from a section were deleted) => manually delete all but the last of these in any given row
-- [ ] using ``NIS Edit``, compile the installer by opening ``src/typeloader_installer_new.nsi`` and selecting „Compile and Run“ (Shift + F9)
+- [ ] update NEW_VERSION in ``typeloader_installer_updater.py``, then run it
+- [ ] using ``NIS Edit``, compile the installer by opening the new ``typeloader2/typeloader_installer.nsi`` and selecting „Compile“ (not "Compile and Run", as TypeLoader should be tested without elevated rights)
 - [ ] test the installer locally ⇒ make any necessary changes and commit them to the release branch
 - [ ] using ``OwnCloud``, copy the installer to a ``Windows10`` computer outside the LSL-network.
-- [ ] If it is not present already, install the previous version by using the old installer from the previous ``GitHub`` release.
+- [ ] if it is not present already, install the previous version by using the old installer from the previous ``GitHub`` release.
 - [ ] create a test login and perform a ``Basic Feature Check``
-- [ ] With the new installer, update the existing version and perform a ``Basic Feature Check``. This should confirm that updating works as expected.
-- [ ] Deinstall TypeLoader and remove the directory at TypeLoader's data-path, including all content. Then reinstall it with the the new installer, create a new test user and perform a ``Basic Feature Check``. This should confirm that the new version works for first-time users.
-- [ ] If any changes need to be made, commit them to the release branch and copy it back to LSL. 
-- [ ] Once everything works, run another test_suite and make sure everything is committed to the release branch. 
-- [ ] Move the new installer from ``src`` to ``installer\windows``.
+- [ ] with the new installer, update the existing version and perform a ``Basic Feature Check``. This should confirm that updating works as expected.
+- [ ] deinstall TypeLoader and check whether any files remain behind. If so, use ``deinstaller_cleanup.py`` to adjust the installer accordingly. Then recreate the installer from the adjusted script.
+- [ ] remove the directory at TypeLoader's data-path, including all content. Then reinstall it with the the new installer, create a new test user and perform a ``Basic Feature Check``. This should confirm that the new version works for first-time users.
+- [ ] if any changes need to be made, commit them to the release branch and copy it back to LSL. 
+- [ ] once everything works, run another test_suite and make sure everything is committed to the release branch. 
+- [ ] move the new installer from ``typeloader2`` to ``installer\windows``.
 
 ## Wrap up the new release
 - [ ] Once users are happy, merge release branch back into ``master`` (``--no-ff``)
 - [ ] merge ``master`` into ``productive`` (``--no-ff``)
 - [ ] merge productive back into master to get all heads to the same commit (fast-forward is fine, so **don't use --no-ff** or you will get another merge commit!)
-- [ ] tag the merge commit with the new version number
+- [ ] tag the merge commit on ``productive`` with the new version number
 - [ ] push ``master`` to GitLab
 - [ ] push ``productive`` to GitLab
 - [ ] In the productive repo, pull from GitLab & checkout ``productive``
@@ -53,3 +49,5 @@
   - [ ] from ``GitLab``
   - [ ] from productive repo
   - [ ] from local development repo
+
+/label ~todo ~release

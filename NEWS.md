@@ -1,5 +1,8 @@
 # Version History
 
+## 2.8.2.1 (2020-08-31)
+- several small bugfixes
+
 ## 2.8.2 (2020-08-26)
 ### New Features:
 - Support for ENA Webin-CLI 3.1.0 (#154)
