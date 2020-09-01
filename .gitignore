@@ -23,3 +23,4 @@ typeloader2/ENA_Webin_CLI/java
 /.venv
 *.egg-info*
 /.runtest/
+/typeloader2/typeloader_installer_new.nsi
