@@ -186,7 +186,7 @@ class ENASubmissionForm(CollapsibleDialog):
         mywidget.setLayout(layout)
 
         proj_btn = QueryButton("Choose a (different) existing project",
-                               "SELECT project_name FROM projects where project_status = 'Open' order by project_name desc")
+                               "select project_name from projects where project_status = 'Open' order by project_name desc")
         self.proj_widget = ChoiceSection("Project:", [proj_btn], self.tree)
         self.proj_widget.field.setText(self.project)
         if self.project:
@@ -271,7 +271,7 @@ class ENASubmissionForm(CollapsibleDialog):
         """
         if self.settings["embl_submission"] == self.settings["embl_submission_prod"]:
             self.log.debug("Checking if this is your first ENA submission...")
-            query = "select submission_id from ena_submissions where success = 'yes' LIMIT 1"
+            query = "select submission_id from ena_submissions where success = 'yes' limit 1"
             success, data = db_internal.execute_query(query, 1, self.log, "Checking for previous ENA submissions",
                                                       "Database error", self)
             if not success:
@@ -327,6 +327,13 @@ class ENASubmissionForm(CollapsibleDialog):
 
         try:
             self.submission_successful = True
+            if self.settings["use_ena_server"] == "PROD":  # submission to productive server
+                msg = "This submission will go to the productive ENA server.\nDo you want to proceed?"
+                reply = QMessageBox.question(self, "Proceed?", msg, QMessageBox.Yes | QMessageBox.No,
+                                             QMessageBox.Yes)
+                if not reply:
+                    return
+
             results = submit_alleles_to_ENA(self.project_name, ENA_ID, self.samples, files, self.settings, self.log)
             success, self.file_dic, self.ena_results, self.problem_samples, err_type, msg = results
 
