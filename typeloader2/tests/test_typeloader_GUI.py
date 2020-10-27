@@ -199,7 +199,7 @@ class TestUpdateReference(unittest.TestCase):
         """test that after the update, the .dat file checksum is equal to that in the reference repo
          """
         update_me = check_update_needed(self.reference_local_path, log, skip_if_updated_today=False)
-        self.assertEqual(update_me, [])
+        self.assertTrue("KIR" not in update_me)
 
 
 class Test_1_Create_Project(unittest.TestCase):
