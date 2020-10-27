@@ -3,6 +3,9 @@
 ## 2.8.2.1 (2020-08-31)
 - several small bugfixes
 
+## 2.8.3 (2020-10-27)
+- ask for confirmation before submissions to ENA's productive server, to avoid accidental submissions (#170)
+
 ## 2.8.2 (2020-08-26)
 ### New Features:
 - Support for ENA Webin-CLI 3.1.0 (#154)
