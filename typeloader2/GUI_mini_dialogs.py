@@ -11,7 +11,7 @@ contains various small TypeLoader dialogs
 '''
 
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QFormLayout,
-                             QLabel, QLineEdit, QApplication)
+                             QLabel, QLineEdit, QApplication, QInputDialog)
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.Qt import QPushButton, QMessageBox
@@ -101,6 +101,7 @@ class ResetReferenceDialog(QDialog):
             self.parent = None
         else:
             self.parent = parent
+        self.testing = testing
         self.btn_dic = {}
         self.updated = []
         self.log.debug("Opened DowngradeReferenceDialog")
@@ -149,15 +150,25 @@ class ResetReferenceDialog(QDialog):
                                     "Please insert a version number, e.g., 3.39.0!")
             return
 
-        reply = QMessageBox.question(self, "Are you sure?",
-                                     f"This will reset the TypeLoader {db_name.upper()} reference for ALL your "
-                                     f"users!\nAre you sure you want to proceed?",
-                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No
-                                     )
-        if reply == QMessageBox.No:
-            self.log.info("\tUser chose to abort")
-            self.close()
-            return
+        if not self.testing:
+            reply = QMessageBox.question(self, "Are you sure?",
+                                         f"This will reset the TypeLoader {db_name.upper()} reference for ALL your "
+                                         f"users!\nAre you sure you want to proceed?",
+                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+                                         )
+            if reply == QMessageBox.No:
+                self.log.info("\tUser chose to abort")
+                self.close()
+                return
+
+            pwd, ok = QInputDialog.getText(self, "Enter Password", "Please provide password:", QLineEdit.Password)
+            if ok:
+                if pwd == "ichdarfdas":
+                    pass
+                else:
+                    return
+            else:
+                return
 
         dots = version.count(".")
         version = version.replace(".", "").replace("-", "").replace("_", "")
