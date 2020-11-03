@@ -10,7 +10,8 @@ contains various small TypeLoader dialogs
 @author: Bianca Schoene
 '''
 
-from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QLabel, QApplication)
+from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QFormLayout,
+                             QLabel, QLineEdit, QApplication)
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.Qt import QPushButton, QMessageBox
@@ -20,6 +21,7 @@ from shutil import copyfile
 
 import general
 from GUI_login import handle_reference_update
+from typeloader_functions import perform_reference_update
 
 
 # ===========================================================
@@ -29,6 +31,7 @@ from GUI_login import handle_reference_update
 class RefreshReferenceDialog(QDialog):
     """a dialog to allow manually refreshing the reference database
     """
+
     def __init__(self, settings, log, parent=None, testing=False):
         super().__init__(parent)
         self.settings = settings
@@ -87,6 +90,105 @@ class RefreshReferenceDialog(QDialog):
         self.close()
 
 
+class ResetReferenceDialog(QDialog):
+    """a dialog to allow manually resetting a reference database to a previous version
+    """
+    def __init__(self, settings, log, parent=None, testing=False):
+        super().__init__(parent)
+        self.settings = settings
+        self.log = log
+        if testing:
+            self.parent = None
+        else:
+            self.parent = parent
+        self.btn_dic = {}
+        self.updated = []
+        self.log.debug("Opened DowngradeReferenceDialog")
+
+        self.setWindowTitle("Reset reference to arbitrary version")
+        self.setWindowIcon(QIcon(general.favicon))
+        self.resize(300, 100)
+        self.init_UI()
+        self.setModal(True)
+        self.show()
+
+    def init_UI(self):
+        """establish and fill the UI
+        """
+        layout = QFormLayout(self)
+        self.setLayout(layout)
+
+        msg = "Would you like to reset any of TypeLoader's reference files to an earlier version?\n"
+        msg += "(This will take a minute or so. Please wait after clicking.)\n"
+        layout.addRow(QLabel(msg))
+
+        msg2 = "This will affect all users and may have unintended side effects!\nUse with care!"
+        lbl2 = QLabel(msg2)
+        lbl2.setStyleSheet(general.label_style_2nd)
+        layout.addRow(lbl2)
+
+        self.version_field = QLineEdit(self)
+        self.version_field.setWhatsThis("Enter any valid version of the target, e.g., '3.39.0' or '2.7.1'.")
+        layout.addRow(QLabel("Target version:"), self.version_field)
+
+        for text in ["HLA", "KIR"]:
+            btn = QPushButton(text, self)
+            btn.setCheckable(True)
+            btn.clicked.connect(self.update_reference)
+            self.btn_dic[text] = btn
+            layout.addRow(btn)
+
+    @pyqtSlot()
+    def update_reference(self):
+        """catches button clicked and updates reference accordingly
+        """
+        db_name = self.sender().text().lower()
+        version = self.version_field.text().strip()
+        if not version:
+            QMessageBox.information(self, "Missing version info",
+                                    "Please insert a version number, e.g., 3.39.0!")
+            return
+
+        reply = QMessageBox.question(self, "Are you sure?",
+                                     f"This will reset the TypeLoader {db_name.upper()} reference for ALL your "
+                                     f"users!\nAre you sure you want to proceed?",
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+                                     )
+        if reply == QMessageBox.No:
+            self.log.info("\tUser chose to abort")
+            self.close()
+            return
+
+        dots = version.count(".")
+        version = version.replace(".", "").replace("-", "").replace("_", "")
+
+        if not version.endswith("0") and dots < 2:
+            version += "0"
+
+        self.log.info(f"User chose to reset {db_name.upper()} to version {version}.")
+        blast_path = self.settings["blast_path"]
+        reference_local_path = os.path.join(self.settings["root_path"],
+                                            self.settings["general_dir"],
+                                            self.settings["reference_dir"])
+
+        success, err_type, msg = perform_reference_update(db_name, reference_local_path, blast_path, self.log,
+                                                          version=version)
+        self.log.info(msg.replace("\n", " "))
+        if success:
+            self.updated = True
+            msg2 = "Once you are done, please reset the reference back to the latest version, " \
+                   "either manually or by restarting TypeLoader!"
+
+            QMessageBox.information(self, "Database reset successfull", msg)
+            QMessageBox.information(self, "Please remember...", msg2)
+
+        else:
+            QMessageBox.information(self, "Database reset failed", msg)
+            self.log.info("Database reset failed.")
+
+        self.close()
+
+
 # ===========================================================
 # functions:
 
@@ -118,7 +220,7 @@ def main():
     app = QApplication(sys.argv)
     sys.excepthook = log_uncaught_exceptions
 
-    ex = RefreshReferenceDialog(settings_dic, log)
+    ex = ResetReferenceDialog(settings_dic, log)
     ex.show()
     result = app.exec_()
 
