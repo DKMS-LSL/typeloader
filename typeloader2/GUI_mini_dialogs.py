@@ -93,6 +93,7 @@ class RefreshReferenceDialog(QDialog):
 class ResetReferenceDialog(QDialog):
     """a dialog to allow manually resetting a reference database to a previous version
     """
+
     def __init__(self, settings, log, parent=None, testing=False):
         super().__init__(parent)
         self.settings = settings
@@ -139,17 +140,10 @@ class ResetReferenceDialog(QDialog):
             self.btn_dic[text] = btn
             layout.addRow(btn)
 
-    @pyqtSlot()
-    def update_reference(self):
-        """catches button clicked and updates reference accordingly
-        """
-        db_name = self.sender().text().lower()
-        version = self.version_field.text().strip()
-        if not version:
-            QMessageBox.information(self, "Missing version info",
-                                    "Please insert a version number, e.g., 3.39.0!")
-            return
+    def check_proceed(self, db_name):
+        """ check whether version is
 
+        """
         if not self.testing:
             reply = QMessageBox.question(self, "Are you sure?",
                                          f"This will reset the TypeLoader {db_name.upper()} reference for ALL your "
@@ -157,24 +151,51 @@ class ResetReferenceDialog(QDialog):
                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No
                                          )
             if reply == QMessageBox.No:
-                self.log.info("\tUser chose to abort")
                 self.close()
-                return
+                return False, "User chose to abort."
 
             pwd, ok = QInputDialog.getText(self, "Enter Password", "Please provide password:", QLineEdit.Password)
             if ok:
-                if pwd == "ichdarfdas":
-                    pass
-                else:
-                    return
+                if pwd != "ichdarfdas":
+                    return False, "Wrong password!"
             else:
-                return
+                return False, "Could not get password!"
+
+        return True, None
+
+    def handle_version_input(self, version):
+        if not version:
+            return False, "Missing version", "Please insert a version number, e.g., 3.39.0!"
 
         dots = version.count(".")
         version = version.replace(".", "").replace("-", "").replace("_", "")
 
+        try:
+            int(version)
+        except ValueError:
+            return False, "Invalid version", \
+                   "Version should only contain digits and up to 2 dots, like '2.7.0' or '3.39'!"
+
         if not version.endswith("0") and dots < 2:
             version += "0"
+        return True, version, None
+
+    @pyqtSlot()
+    def update_reference(self):
+        """catches button clicked and updates reference accordingly
+        """
+        db_name = self.sender().text().lower()
+        version = self.version_field.text().strip()
+
+        proceed, msg = self.check_proceed(db_name)
+        if not proceed:
+            self.log.info(f"\t{msg}")
+            return
+
+        version_ok, version, msg = self.handle_version_input(version)
+        if not version_ok:
+            QMessageBox.warning(self, version, msg)
+            return
 
         self.log.info(f"User chose to reset {db_name.upper()} to version {version}.")
         blast_path = self.settings["blast_path"]
@@ -186,16 +207,18 @@ class ResetReferenceDialog(QDialog):
                                                           version=version)
         self.log.info(msg.replace("\n", " "))
         if success:
-            self.updated = True
+            self.updated = version
             msg2 = "Once you are done, please reset the reference back to the latest version, " \
                    "either manually or by restarting TypeLoader!"
 
-            QMessageBox.information(self, "Database reset successfull", msg)
-            QMessageBox.information(self, "Please remember...", msg2)
+            if not self.testing:
+                QMessageBox.information(self, "Database reset successfull", msg)
+                QMessageBox.information(self, "Please remember...", msg2)
 
         else:
-            QMessageBox.information(self, "Database reset failed", msg)
             self.log.info("Database reset failed.")
+            if not self.testing:
+                QMessageBox.information(self, "Database reset failed", msg)
 
         self.close()
 

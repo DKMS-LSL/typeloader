@@ -158,13 +158,7 @@ def update_database(db_name, reference_local_path, blast_path, log, version=None
     os.makedirs(ref_path_temp, exist_ok=True)
 
     if version:
-        remote_db_file = remote_db_path_old_files["%s_path" % db_name]
-        try:
-            int(version)
-            remote_db_file = remote_db_file.replace("VERSION", version)
-        except ValueError:
-            msg = f"Could not find {db_name} version '{version}'. The version should be a 3-digit-number."
-            return False, msg
+        remote_db_file = remote_db_path_old_files["%s_path" % db_name].replace("VERSION", version)
     else:
         remote_db_file = remote_db_path["%s_path" % db_name]
 
