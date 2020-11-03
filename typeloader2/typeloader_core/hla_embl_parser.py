@@ -63,10 +63,12 @@ def read_dat_file(dat_file, target, log, isENA = False, verbose = False):
     """
     alleles = []
     version = ""
-    curr_release_pattern1 = "\(rel. (.*?), current release"
-    curr_release_regex1 = re.compile(curr_release_pattern1) 
-    curr_release_pattern2 = "\(rel. (.*?), last updated"
-    curr_release_regex2 = re.compile(curr_release_pattern2)
+    if target == "KIR":
+        curr_release_pattern1 = "\(rel. (.*?), current release"
+        curr_release_regex1 = re.compile(curr_release_pattern1)
+    else:
+        curr_release_pattern1 = "\(rel. (.*?), last updated"
+        curr_release_regex1 = re.compile(curr_release_pattern1)
 
     if verbose:
         log.info("Reading {}...".format(dat_file))
@@ -107,11 +109,10 @@ def read_dat_file(dat_file, target, log, isENA = False, verbose = False):
 
             elif line.startswith("DT"):
                 line = line.lower()
-                for regex in (curr_release_regex1, curr_release_regex2):
-                    match = regex.search(line)
-                    if match:
-                        version = match.groups()[0]
-                
+                match = curr_release_regex1.search(line)
+                if match:
+                    version = match.groups()[0]
+
             elif line.startswith("DE"):
                 s = line.split()
                 if target in ["HLA", "HLA_23_with_introns", "Phasing_HLA_23", "KIR"]:
