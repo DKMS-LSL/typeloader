@@ -96,7 +96,7 @@ class Allele:
 # functions:
 
 
-def perform_reference_update(db_name, reference_local_path, blast_path, log):
+def perform_reference_update(db_name, reference_local_path, blast_path, log, version=None):
     """call trigger reference update of a database
 
     :param db_name: HLA or KIR
@@ -112,15 +112,20 @@ def perform_reference_update(db_name, reference_local_path, blast_path, log):
 
     blast_dir = os.path.dirname(blast_path)
     try:
-        update_msg = update_reference.update_database(db_name, reference_local_path, blast_dir, log)
+        success, update_msg = update_reference.update_database(db_name, reference_local_path, blast_dir, log,
+                                                               version=version)
     except Exception as E:
-        log.error("Reference update failed!")
-        log.exception(E)
+        log.exception("Reference update failed!")
         general.play_sound()
         msg = f"Could not update the reference database(s). Please try again!\n\nError: {repr(E)}"
         return False, "Reference update failed", msg
 
-    return True, None, update_msg
+    if success:
+        err = None
+    else:
+        err = "Reference update failed"
+
+    return success, err, update_msg
 
 
 def toggle_project_status(proj_name, curr_status, log, values=["Open", "Closed"],
