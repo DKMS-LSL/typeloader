@@ -583,6 +583,8 @@ class IPDSubmissionForm(CollapsibleDialog):
             self.befund_widget.field.setText(pretypings_file)
             self.fake_btn.setStyleSheet(general.btn_style_normal)
             self.ok_btn2.check_ready()
+        else:
+            QMessageBox.warning(self, ena_file, pretypings_file)
 
     @pyqtSlot()
     def get_pretypings(self):
