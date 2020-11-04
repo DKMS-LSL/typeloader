@@ -344,6 +344,12 @@ class MainGUI(QMainWindow):
         ref_act.setStatusTip("Manually trigger a refresh of TypeLoader's reference files.")
         self.options_menu.addAction(ref_act)
 
+        reset_act = QAction("R&eset Reference to previous version", self.options_menu)
+        reset_act.setShortcut('Ctrl+E')
+        reset_act.triggered.connect(self.open_ResetReferenceDialog)
+        reset_act.setStatusTip("Reset one of TypeLoader's reference files to an older database version.")
+        self.options_menu.addAction(reset_act)
+
     #         # generate status report:
     #         report_status_act = QAction('Generate status report', self)
     #         report_status_act.setShortcut('Ctrl+R')
@@ -430,6 +436,11 @@ class MainGUI(QMainWindow):
         """opens the 'RefreshReference' dialog
         """
         GUI_mini_dialogs.RefreshReferenceDialog(self.settings, self.log, self)
+
+    def open_ResetReferenceDialog(self):
+        """opens the 'ResetReference' dialog
+        """
+        GUI_mini_dialogs.ResetReferenceDialog(self.settings, self.log, self)
 
     def on_projects_changed(self):
         """when a new project has been created or a project been deleted,

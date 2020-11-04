@@ -169,6 +169,61 @@ class Test_0_Clean_Stuff_initial(unittest.TestCase):
             pass
 
 
+class TestResetReferenceManually(unittest.TestCase):
+    """test whether manual reference resets work
+    """
+
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping reference reset test because skip_other_tests is set to True")
+
+        self.form = GUI_mini_dialogs.ResetReferenceDialog(curr_settings, log, parent=None, testing=True)
+        self.target = "KIR"
+        self.target_version = "2.7.1"
+        self.target_version_after_update = "271"
+        self.reference_local_path = os.path.join(curr_settings["root_path"],
+                                                 curr_settings["general_dir"],
+                                                 curr_settings["reference_dir"])
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test01_version_handling(self):
+        """test that version input is handled correctly
+         """
+        scenarios = [("", False, "Missing version", "Please insert a version number, e.g., 3.39.0!"),
+                     ("39b", False, "Invalid version",
+                      "Version should only contain digits and up to 2 dots, like '2.7.0' or '3.39'!"),
+                     ("2.7.0", True, "270", None),
+                     ("27", True, "270", None),
+                     ("2.7.1", True, "271", None),
+                     ("2.7", True, "270", None),
+                     ("2-7", True, "270", None),
+                     ("2_7", True, "270", None),
+                     ]
+        for (version_org, success, exp_version, exp_msg) in scenarios:
+            version_ok, new_version, msg = self.form.handle_version_input(version_org)
+            self.assertEqual(version_ok, success)
+            self.assertEqual(new_version, exp_version)
+            self.assertEqual(msg, exp_msg)
+
+    def test02_confirmation_handling(self):
+        """test that confirmation handling is correct
+         """
+        # TODO: check actual input
+        proceed, msg = self.form.check_proceed(self.target)
+        self.assertTrue(proceed)
+        self.assertEqual(msg, None)
+
+    def test03_happy_path(self):
+        self.form.version_field.setText(self.target_version)
+        self.form.btn_dic[self.target].click()
+        self.assertEqual(self.form.updated, self.target_version_after_update)
+
+
+
 class TestUpdateReference(unittest.TestCase):
     """test whether reference updates work
     """
@@ -530,7 +585,7 @@ class Test_Create_New_Allele(unittest.TestCase):
                                               "Can't get information from {}",
                                               "ALLELES")
 
-        query = "SELECT * from ALLELES"
+        query = "select * from alleles"
         success, data_content = execute_db_query(query,
                                                  len(data_info),
                                                  log,
@@ -591,7 +646,7 @@ class Test_Create_New_Allele(unittest.TestCase):
                                               "Can't get information from {}",
                                               "FILES")
 
-        query = "SELECT * from FILES"
+        query = "select * from files"
         success, data_content = execute_db_query(query,
                                                  len(data_info),
                                                  log,
@@ -634,7 +689,7 @@ class Test_Create_New_Allele(unittest.TestCase):
                                               "Can't get information from {}",
                                               "SAMPLES")
 
-        query = "SELECT * from SAMPLES"
+        query = "select * from samples"
         success, data_content = execute_db_query(query,
                                                  len(data_info),
                                                  log,
@@ -786,7 +841,7 @@ class Test_Send_To_ENA(unittest.TestCase):
                                               "Can't get information from {}",
                                               "ENA_SUBMISSIONS")
         self.assertTrue(success)
-        query = "SELECT * from ENA_SUBMISSIONS"
+        query = "select * from ena_submissions"
         success, data_content = execute_db_query(query,
                                                  len(data_info),
                                                  log,
@@ -831,7 +886,7 @@ class Test_Send_To_IMGT(unittest.TestCase):
         if skip_other_tests:
             self.skipTest(self, "Skipping Submission to IPD because skip_other_tests is set to True")
         else:
-            query = "SELECT project_name from projects"
+            query = "select project_name from projects"
             success, data_content = execute_db_query(query,
                                                      1,
                                                      log,
@@ -885,7 +940,7 @@ class Test_Send_To_IMGT(unittest.TestCase):
         self.assertEqual(self.form.project_files.item(0, 2).text(), samples_dic["sample_1"]["id_int"])
         self.assertEqual(self.form.project_files.item(0, 3).text(), samples_dic["sample_1"]["local_name"])
         self.assertEqual(self.form.project_files.item(0, 4).text(), "ENA submitted")
-        query = "SELECT * from ENA_SUBMISSIONS"
+        query = "select * from ena_submissions"
         success, data_content = execute_db_query(query,
                                                  2,
                                                  log,
@@ -902,7 +957,7 @@ class Test_Send_To_IMGT(unittest.TestCase):
         """
         Test if ALLELES have been updated correctly
         """
-        query = "SELECT * from ENA_SUBMISSIONS"
+        query = "select * from ena_submissions"
         success, data_content_ena = execute_db_query(query,
                                                      2,
                                                      log,
@@ -911,7 +966,7 @@ class Test_Send_To_IMGT(unittest.TestCase):
                                                      "Can't get rows from {}",
                                                      "ENA_SUBMISSIONS")
 
-        query = "SELECT * from IPD_SUBMISSIONS"
+        query = "select * from ipd_submissions"
         success, data_content_ipd = execute_db_query(query,
                                                      5,
                                                      log,
@@ -929,7 +984,7 @@ class Test_Send_To_IMGT(unittest.TestCase):
                                               "Can't get information from {}",
                                               "ALLELES")
 
-        query = "SELECT * from ALLELES"
+        query = "select * from alleles"
         success, data_content = execute_db_query(query,
                                                  len(data_info),
                                                  log,
@@ -954,7 +1009,7 @@ class Test_Send_To_IMGT(unittest.TestCase):
         self.assertEqual(data_content[0][14], "completed")  # lab_status
         self.assertEqual(data_content[0][24], samples_dic["sample_1"]["target_allele"])  # target_allele
         self.assertEqual(data_content[0][31], "IPD-KIR")  # reference_database
-        self.assertEqual(data_content[0][32], "2.8.0")  # database_version
+        self.assertEqual(data_content[0][32], "2.9.0")  # database_version
         self.assertEqual(data_content[0][36], data_content_ena[0][1])  # ena_submission_id
         self.assertEqual(data_content[0][38], "LT986596")  # ena accession number: LTxxxxxx
         self.assertEqual(data_content[0][39], data_content_ipd[0][0])  # ipd_submission_id
@@ -991,7 +1046,7 @@ class Test_Send_To_IMGT(unittest.TestCase):
         Test the written IPD file (KIR3DP1 in this case) in the submissions directory
         """
 
-        query = "SELECT * from IPD_SUBMISSIONS"
+        query = "select * from ipd_submissions"
         success, data_content_ipd = execute_db_query(query,
                                                      1,
                                                      log,

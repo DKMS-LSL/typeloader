@@ -19,12 +19,17 @@ else:
 remote_db_path = {
     "hla_path": "https://github.com/DKMS-LSL/IMGTHLA/raw/Latest/hla.dat",
     "kir_path": "https://github.com/DKMS-LSL/IPDKIR/raw/Latest/KIR.dat"
-    }
+}
+
+remote_db_path_old_files = {
+    "hla_path": "https://media.githubusercontent.com/media/ANHIG/IMGTHLA/VERSION/hla.dat",
+    "kir_path": "https://raw.githubusercontent.com/ANHIG/IPDKIR/VERSION/KIR.dat"
+}
 
 remote_checksumfile_index = {
     "kir_checksums_file": "https://raw.githubusercontent.com/DKMS-LSL/IPDKIR/Latest/md5checksum.txt",
     "hla_checksums_file": "https://raw.githubusercontent.com/DKMS-LSL/IMGTHLA/Latest/md5checksum.txt"
-    }
+}
 
 
 def local_file_from_today(local_ref_file, log):
@@ -140,7 +145,7 @@ def check_database(db_name, reference_local_path, log, skip_if_updated_today=Tru
     return True, msg
 
 
-def update_database(db_name, reference_local_path, blast_path, log):
+def update_database(db_name, reference_local_path, blast_path, log, version=None):
     """updates a reference database
     """
     log.info("Retrieving new database version for {}...".format(db_name))
@@ -152,12 +157,21 @@ def update_database(db_name, reference_local_path, blast_path, log):
     ref_path_temp = os.path.join(reference_local_path, "temp")
     os.makedirs(ref_path_temp, exist_ok=True)
 
-    remote_db_file = remote_db_path["%s_path" % db_name]
+    if version:
+        remote_db_file = remote_db_path_old_files["%s_path" % db_name].replace("VERSION", version)
+    else:
+        remote_db_file = remote_db_path["%s_path" % db_name]
+
     log.debug(f"\tdownloading new file from {remote_db_file}...")
     local_db_file = os.path.join(ref_path_temp, "%s.dat" % use_dbname)
-    with urllib.request.urlopen(remote_db_file, timeout=10) as db_response, open(local_db_file, "wb") as db_local:
-        shutil.copyfileobj(db_response, db_local)
-        log.debug("\t => successfully downloaded new {} file".format(db_name))
+    try:
+        with urllib.request.urlopen(remote_db_file, timeout=10) as db_response, open(local_db_file, "wb") as db_local:
+            shutil.copyfileobj(db_response, db_local)
+            log.debug("\t => successfully downloaded new {} file".format(db_name))
+    except urllib.error.HTTPError:
+        msg = f"Sorry, could not find file {remote_db_file}!\n\n" \
+              f"Possibly, version {version} of {db_name.upper()} does not exist?"
+        return False, msg
 
     log.debug("\tCreating parsed files...")
     version = hla_embl_parser.make_parsed_files(use_dbname, ref_path_temp, log)
@@ -173,7 +187,7 @@ def update_database(db_name, reference_local_path, blast_path, log):
         update_msg += f"but could not process it (see below). We'll continue to use the old files for now.\n\n{msg}"
 
     log.info(update_msg)
-    return update_msg
+    return success, update_msg
 
 
 def make_restricted_db(db_name, ref_path, restricted_to, target_dir, blast_path, log):
@@ -288,7 +302,7 @@ def main():
     for db_name in db_list:
         new_version, msg = check_database(db_name, reference_local_path, log, skip_if_updated_today=False)
         if new_version:
-            update_msg = update_database(db_name, reference_local_path, blast_path, log)
+            success, update_msg = update_database(db_name, reference_local_path, blast_path, log)
 
     log.info("<End>")
 
@@ -298,7 +312,5 @@ if __name__ == '__main__':
     log.info("<Start>")
     blast_path = r"C:\Daten\local_tools\blast\bin"
     reference_local_path = r"C:\Daten\local_data\TypeLoader\_general\reference_data"
-    restricted_to = ["HLA-B*07:386N", "HLA-B*35:03:01:01"]
-    target_dir = r"C:\Daten\local_data\TypeLoader\_general\ref_data_restricted"
-    make_restricted_db("hla", reference_local_path, restricted_to, target_dir, blast_path, log)
-    # update_msg = update_database("hla", reference_local_path, blast_path, log)
+
+    success, msg = update_database("hla", reference_local_path, blast_path, log, version="3390")
