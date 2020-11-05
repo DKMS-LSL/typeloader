@@ -15,7 +15,7 @@ contains classes and functions for login & user handling functionality
 import os, sys, shutil, logging, platform, urllib
 from configparser import ConfigParser
 from PyQt5.QtWidgets import (QApplication, QDialog, QFormLayout,
-                             QMessageBox, QLabel, QPushButton,  
+                             QMessageBox, QLabel, QPushButton,
                              QLineEdit, QStyleFactory)
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtGui import QIcon
@@ -27,7 +27,7 @@ from typeloader_core import update_reference
 from GUI_forms import ProceedButton
 from PyQt5.Qt import QMessageBox
 
-#===========================================================
+# ===========================================================
 # parameters:
 base_config_file = "config_base.ini"
 raw_config_file = "config_raw.ini"
@@ -37,13 +37,15 @@ local_patchme_file = os.path.join("_general", "additional.ini")
 
 __version__ = general.read_package_variable("__version__")
 
-#===========================================================
+
+# ===========================================================
 # classes:
 
 class NewUserForm(QDialog):
     """a dialog to add a new user
     """
-    def __init__(self, log, root_path, parent = None):
+
+    def __init__(self, log, root_path, parent=None):
         super().__init__(parent)
         self.log = log
         self.root_path = root_path
@@ -53,43 +55,43 @@ class NewUserForm(QDialog):
         self.init_UI()
         self.show()
         self.check_test_user()
-        
+
     def init_UI(self):
         layout = QFormLayout(self)
         lbl = QLabel("Create new user:")
         lbl.setStyleSheet(general.label_style_main)
         layout.addRow(lbl)
-        
+
         self.user_field = QLineEdit(self)
         layout.addRow(QLabel("User name:"), self.user_field)
-        
+
         self.pwd_field = QLineEdit(self)
         self.pwd_field.setEchoMode(QLineEdit.Password)
         layout.addRow(QLabel("Password:"), self.pwd_field)
-        
+
         self.add_field = QLineEdit(self)
         self.add_field.setPlaceholderText("Dr.")
         layout.addRow(QLabel("Form of address:"), self.add_field)
-        
+
         self.name_field = QLineEdit(self)
         layout.addRow(QLabel("Full Name:"), self.name_field)
-        
+
         self.short_field = QLineEdit(self)
         self.short_field.setPlaceholderText("(optional)")
         layout.addRow(QLabel("Initials:"), self.short_field)
-        
+
         self.email_field = QLineEdit(self)
         layout.addRow(QLabel("Email:"), self.email_field)
-        
+
         fields = [self.user_field, self.name_field, self.pwd_field, self.email_field]
-        ok_btn = ProceedButton("Create user!", items = fields, log = self.log, parent = self)
+        ok_btn = ProceedButton("Create user!", items=fields, log=self.log, parent=self)
         for item in fields:
             item.textChanged.connect(ok_btn.check_ready)
         ok_btn.proceed.connect(self.make_new_user)
         layout.addRow(ok_btn)
-    
+
     @pyqtSlot()
-    def make_new_user(self, _ = None):
+    def make_new_user(self, _=None):
         """adds user to user_dic
         """
         try:
@@ -102,11 +104,11 @@ class NewUserForm(QDialog):
             if not self.address:
                 self.address = "Dr."
             self.email = self.email_field.text().strip()
-            
-            if not self.short: # make initials
+
+            if not self.short:  # make initials
                 for word in self.name.split():
                     self.short += word[0].upper()
-            
+
             try:
                 self.user_db.add_user(self.login, self.pwd)
                 self.accept()
@@ -116,10 +118,10 @@ class NewUserForm(QDialog):
         except Exception as E:
             self.log.error(E)
             self.log.exception(E)
-            QMessageBox.warning(self, "Cannot create user", 
+            QMessageBox.warning(self, "Cannot create user",
                                 "An error occurred while creating user '{}':\n\n{}".format(repr(E)))
             return False
-        
+
     def check_test_user(self):
         """checks whether a test user already exists; if not, shows popup asking to create one
         """
@@ -138,11 +140,12 @@ class NewUserForm(QDialog):
             msg += "With a test account, you can try all of TypeLoader's functionality safely."
             msg += "\n\nFor more info, please check the user manual at\nhttps://github.com/DKMS-LSL/typeloader/blob/master/user_manual/users_test.md"
             QMessageBox.information(self, "No test user found, yet!", msg)
-    
+
 
 class LoginForm(QDialog):
     """A simple user login dialog
     """
+
     def __init__(self, log, parent=None):
         super().__init__(parent)
         self.log = log
@@ -156,35 +159,36 @@ class LoginForm(QDialog):
         cf.read(base_config_file)
         self.root_path = cf.get("Paths", "root_path")
         log.debug("root path: {}".format(self.root_path))
-        
+
         pickle_file = os.path.join(self.root_path, "_general", "user.pickle")
         log.debug("pickle_file: {}".format(pickle_file))
         self.user_db = user.User(os.path.join(pickle_file))
-        
+
         self.init_UI()
         self.check_latest_version(self.log)
         self.check_module_versions()
-        
+
     def init_UI(self):
         layout = QFormLayout(self)
-        
+
         lbl = QLabel("Welcome to TypeLoader!")
         lbl.setStyleSheet(general.label_style_main)
         layout.addRow(lbl)
-        
+
         self.user_field = QLineEdit(self)
         layout.addRow(QLabel("User name:"), self.user_field)
-        
+
         self.pwd_field = QLineEdit(self)
         self.pwd_field.setEchoMode(QLineEdit.Password)
         layout.addRow(QLabel("Password:"), self.pwd_field)
-        
+
         self.login_btn = QPushButton('Login', self)
         layout.addRow(self.login_btn)
         self.login_btn.clicked.connect(self.handle_login)
-        
+
         self.remove_lock_btn = QPushButton("Remove user lock", self)
-        self.remove_lock_btn.setWhatsThis("If your login is blocked because the GUI crashed during the last run, you can remove the lock here.")
+        self.remove_lock_btn.setWhatsThis(
+            "If your login is blocked because the GUI crashed during the last run, you can remove the lock here.")
         layout.addRow(self.remove_lock_btn)
         self.remove_lock_btn.clicked.connect(self.remove_lock)
         self.remove_lock_btn.setEnabled(False)
@@ -204,27 +208,27 @@ class LoginForm(QDialog):
                 if not locked:
                     self.log.info("Hello, user {}!".format(self.login))
                     self.accept()
-                    
+
         except Exception as E:
             self.log.exception(E)
             QMessageBox.warning(self, "login error",
-                        "An error occured during login: \n\n{}".format(repr(E)))
-    
+                                "An error occured during login: \n\n{}".format(repr(E)))
+
     def check_login(self):
         """checks whether login data is ok
         """
         ok = False
-        self.login= self.user_field.text().strip()
+        self.login = self.user_field.text().strip()
         self.pwd = self.pwd_field.text().strip()
-        
+
         if self.user_db.authenticate_user(self.login, self.pwd):
             ok = True
-        
+
         if not ok:
             self.handle_bad_login()
-        
+
         return ok
-            
+
     def handle_bad_login(self):
         self.log.info("Bad username or password")
         msgBox = QMessageBox()
@@ -235,24 +239,27 @@ class LoginForm(QDialog):
         msgBox.addButton(QPushButton('Ok'), QMessageBox.YesRole)
         msgBox.addButton(QPushButton('Reset Password'), QMessageBox.ActionRole)
         ret = msgBox.exec_()
-    
-        if ret == 1: # if reset password
+
+        if ret == 1:  # if reset password
             self.log.info("Password reset requested. Are you sure?")
-            reply = QMessageBox.question(self, "Password Reset", 
+            reply = QMessageBox.question(self, "Password Reset",
                                          "Are you sure you want to reset your password to nothing?",
                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-    
+
             if reply == QMessageBox.Yes:
                 if self.login in self.user_db.all_credentials:
                     self.log.info("Resetting password for user {}...".format(self.login))
-                    
+
                     self.user_db.modify_user(self.login, "")
-                    QMessageBox.information(self, "Password was reset", "Your password was reset to empty. You can now login without password.\nAfter logging in, please use the settings dialog to change your password again!")
+                    QMessageBox.information(self, "Password was reset",
+                                            "Your password was reset to empty. You can now login without password.\nAfter logging in, please use the settings dialog to change your password again!")
                 else:
-                    QMessageBox.warning(self, "Unknown user", "User name {} does not exist. Please use the 'Create new user' button to create it!".format(self.login))
+                    QMessageBox.warning(self, "Unknown user",
+                                        "User name {} does not exist. Please use the 'Create new user' button to create it!".format(
+                                            self.login))
             else:
                 self.log.info("Keeping password unchanged")
-    
+
     @pyqtSlot()
     def handle_new_user(self):
         """starts NewUserForm dialog to catch data for a new user
@@ -267,31 +274,31 @@ class LoginForm(QDialog):
                 self.short = dialog.short
                 self.address = dialog.address
                 self.email = dialog.email
-            
+
                 # if self.login == "admin":
                 #     QMessageBox.warning(self, "User creation error",
                 #             "Username 'admin' is restricted. Please use something else!")
                 #     return
-                
-                success = create_user_space(self.root_path, self.login, self.name, 
+
+                success = create_user_space(self.root_path, self.login, self.name,
                                             self.short, self.email, self.address, self.log)
                 if not success:
-                    QMessageBox.warning(self, "User creation error", 
-                            "Cannot create user path because it already exists!")
+                    QMessageBox.warning(self, "User creation error",
+                                        "Cannot create user path because it already exists!")
                     return
-            
+
                 self.log.debug("=> created user {}".format(self.login))
                 self.accept()
             else:
                 QMessageBox.warning(
                     self, 'Error', 'Could not create new user')
-                
+
         except Exception as E:
             self.log.error(E)
             self.log.exception(E)
             QMessageBox.warning(
                 self, 'New user error', 'An error occurred while trying to create a new user:\n\n{}'.format(repr(E)))
-    
+
     @pyqtSlot()
     def check_lock(self):
         """checks whether this login is currently in use;
@@ -299,7 +306,7 @@ class LoginForm(QDialog):
         """
         self.log.debug("Checking lock for user {}...".format(self.login))
         locked = False
-        if self.login == "staging": # staging user has different paths depending on the os used
+        if self.login == "staging":  # staging user has different paths depending on the os used
             cf, _, myos = get_raw_settings("staging", self.log)
             if myos == "Windows":
                 self.root_path = cf.get("Paths", "staging_path_windows")
@@ -314,18 +321,18 @@ class LoginForm(QDialog):
             QMessageBox.warning(self, "Locked", msg)
             locked = True
             self.remove_lock_btn.setEnabled(True)
-        else: 
+        else:
             locked = False
             self.log.debug("=> Login is available, proceeding...")
-            #create lockfile
+            # create lockfile
             try:
                 with open(self.lockfile, "w") as _:
                     os.utime(self.lockfile)
             except Exception as E:
                 self.log.warning("Could not create lockfile under {}: {}".format(self.lockfile, repr(E)))
-    
+
         return locked
-    
+
     @pyqtSlot()
     def remove_lock(self):
         """removes the lockfile if it remained after a GUI crash
@@ -335,14 +342,14 @@ class LoginForm(QDialog):
         if login_ok:
             if os.path.isfile(self.lockfile):
                 reply = QMessageBox.question(self, 'Remove lock?',
-                "Are you sure you want to remove user '{}''s lockfile? \n\n(Only use this if you're sure the lock is there because TypeLoader crashed during your last session!)".format(self.login), QMessageBox.Yes | 
-                                                                QMessageBox.No, QMessageBox.Yes)
+                                             "Are you sure you want to remove user '{}''s lockfile? \n\n(Only use this if you're sure the lock is there because TypeLoader crashed during your last session!)".format(
+                                                 self.login), QMessageBox.Yes |
+                                             QMessageBox.No, QMessageBox.Yes)
                 if reply == QMessageBox.Yes:
                     self.log.info("Removing lock from user '{}'...".format(self.login))
                     self.accept()
                 else:
                     self.log.info("Not removing lock.")
-
 
     def check_latest_version(self, log):
         """checks whether current version is up to date;
@@ -357,7 +364,6 @@ class LoginForm(QDialog):
             else:
                 QMessageBox.warning(self, error, msg)
 
-
     def check_module_versions(self):
         """for 3rd party modules where it matters, check whether the necessary version is installed
         """
@@ -368,7 +374,7 @@ class LoginForm(QDialog):
             QMessageBox.warning(self, "Python module out of date!", msg)
 
 
-#===========================================================
+# ===========================================================
 # functions:
 
 def make_new_settings(root_path, user, user_name, short_name, email, address,
@@ -385,7 +391,7 @@ def make_new_settings(root_path, user, user_name, short_name, email, address,
     # concatenate raw user config with company config:
     with open(user_ini, "w") as g:
         config = ConfigParser()  # user config, to be created
-        
+
         config_read = ConfigParser()  # read source config
         for myfile in [raw_config_file, company_config_file]:
             log.debug(os.path.abspath(myfile))
@@ -395,7 +401,7 @@ def make_new_settings(root_path, user, user_name, short_name, email, address,
                     config.add_section(section)
                 for (key, value) in config_read.items(section):
                     config.set(section, key, value)
-        
+
         if user.lower().startswith("test") or user.lower() == "admin":
             log.info("This is a TEST user.")
             config.set("Other", "use_ena_server", "TEST")
@@ -406,33 +412,33 @@ def make_new_settings(root_path, user, user_name, short_name, email, address,
             config.set("Other", "use_ena_server", "PROD")
             config.set("Other", "modus", "productive")
             config.set("ENA", "embl_submission", config.get("ENA", "embl_submission_prod"))
-            
+
         config.add_section("Paths")
-        config.set("Paths", "raw_files_path", "")        
+        config.set("Paths", "raw_files_path", "")
         config.set("Paths", "default_saving_dir", "")
-        
+
         cf = get_basic_cf(log)
         config.set("Paths", "root_path", root_path)
         config.set("Paths", "blast_path", cf.get("Paths", "blast_path"))
-        
+
         # add user paths:
         user_dir = os.path.join(root_path, user)
         log.debug("Preparing user dir under {}".format(user_dir))
-        config.set("Paths", "login_dir", user_dir) 
+        config.set("Paths", "login_dir", user_dir)
         projects_dir = os.path.join(user_dir, "projects")
-        config.set("Paths", "projects_dir", projects_dir) 
-        config.set("Paths", "temp_dir", os.path.join(user_dir, "temp")) 
-        config.set("Paths", "recovery_dir", os.path.join(user_dir, "recovery")) 
-        config.set("Paths", "db_file", os.path.join(user_dir, "data.db")) 
-        config.set("Paths", "dat_path", root_path) 
-        
+        config.set("Paths", "projects_dir", projects_dir)
+        config.set("Paths", "temp_dir", os.path.join(user_dir, "temp"))
+        config.set("Paths", "recovery_dir", os.path.join(user_dir, "recovery"))
+        config.set("Paths", "db_file", os.path.join(user_dir, "data.db"))
+        config.set("Paths", "dat_path", root_path)
+
         # add user section:
         config.add_section("User")
-        config.set("User", "login", user) 
-        config.set("User", "user_name", user_name) 
-        config.set("User", "short_name", short_name) 
-        config.set("User", "email", email) 
-        config.set("User", "address_form", address) 
+        config.set("User", "login", user)
+        config.set("User", "user_name", user_name)
+        config.set("User", "short_name", short_name)
+        config.set("User", "email", email)
+        config.set("User", "address_form", address)
 
         # add patchme values:
         config_read.read(os.path.join(root_path, local_patchme_file))
@@ -441,7 +447,7 @@ def make_new_settings(root_path, user, user_name, short_name, email, address,
                 config.add_section(section)
             for (key, value) in config_read.items(section):
                 config.set(section, key, value)
-        config.write(g) 
+        config.write(g)
     log.info("\t=> Done!")
     return user_ini
 
@@ -456,7 +462,7 @@ def get_basic_cf(log=None):
     return cf
 
 
-def get_raw_settings(user, log, cf = None):
+def get_raw_settings(user, log, cf=None):
     """reads settings from user's config_file
     """
     if not cf:
@@ -475,27 +481,27 @@ def get_raw_settings(user, log, cf = None):
     user_cf_file = os.path.join(root_path, user, ini_file)
     cf.read(user_cf_file)
     return cf, user_cf_file, myos
-    
-    
-def get_settings(user, log, cf = None):
+
+
+def get_settings(user, log, cf=None):
     """translates user's read config file into settings_dic 
     """
     log.info("Loading user settings...")
     cf, user_cf_file, myos = get_raw_settings(user, log, cf)
-    
+
     if not os.path.isfile(user_cf_file):
         log.error("\tUser settings file {} not found!".format(user_cf_file))
         return None
-    
-    settings_dic = {"user_cf" : user_cf_file, # user's config file
-                    "os" : myos # current operating system
-                    } 
+
+    settings_dic = {"user_cf": user_cf_file,  # user's config file
+                    "os": myos  # current operating system
+                    }
     for section in cf.sections():
         for (key, value) in cf.items(section):
             settings_dic[key] = value.strip()
     if settings_dic["modus"] in ["testing", "debugging"]:
         settings_dic["embl_submission"] = settings_dic["embl_submission_test"]
-    for key in ["ipd_shortname", "cell_line_token"]: # if these were not set during install
+    for key in ["ipd_shortname", "cell_line_token"]:  # if these were not set during install
         if not key in settings_dic:
             settings_dic[key] = ""
         elif settings_dic[key] == "a short acronym of your company; use only letters or hyphens!":
@@ -515,17 +521,17 @@ def get_settings(user, log, cf = None):
 
     log.info("\t=>Success")
     return settings_dic
-    
+
 
 def create_user_space(root_path, user, user_name, short_name, email, address, log):
     """creates folders and empty db for new user
     """
     user_dir = os.path.join(root_path, user)
     log.debug("Creating user dir under {}".format(user_dir))
-    os.makedirs(user_dir, exist_ok = True)
+    os.makedirs(user_dir, exist_ok=True)
     make_new_settings(root_path, user, user_name, short_name, email, address, log)
     settings_dic = get_settings(user, log)
-    
+
     log.info("Creating new user space...")
     try:
         os.makedirs(settings_dic["projects_dir"])
@@ -536,7 +542,7 @@ def create_user_space(root_path, user, user_name, short_name, email, address, lo
             log.warning("Lockfile {} already exists! This should not be!".format(lockfile))
         with open(lockfile, "w") as _:
             os.utime(lockfile)
-            
+
         log.info("Creating empty database...")
         db_internal.make_clean_db(settings_dic["db_file"], log)
         return True
@@ -566,7 +572,7 @@ def dump_db(curr_time, settings_dic, log):
     shutil.copy(db_file, db_file_temp)
 
 
-def handle_reference_update(update_me, reference_local_path, blast_path, parent, log):
+def handle_reference_update(update_me, reference_local_path, blast_path, parent, settings, log):
     """performs the reference update for all references given in upate_me, passes results to user as QMessageBox
 
     :param update_me: list of references to update (can contain "HLA", "KIR" or both)
@@ -647,11 +653,11 @@ def check_for_reference_updates(log, settings, parent):
 def startup(user, curr_time, log):
     """performs startup actions 
     (between 'login accepted' and 'main window start')
-    """ 
+    """
     settings_dic = get_settings(user, log)
     start_logfile(log, settings_dic, curr_time)
     dump_db(curr_time, settings_dic, log)
-    
+
     return settings_dic
 
 
@@ -675,8 +681,8 @@ def get_latest_version(myurl, repo, log):
                     log.debug("\t\t!Did not find a quote delimiter in the version line!")
     except Exception as E:
         print(E)
-        log.exception(E)   
-             
+        log.exception(E)
+
     if version:
         log.debug("\t\tlatest version on GitHub: {}".format(version))
         return version, msg
@@ -695,7 +701,7 @@ def check_for_newer_version(myurl, repo, log):
     newer_version = False
     error = None
     latest_version, msg = get_latest_version(myurl, repo, log)
-    if not latest_version: # could not get current version from github
+    if not latest_version:  # could not get current version from github
         error = "NewVersion Error"
         return newer_version, error, msg
     else:
@@ -709,8 +715,8 @@ def check_for_newer_version(myurl, repo, log):
         else:
             log.info(f"\t=> You are currently using {__version__}, the newest available version of TypeLoader. :)")
             return newer_version, error, False
-    
-    
+
+
 def log_uncaught_exceptions(cls, exception, tb):
     """reimplementation of sys.excepthook;
     catches uncaught exceptions, logs them and exits the app
@@ -718,16 +724,16 @@ def log_uncaught_exceptions(cls, exception, tb):
     import traceback
     from PyQt5.QtCore import QCoreApplication
     log.critical('{0}: {1}'.format(cls, exception))
-    log.exception(msg = "Uncaught Exception", exc_info = (cls, exception, tb))
-    #TODO: (future) maybe find a way to display the traceback only once, both in console and logfile?
+    log.exception(msg="Uncaught Exception", exc_info=(cls, exception, tb))
+    # TODO: (future) maybe find a way to display the traceback only once, both in console and logfile?
     sys.__excepthook__(cls, exception, traceback)
-    QCoreApplication.exit(1)   
+    QCoreApplication.exit(1)
 
 
 def config_files_missing():
     """checks whether the config files exist
     """
-    for myfile in [base_config_file, company_config_file]: 
+    for myfile in [base_config_file, company_config_file]:
         if not os.path.isfile(myfile):
             print(os.path.abspath(myfile))
             raise IOError("File {} does not exist! Please create it before trying again!\nAborting...".format(myfile))
@@ -752,11 +758,11 @@ def check_root_path(root_path):
     """checks whether root_path and '_general' subdir was already created 
     (should happen during setup, but sometimes doesn't due to missing privileges),
     if not, creates them
-    """  
+    """
     import errno
     general_dir = os.path.join(root_path, "_general")
     counter_config = os.path.join(general_dir, "counter_config.ini")
-        
+
     if os.path.isdir(general_dir):
         if os.path.isfile(counter_config):
             return
@@ -775,36 +781,38 @@ def check_root_path(root_path):
             if e.errno != errno.EEXIST:  # if dir creation fails for any reason except "dir exists already"
                 raise
 
+
 pass
-#===========================================================
+# ===========================================================
 # main:
-    
+
 if __name__ == '__main__':
     from typeloader_GUI import create_connection, close_connection, MainGUI, remove_lock
+
     log = general.start_log(level="DEBUG")
     log.info("<Start {}>".format(os.path.basename(__file__)))
     sys.excepthook = log_uncaught_exceptions
-    
-#     generate_inis(log)
-    
+
+    #     generate_inis(log)
+
     app = QApplication(sys.argv)
     app.setStyle(QStyleFactory.create("Fusion"))
-      
+
     login = LoginForm(log)
     result = None
     if login.exec_() == QDialog.Accepted:
         user = login.login
         settings_dic = get_settings(user, log)
         db_file = settings_dic["db_file"]
-           
-        mydb = create_connection(log, db_file) 
-   
+
+        mydb = create_connection(log, db_file)
+
         ex = MainGUI(mydb, log, settings_dic)
         ex.showMaximized()
         result = app.exec_()
-               
+
         close_connection(log, mydb)
         remove_lock(settings_dic, log)
-      
+
     log.info("<End>")
     sys.exit(result)
