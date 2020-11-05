@@ -128,6 +128,23 @@ def perform_reference_update(db_name, reference_local_path, blast_path, log, ver
     return success, err, update_msg
 
 
+def update_curr_versions(settings, log):
+    """gets the current version of the reference databases
+    """
+    log.info(f"Getting current database versions...")
+    reference_path = os.path.join(settings["root_path"], settings["general_dir"], settings["reference_dir"])
+    db_versions = {}
+    for db_name in ["hla", "KIR"]:
+        version_file = os.path.join(reference_path, f"curr_version_{db_name}.txt")
+        with open(version_file, "r") as f:
+            version = f.read().strip()
+        db_name = db_name.upper()
+        log.info(f"\tcurrent {db_name} version is {version}")
+        db_versions[db_name] = version
+
+    settings["db_versions"] = db_versions
+
+
 def toggle_project_status(proj_name, curr_status, log, values=["Open", "Closed"],
                           texts=["Close Project", "Reopen Project"], parent=None):
     """toggles the status of a given project between 'Open' and 'Closed';
@@ -1101,14 +1118,8 @@ def upload_allele_with_restricted_db(project_name, sample_id_int, sample_id_ext,
 # main:
 
 def main(settings, log, mydb):
-    project_name = '20200722_SA_X_732741'
-    ENA_ID = "PRJEB39495"
-    samples = [['20200722_SA_X_732741', '1'], ['20200722_SA_X_732741', '2']]
-    files = ['C:\\Daten\\local_data\\TypeLoader\\staging\\projects\\20200722_SA_X_732741\\ID000001\\DKMS-LSL_ID000001_3DP1_1.ena.txt', 'C:\\Daten\\local_data\\TypeLoader\\staging\\projects\\20200722_SA_X_732741\\ID14278154\\DKMS-LSL_ID14278154_A_1.ena.txt']
+    update_curr_versions(settings, log)
 
-    submit_alleles_to_ENA(project_name, ENA_ID, samples, files, settings, log)
-
-    general.play_sound()
 
 
 if __name__ == "__main__":

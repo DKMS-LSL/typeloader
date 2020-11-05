@@ -21,7 +21,7 @@ from shutil import copyfile
 
 import general
 from GUI_login import handle_reference_update
-from typeloader_functions import perform_reference_update
+from typeloader_functions import perform_reference_update, update_curr_versions
 
 
 # ===========================================================
@@ -85,7 +85,7 @@ class RefreshReferenceDialog(QDialog):
                                             self.settings["reference_dir"])
 
         self.updated = handle_reference_update(update_me, reference_local_path, blast_path,
-                                               self.parent, self.log)
+                                               self.parent, self.settings, self.log)
         self.sender().setChecked(False)
         self.close()
 
@@ -208,9 +208,10 @@ class ResetReferenceDialog(QDialog):
         self.log.info(msg.replace("\n", " "))
         if success:
             self.updated = version
+            update_curr_versions(self.settings, self.log)
+
             msg2 = "Once you are done, please reset the reference back to the latest version, " \
                    "either manually or by restarting TypeLoader!"
-
             if not self.testing:
                 QMessageBox.information(self, "Database reset successfull", msg)
                 QMessageBox.information(self, "Please remember...", msg2)

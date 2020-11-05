@@ -22,7 +22,7 @@ from PyQt5.QtGui import QIcon
 
 import general, db_internal
 from authuser import user
-from typeloader_functions import perform_reference_update
+from typeloader_functions import perform_reference_update, update_curr_versions
 from typeloader_core import update_reference
 from GUI_forms import ProceedButton
 from PyQt5.Qt import QMessageBox
@@ -508,6 +508,11 @@ def get_settings(user, log, cf = None):
         with open(user_cf_file, "w") as g:
             cf.write(g)
 
+    settings_dic["reference_local_path"] = os.path.join(settings_dic["root_path"],
+                                                        settings_dic["general_dir"],
+                                                        settings_dic["reference_dir"])
+    update_curr_versions(settings_dic, log)
+
     log.info("\t=>Success")
     return settings_dic
     
@@ -586,6 +591,8 @@ def handle_reference_update(update_me, reference_local_path, blast_path, parent,
         if parent:
             QMessageBox.information(parent, "Reference data updated", "\n\n".join(msges))
 
+    update_curr_versions(settings, log)
+
     return updated
 
 
@@ -619,7 +626,7 @@ def check_for_reference_updates(log, settings, parent):
     :return: nothing
     """
     blast_path = settings["blast_path"]
-    reference_local_path = os.path.join(settings["root_path"], settings["general_dir"], settings["reference_dir"])
+    reference_local_path = settings["reference_local_path"]
 
     update_me = check_update_needed(reference_local_path, log)
 
@@ -634,7 +641,7 @@ def check_for_reference_updates(log, settings, parent):
             log.info("User chose not to update the database.")
             return
 
-    handle_reference_update(update_me, reference_local_path, blast_path, parent, log)
+    handle_reference_update(update_me, reference_local_path, blast_path, parent, settings, log)
 
 
 def startup(user, curr_time, log):
