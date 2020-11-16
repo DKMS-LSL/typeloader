@@ -165,7 +165,7 @@ class NewAlleleBulkForm(CollapsibleDialog):
                 return False
 
         try:
-            report, self.errors_found = typeloader.bulk_upload_new_alleles(self.csv_file, self.project, 
+            report, self.errors_found, _ = typeloader.bulk_upload_new_alleles(self.csv_file, self.project,
                                                                            self.settings, self.mydb, self.log)
             self.report_txt.setText(report)
             self.upload_btn.setChecked(False)

@@ -826,13 +826,16 @@ def bulk_upload_new_alleles(csv_file, project, settings, mydb, log):
     log.info("Starting bulk upload from file {}...".format(csv_file))
     alleles, error_dic, num_rows = parse_bulk_csv(csv_file, settings, log)
     successful = []
+    alleles_uploaded = []
     for allele in alleles:
         [nr, sample_id_int, sample_id_ext, raw_path, customer, incomplete_ok] = allele
         log.info("Uploading #{}: {}...".format(nr, sample_id_int))
         success, msg = upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, customer, settings,
                                                   mydb, log, incomplete_ok=incomplete_ok)
         if success:
-            successful.append("  - #{}: {}".format(nr, msg))
+            local_name = msg
+            successful.append("  - #{}: {}".format(nr, local_name))
+            alleles_uploaded.append(local_name)
         else:
             if msg.startswith("Incomplete sequence"):
                 msg = msg.replace("\n", " ").split("!")[0] + "!"
@@ -856,7 +859,7 @@ def bulk_upload_new_alleles(csv_file, project, settings, mydb, log):
         errors = "\nNo problems encountered."
     report += errors
 
-    return report, errors_found
+    return report, errors_found, alleles_uploaded
 
 
 def delete_sample(sample, nr, project, settings, log, parent=None):
