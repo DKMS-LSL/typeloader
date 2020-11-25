@@ -92,7 +92,7 @@ class MainGUI(QMainWindow):
     def make_leftlist(self):
         """sets up the navigation area
         """
-        self.navigation = GUI_navigation.Navigation(self.log, self.settings)
+        self.navigation = GUI_navigation.Navigation(self.log, self.settings, self.mydb)
 
         desktop = QDesktopWidget()
         geometry = desktop.availableGeometry(desktop.primaryScreen())

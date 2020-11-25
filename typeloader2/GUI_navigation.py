@@ -20,6 +20,7 @@ from PyQt5.QtGui import QIcon
 
 import general, db_internal
 import typeloader_functions
+from GUI_forms_new_allele import NewAlleleForm
 
 show_extended = True
 
@@ -260,9 +261,10 @@ class Navigation(QWidget):
     change_view = pyqtSignal(int)
     refresh = pyqtSignal(str)
 
-    def __init__(self, log, settings):
+    def __init__(self, log, settings, mydb):
         self.log = log
         self.settings = settings
+        self.mydb = mydb
         super().__init__()
         self.init_UI()
         self.create_model()
@@ -454,7 +456,10 @@ class Navigation(QWidget):
                 elif action == delete_sample_act:
                     self.log.info("Deleting {} #{} of project {}".format(sample, nr, project))
                     self.delete_sample(sample, nr, project, status)
-    
+                elif action == restart_sample_act:
+                    self.log.info("Starting over {} #{} of project {}".format(sample, nr, project))
+                    self.restart_sample(sample, nr, project, status)
+
     @pyqtSlot(QModelIndex)
     def onDoubleClick(self, index):
         """open SampleView or ProjectView
@@ -622,8 +627,27 @@ class Navigation(QWidget):
         if reply == QMessageBox.Yes:
             typeloader_functions.delete_all_samples_from_project(project, self.settings, self.log, self)
             self.refresh.emit(project)
-            self.changed_projects.emit(project, status)    
-            
+            self.changed_projects.emit(project, status)
+
+    def restart_sample(self, sample, nr, project, status):
+        # TODO: ask confirmation
+        # TODO: implement password protection
+        success, msg, db_versions, startover_dic = typeloader_functions.initiate_startover_allele(project,
+                                                                                                  sample,
+                                                                                                  nr,
+                                                                                                  self,
+                                                                                                  self.settings,
+                                                                                                  self.log)
+        # TODO: handle db_versions
+
+        if success:
+            NewAlleleForm(self.log, self.mydb, project, self.settings, parent=self,
+                          startover=startover_dic,
+                          sample_ID_int=startover_dic["sample_id_int"],
+                          sample_ID_ext=startover_dic["sample_id_ext"])
+            self.refresh.emit(project)
+            self.changed_projects.emit(project, status)
+
 
 # ===========================================================
 
