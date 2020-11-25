@@ -44,7 +44,6 @@ flatfile_dic = {"function_hla": "antigen presenting molecule",
 class Allele:
     def __init__(self, gendx_result, gene, name, product, targetFamily, sample_id_int, settings, log,
                  newAlleleName="", partner_allele="", parent=None, existing_values=None):
-        print("existing values:", existing_values)
         self.gendx_result = gendx_result
         self.targetFamily = targetFamily
         self.gene = gene
@@ -726,8 +725,6 @@ def save_new_allele_to_db(allele, project,
                    os.path.basename(blastXmlFile), os.path.basename(ena_path))
         update_queries.append(update_files_query)
 
-        for query in update_queries:
-            print(query)
         success = db_internal.execute_transaction(update_queries, mydb, log,
                                                   "saving the novel allele in the database",
                                                   "Database error")
@@ -1271,8 +1268,8 @@ def get_protected_values(project_name, sample_id_int, local_name, parent, log):
                      "ref_db": reference_database,
                      "db_version": database_version
                      }
-                    #TODO: do not rename submission IDs, or the ENA- and IPD-tab of AlleleView will fail!
-                    #TODO: put header stuff into fasta header so it doesn't get lost!
+    # TODO: do not rename submission IDs, or the ENA- and IPD-tab of AlleleView will fail!
+    # TODO: put header stuff into fasta header so it doesn't get lost!
 
     return True, startover_dic
 
@@ -1320,8 +1317,6 @@ def main(settings, log, mydb):
 
     result = initiate_startover_allele(project, sample, allele, parent, settings, log)
     startover_dic = result[-1]
-
-    print(startover_dic)
 
 
 if __name__ == "__main__":
