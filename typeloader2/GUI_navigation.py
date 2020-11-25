@@ -21,6 +21,7 @@ from PyQt5.QtGui import QIcon
 import general, db_internal
 import typeloader_functions
 from GUI_forms_new_allele import NewAlleleForm
+from GUI_mini_dialogs import ResetReferenceDialog
 
 show_extended = True
 
@@ -260,6 +261,7 @@ class Navigation(QWidget):
     changed_allele = pyqtSignal(str, int, str)
     change_view = pyqtSignal(int)
     refresh = pyqtSignal(str)
+    callNewAlleleDialogNow = pyqtSignal(bool)
 
     def __init__(self, log, settings, mydb):
         self.log = log
@@ -273,6 +275,7 @@ class Navigation(QWidget):
 
         self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self.open_menu)
+        self.callNewAlleleDialogNow.connect(self.call_NewAlleleForm)
 
     def init_UI(self):
         """creates the UI
@@ -629,9 +632,30 @@ class Navigation(QWidget):
                                                                                                   self,
                                                                                                   self.settings,
                                                                                                   self.log)
-        # TODO: handle db_versions
-
         if success:
+            self.restart_data = (project, status, startover_dic)
+            if msg:
+                if db_versions:
+                    (target, prev_version) = db_versions
+                    switch_db = QMessageBox.question(self, "Database version changed meanwhile", msg,
+                                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                    if switch_db:
+                        dialog = ResetReferenceDialog(self.settings, self.log, self, target_value=prev_version)
+                        dialog.db_reset_done.connect(self.call_NewAlleleForm)
+
+                else:
+                    QMessageBox.warning(self, "Somthing happened...", msg)
+                    self.log.warning(msg)
+                    self.log.info("Not proceeding...")
+            else:
+                self.callNewAlleleDialogNow.emit(True)
+
+    def call_NewAlleleForm(self, start_now):
+        """once all preparations and confirmations are done, start the NewAlleleForm so the user can upload the new input file
+         """
+        if start_now:
+            (project, status, startover_dic) = self.restart_data
+            self.log.info("Starting NewAlleleForm for uploading new sequence...")
             NewAlleleForm(self.log, self.mydb, project, self.settings, parent=self,
                           startover=startover_dic,
                           sample_ID_int=startover_dic["sample_id_int"],
@@ -640,6 +664,7 @@ class Navigation(QWidget):
             self.changed_projects.emit(project, status)
 
 
+# ===========================================================
 # functions:
 
 def ask_for_password(user_name, parent, log):

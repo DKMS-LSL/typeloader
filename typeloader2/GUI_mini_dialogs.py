@@ -12,7 +12,7 @@ contains various small TypeLoader dialogs
 
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QFormLayout,
                              QLabel, QLineEdit, QApplication, QInputDialog)
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtCore import pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.Qt import QPushButton, QMessageBox
 
@@ -93,8 +93,9 @@ class RefreshReferenceDialog(QDialog):
 class ResetReferenceDialog(QDialog):
     """a dialog to allow manually resetting a reference database to a previous version
     """
+    db_reset_done = pyqtSignal(bool)
 
-    def __init__(self, settings, log, parent=None, testing=False):
+    def __init__(self, settings, log, parent=None, testing=False, target_value=None):
         super().__init__(parent)
         self.settings = settings
         self.log = log
@@ -103,6 +104,7 @@ class ResetReferenceDialog(QDialog):
         else:
             self.parent = parent
         self.testing = testing
+        self.target_value = target_value
         self.btn_dic = {}
         self.updated = []
         self.log.debug("Opened DowngradeReferenceDialog")
@@ -131,6 +133,8 @@ class ResetReferenceDialog(QDialog):
 
         self.version_field = QLineEdit(self)
         self.version_field.setWhatsThis("Enter any valid version of the target, e.g., '3.39.0' or '2.7.1'.")
+        if self.target_value:
+            self.version_field.setText(self.target_value)
         layout.addRow(QLabel("Target version:"), self.version_field)
 
         for text in ["HLA", "KIR"]:
@@ -215,11 +219,13 @@ class ResetReferenceDialog(QDialog):
             if not self.testing:
                 QMessageBox.information(self, "Database reset successfull", msg)
                 QMessageBox.information(self, "Please remember...", msg2)
+            self.db_reset_done.emit(True)
 
         else:
             self.log.info("Database reset failed.")
             if not self.testing:
                 QMessageBox.information(self, "Database reset failed", msg)
+            self.db_reset_done.emit(False)
 
         self.close()
 
