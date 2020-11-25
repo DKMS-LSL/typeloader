@@ -516,122 +516,113 @@ class Navigation(QWidget):
         """
         self.log.debug(
             "Attempting to delete sample '{}' allele {} of project '{}' from database...".format(sample, nr, project))
-        if self.settings["login"] == "admin":
-            pass
-        else:
-            pwd, ok = QInputDialog.getText(self, "Enter Password", "Please provide password:", QLineEdit.Password)
-            if ok:
-                if pwd == "ichdarfdas":
-                    pass
-                else:
-                    return
-            else:
-                return
-        self.log.debug("Asking for confirmation before deleting allele...")
-        reply = QMessageBox.question(self, 'Message',
-                                     "Are you really sure you want to delete sample {} allele #{} from project {}?".format(
-                                         sample, nr, project), QMessageBox.Yes |
-                                     QMessageBox.No, QMessageBox.No)
+        proceed = ask_for_password(self.settings["login"], self, self.log)
+        if not proceed:
+            return
 
-        if reply == QMessageBox.Yes:
-            # delete from database:
-            delete_q_alleles = "delete from alleles where sample_id_int = '{}' and allele_nr = {} and project_name = '{}'".format(
-                sample, nr, project)
-            success, _ = db_internal.execute_query(delete_q_alleles, 0, self.log,
-                                                   "Deleting sample {} allele #{} from ALLELES table".format(sample,
-                                                                                                             nr),
-                                                   "Sample Deletion Error", self)
-            if success:
-                self.log.debug("\t=> Successfully deleted sample from table ALLELES")
+        msg = "Are you really sure you want to delete sample {} allele #{} from project {}?".format(sample, nr, project)
+        proceed = ask_for_confirmation(msg, self, self.log)
+        if not proceed:
+            return
 
-            more_projects_query = "select project_name from alleles where sample_id_int = '{}'".format(sample)
-            success, data = db_internal.execute_query(more_projects_query, 1, self.log,
-                                                      "Finding more rows with sample {} in ALLELES table".format(
-                                                          sample), "Sample Deletion Error", self)
+        # delete from database:
+        delete_q_alleles = "delete from alleles where sample_id_int = '{}' and allele_nr = {} and project_name = '{}'".format(
+            sample, nr, project)
+        success, _ = db_internal.execute_query(delete_q_alleles, 0, self.log,
+                                               "Deleting sample {} allele #{} from ALLELES table".format(sample,
+                                                                                                         nr),
+                                               "Sample Deletion Error", self)
+        if success:
+            self.log.debug("\t=> Successfully deleted sample from table ALLELES")
 
-            single_allele = False
-            if success:
-                if not data:  # sample was only contained in this project and only had one allele
-                    single_allele = True
-                    delete_q_samples = "delete from SAMPLES where sample_id_int = '{}'".format(sample)
-                    success, _ = db_internal.execute_query(delete_q_samples, 0, self.log,
-                                                           "Deleting sample {} from SAMPLES table".format(sample),
-                                                           "Sample Deletion Error", self)
-                    if success:
-                        self.log.debug("\t=> Successfully deleted sample from table SAMPLES")
+        more_projects_query = "select project_name from alleles where sample_id_int = '{}'".format(sample)
+        success, data = db_internal.execute_query(more_projects_query, 1, self.log,
+                                                  "Finding more rows with sample {} in ALLELES table".format(
+                                                      sample), "Sample Deletion Error", self)
 
-                files_q = "select raw_file, fasta, blast_xml, ena_file, ena_response_file, ipd_submission_file from FILES where sample_id_int = '{}' and allele_nr = {}".format(
-                    sample, nr)
-                success, files = db_internal.execute_query(files_q, 6, self.log,
-                                                           "Getting files of sample {} #{} from FILES table".format(
-                                                               sample, nr), "Sample Deletion Error", self)
+        single_allele = False
+        if success:
+            if not data:  # sample was only contained in this project and only had one allele
+                single_allele = True
+                delete_q_samples = "delete from SAMPLES where sample_id_int = '{}'".format(sample)
+                success, _ = db_internal.execute_query(delete_q_samples, 0, self.log,
+                                                       "Deleting sample {} from SAMPLES table".format(sample),
+                                                       "Sample Deletion Error", self)
                 if success:
+                    self.log.debug("\t=> Successfully deleted sample from table SAMPLES")
 
-                    delete_q_files = "delete from FILES where sample_id_int = '{}' and allele_nr = {}".format(sample,
-                                                                                                              nr)
-                    success, _ = db_internal.execute_query(delete_q_files, 0, self.log,
-                                                           "Deleting sample {} from FILES table".format(sample),
-                                                           "Sample Deletion Error", self)
-                    if success:
-                        self.log.debug("\t=> Successfully deleted sample from table FILES")
+            files_q = "select raw_file, fasta, blast_xml, ena_file, ena_response_file, ipd_submission_file from FILES where sample_id_int = '{}' and allele_nr = {}".format(
+                sample, nr)
+            success, files = db_internal.execute_query(files_q, 6, self.log,
+                                                       "Getting files of sample {} #{} from FILES table".format(
+                                                           sample, nr), "Sample Deletion Error", self)
+            if success:
 
-            # delete from disk space:
-            self.log.debug(
-                "Attempting to delete sample {} allele #{} of project '{}' from file system...".format(sample, nr,
+                delete_q_files = "delete from FILES where sample_id_int = '{}' and allele_nr = {}".format(sample,
+                                                                                                          nr)
+                success, _ = db_internal.execute_query(delete_q_files, 0, self.log,
+                                                       "Deleting sample {} from FILES table".format(sample),
+                                                       "Sample Deletion Error", self)
+                if success:
+                    self.log.debug("\t=> Successfully deleted sample from table FILES")
+
+        # delete from disk space:
+        self.log.debug(
+            "Attempting to delete sample {} allele #{} of project '{}' from file system...".format(sample, nr,
+                                                                                                   project))
+        sample_dir = os.path.join(self.settings["projects_dir"], project, sample)
+        if files:
+            for myfile in files[0]:
+                if myfile:
+                    self.log.debug("\tDeleting {}...".format(myfile))
+                    try:
+                        os.remove(os.path.join(sample_dir, myfile))
+                    except Exception:
+                        self.log.debug("\t\t=> Could not delete")
+
+        if single_allele:
+            self.log.debug("\tDeleting sample dir {}...".format(sample_dir))
+            try:
+                os.removedirs(sample_dir)
+            except Exception as E:
+                self.log.warning("\tcould not delete sample dir!")
+                self.log.exception(E)
+
+        self.log.debug(
+            "=> Sample {} #{} of project {} successfully deleted from database and file system".format(sample, nr,
                                                                                                        project))
-            sample_dir = os.path.join(self.settings["projects_dir"], project, sample)
-            if files:
-                for myfile in files[0]:
-                    if myfile:
-                        self.log.debug("\tDeleting {}...".format(myfile))
-                        try:
-                            os.remove(os.path.join(sample_dir, myfile))
-                        except Exception:
-                            self.log.debug("\t\t=> Could not delete")
-
-            if single_allele:
-                self.log.debug("\tDeleting sample dir {}...".format(sample_dir))
-                try:
-                    os.removedirs(sample_dir)
-                except Exception as E:
-                    self.log.warning("\tcould not delete sample dir!")
-                    self.log.exception(E)
-
-            self.log.debug(
-                "=> Sample {} #{} of project {} successfully deleted from database and file system".format(sample, nr,
-                                                                                                           project))
-            self.refresh.emit(project)
-            self.changed_projects.emit(project, status)
+        self.refresh.emit(project)
+        self.changed_projects.emit(project, status)
 
     def delete_all_samples(self, project, status):
         """delete all sample of a project from the database & file system
         """
         self.log.debug("Attempting to delete all alleles of project '{}' from database...".format(project))
-        if self.settings["login"] == "admin":
-            pass
-        else:
-            pwd, ok = QInputDialog.getText(self, "Enter Password", "Please provide password:", QLineEdit.Password)
-            if ok:
-                if pwd == "ichdarfdas":
-                    pass
-                else:
-                    return
-            else:
-                return
-        self.log.debug("Asking for confirmation before deleting allele...")
-        reply = QMessageBox.question(self, 'Message',
-                                     "Are you really sure you want to delete ALL SAMPLES from project {}?".format(
-                                         project), QMessageBox.Yes |
-                                     QMessageBox.No, QMessageBox.No)
+        proceed = ask_for_password(self.settings["login"], self, self.log)
+        if not proceed:
+            return
 
-        if reply == QMessageBox.Yes:
-            typeloader_functions.delete_all_samples_from_project(project, self.settings, self.log, self)
-            self.refresh.emit(project)
-            self.changed_projects.emit(project, status)
+        msg = "Are you really sure you want to delete ALL SAMPLES from project {}?".format(project)
+        proceed = ask_for_confirmation(msg, self, self.log)
+        if not proceed:
+            return
+
+        typeloader_functions.delete_all_samples_from_project(project, self.settings, self.log, self)
+        self.refresh.emit(project)
+        self.changed_projects.emit(project, status)
 
     def restart_sample(self, sample, nr, project, status):
-        # TODO: ask confirmation
-        # TODO: implement password protection
+        proceed = ask_for_password(self.settings["login"], self, self.log)
+        if not proceed:
+            return
+
+        msg = f"Are you really sure you want to upload a completely fresh input sequence for allele {sample} #{nr}?" \
+              f"\n\nBeware: if you already submitted this allele to ENA and/or IPD, you will have to later resubmit it " \
+              f"to ensure that both have the correct sequence!"
+        proceed = ask_for_confirmation(msg, self, self.log)
+        if not proceed:
+            return
+
         success, msg, db_versions, startover_dic = typeloader_functions.initiate_startover_allele(project,
                                                                                                   sample,
                                                                                                   nr,
@@ -649,9 +640,40 @@ class Navigation(QWidget):
             self.changed_projects.emit(project, status)
 
 
+# functions:
+
+def ask_for_password(user_name, parent, log):
+    """raises a little popup dialog to ask user for a password;
+    returns whether password was accepted
+    """
+    if user_name == "admin":
+        return True
+    else:
+        log.info("Asking for password before proceeding...")
+        pwd, ok = QInputDialog.getText(parent, "Enter Password", "Please provide password:", QLineEdit.Password)
+        if ok:
+            if pwd == "ichdarfdas":
+                log.info("\t=> password accepted")
+                return True
+    log.info("\t=> password was not accepted, sorry")
+    return False
+
+
+def ask_for_confirmation(msg, parent, log):
+    """asks the user to confirm that they want to proceed;
+    returns answer to "do you want to proceed?" as bool
+    """
+    log.debug("Asking for confirmation before proceeding...")
+    reply = QMessageBox.question(parent, 'Message', msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+    if reply == QMessageBox.No:
+        log.info("\t=> User chose to abort")
+        return False
+    else:
+        log.info("\t=> Confirmed. Proceeding...")
+        return True
+
+
 # ===========================================================
-
-
 # main:
 def main():
     from typeloader_GUI import create_connection, close_connection, log_uncaught_exceptions
