@@ -1222,7 +1222,7 @@ def mark_as_outdated(value):
         if value == "None":
             return None
         else:
-            return value + suffix
+            return value.replace(suffix, "") + suffix
     return value
 
 
