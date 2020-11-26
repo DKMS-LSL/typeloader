@@ -658,18 +658,47 @@ class Navigation(QWidget):
             else:
                 self.callNewAlleleDialogNow.emit(True)
 
+    @pyqtSlot(bool)
     def call_NewAlleleForm(self, start_now):
         """once all preparations and confirmations are done, start the NewAlleleForm so the user can upload the new input file
          """
         if start_now:
             (project, status, startover_dic) = self.restart_data
             self.log.info("Starting NewAlleleForm for uploading new sequence...")
-            NewAlleleForm(self.log, self.mydb, project, self.settings, parent=self,
-                          startover=startover_dic,
-                          sample_ID_int=startover_dic["sample_id_int"],
-                          sample_ID_ext=startover_dic["sample_id_ext"])
-            self.refresh.emit(project)
-            self.changed_projects.emit(project, status)
+            dialog = NewAlleleForm(self.log, self.mydb, project, self.settings, parent=self,
+                                   startover=startover_dic,
+                                   sample_ID_int=startover_dic["sample_id_int"],
+                                   sample_ID_ext=startover_dic["sample_id_ext"])
+            dialog.new_allele.connect(self.prompt_resubmission)
+
+    @pyqtSlot(str)
+    def prompt_resubmission(self, new_allele):
+        """Once the resetted sequence has been saved, check whether the previous version was already submitted to ENA and/or IPD.
+         If yes, tell the user to update their submissions.
+         """
+        (project, status, startover_dic) = self.restart_data
+        submitted = []
+        if startover_dic['ena_submission_id']:
+            submitted.append("ENA")
+        if startover_dic['ipd_submission_nr']:
+            submitted.append("IPD")
+
+        if submitted:
+            msg = f"The previous files of this allele have been submitted to {' and '.join(submitted)}.\n" \
+                  f"You must update these now!\n\n"
+            if "ENA" in submitted:
+                msg += "To update the sequence at ENA, simply resubmit it via TypeLoader.\n\n"
+            if "IPD" in submitted:
+                msg += "To then update the sequence at IPD, use your original ENA reply file and generate a " \
+                       "fresh IPD-file using TypeLoader. Then send it to IPD in your usual way and ask them " \
+                       "to update the sequence for you.\n\n"
+
+            msg += "Your submission IDs will be kept but have been marked as 'outdated' in TypeLoader until " \
+                   "resubmission is done."
+            QMessageBox.information(self, "Please update your submissions", msg)
+
+        self.refresh.emit(project)
+        self.changed_projects.emit(project, status)
 
 
 # ===========================================================
