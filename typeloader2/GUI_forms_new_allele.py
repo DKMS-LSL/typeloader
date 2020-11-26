@@ -421,6 +421,13 @@ class NewAlleleForm(CollapsibleDialog):
 
             self.success_parsing, self.myalleles, self.ENA_text = results
             if self.success_parsing:
+                if self.startover:
+                    if self.myalleles[0].gene != self.startover["gene"]:
+                        msg = f"{self.startover['local_name']} is a(n) {self.startover['gene']} allele! The uploaded file contains a(n) " \
+                              f"{self.myalleles[0].gene} sequence!\nRestarting an allele is only allowed with the " \
+                              f"same locus, otherwise the allele name would not match the sequence."
+                        QMessageBox.warning(self, "Locus does not match!", msg)
+                        return
                 if self.filetype == "XML":
                     self.allele1 = self.myalleles[0]
                     self.allele2 = self.myalleles[1]
