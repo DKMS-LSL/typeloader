@@ -290,7 +290,7 @@ class AlleleView(QTabWidget):
         """creates the "general" tab
         """
         # columns: sample_id_int, allele_nr, project_name, nr_in_project, cell_line, local_name, gene, goal, allele_status, lab_status, int. allele name, official allele name
-        hidden_rows = list(range(9, 14)) + list(range(15, 33)) + list(range(35, 46))
+        hidden_rows = list(range(9, 14)) + list(range(15, 23)) + list(range(24, 33)) + list(range(35, 46))
         mytab = TabTableSimple(self.log, self.db, 0, "alleles", hidden_rows, protected_columns=[0, 1, 2, 3, 5],
                                headers=alleles_header_dic, add_color_proxy=(8, 14))
         mytab.table.setItemDelegateForRow(7, ComboDelegate(self, general.field_options["goal"]))
@@ -315,7 +315,7 @@ class AlleleView(QTabWidget):
         """creates the "lab processing" tab
         """
         # columns: lab_status, panel, pos, SR_data, SR_phasing, SR_tech, LR_data, LR_phasing, LR_tech, comment
-        hidden_rows = list(range(14)) + list(range(24, 46))
+        hidden_rows = list(range(14)) + list(range(23, 46))
         mytab = TabTableSimple(self.log, self.db, 0, "alleles", hidden_rows, add_color_proxy=(8, 14),
                                headers=alleles_header_dic)
         mytab.table.setItemDelegateForRow(14, ComboDelegate(self, general.field_options["lab_status"]))
@@ -606,9 +606,9 @@ def main():
     mydb = create_connection(log, settings_dic["db_file"])
     app = QApplication(sys.argv)
     sys.excepthook = log_uncaught_exceptions
-    
-    project_name = "20181207_ADMIN_HLA-B_NEB1"
-    sample_id_int = "ID64798343"
+
+    project_name = "20201119_ADMIN_mixed_startover-85"
+    sample_id_int = "ID19454517"
     ex = SampleView(log, mydb, sample_id_int, project_name)
     ex.show()  # Maximized()
     result = app.exec_()
