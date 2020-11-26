@@ -328,7 +328,8 @@ class IPDFileChoiceTable(FileChoiceTable):
 
     def __init__(self, project, log, parent=None):
         query = """select project_nr, alleles.sample_id_int, alleles.local_name, allele_status, 
-        ena_submission_id, ipd_submission_nr, cell_line_old, gene, target_allele, partner_allele
+        ena_submission_id, substr(ipd_submission_nr, 0, instr(ipd_submission_nr, '_')) as ipd_submission_nr,
+        cell_line_old, gene, target_allele, partner_allele
         from alleles
          join files on alleles.sample_id_int = files.sample_id_int and alleles.allele_nr = files.allele_nr
         """.format(project)
