@@ -661,6 +661,7 @@ class EditFileDialog(QDialog):
         self.project = project
         self.file = None
         self.txt = ""
+        self.protected = False
         self.unsaved_changes = False
         if parent:
             self.settings = parent.settings
@@ -729,6 +730,8 @@ class EditFileDialog(QDialog):
                     self.txt = f.read()
                 self.txt_field.setPlainText(self.txt)
                 self.resize(800, 600)
+                self.check_protected_from_writing(path)
+
             else:
                 if self.sample:
                     category = "does not belong to the sample"
@@ -739,16 +742,38 @@ class EditFileDialog(QDialog):
             self.log.exception(E)
             QMessageBox.warning(self, "File problem", "An error occurred while trying to read the chosen file:\n\n{}".format(repr(E)))
 
+    def check_protected_from_writing(self, path):
+        """returns True if this kind of file is prohibited from manual editing,
+         otherwise returns False
+         """
+        filename = os.path.basename(path)
+        msg = "ENA and IPD files cannot be edited to ensure consistency between TypeLoader, ENA and IPD.\nIf you " \
+              "need to change anything, please edit the file you uploaded to TypeLoader and then use the 'Restart " \
+              "Allele' feature to generate fresh, consistent files, which you can then resubmit."
+        if filename.startswith(self.settings['ipd_shortname']):  # IPD file
+            self.protected = True
+            QMessageBox.warning(self, "No editing allowed", msg)
+            self.log.debug("IPD files cannot be edited")
+            return
+        elif filename.endswith(".ena.txt"):  # ENA file
+            self.protected = True
+            QMessageBox.warning(self, "No editing allowed", msg)
+            self.log.debug("ENA files cannot be edited")
+            return
+        self.protected = False  # all other files are ok to edit
+        self.log.debug("Editing is allowed")
+
     def on_text_changed(self):
         """when text in text window is edited, enable & highlight save_btn
         """
         try:
-            if self.txt_field.toPlainText() != self.txt:
-                self.save_btn.setEnabled(True)
-                self.save_btn.setStyleSheet(general.btn_style_clickme)
-                self.discard_btn.setEnabled(True)
-                self.discard_btn.setStyleSheet(general.btn_style_clickme)
-                self.unsaved_changes = True
+            if not self.protected:
+                if self.txt_field.toPlainText() != self.txt:
+                    self.save_btn.setEnabled(True)
+                    self.save_btn.setStyleSheet(general.btn_style_clickme)
+                    self.discard_btn.setEnabled(True)
+                    self.discard_btn.setStyleSheet(general.btn_style_clickme)
+                    self.unsaved_changes = True
         except Exception as E:
             self.log.exception(E)
 
