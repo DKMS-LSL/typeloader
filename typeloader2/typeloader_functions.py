@@ -637,6 +637,9 @@ def save_new_allele_to_db(allele, project,
                 header_data["comment"] = msg
         # update ALLELES table:
 
+        startover_keys = ["ena_submission_id", "ena_acception_date", "ena_accession_nr",
+                          "ipd_submission_id", "ipd_submission_nr", "hws_submission_nr",
+                          "kommentar"]
         if startover_allele:
             allele.allele_nr = startover["allele_nr"]
             project_nr = startover["project_nr"]
@@ -644,13 +647,9 @@ def save_new_allele_to_db(allele, project,
             delete_query = f"delete from alleles where local_name = '{allele.local_name}'"
             update_queries.append(delete_query)
         else:
-            startover = {"ena_submission_id": None,
-                         "ena_acception_date": None,
-                         "ena_accession_nr": None,
-                         "ipd_submission_id": None,
-                         "ipd_submission_nr": None,
-                         "hws_submission_nr": None
-                         }
+            startover = {}
+            for key in startover_keys:
+                startover[key] = None
 
         update_alleles_query = """INSERT INTO alleles 
         (sample_id_int, allele_nr, project_name, project_nr, local_name, GENE, 
@@ -681,8 +680,7 @@ def save_new_allele_to_db(allele, project,
 
         if startover:
             update_me = []
-            for key in ["ena_submission_id", "ena_acception_date", "ena_accession_nr",
-                        "ipd_submission_id", "ipd_submission_nr", "hws_submission_nr"]:
+            for key in startover_keys:
                 if startover[key]:
                     update_me.append(key)
 
@@ -1232,13 +1230,13 @@ def get_protected_values(project_name, sample_id_int, local_name, parent, log):
     query = f"""select allele_nr, project_nr, gene, reference_database, database_version, 
                     ena_submission_id, ena_acception_date, ena_accession_nr, 
                     ipd_submission_id, ipd_submission_nr, hws_submission_nr,
-                    sample_id_ext, customer
+                    sample_id_ext, customer, kommentar
                 from alleles join samples on alleles.sample_id_int = samples.sample_id_int 
                 where local_name = '{local_name}' and project_name = '{project_name}'
                     and alleles.sample_id_int = '{sample_id_int}'
                 """
 
-    success, data = db_internal.execute_query(query, 13, log,
+    success, data = db_internal.execute_query(query, 14, log,
                                               "retrieving protected values from database",
                                               parent=parent)
     if not success:
@@ -1250,7 +1248,15 @@ def get_protected_values(project_name, sample_id_int, local_name, parent, log):
 
     [allele_nr, project_nr, gene, reference_database, database_version,
      ena_submission_id, ena_acception_date, ena_accession_nr,
-     ipd_submission_id, ipd_submission_nr, hws_submission_nr, sample_id_ext, customer] = data[0]
+     ipd_submission_id, ipd_submission_nr, hws_submission_nr, sample_id_ext, customer,
+     kommentar] = data[0]
+
+    notice = "restarted with fresh sequence"
+    kommentar = kommentar.replace(f", {notice}", "").replace(notice, "")  # these should not accumulate
+    if kommentar:
+        kommentar = ", ".join([kommentar, notice])
+    else:
+        kommentar = notice
 
     startover_dic = {"allele_nr": allele_nr,
                      "project_nr": project_nr,
@@ -1266,10 +1272,12 @@ def get_protected_values(project_name, sample_id_int, local_name, parent, log):
                      "ipd_submission_nr": ipd_submission_nr if ipd_submission_nr != 'None' else None,
                      "hws_submission_nr": mark_as_outdated(hws_submission_nr),
                      "ref_db": reference_database,
-                     "db_version": database_version
+                     "db_version": database_version,
+                     "kommentar": kommentar
                      }
-    # TODO: do not rename submission IDs, or the ENA- and IPD-tab of AlleleView will fail!
-    # TODO: put header stuff into fasta header so it doesn't get lost!
+    for key in startover_dic:
+        if startover_dic[key] == "None":
+            startover_dic[key] = None
 
     return True, startover_dic
 
