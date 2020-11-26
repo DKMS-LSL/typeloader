@@ -615,6 +615,11 @@ class Navigation(QWidget):
         self.changed_projects.emit(project, status)
 
     def restart_sample(self, sample, nr, project, status):
+        """ask for confirmation and permission when restarting is selected;
+         if both are given, initiate restart (getting necessary data from db) and offer db version switch of needed;
+         once everything is ok, emit self.callNewAlleleDialogNow or ResetReferenceDialog.db_reset_done
+         to trigger call_NewAlleleForm()
+         """
         proceed = ask_for_password(self.settings["login"], self, self.log)
         if not proceed:
             return
@@ -639,12 +644,15 @@ class Navigation(QWidget):
                     (target, prev_version) = db_versions
                     switch_db = QMessageBox.question(self, "Database version changed meanwhile", msg,
                                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-                    if switch_db:
+                    if switch_db == QMessageBox.Yes:
+                        self.log.debug(f"User chose to update db {target} to {prev_version}...")
                         dialog = ResetReferenceDialog(self.settings, self.log, self, target_value=prev_version)
                         dialog.db_reset_done.connect(self.call_NewAlleleForm)
-
+                    else:
+                        self.log.debug(f"User chose to keep db {target} at current version...")
+                        self.callNewAlleleDialogNow.emit(True)
                 else:
-                    QMessageBox.warning(self, "Somthing happened...", msg)
+                    QMessageBox.warning(self, "Something happened...", msg)
                     self.log.warning(msg)
                     self.log.info("Not proceeding...")
             else:
@@ -689,7 +697,7 @@ def ask_for_confirmation(msg, parent, log):
     returns answer to "do you want to proceed?" as bool
     """
     log.debug("Asking for confirmation before proceeding...")
-    reply = QMessageBox.question(parent, 'Message', msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+    reply = QMessageBox.question(parent, 'Are you sure?', msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
     if reply == QMessageBox.No:
         log.info("\t=> User chose to abort")
         return False

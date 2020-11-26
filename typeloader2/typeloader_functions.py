@@ -401,7 +401,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 # No BLAST hit at position 1
                 msg = "No BLAST hit at position 1"
                 log.warning(msg)
-                return False, "Problem in XML file", msg
+                return False, "Problem in Fasta file", msg
             else:
                 extraInformation = annotations[alleleName]["extraInformation"]
                 closestAlleleName = annotations[alleleName]["closestAllele"]
