@@ -328,11 +328,16 @@ class IPDFileChoiceTable(FileChoiceTable):
 
     def __init__(self, project, log, parent=None):
         query = """select project_nr, alleles.sample_id_int, alleles.local_name, allele_status, 
-        ena_submission_id, substr(ipd_submission_nr, 0, instr(ipd_submission_nr, '_')) as ipd_submission_nr,
-        cell_line_old, gene, target_allele, partner_allele
-        from alleles
+        ena_submission_id, 
+		case
+			when instr(ipd_submission_nr, '_') > 0
+				then substr(ipd_submission_nr, 1, instr(ipd_submission_nr, '_')-1)
+			else
+				IPD_SUBMISSION_nr
+		end
+		from alleles
          join files on alleles.sample_id_int = files.sample_id_int and alleles.allele_nr = files.allele_nr
-        """.format(project)
+        """.format(project)  #TODO: is this format() still necessary or leftover code?
         num_columns = 10
         header = ["Submit?", "Nr", "Sample", "Allele", "Allele Status", "ENA submission ID", "IPD submission ID"]
         if parent:
