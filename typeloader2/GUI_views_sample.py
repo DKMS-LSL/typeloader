@@ -27,8 +27,8 @@ from GUI_overviews import (InvertedTable, FilterableTable, edit_on_manual_submit
                            SqlQueryModel_filterable, SqlQueryModel_editable,
                            SqlTableModel_protected,
                            TabTableSimple, TabTableRelational, TabTableNonEditable,
-                           ComboDelegate, EditFilesButton, DownloadFilesButton,
-                           EditFileDialog, DownloadFilesDialog)
+                           ComboDelegate, ReadFilesButton, DownloadFilesButton,
+                           ReadFileDialog, DownloadFilesDialog)
 
 
 # ===========================================================
@@ -486,9 +486,9 @@ class SampleView(QWidget):
         self.grid = QGridLayout()
         self.setLayout(self.grid)
 
-        self.edit_btn = EditFilesButton("Edit a file", self, self.log)
-        self.edit_btn.clicked.connect(self.open_edit_dialog)
-        self.grid.addWidget(self.edit_btn, 0, 2)
+        self.read_btn = ReadFilesButton("View a file", self, self.log)
+        self.read_btn.clicked.connect(self.open_read_dialog)
+        self.grid.addWidget(self.read_btn, 0, 2)
 
         self.download_btn = DownloadFilesButton("Download files", self, self.log)
         self.download_btn.clicked.connect(self.open_download_dialog)
@@ -566,12 +566,12 @@ class SampleView(QWidget):
             self.log.exception(E)
 
     @pyqtSlot()
-    def open_edit_dialog(self):
-        """opens EditFileDialog
+    def open_read_dialog(self):
+        """opens ReadFileDialog
         """
         self.log.debug("Opening file editing dialog...")
         try:
-            dialog = EditFileDialog(self.log, self.project, self.sample_id_int, self)
+            dialog = ReadFileDialog(self.log, self.project, self.sample_id_int, self)
             dialog.exec_()
         except Exception as E:
             self.log.exception(E)

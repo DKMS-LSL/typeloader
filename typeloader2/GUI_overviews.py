@@ -582,7 +582,7 @@ class TabTableNonEditable(InvertedTable):
         self.model.setQuery(self.query + " where " + self.filter)
 
 
-class EditFilesButton(ChoiceButton):
+class ReadFilesButton(ChoiceButton):
     """opens an EditFileDialog
     """
 
@@ -674,7 +674,7 @@ class DownloadFilesDialog(QDialog):
             self.close()
 
 
-class EditFileDialog(QDialog):
+class ReadFileDialog(QDialog):
     """a dialog to choose a file of a sample, view, edit, and save it
     """
 
@@ -685,14 +685,13 @@ class EditFileDialog(QDialog):
         self.project = project
         self.file = None
         self.txt = ""
-        self.protected = False
         self.unsaved_changes = False
         if parent:
             self.settings = parent.settings
         else:
             import GUI_login
             self.settings = GUI_login.get_settings("admin", log)
-        self.setWindowTitle("Edit a file")
+        self.setWindowTitle("View a file")
         self.setWindowIcon(QIcon(general.favicon))
         #         self.resize(800, 800)
         self.init_UI()
@@ -718,16 +717,8 @@ class EditFileDialog(QDialog):
         layout.addWidget(self.file_widget, 2, 0, 2, 2)
 
         self.txt_field = QPlainTextEdit(self)
-        self.txt_field.textChanged.connect(self.on_text_changed)
+        self.txt_field.setReadOnly(True)
         layout.addWidget(self.txt_field, 4, 0, 5, 2)
-
-        self.save_btn = ProceedButton("Save changes!", [self.file_widget.field], self.log, parent=self)
-        self.save_btn.clicked.connect(self.save_file)
-        layout.addWidget(self.save_btn, 10, 0)
-
-        self.discard_btn = ProceedButton("Discard changes!", [self.file_widget.field], self.log, parent=self)
-        layout.addWidget(self.discard_btn, 10, 1)
-        self.discard_btn.clicked.connect(self.reset_file)
 
         self.close_btn = QPushButton("Close", self)
         self.close_btn.clicked.connect(self.close)
@@ -754,7 +745,6 @@ class EditFileDialog(QDialog):
                     self.txt = f.read()
                 self.txt_field.setPlainText(self.txt)
                 self.resize(800, 600)
-                self.check_protected_from_writing(path)
 
             else:
                 if self.sample:
@@ -767,84 +757,6 @@ class EditFileDialog(QDialog):
             self.log.exception(E)
             QMessageBox.warning(self, "File problem",
                                 "An error occurred while trying to read the chosen file:\n\n{}".format(repr(E)))
-
-    def check_protected_from_writing(self, path):
-        """returns True if this kind of file is prohibited from manual editing,
-         otherwise returns False
-         """
-        filename = os.path.basename(path)
-        msg = "ENA and IPD files cannot be edited to ensure consistency between TypeLoader, ENA and IPD.\nIf you " \
-              "need to change anything, please edit the file you uploaded to TypeLoader and then use the 'Restart " \
-              "Allele' feature to generate fresh, consistent files, which you can then resubmit."
-        if filename.startswith(self.settings['ipd_shortname']):  # IPD file
-            self.protected = True
-            QMessageBox.warning(self, "No editing allowed", msg)
-            self.log.debug("IPD files cannot be edited")
-            return
-        elif filename.endswith(".ena.txt"):  # ENA file
-            self.protected = True
-            QMessageBox.warning(self, "No editing allowed", msg)
-            self.log.debug("ENA files cannot be edited")
-            return
-        self.protected = False  # all other files are ok to edit
-        self.log.debug("Editing is allowed")
-
-    def on_text_changed(self):
-        """when text in text window is edited, enable & highlight save_btn
-        """
-        try:
-            if not self.protected:
-                if self.txt_field.toPlainText() != self.txt:
-                    self.save_btn.setEnabled(True)
-                    self.save_btn.setStyleSheet(general.btn_style_clickme)
-                    self.discard_btn.setEnabled(True)
-                    self.discard_btn.setStyleSheet(general.btn_style_clickme)
-                    self.unsaved_changes = True
-        except Exception as E:
-            self.log.exception(E)
-
-    def save_file(self):
-        """saves the edited file
-        """
-        self.log.debug("'Save changes' was clicked")
-        try:
-            txt = self.txt_field.toPlainText()
-            if txt:
-                self.log.debug("Saving changes?")
-                reply = QMessageBox.question(self, 'Message',
-                                             "Save changes to {}?".format(os.path.basename(self.file)),
-                                             QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
-
-                if reply == QMessageBox.Yes:
-                    self.log.debug("Saving changes in file {}...".format(self.file))
-                    with open(self.file, "w") as g:
-                        g.write(txt)
-                    self.txt = txt
-                    self.unsaved_changes = False
-                    self.discard_btn.change_to_normal()
-                    self.save_btn.change_to_normal()
-                    self.log.debug("=> Success")
-                else:
-                    self.log.debug("Not saving")
-                    self.save_btn.setChecked(False)
-                    self.save_btn.setStyleSheet(general.btn_style_clickme)
-            else:
-                self.log.debug("No text to save...")
-        except Exception as E:
-            self.log.exception(E)
-
-    def reset_file(self):
-        """returns the edited file to its previous state
-        """
-        try:
-            self.log.debug("Reversing changes on file {}...".format(self.file))
-            self.txt_field.setPlainText(self.txt)
-            self.unsaved_changes = False
-            self.discard_btn.change_to_normal()
-            self.save_btn.change_to_normal()
-            self.log.debug("=> Success")
-        except Exception as E:
-            self.log.exception(E)
 
     def closeEvent(self, event):
         """asks for confirmation before closing
@@ -888,10 +800,9 @@ def main():
     app = QApplication(sys.argv)
     sys.excepthook = log_uncaught_exceptions
 
-    project_name = "20180706_ADMIN_mixed_bsh"
-    sample_id_int = "ID15763275"
-    ex = DownloadFilesDialog(log, sample_id_int, project_name)
-    #     ex = EditFileDialog(log, sample_id_int, project_name)
+    project_name = "20201119_ADMIN_mixed_startover-85"
+    sample_id_int = "ID19454517"
+    ex = ReadFileDialog(log, project_name, sample_id_int)
     ex.show()  # Maximized()
     result = app.exec_()
 
