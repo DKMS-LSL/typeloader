@@ -51,6 +51,7 @@ from PyQt5.QtCore import Qt, QTimer, QModelIndex
 
 delete_all_stuff_at_the_end = True  # deletes database entries and project directory
 skip_other_tests = False  # set to True to skip all tests except the current WiP (out-comment it there in setUpClass)
+skip_make_project = False  # set to True to skip initial cleanup and new project creation
 project_name = ""  # this will be set in create project
 
 samples_dic = {  # samples to test
@@ -148,7 +149,7 @@ class Test_0_Clean_Stuff_initial(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        if skip_other_tests:
+        if skip_make_project:
             self.skipTest(self, "Skipping initial cleanup because skip_other_tests is set to True")
 
     @classmethod
@@ -262,7 +263,7 @@ class Test_1_Create_Project(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        if skip_other_tests:
+        if skip_make_project:
             self.skipTest(self, "Skipping Create Test because skip_other_tests is set to True")
         else:
             self.form = PROJECT.NewProjectForm(log, mydb, curr_settings)
