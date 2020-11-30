@@ -223,7 +223,6 @@ class TestResetReferenceManually(unittest.TestCase):
         self.assertEqual(self.form.updated, self.target_version_after_update)
 
 
-
 class TestUpdateReference(unittest.TestCase):
     """test whether reference updates work
     """
@@ -876,8 +875,7 @@ class Test_Send_To_ENA(unittest.TestCase):
 
 
 class Test_Send_To_IMGT(unittest.TestCase):
-    """
-    Create IMGT / IPD files
+    """Create IMGT / IPD files
     No transmission
     """
 
@@ -886,6 +884,7 @@ class Test_Send_To_IMGT(unittest.TestCase):
         if skip_other_tests:
             self.skipTest(self, "Skipping Submission to IPD because skip_other_tests is set to True")
         else:
+            log.debug("setting up test...")
             query = "select project_name from projects"
             success, data_content = execute_db_query(query,
                                                      1,
@@ -897,14 +896,17 @@ class Test_Send_To_IMGT(unittest.TestCase):
             self.assertTrue(success, "Could not retrieve project name from table PROJECTS")
             self.project_name = data_content[0][0]
             self.form = IPD.IPDSubmissionForm(log, mydb, self.project_name, curr_settings, parent=None)
-            query = """update ALLELES set IPD_submission_nr = 'DKMS1000{}'
-            where Sample_ID_int = '{}'and allele_nr = 1""".format(samples_dic["sample_1"]["submission_id"],
-                                                                  samples_dic["sample_1"]["id_int"])
-            execute_db_query(query, 0, log,
-                             "updating {}.IPD_submission_nr",
-                             "Successfully updated {}.IPD_submission_nr",
-                             "Can't update {}.IPD_submission_nr",
-                             "ALLELES")
+            query = f"""update ALLELES set IPD_submission_nr = 'DKMS1000{samples_dic["sample_1"]["submission_id"]}'
+                        where Sample_ID_int = '{samples_dic["sample_1"]["id_int"]}' and allele_nr = 1"""
+            success, data = execute_db_query(query, 0, log,
+                                             "updating {}.IPD_submission_nr",
+                                             "Successfully updated {}.IPD_submission_nr",
+                                             "Can't update {}.IPD_submission_nr",
+                                             "ALLELES")
+            if success:
+                log.debug("\t=> setup successful")
+            else:
+                raise Exception("setUpClass did not work! Can't update ALLELES.IPD_submission_nr!")
 
     @classmethod
     def tearDownClass(self):
@@ -1387,7 +1389,7 @@ class Test_Views(unittest.TestCase):
             model = view.flipped_model
 
             # test whether only right columns are shown:
-            shown_columns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 14, 33, 34]
+            shown_columns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 14, 23, 33, 34]
             for col in shown_columns:
                 self.assertEqual(view.table.isIndexHidden(model.index(col, 1)), False)
             for col in range(44):
@@ -1415,6 +1417,8 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.data(model.index(8, 0), Qt.DisplayRole), "IPD submitted")
             self.assertEqual(model.headerData(14, Qt.Vertical, Qt.DisplayRole), "Lab Status")
             self.assertEqual(model.data(model.index(14, 0), Qt.DisplayRole), "completed")
+            self.assertEqual(model.headerData(23, Qt.Vertical, Qt.DisplayRole), "Comment")
+            self.assertEqual(model.data(model.index(23, 0), Qt.DisplayRole), "")
             self.assertEqual(model.headerData(33, Qt.Vertical, Qt.DisplayRole), "Internal Allele Name")
             self.assertEqual(model.data(model.index(33, 0), Qt.DisplayRole), "")
             self.assertEqual(model.headerData(34, Qt.Vertical, Qt.DisplayRole), "Official Allele Name")
@@ -1456,7 +1460,7 @@ class Test_Views(unittest.TestCase):
             model = view.flipped_model
 
             # test whether only right columns are shown:
-            shown_columns = [14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+            shown_columns = [14, 15, 16, 17, 18, 19, 20, 21, 22]
             for col in shown_columns:
                 self.assertEqual(view.table.isIndexHidden(model.index(col, 1)), False)
             for col in range(44):
@@ -1474,9 +1478,8 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.headerData(20, Qt.Vertical, Qt.DisplayRole), "Long Read Data?")
             self.assertEqual(model.headerData(21, Qt.Vertical, Qt.DisplayRole), "LR Phased?")
             self.assertEqual(model.headerData(22, Qt.Vertical, Qt.DisplayRole), "LR Technology")
-            self.assertEqual(model.headerData(23, Qt.Vertical, Qt.DisplayRole), "Comment")
 
-            for col in [15, 16, 17, 18, 19, 20, 21, 22, 23]:
+            for col in [15, 16, 17, 18, 19, 20, 21, 22]:
                 value = model.data(model.index(col, 0), Qt.DisplayRole)
                 msg = "Col {} ({}) should be empty, but contains {}!".format(col,
                                                                              model.headerData(col, Qt.Vertical,
@@ -2263,7 +2266,7 @@ class Test_multiple_novel_alleles_part1(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         if skip_other_tests:
-            self.skipTest(self, "Skipping Test_null_alleles because skip_other_tests is set to True")
+            self.skipTest(self, "Skipping Test_multiple_novel_alleles_part1 because skip_other_tests is set to True")
         else:
             self.project_name = project_name
             self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "multiple")
@@ -2282,6 +2285,7 @@ class Test_multiple_novel_alleles_part1(unittest.TestCase):
                                        "ALLELES")
 
             if data:  # set partner allele back to None
+                self.log.debug("Setting partner allele back to Null")
                 query2 = "update alleles set partner_allele = Null where local_name = '{}'".format(self.local_name)
                 _, data = execute_db_query(query2, 0, log, "Return partner allele to empty",
                                            "Resetting ALLELES for test allele {}".format(self.sample_id_int),
@@ -2339,7 +2343,7 @@ class Test_multiple_novel_alleles_part1(unittest.TestCase):
         """test if BothAllelesNovelDialog input produces the intended behavior
         """
         # open MultiAlleleDialog with input data:
-        problem_dic = {'DKMS-LSL_ID000010_3DP1_1': ['ID000010', 'DKMS-LSL_ID000010_3DP1_1',
+        problem_dic = {self.local_name : [self.sample_id_int, self.local_name ,
                                                     TargetAllele(gene='KIR3DP1', target_allele='KIR3DP1*0030102:new',
                                                                  partner_allele=''),
                                                     ['003new', '004new', '001']]}
