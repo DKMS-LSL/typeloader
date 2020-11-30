@@ -107,7 +107,7 @@ class ResetReferenceDialog(QDialog):
         self.target_value = target_value
         self.btn_dic = {}
         self.updated = []
-        self.log.debug("Opened DowngradeReferenceDialog")
+        self.log.debug("Opened ResetReferenceDialog")
 
         self.setWindowTitle("Reset reference to arbitrary version")
         self.setWindowIcon(QIcon(general.favicon))
@@ -230,6 +230,44 @@ class ResetReferenceDialog(QDialog):
         self.close()
 
 
+class VersionDialog(QDialog):
+    """a dialog to show the current versions used by TypeLoader
+    """
+    def __init__(self, settings, log, parent=None):
+        super().__init__(parent)
+        self.settings = settings
+        self.log = log
+        self.parent = parent
+        self.TL_version = general.read_package_variable("__version__")
+        self.log.debug("Opened VersionDialog")
+
+        self.setWindowTitle("TypeLoader's current versions")
+        self.setWindowIcon(QIcon(general.favicon))
+        self.resize(350, 150)
+        self.init_UI()
+        self.setModal(True)
+        self.show()
+
+    def init_UI(self):
+        """establish and fill the UI
+        """
+        layout = QFormLayout(self)
+        self.setLayout(layout)
+
+        header = QLabel("Current versions:")
+        header.setStyleSheet(general.label_style_2nd)
+        layout.addRow(header)
+
+        layout.addRow(QLabel(""))  # empty line
+
+        layout.addRow(QLabel("HLA/IMGT database:"),
+                      QLabel(self.settings["db_versions"]["HLA"]))
+
+        layout.addRow(QLabel("IPD-KIR database:"),
+                      QLabel(self.settings["db_versions"]["KIR"]))
+
+        layout.addRow(QLabel("TypeLoader:"),
+                      QLabel(self.TL_version))
 # ===========================================================
 # functions:
 
@@ -261,7 +299,7 @@ def main():
     app = QApplication(sys.argv)
     sys.excepthook = log_uncaught_exceptions
 
-    ex = ResetReferenceDialog(settings_dic, log)
+    ex = VersionDialog(settings_dic, log)
     ex.show()
     result = app.exec_()
 
