@@ -92,7 +92,7 @@ class MainGUI(QMainWindow):
     def make_leftlist(self):
         """sets up the navigation area
         """
-        self.navigation = GUI_navigation.Navigation(self.log, self.settings)
+        self.navigation = GUI_navigation.Navigation(self.log, self.settings, self.mydb)
 
         desktop = QDesktopWidget()
         geometry = desktop.availableGeometry(desktop.primaryScreen())
@@ -164,7 +164,7 @@ class MainGUI(QMainWindow):
         self.view_sample.sub_lbl = QLabel(self.current_sample, self.view_sample)
         self.view_sample.layout.addWidget(self.view_sample.sub_lbl, 0, 1)
         self.view_sample.sub_lbl.setStyleSheet(general.label_style_main)
-        self.view_sample.layout.addWidget(mywidget.edit_btn, 0, 6)
+        self.view_sample.layout.addWidget(mywidget.read_btn, 0, 6)
         self.view_sample.layout.addWidget(mywidget.download_btn, 0, 7)
         self.view_sample.widget.data_changed.connect(self.on_data_changed)
         self.view_sample.widget.allele_updated.connect(self.change_allele)

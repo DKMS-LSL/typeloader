@@ -21,7 +21,7 @@ import sys, os
 import general
 from db_internal import execute_query
 from GUI_overviews import (InvertedTable, FilterableTable, SqlQueryModel_filterable,
-                           EditFilesButton, EditFileDialog,
+                           ReadFilesButton, ReadFileDialog,
                            DownloadFilesButton, DownloadFilesDialog)
 from typeloader_functions import toggle_project_status
 
@@ -274,8 +274,8 @@ class ProjectView(QWidget):
         self.download_btn.clicked.connect(self.open_download_dialog)
         self.grid.addWidget(self.download_btn, 0, 3)
          
-        self.edit_btn = EditFilesButton("Edit a file", self, self.log)
-        self.edit_btn.clicked.connect(self.open_edit_dialog)
+        self.edit_btn = ReadFilesButton("View a file", self, self.log)
+        self.edit_btn.clicked.connect(self.open_read_dialog)
         self.grid.addWidget(self.edit_btn, 0, 4)
         
         self.project_stats = ProjectStatsTable(self.log, self.mydb)
@@ -359,12 +359,12 @@ class ProjectView(QWidget):
             self.log.exception(E)
             
     @pyqtSlot()
-    def open_edit_dialog(self):
-        """opens EditFileDialog
+    def open_read_dialog(self):
+        """opens ReadFileDialog
         """
-        self.log.debug("Opening file editing dialog...")
+        self.log.debug("Opening file viewing dialog...")
         try:
-            dialog = EditFileDialog(self.log, self.project_name, parent = self)
+            dialog = ReadFileDialog(self.log, self.project_name, parent = self)
             dialog.exec_()
         except Exception as E:
             self.log.exception(E)

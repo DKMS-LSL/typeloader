@@ -21,6 +21,7 @@ from typeloader_core import (EMBLfunctions as EF, coordinates as COO, backend_ma
                              backend_enaformat as BE, getAlleleSeqsAndBlast as GASB,
                              closestallele as CA, errors, update_reference)
 import general, db_internal
+
 # ===========================================================
 # parameters:
 
@@ -42,7 +43,7 @@ flatfile_dic = {"function_hla": "antigen presenting molecule",
 
 class Allele:
     def __init__(self, gendx_result, gene, name, product, targetFamily, sample_id_int, settings, log,
-                 newAlleleName="", partner_allele="", parent=None):
+                 newAlleleName="", partner_allele="", parent=None, existing_values=None):
         self.gendx_result = gendx_result
         self.targetFamily = targetFamily
         self.gene = gene
@@ -59,7 +60,11 @@ class Allele:
         self.partner_allele = partner_allele
         self.null_allele = False
         self.parent = None
-        self.make_local_name()
+        if existing_values:
+            (self.allele_nr, self.local_name) = existing_values
+            self.cell_line = "_".join(self.local_name.split("_")[:2])
+        else:
+            self.make_local_name()
 
     def make_local_name(self):
         """creates the local name, cell_line and allele_nr of an allele
@@ -308,8 +313,14 @@ def remove_other_allele(blast_xml_file, fasta_file, other_allele_name, log, repl
 
 
 def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_filename,
-                          allelesFilename, header_data, settings, log, incomplete_ok=False):
+                          allelesFilename, header_data, settings, log, incomplete_ok=False, startover=False):
     log.debug("Processing sequence file...")
+    if startover:
+        allele_nr = startover["allele_nr"]
+        local_name = startover["local_name"]
+        existing_values = (allele_nr, local_name)
+    else:
+        existing_values = None
     try:
         if filetype == "XML":
             try:
@@ -346,7 +357,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
 
             (gendx_result, gene, name, product) = (genDxAlleleNames[0], geneNames[0], alleleNames[0], products[0])
             allele1 = Allele(gendx_result, gene, name, product, targetFamily, header_data["sample_id_int"], settings,
-                             log)
+                             log, existing_values=existing_values)
 
             if len(genDxAlleleNames) > 1:
                 (gendx_result, gene, name, product) = (genDxAlleleNames[1], geneNames[1],
@@ -354,7 +365,8 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 allele2 = Allele(gendx_result, gene, name, product, targetFamily,
                                  header_data["sample_id_int"], settings, log)
             else:
-                allele2 = Allele("", "", "", "", "", header_data["sample_id_int"], settings, log)
+                allele2 = Allele("", "", "", "", "", header_data["sample_id_int"], settings, log,
+                                 existing_values=existing_values)
 
             myalleles = [allele1, allele2]
             ENA_text = ""
@@ -373,7 +385,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 empty_xml = False
                 if E.args:
                     msg = E.args[0]
-                    if msg == "Your XML file was empty":  #TODO: test this (seems to not be caught correctly)
+                    if msg == "Your XML file was empty":  # TODO: test this (seems to not be caught correctly)
                         empty_xml = True
                 if empty_xml:
                     return False, "BLAST hickup", "The generated blast.xml-file was empty. This was probably a BLAST hickup. Please restart TypeLoader and try again!"
@@ -389,7 +401,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 # No BLAST hit at position 1
                 msg = "No BLAST hit at position 1"
                 log.warning(msg)
-                return False, "Problem in XML file", msg
+                return False, "Problem in Fasta file", msg
             else:
                 extraInformation = annotations[alleleName]["extraInformation"]
                 closestAlleleName = annotations[alleleName]["closestAllele"]
@@ -445,13 +457,14 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
 
                 myallele = Allele("", geneName, newAlleleName, productName_FT, targetFamily,
                                   header_data["sample_id_int"],
-                                  settings, log, newAlleleName)
+                                  settings, log, newAlleleName, existing_values=existing_values)
                 myallele.null_allele = null_allele
                 myalleles = [myallele]
                 generalData = BME.make_globaldata(gene_tag=gene_tag, gene=geneName, allele=newAlleleName,
                                                   product_DE=productName_DE, product_FT=productName_FT,
                                                   function=function, species=flatfile_dic["species"],
-                                                  seqLen=str(len(sequence)), cellline=myallele.local_name, pseudogene=pseudogene)
+                                                  seqLen=str(len(sequence)), cellline=myallele.local_name,
+                                                  pseudogene=pseudogene)
                 ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, null_allele) + BME.make_genemodel(
                     BE.backend_dict, generalData, enaPosHash, extraInformation, features) + BME.make_footer(
                     BE.backend_dict, sequence)
@@ -582,12 +595,14 @@ def save_new_allele(project, sample_name, local_name, ENA_text,
 def save_new_allele_to_db(allele, project,
                           filetype, raw_file, fasta_filename, blastXmlFile,
                           header_data, targetFamily,
-                          ena_path, restricted_alleles, settings, mydb, log):
+                          ena_path, restricted_alleles, settings, mydb, log, startover=False):
     """save new allele to internal database
     """
     try:
         log.info("Saving allele {} to database...".format(allele.newAlleleName))
-
+        startover_allele = False
+        if startover:
+            startover_allele = True
         # get numbers to increment from database:
         query1 = "select count(*) from alleles where project_name = '{}'".format(project)
         success, data = db_internal.execute_query(query1, 1, log,
@@ -621,6 +636,21 @@ def save_new_allele_to_db(allele, project,
             else:
                 header_data["comment"] = msg
         # update ALLELES table:
+
+        startover_keys = ["ena_submission_id", "ena_acception_date", "ena_accession_nr",
+                          "ipd_submission_id", "ipd_submission_nr", "hws_submission_nr",
+                          "kommentar"]
+        if startover_allele:
+            allele.allele_nr = startover["allele_nr"]
+            project_nr = startover["project_nr"]
+            allele.local_name = startover["local_name"]
+            delete_query = f"delete from alleles where local_name = '{allele.local_name}'"
+            update_queries.append(delete_query)
+        else:
+            startover = {}
+            for key in startover_keys:
+                startover[key] = None
+
         update_alleles_query = """INSERT INTO alleles 
         (sample_id_int, allele_nr, project_name, project_nr, local_name, GENE, 
         Goal, Allele_status, Lab_Status, 
@@ -648,13 +678,27 @@ def save_new_allele_to_db(allele, project,
                    header_data["comment"], header_data["ref_version"], general.timestamp('%Y-%m-%d'))
         update_queries.append(update_alleles_query)
 
+        if startover:
+            update_me = []
+            for key in startover_keys:
+                if startover[key]:
+                    update_me.append(key)
+
+            if update_me:
+                update_query = "update alleles set "
+                for key in update_me:
+                    update_query += f"{key} = '{startover[key]}', "
+                update_query = update_query[:-2]  # remove trailing comma
+                update_query += f" where local_name = '{startover['local_name']}'"
+                update_queries.append(update_query)
+
         # update SAMPLES table:
         query4 = "select count(*) from samples where SAMPLE_ID_INT = '{}'".format(allele.sample_id_int)
         success, data = db_internal.execute_query(query4, 1, log,
                                                   "checking if sample already known",
                                                   err_type="Database Error", parent=None)
         if success:
-            if data != [[0]]:  # if sample already known, don't re-enter it
+            if data != [[0]] or startover_allele:  # if sample already known, don't re-enter it
                 pass
             else:
                 update_samples_query = """INSERT INTO samples
@@ -665,6 +709,10 @@ def save_new_allele_to_db(allele, project,
             return (False, False, False)
 
         # update FILES table:
+        if startover_allele:
+            delete_files = f"""delete from files where local_name = '{allele.local_name}'"""
+            update_queries.append(delete_files)
+
         update_files_query = """INSERT INTO files
         (Sample_ID_int, local_name, allele_nr, project, raw_file_type, raw_file, fasta, 
         blast_xml, ena_file) values 
@@ -768,7 +816,8 @@ def handle_new_allele_parsing(project_name, sample_id_int, sample_id_ext, raw_pa
 
 
 def upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_path, customer,
-                               settings, mydb, log, incomplete_ok=False, use_restricted_db=False):
+                               settings, mydb, log, incomplete_ok=False, use_restricted_db=False,
+                               startover=False):
     """adds one new target sequence to TypeLoader
     """
     success, results = handle_new_allele_parsing(project_name, sample_id_int, sample_id_ext,
@@ -796,6 +845,11 @@ def upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_p
     myallele = myalleles[0]
     myallele.sample_id_int = sample_id_int
     myallele.make_local_name()
+    if startover:
+        if myallele.gene != startover["gene"]:
+            return False, f"This used to be a {startover['gene']} allele! " \
+                          f"It can only be restarted with another {startover['gene']} allele."
+
     # save allele files:
     results = save_new_allele(project_name, sample_name, myallele.local_name, ENA_text,
                               filetype, temp_raw_file, blastXmlFile, fasta_filename, False,
@@ -811,7 +865,8 @@ def upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_p
                                                      filetype, raw_file,
                                                      fasta_filename, blastXmlFile,
                                                      header_data, targetFamily,
-                                                     ena_path, None, settings, mydb, log)
+                                                     ena_path, None, settings, mydb, log,
+                                                     startover)
     if success:
         log.debug("Allele uploaded successfully")
         return True, myallele.local_name
@@ -821,7 +876,7 @@ def upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_p
 
 def bulk_upload_new_alleles(csv_file, project, settings, mydb, log):
     """performs bulk uploading, parsing and saving of new target alleles
-    specified in a .csv file 
+    specified in a .csv file
     """
     log.info("Starting bulk upload from file {}...".format(csv_file))
     alleles, error_dic, num_rows = parse_bulk_csv(csv_file, settings, log)
@@ -1011,7 +1066,6 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
     if not success:
         log.error("Validation by ENA's Webin-CLI failed!")
         log.error(ENA_response)
-        print(ENA_response)
         return [ENA_response], False, "ENA validation error", ENA_response, problem_samples
 
     log.debug("\t=> looking good")
@@ -1103,8 +1157,8 @@ def upload_allele_with_restricted_db(project_name, sample_id_int, sample_id_ext,
                                  settings["reference_dir"])
     target_dir = os.path.join(settings["temp_dir"], "restricted_db")
     success, restricted_db = update_reference.make_restricted_db("restricted", ref_path_orig,
-                                                                reference_alleles, target_dir,
-                                                                settings["blast_path"], log)
+                                                                 reference_alleles, target_dir,
+                                                                 settings["blast_path"], log)
     if not success:
         msg = "Creating restricted database did not work! Aborting..."
         log.error(msg)
@@ -1117,12 +1171,160 @@ def upload_allele_with_restricted_db(project_name, sample_id_int, sample_id_ext,
     return success, msg
 
 
+def collect_old_files_for_renaming(project_name, sample_id_int, allele_nr, parent, settings, log):
+    log.debug("\tFinding old files in database...")
+    file_query = f"""select alleles.local_name, raw_file, fasta, blast_xml, ena_file, 
+                        ipd_submission_file, ipd_submission_nr
+                    from files join alleles on files.local_name = alleles.local_name
+                    where alleles.allele_nr = {allele_nr} and files.project = '{project_name}'
+                        and files.sample_id_int = '{sample_id_int}'"""
+    success, data = db_internal.execute_query(file_query, 7, log,
+                                              "retrieving previously created files from database",
+                                              parent=parent)
+    if not success:
+        return False, data, []  # data = err_msg
+
+    if not data:
+        return False, "Could not find data for this allele in the database!", []
+
+    if len(data) > 1:
+        return False, "Found multiple alleles with this specification! (This should not happen!)", []
+
+    log.info("\tRenaming old files...")
+    [local_name, raw_file, fasta, blast_xml, ena_file, ipd_submission_file, ipd_submission_nr] = data[0]
+    sample_dir = os.path.join(settings["projects_dir"], project_name, sample_id_int)
+    timestamp = general.timestamp("%Y%m%d%H%M%S")
+
+    if ipd_submission_nr and not ipd_submission_file:  # in older samples, the IPD filename was not stored
+        for file in [f"{ipd_submission_nr}.txt",
+                     f"{ipd_submission_nr}_confirmed.txt"]:
+            if os.path.exists(os.path.join(sample_dir, file)):
+                ipd_submission_file = file
+
+    files = [raw_file, fasta, blast_xml, ena_file, ipd_submission_file]
+    rename_me = []
+    for file in files:
+        if file:
+            split = file.split(".")
+            new_file = f"{split[0]}_old_{timestamp}.{'.'.join(split[1:])}"
+            rename_me.append((os.path.join(sample_dir, file), os.path.join(sample_dir, new_file)))
+
+    return True, local_name, rename_me
+
+
+def mark_as_outdated(value):
+    """if value exists, mark it with a suffix as outdated
+    """
+    suffix = "_outdated!"
+    if value:
+        if value == "None":
+            return None
+        else:
+            return value.replace(suffix, "") + suffix
+    return value
+
+
+def get_protected_values(project_name, sample_id_int, local_name, parent, log):
+    log.debug("Getting protected values from db...")
+
+    query = f"""select allele_nr, project_nr, gene, reference_database, database_version, 
+                    ena_submission_id, ena_acception_date, ena_accession_nr, 
+                    ipd_submission_id, ipd_submission_nr, hws_submission_nr,
+                    sample_id_ext, customer, kommentar
+                from alleles join samples on alleles.sample_id_int = samples.sample_id_int 
+                where local_name = '{local_name}' and project_name = '{project_name}'
+                    and alleles.sample_id_int = '{sample_id_int}'
+                """
+
+    success, data = db_internal.execute_query(query, 14, log,
+                                              "retrieving protected values from database",
+                                              parent=parent)
+    if not success:
+        return False, data
+    if not data:
+        return False, f"Could not find allele data of allele {local_name}!"
+    if len(data) > 1:
+        return False, f"Found multiple alleles with this specification! (This should not happen!)"
+
+    [allele_nr, project_nr, gene, reference_database, database_version,
+     ena_submission_id, ena_acception_date, ena_accession_nr,
+     ipd_submission_id, ipd_submission_nr, hws_submission_nr, sample_id_ext, customer,
+     kommentar] = data[0]
+
+    notice = "restarted with fresh sequence"
+    kommentar = kommentar.replace(f", {notice}", "").replace(notice, "")  # these should not accumulate
+    if kommentar:
+        kommentar = ", ".join([kommentar, notice])
+    else:
+        kommentar = notice
+
+    startover_dic = {"allele_nr": allele_nr,
+                     "project_nr": project_nr,
+                     "local_name": local_name,
+                     "gene": gene,
+                     "sample_id_int": sample_id_int,
+                     "sample_id_ext": sample_id_ext,
+                     "customer": customer,
+                     "ena_submission_id": ena_submission_id,
+                     "ena_acception_date": mark_as_outdated(ena_acception_date),
+                     "ena_accession_nr": mark_as_outdated(ena_accession_nr),
+                     "ipd_submission_id": ipd_submission_id,
+                     "ipd_submission_nr": mark_as_outdated(ipd_submission_nr),
+                     "hws_submission_nr": mark_as_outdated(hws_submission_nr),
+                     "ref_db": reference_database,
+                     "db_version": database_version,
+                     "kommentar": kommentar
+                     }
+    for key in startover_dic:
+        if startover_dic[key] == "None":
+            startover_dic[key] = None
+
+    return True, startover_dic
+
+
+def initiate_startover_allele(project_name, sample_id_int, allele_nr, parent, settings, log):
+    log.info(f"Initiating startover...")
+
+    success, err_msg, rename_files = collect_old_files_for_renaming(project_name, sample_id_int, allele_nr, parent,
+                                                                    settings, log)
+    if not success:
+        return False, err_msg, None, None
+
+    local_name = err_msg
+
+    success, results = get_protected_values(project_name, sample_id_int, local_name, parent, log)
+    if not success:
+        return False, results, None  # results = err_msg
+
+    startover_dic = results
+    startover_dic["rename_files"] = rename_files
+    db_dic = {"IPD-IMGT/HLA": "HLA",
+              "IPD-KIR": "KIR"}
+    db_short = db_dic[startover_dic["ref_db"]]
+
+    if settings["db_versions"][db_short] != startover_dic["db_version"]:
+        msg = f"This allele was originally uploaded to TypeLoader with {startover_dic['ref_db']} version " \
+              f"{startover_dic['db_version']}!"
+        msg += "\nDo you wish to reset TypeLoader to this, in order to use the same reference?"
+        log.info(msg)
+        return True, msg, (db_short, startover_dic["db_version"]), startover_dic
+
+    return True, None, None, startover_dic
+
+
 # ===========================================================
 # main:
 
 def main(settings, log, mydb):
-    update_curr_versions(settings, log)
+    project = "20201119_ADMIN_mixed_startover-85"
+    sample = "ID15592561"
+    allele = "DKMS-LSL_ID15592561_DPB1_1"
+    nr = ""
+    new_fasta = None
+    parent = None
 
+    result = initiate_startover_allele(project, sample, allele, parent, settings, log)
+    startover_dic = result[-1]
 
 
 if __name__ == "__main__":
@@ -1131,7 +1333,7 @@ if __name__ == "__main__":
 
     log = general.start_log(level="debug")
     log.info("<Start {}>".format(os.path.basename(__file__)))
-    settings_dic = GUI_login.get_settings("staging", log)
+    settings_dic = GUI_login.get_settings("admin", log)
     mydb = create_connection(log, settings_dic["db_file"])
     main(settings_dic, log, mydb)
     close_connection(log, mydb)

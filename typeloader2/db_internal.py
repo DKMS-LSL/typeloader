@@ -160,8 +160,7 @@ def execute_query(query, num_columns, log, task, err_type="Database Error", pare
     if err_msg:
         if parent:
             QMessageBox.warning(parent, err_type, err_msg)
-        else:
-            data = err_msg
+        data = err_msg
         return success, data
 
     success = True
