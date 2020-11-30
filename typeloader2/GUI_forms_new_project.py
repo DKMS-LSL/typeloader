@@ -155,9 +155,13 @@ class NewProjectForm(QDialog):
     def get_values(self):
         """retrieves all values from the GUI
         """
+        self.log.debug("Getting all infos from the GUI...")
         self.check_ready_project()
         self.title = self.title_entry.text().strip()
         self.description = self.desc_entry.text().strip()
+        if not self.title:
+            self.title = self.pool
+            self.title_entry.setText(self.pool)
 
     def check_all_fields_valid(self):
         """checks whether all fields contain only valid characters
