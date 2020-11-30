@@ -330,11 +330,12 @@ class IPDFileChoiceTable(FileChoiceTable):
         query = """select project_nr, alleles.sample_id_int, alleles.local_name, allele_status, 
         ena_submission_id, 
 		case
-			when instr(ipd_submission_nr, '_') > 0
-				then substr(ipd_submission_nr, 1, instr(ipd_submission_nr, '_')-1)
+			when instr(IPD_SUBMISSION_NR, '_') > 0
+				then substr(IPD_SUBMISSION_NR, 1, instr(IPD_SUBMISSION_NR, '_')-1)
 			else
-				IPD_SUBMISSION_nr
-		end
+				IPD_SUBMISSION_NR
+		end as IPD_SUBMISSION_NR,
+		cell_line_old, gene, target_allele, partner_allele
 		from alleles
          join files on alleles.sample_id_int = files.sample_id_int and alleles.allele_nr = files.allele_nr
         """.format(project)  #TODO: is this format() still necessary or leftover code?
