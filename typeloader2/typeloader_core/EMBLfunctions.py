@@ -503,7 +503,7 @@ def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic,
         last_line = str(output_list)
 
     s = submission_alias.split("_")
-
+    log.debug("\n".join(output_list))
     if modus == "validate":
         if last_line == 'INFO : The submission has been validated successfully.':
             success = True
