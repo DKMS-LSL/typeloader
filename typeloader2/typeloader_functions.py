@@ -223,7 +223,7 @@ def upload_parse_sequence_file(raw_path, settings, log, use_given_reference=Fals
 
     sample_name = None
     if header_data:
-        for key in ["SAMPLE_ID_INT", "LIMS-DONOR_ID"]:
+        for key in ["SAMPLE_ID_INT", "LIMS_DONOR_ID"]:
             if key in header_data:
                 if header_data[key]:
                     sample_name = header_data[key]
