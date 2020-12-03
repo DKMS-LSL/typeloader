@@ -628,6 +628,11 @@ def save_new_allele_to_db(allele, project,
             null_allele = 'yes'
         else:
             null_allele = 'no'
+
+        for key in header_data:
+            if not header_data[key]:
+                header_data[key] = ""
+
         update_queries = []
         if restricted_alleles:
             msg = f"Uploaded using a reference restricted to {' & '.join(restricted_alleles)}"

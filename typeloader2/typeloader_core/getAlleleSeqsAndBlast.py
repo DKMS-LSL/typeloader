@@ -72,6 +72,8 @@ def parse_fasta_header(fasta_header):
         for item in items:
             data = item.replace('"', "").split("=")
             try:
+                if data[1] in ["list()", "list(NULL)"]:
+                    data[1] = ""
                 header_data[data[0]] = data[1]
             except IndexError:
                 print("Error: cannot distinguish key:value pair from '{}' in fasta_header".format(item))
