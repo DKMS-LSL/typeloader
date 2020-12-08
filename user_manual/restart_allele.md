@@ -50,3 +50,6 @@ If the assemblies are already public, ENA will tell you how to proceed. You will
 Please notify IPD that you need to correct a sequence, and which allele is concerned. If the reference database has been updated between your original submission and now (TypeLoader will check this during Restart and let you know if it is the case), ask them whether they prefer the corrected files to be built against the original reference or the current one.
 
 Using the reference database version they ask for and the original ENA acception reply and pretyping files, generate fresh IPD files by using the normal [=> IPD submission](submission_ipd.md) functionality. Then send the corrected files to IPD via your usual channel and ask them to update the allele for you.
+
+**Once you have created fresh, corrected IPD files, the '_outdated!' markers on the respective fields of ENA- and IPD-submission will vanish again.** 
+So you can always tell whether the correction has been finished by this marker.
