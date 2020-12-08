@@ -10,7 +10,8 @@ TypeLoader automatically uses the newest version of these LSL-approved reference
 ## Manual reference updates
 If you suspect your reference may be broken, or if you want to return to the current version after using a [=> deliberately old reference version](database-reset.md), you can tell TypeLoader to download and build a fresh reference.
 
-To do this, choose `Options` => `Update Reference` (or `CTRL+R`): 
+To do this, choose `Options` => `Refresh Reference` (or `CTRL+R`): 
+
 ![image](images/reference_update_option.png)
 
 Then, you can choose whether to update the reference for `HLA` (which includes `MIC`) or `KIR` or both:
