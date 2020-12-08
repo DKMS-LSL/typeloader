@@ -8,7 +8,7 @@ TypeLoader automatically uses the newest version of these LSL-approved reference
 **It is strongly advised to always update the reference when TypeLoader suggests this!**
 
 ## Manual reference updates
-If you suspect your reference may be broken, you can tell TypeLoader to download and build a fresh reference.
+If you suspect your reference may be broken, or if you want to return to the current version after using a [=> deliberately old reference version](database-reset.md), you can tell TypeLoader to download and build a fresh reference.
 
 To do this, choose `Options` => `Update Reference` (or `CTRL+R`): 
 ![image](images/reference_update_option.png)
@@ -27,3 +27,5 @@ However, if this only affects the BLAST reference files created by TypeLoader *f
 This can lead to weird BLAST errors (usually "file not found") during sequence upload or IPD file creation. 
 
 Whenever you suspect this has happened, just tell TypeLoader to refresh its reference. If this was the problem, it should be fixed afterwards. 
+
+Also, if you have [=> reset a reference database to a previous version](database_reset.md), you can use this functionality to return to the current database version after you are finished without having to restart TypeLoader.
