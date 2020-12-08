@@ -13,8 +13,8 @@ The data in this view is organized in three tables:
 
 Additionally, there are two buttons to interact with the sample's files:
 
-  * **Edit a file** opens a dialog in which a text file of this sample can be selected, edited, and saved.
-  * **Download a file** opens a dialog with which a file of this sample can be selected and downloaded to a location of choice.
+  * **View files** opens a dialog in which the text files of this sample can be selected and viewed. (see below for details)
+  * **Download files** opens a dialog with which a file of this sample can be selected and downloaded to a location of choice.
 
 (See below for more details.)
 
@@ -61,16 +61,12 @@ The data in all tabs is editable, although some rows have been protected from ed
 All allele status and lab status values are [=> color-coded](colors_icons.md).
 
 ##  File Buttons 
-###  Edit a file 
-Clicking this button will open a dialog with which you can choose a file of this sample to edit by clicking ``Choose File``.
+###  View files 
+Clicking this button will open a dialog with which you can choose a file of this sample to view by clicking ``Choose File``.
 
-![Important](images/icon_important.png) **While files of other samples are visible in this dialog, TypeLoader will not allow you to edit them from here. To access them, please go to the SampleView showing this sample and then click ``Choose File``.**
+After choosing a file, it is displayed. 
 
-**If your project contains several alleles of the same sample, you can access both from the same sample-view, though.**
-
-After choosing a file, it is displayed and can be edited. **Do not edit sample files of submitted alleles without good reason!** Changes in them can lead to incongruence with ENA's data, which can make trouble down the line.
-
-All changes have to be confirmed or discarded before closing the dialog.
+**Note that editing the files is not possible, as this might lead to discrepancies between the files and submitted data.** If you need to edit the sequences (e.g., because you found out that there was a mistake in the sequence), please use the [=>Restart Allele](restart_allele.md) option.
 
 ###  Download a file 
 Clicking this button will open a dialog with which you can choose a file of this sample to download to a location of your choice.
@@ -83,4 +79,4 @@ Click ``Choose files`` to choose the file you want to download.
 
 After you have successfully chosen a file, you can click the now green ``Download!`` button. Then you will be asked to specify the path where to save the file. After confirming, the file you have chosen will be saved there.
 
-![Important](images/icon_important.png) **Note that if you download and then edit a file, TypeLoader will not know your changes. So if you intend to make changes, you should use the ``Edit a file`` button and edit TypeLoader's internal files instead.**
+![Important](images/icon_important.png) **Note that if you download and then edit a file, TypeLoader will not know your changes. So if you intend to make changes, you should use the [=>Restart Allele](restart_allele.md) option to generate new, consistent files.**
