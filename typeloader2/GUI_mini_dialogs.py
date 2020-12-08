@@ -237,6 +237,7 @@ class VersionDialog(QDialog):
         super().__init__(parent)
         self.settings = settings
         self.log = log
+        update_curr_versions(self.settings, self.log)
         self.parent = parent
         self.TL_version = general.read_package_variable("__version__")
         self.log.debug("Opened VersionDialog")
