@@ -280,16 +280,19 @@ def parse_register_EMBL_xml(filename, filetype, samples=None):
             error = "".join(errors)
     except Exception as E:
         if "ExpatError" in str(type(E)):
-            parse_dic = {}
-            for element in xml_data[1:-1].split(","):
-                [key, value] = element.replace('"', '').split(":")
-                parse_dic[key] = value
+            try:
+                parse_dic = {}
+                for element in xml_data[1:-1].split(","):
+                    [key, value] = element.replace('"', '').split(":")
+                    parse_dic[key] = value
 
-            parseable_reply = True
-            info = ""
-            for key in ["error", "message", "status"]:
-                if key not in parse_dic:
-                    parseable_reply = False
+                parseable_reply = True
+                info = ""
+                for key in ["error", "message", "status"]:
+                    if key not in parse_dic:
+                        parseable_reply = False
+            except:
+                parseable_reply = False
             if not parseable_reply:
                 error = xml_data.split("<body>")[1].split("</body>")[0]
                 error += "\n\nI cannot parse this, but apparently there's a problem."
