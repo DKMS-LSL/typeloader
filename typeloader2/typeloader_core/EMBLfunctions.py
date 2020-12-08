@@ -279,6 +279,7 @@ def parse_register_EMBL_xml(filename, filetype, samples=None):
                             errors.append(mytext)
             error = "".join(errors)
     except Exception as E:
+        info = ""
         if "ExpatError" in str(type(E)):
             try:
                 parse_dic = {}
@@ -294,7 +295,10 @@ def parse_register_EMBL_xml(filename, filetype, samples=None):
             except:
                 parseable_reply = False
             if not parseable_reply:
-                error = xml_data.split("<body>")[1].split("</body>")[0]
+                try:
+                    error = xml_data.split("<body>")[1].split("</body>")[0]
+                except IndexError:
+                    error = str(xml_data)
                 error += "\n\nI cannot parse this, but apparently there's a problem."
                 error += "\nCheck EMBL server connection?"
             else:
