@@ -16,7 +16,7 @@ To start a new project, you must give the following details:
 * **User:** This is the full name of the user starting this project. TypeLoader will automatically enter the name associated with the logged in user account. The associated initials are later used for the project name. You can also enter a different name - then the initials for the project name will be inferred from the full name given here.
 * **Gene**: This is the gene the sequences of this project belong to. If the project will cover several loci, use "mixed".
 * **Pool**: The name of the sample pool or experiment.
-* **Title**: Optionally, you can give your project a title. This will be stored and reported to ENA, and can be useful for filtering the [=> Project Overview](overview_projects.md). Keep it short and concise.
+* **Title**: Optionally, you can give your project a title. This will be stored and reported to ENA, and can be useful for filtering the [=> Project Overview](overview_projects.md). Keep it short and concise. If you enter nothing here, the content of the "Pool" field will be automatically copied here during project submission. This will help you identifying your projects in the ENA web view in case you later need to check on any submissions manually.
 * **Description**: Optionally, you can give your project a description. This will be stored and reported to ENA, and can be useful for filtering the [=> Project Overview](overview_projects.md). Keep it short and concise.
 
 ##  (2) Generate project 
