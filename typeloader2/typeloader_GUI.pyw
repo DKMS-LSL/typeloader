@@ -338,7 +338,7 @@ class MainGUI(QMainWindow):
         log_act.setStatusTip("Download a log file to send to the TypeLoader developers.")
         self.options_menu.addAction(log_act)
 
-        ref_act = QAction("Update &Reference", self.options_menu)
+        ref_act = QAction("Refresh &Reference", self.options_menu)
         ref_act.setShortcut('Ctrl+R')
         ref_act.triggered.connect(self.open_RefreshReferenceDialog)
         ref_act.setStatusTip("Manually trigger a refresh of TypeLoader's reference files.")
@@ -350,7 +350,7 @@ class MainGUI(QMainWindow):
         reset_act.setStatusTip("Reset one of TypeLoader's reference files to an older database version.")
         self.options_menu.addAction(reset_act)
 
-        version_act = QAction("Show current V&ersions", self.options_menu)
+        version_act = QAction("Show current &Versions", self.options_menu)
         version_act.setShortcut('Ctrl+V')
         version_act.triggered.connect(self.open_VersionDialog)
         version_act.setStatusTip("Show the current versions of TypeLoader and the reference databases.")
