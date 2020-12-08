@@ -169,7 +169,7 @@ class SampleAlleles(FilterableTable):
     def enhance_UI(self):
         self.header_lbl.setText("Alleles:")
         self.table.verticalHeader().hide()
-        self.setMaximumHeight(170)
+        self.setMaximumHeight(210)
 
     def create_model(self):
         """creates the table model
@@ -486,7 +486,7 @@ class SampleView(QWidget):
         self.grid = QGridLayout()
         self.setLayout(self.grid)
 
-        self.read_btn = ReadFilesButton("View a file", self, self.log)
+        self.read_btn = ReadFilesButton("View files", self, self.log)
         self.read_btn.clicked.connect(self.open_read_dialog)
         self.grid.addWidget(self.read_btn, 0, 2)
 
