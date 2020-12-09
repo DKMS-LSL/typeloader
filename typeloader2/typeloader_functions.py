@@ -618,15 +618,15 @@ def save_new_allele_to_db(allele, project,
         if startover:
             startover_allele = True
         # get numbers to increment from database:
-        query1 = "select count(*) from alleles where project_name = '{}'".format(project)
+        query1 = "select max(project_nr) from alleles where project_name = '{}'".format(project)
         success, data = db_internal.execute_query(query1, 1, log,
                                                   "retrieving number of alleles for this project from the database",
                                                   err_type="Database Error", parent=None)
         if success:
-            try:
-                project_nr = data[0][0] + 1
-            except IndexError:
+            if data == [['']]:
                 project_nr = 1
+            else:
+                project_nr = data[0][0] + 1
         else:
             log.warning("Could not retrieve existing alleles of project {}!".format(project))
             return (False, False, False)
