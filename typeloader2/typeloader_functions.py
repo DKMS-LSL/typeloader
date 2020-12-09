@@ -66,24 +66,38 @@ class Allele:
         else:
             self.make_local_name()
 
+    def get_lowest_free_nr(self, highest_possible_nr, used_nrs):
+        """returns lowest non-taken number between 1 and highest_possible_nr that is not contained in used_nrs
+        """
+        for n in range(1, highest_possible_nr + 1):
+            if n not in used_nrs:
+                return n
+
     def make_local_name(self):
         """creates the local name, cell_line and allele_nr of an allele
         """
         self.log.info("Generating local_name and cell_line...")
-        query = "select local_name, gene from alleles where sample_id_int = '{}'".format(self.sample_id_int)
-        success, data = db_internal.execute_query(query, 2, self.log,
+        query = f"""select local_name, allele_nr, gene from alleles 
+                where sample_id_int = '{self.sample_id_int}'
+                order by gene, allele_nr"""
+        success, data = db_internal.execute_query(query, 3, self.log,
                                                   "retrieving number of alleles for this sample from the database",
                                                   err_type="Database Error", parent=self.parent)
         if success:
-            self.allele_nr = len(data) + 1  # number of this allele within this sample
-            if self.allele_nr > 1:
-                self.log.info("\tThis is allele #{} for this sample!".format(self.allele_nr))
-
-            self.allele_nr_locus = 1
             if data:
-                for [_, mygene] in data:
-                    if mygene == self.gene:
-                        self.allele_nr_locus += 1
+                allele_nrs = [nr for [_, nr, _] in data]
+                highest_possible_allele_nr = max(allele_nrs) + 1
+                self.allele_nr = self.get_lowest_free_nr(highest_possible_allele_nr, allele_nrs)
+
+                same_gene_alleles = [int(local_name.split("_")[-1]) for [local_name, _, gene] in data if
+                                     gene == self.gene]
+                self.allele_nr_locus = self.get_lowest_free_nr(highest_possible_allele_nr, same_gene_alleles)
+
+                self.log.info(f"\tThis is allele #{self.allele_nr} for this sample "
+                              f"and allele #{self.allele_nr_locus} for this locus!")
+            else:
+                self.allele_nr = 1
+                self.allele_nr_locus = 1
 
             locus = self.gene.replace("HLA-", "").replace("KIR", "")
             self.cell_line = "_".join([self.settings["cell_line_token"], self.sample_id_int])
