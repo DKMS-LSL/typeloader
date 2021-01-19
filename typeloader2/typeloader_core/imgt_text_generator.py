@@ -280,10 +280,12 @@ def make_imgt_text(submissionId, cellLine, local_name, myallele, enaId, befund, 
     
     [locus, self_name] = closestAllele.split("*")
     if locus.startswith("KIR"):
+        db_name = "KIR"
         self_name = self_name[:3] + "new"
     else:
         self_name = self_name.split(":")[0] + ":new"
-        
+        db_name = "HLA"
+
     diffLine = make_diff_line(diffToClosest, imgtDiff, "{}*{}".format(locus, self_name), closestAllele)
     differencesText = refAlleleDiffString.replace("{text}", diffLine)    
     otherAllelesText = make_befund_text(befund, self_name, myallele, closestAllele, geneMap, differencesText, log)
@@ -330,6 +332,8 @@ def make_imgt_text(submissionId, cellLine, local_name, myallele, enaId, befund, 
                             ("{lab of origin}", settings["lab_of_origin"]),
                             ("{material available}", settings["material_available"]),
                             ("{typeloader version}", settings["TL_version"]),
+                            ("{database}", db_name),
+                            ("{db version}", settings["db_versions"][db_name]),
                             ("{primary sequencing tech}", settings["primary_sequencing"]),
                             ("{secondary sequencing tech}", settings["secondary_sequencing"]),
                             ("{type of primer}", settings["type_of_primer"]),

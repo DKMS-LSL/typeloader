@@ -68,7 +68,8 @@ def find_alleles_per_project(project, log, parent = None):
     """finds all alleles of a project
     """
     log.info("Finding alleles of project {}...".format(project))
-    query = "select distinct sample_id_int, cell_line_old, local_name, gene, target_allele, partner_allele from alleles where project_name = '{}'".format(project)
+    query = """select distinct sample_id_int, cell_line_old, local_name, gene, target_allele, partner_allele
+            from alleles where project_name = '{}'""".format(project)
     success, data = db_internal.execute_query(query, 6, log, "getting samples from database", "DB error", parent)
     if not success:
         return False, None
@@ -83,7 +84,10 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
     success, data = find_alleles_per_project(project, log, parent)
     if not success:
         return False, None, None
-    
+
+    if not data:
+        return False, "No alleles found", f"Could not find any alleles for project {project}!"
+
     # write fake ENA file:
     log.info("Writing fake ENA file...")
     fake_file_ena = os.path.join(settings["login_dir"], "temp", "fake_ENA_reply.txt")

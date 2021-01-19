@@ -279,19 +279,26 @@ def parse_register_EMBL_xml(filename, filetype, samples=None):
                             errors.append(mytext)
             error = "".join(errors)
     except Exception as E:
+        info = ""
         if "ExpatError" in str(type(E)):
-            parse_dic = {}
-            for element in xml_data[1:-1].split(","):
-                [key, value] = element.replace('"', '').split(":")
-                parse_dic[key] = value
+            try:
+                parse_dic = {}
+                for element in xml_data[1:-1].split(","):
+                    [key, value] = element.replace('"', '').split(":")
+                    parse_dic[key] = value
 
-            parseable_reply = True
-            info = ""
-            for key in ["error", "message", "status"]:
-                if key not in parse_dic:
-                    parseable_reply = False
+                parseable_reply = True
+                info = ""
+                for key in ["error", "message", "status"]:
+                    if key not in parse_dic:
+                        parseable_reply = False
+            except:
+                parseable_reply = False
             if not parseable_reply:
-                error = xml_data.split("<body>")[1].split("</body>")[0]
+                try:
+                    error = xml_data.split("<body>")[1].split("</body>")[0]
+                except IndexError:
+                    error = str(xml_data)
                 error += "\n\nI cannot parse this, but apparently there's a problem."
                 error += "\nCheck EMBL server connection?"
             else:
@@ -503,7 +510,7 @@ def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic,
         last_line = str(output_list)
 
     s = submission_alias.split("_")
-
+    log.debug("\n".join(output_list))
     if modus == "validate":
         if last_line == 'INFO : The submission has been validated successfully.':
             success = True

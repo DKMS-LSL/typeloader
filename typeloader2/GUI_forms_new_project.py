@@ -143,7 +143,7 @@ class NewProjectForm(QDialog):
         """gets a list of all existing projects
         """
         self.log.debug("Getting all existing projects from database...")
-        query = "SELECT project_name from projects"
+        query = "select project_name from projects"
         success, data = db_internal.execute_query(query, 1, self.log,
                                                   "retrieving existing projcts",
                                                   "Database error", self)
@@ -155,9 +155,13 @@ class NewProjectForm(QDialog):
     def get_values(self):
         """retrieves all values from the GUI
         """
+        self.log.debug("Getting all infos from the GUI...")
         self.check_ready_project()
         self.title = self.title_entry.text().strip()
         self.description = self.desc_entry.text().strip()
+        if not self.title:
+            self.title = self.pool
+            self.title_entry.setText(self.pool)
 
     def check_all_fields_valid(self):
         """checks whether all fields contain only valid characters
@@ -393,7 +397,6 @@ class NewProjectForm(QDialog):
         self.close()
 
 
-pass
 # ===========================================================
 # main:
 
@@ -416,4 +419,3 @@ if __name__ == '__main__':
     log.info("<End>")
     sys.exit(result)
 #     sys.exit(app.exec_())
-

@@ -42,6 +42,7 @@ FT                  /lab_contact="{lab contact}"
 FT                  /material_available="{material available}"
 FT                  /cell_bank="Not Available"
 FT                  /software="TypeLoader V{typeloader version}"
+FT                  /reference_version="{database} V{db version}"
 {other_alleles}FT   method         1..{sequence length}
 FT                  /primary_sequencing="{primary sequencing tech}"
 FT                  /secondary_sequencing="{secondary sequencing tech}"

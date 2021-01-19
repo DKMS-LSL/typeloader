@@ -51,6 +51,7 @@ from PyQt5.QtCore import Qt, QTimer, QModelIndex
 
 delete_all_stuff_at_the_end = True  # deletes database entries and project directory
 skip_other_tests = False  # set to True to skip all tests except the current WiP (out-comment it there in setUpClass)
+skip_make_project = False  # set to True to skip initial cleanup and new project creation
 project_name = ""  # this will be set in create project
 
 samples_dic = {  # samples to test
@@ -148,7 +149,7 @@ class Test_0_Clean_Stuff_initial(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        if skip_other_tests:
+        if skip_make_project:
             self.skipTest(self, "Skipping initial cleanup because skip_other_tests is set to True")
 
     @classmethod
@@ -167,6 +168,60 @@ class Test_0_Clean_Stuff_initial(unittest.TestCase):
             shutil.rmtree(os.path.join(curr_settings["projects_dir"], project_name))
         except IOError:
             pass
+
+
+class TestResetReferenceManually(unittest.TestCase):
+    """test whether manual reference resets work
+    """
+
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping reference reset test because skip_other_tests is set to True")
+
+        self.form = GUI_mini_dialogs.ResetReferenceDialog(curr_settings, log, parent=None, testing=True)
+        self.target = "KIR"
+        self.target_version = "2.7.1"
+        self.target_version_after_update = "271"
+        self.reference_local_path = os.path.join(curr_settings["root_path"],
+                                                 curr_settings["general_dir"],
+                                                 curr_settings["reference_dir"])
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test01_version_handling(self):
+        """test that version input is handled correctly
+         """
+        scenarios = [("", False, "Missing version", "Please insert a version number, e.g., 3.39.0!"),
+                     ("39b", False, "Invalid version",
+                      "Version should only contain digits and up to 2 dots, like '2.7.0' or '3.39'!"),
+                     ("2.7.0", True, "270", None),
+                     ("27", True, "270", None),
+                     ("2.7.1", True, "271", None),
+                     ("2.7", True, "270", None),
+                     ("2-7", True, "270", None),
+                     ("2_7", True, "270", None),
+                     ]
+        for (version_org, success, exp_version, exp_msg) in scenarios:
+            version_ok, new_version, msg = self.form.handle_version_input(version_org)
+            self.assertEqual(version_ok, success)
+            self.assertEqual(new_version, exp_version)
+            self.assertEqual(msg, exp_msg)
+
+    def test02_confirmation_handling(self):
+        """test that confirmation handling is correct
+         """
+        # TODO: check actual input
+        proceed, msg = self.form.check_proceed(self.target)
+        self.assertTrue(proceed)
+        self.assertEqual(msg, None)
+
+    def test03_happy_path(self):
+        self.form.version_field.setText(self.target_version)
+        self.form.btn_dic[self.target].click()
+        self.assertEqual(self.form.updated, self.target_version_after_update)
 
 
 class TestUpdateReference(unittest.TestCase):
@@ -208,7 +263,7 @@ class Test_1_Create_Project(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        if skip_other_tests:
+        if skip_make_project:
             self.skipTest(self, "Skipping Create Test because skip_other_tests is set to True")
         else:
             self.form = PROJECT.NewProjectForm(log, mydb, curr_settings)
@@ -530,7 +585,7 @@ class Test_Create_New_Allele(unittest.TestCase):
                                               "Can't get information from {}",
                                               "ALLELES")
 
-        query = "SELECT * from ALLELES"
+        query = "select * from alleles"
         success, data_content = execute_db_query(query,
                                                  len(data_info),
                                                  log,
@@ -591,7 +646,7 @@ class Test_Create_New_Allele(unittest.TestCase):
                                               "Can't get information from {}",
                                               "FILES")
 
-        query = "SELECT * from FILES"
+        query = "select * from files"
         success, data_content = execute_db_query(query,
                                                  len(data_info),
                                                  log,
@@ -634,7 +689,7 @@ class Test_Create_New_Allele(unittest.TestCase):
                                               "Can't get information from {}",
                                               "SAMPLES")
 
-        query = "SELECT * from SAMPLES"
+        query = "select * from samples"
         success, data_content = execute_db_query(query,
                                                  len(data_info),
                                                  log,
@@ -786,7 +841,7 @@ class Test_Send_To_ENA(unittest.TestCase):
                                               "Can't get information from {}",
                                               "ENA_SUBMISSIONS")
         self.assertTrue(success)
-        query = "SELECT * from ENA_SUBMISSIONS"
+        query = "select * from ena_submissions"
         success, data_content = execute_db_query(query,
                                                  len(data_info),
                                                  log,
@@ -821,8 +876,7 @@ class Test_Send_To_ENA(unittest.TestCase):
 
 
 class Test_Send_To_IMGT(unittest.TestCase):
-    """
-    Create IMGT / IPD files
+    """Create IMGT / IPD files
     No transmission
     """
 
@@ -831,7 +885,8 @@ class Test_Send_To_IMGT(unittest.TestCase):
         if skip_other_tests:
             self.skipTest(self, "Skipping Submission to IPD because skip_other_tests is set to True")
         else:
-            query = "SELECT project_name from projects"
+            log.debug("setting up test...")
+            query = "select project_name from projects"
             success, data_content = execute_db_query(query,
                                                      1,
                                                      log,
@@ -842,14 +897,17 @@ class Test_Send_To_IMGT(unittest.TestCase):
             self.assertTrue(success, "Could not retrieve project name from table PROJECTS")
             self.project_name = data_content[0][0]
             self.form = IPD.IPDSubmissionForm(log, mydb, self.project_name, curr_settings, parent=None)
-            query = """update ALLELES set IPD_submission_nr = 'DKMS1000{}'
-            where Sample_ID_int = '{}'and allele_nr = 1""".format(samples_dic["sample_1"]["submission_id"],
-                                                                  samples_dic["sample_1"]["id_int"])
-            execute_db_query(query, 0, log,
-                             "updating {}.IPD_submission_nr",
-                             "Successfully updated {}.IPD_submission_nr",
-                             "Can't update {}.IPD_submission_nr",
-                             "ALLELES")
+            query = f"""update ALLELES set IPD_submission_nr = 'DKMS1000{samples_dic["sample_1"]["submission_id"]}'
+                        where Sample_ID_int = '{samples_dic["sample_1"]["id_int"]}' and allele_nr = 1"""
+            success, data = execute_db_query(query, 0, log,
+                                             "updating {}.IPD_submission_nr",
+                                             "Successfully updated {}.IPD_submission_nr",
+                                             "Can't update {}.IPD_submission_nr",
+                                             "ALLELES")
+            if success:
+                log.debug("\t=> setup successful")
+            else:
+                raise Exception("setUpClass did not work! Can't update ALLELES.IPD_submission_nr!")
 
     @classmethod
     def tearDownClass(self):
@@ -885,7 +943,7 @@ class Test_Send_To_IMGT(unittest.TestCase):
         self.assertEqual(self.form.project_files.item(0, 2).text(), samples_dic["sample_1"]["id_int"])
         self.assertEqual(self.form.project_files.item(0, 3).text(), samples_dic["sample_1"]["local_name"])
         self.assertEqual(self.form.project_files.item(0, 4).text(), "ENA submitted")
-        query = "SELECT * from ENA_SUBMISSIONS"
+        query = "select * from ena_submissions"
         success, data_content = execute_db_query(query,
                                                  2,
                                                  log,
@@ -902,7 +960,7 @@ class Test_Send_To_IMGT(unittest.TestCase):
         """
         Test if ALLELES have been updated correctly
         """
-        query = "SELECT * from ENA_SUBMISSIONS"
+        query = "select * from ena_submissions"
         success, data_content_ena = execute_db_query(query,
                                                      2,
                                                      log,
@@ -911,7 +969,7 @@ class Test_Send_To_IMGT(unittest.TestCase):
                                                      "Can't get rows from {}",
                                                      "ENA_SUBMISSIONS")
 
-        query = "SELECT * from IPD_SUBMISSIONS"
+        query = "select * from ipd_submissions"
         success, data_content_ipd = execute_db_query(query,
                                                      5,
                                                      log,
@@ -929,7 +987,7 @@ class Test_Send_To_IMGT(unittest.TestCase):
                                               "Can't get information from {}",
                                               "ALLELES")
 
-        query = "SELECT * from ALLELES"
+        query = "select * from alleles"
         success, data_content = execute_db_query(query,
                                                  len(data_info),
                                                  log,
@@ -954,7 +1012,7 @@ class Test_Send_To_IMGT(unittest.TestCase):
         self.assertEqual(data_content[0][14], "completed")  # lab_status
         self.assertEqual(data_content[0][24], samples_dic["sample_1"]["target_allele"])  # target_allele
         self.assertEqual(data_content[0][31], "IPD-KIR")  # reference_database
-        self.assertEqual(data_content[0][32], "2.8.0")  # database_version
+        self.assertEqual(data_content[0][32], "2.9.0")  # database_version
         self.assertEqual(data_content[0][36], data_content_ena[0][1])  # ena_submission_id
         self.assertEqual(data_content[0][38], "LT986596")  # ena accession number: LTxxxxxx
         self.assertEqual(data_content[0][39], data_content_ipd[0][0])  # ipd_submission_id
@@ -991,7 +1049,7 @@ class Test_Send_To_IMGT(unittest.TestCase):
         Test the written IPD file (KIR3DP1 in this case) in the submissions directory
         """
 
-        query = "SELECT * from IPD_SUBMISSIONS"
+        query = "select * from ipd_submissions"
         success, data_content_ipd = execute_db_query(query,
                                                      1,
                                                      log,
@@ -1332,7 +1390,7 @@ class Test_Views(unittest.TestCase):
             model = view.flipped_model
 
             # test whether only right columns are shown:
-            shown_columns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 14, 33, 34]
+            shown_columns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 14, 23, 33, 34]
             for col in shown_columns:
                 self.assertEqual(view.table.isIndexHidden(model.index(col, 1)), False)
             for col in range(44):
@@ -1360,6 +1418,8 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.data(model.index(8, 0), Qt.DisplayRole), "IPD submitted")
             self.assertEqual(model.headerData(14, Qt.Vertical, Qt.DisplayRole), "Lab Status")
             self.assertEqual(model.data(model.index(14, 0), Qt.DisplayRole), "completed")
+            self.assertEqual(model.headerData(23, Qt.Vertical, Qt.DisplayRole), "Comment")
+            self.assertEqual(model.data(model.index(23, 0), Qt.DisplayRole), "")
             self.assertEqual(model.headerData(33, Qt.Vertical, Qt.DisplayRole), "Internal Allele Name")
             self.assertEqual(model.data(model.index(33, 0), Qt.DisplayRole), "")
             self.assertEqual(model.headerData(34, Qt.Vertical, Qt.DisplayRole), "Official Allele Name")
@@ -1401,7 +1461,7 @@ class Test_Views(unittest.TestCase):
             model = view.flipped_model
 
             # test whether only right columns are shown:
-            shown_columns = [14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+            shown_columns = [14, 15, 16, 17, 18, 19, 20, 21, 22]
             for col in shown_columns:
                 self.assertEqual(view.table.isIndexHidden(model.index(col, 1)), False)
             for col in range(44):
@@ -1419,9 +1479,8 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.headerData(20, Qt.Vertical, Qt.DisplayRole), "Long Read Data?")
             self.assertEqual(model.headerData(21, Qt.Vertical, Qt.DisplayRole), "LR Phased?")
             self.assertEqual(model.headerData(22, Qt.Vertical, Qt.DisplayRole), "LR Technology")
-            self.assertEqual(model.headerData(23, Qt.Vertical, Qt.DisplayRole), "Comment")
 
-            for col in [15, 16, 17, 18, 19, 20, 21, 22, 23]:
+            for col in [15, 16, 17, 18, 19, 20, 21, 22]:
                 value = model.data(model.index(col, 0), Qt.DisplayRole)
                 msg = "Col {} ({}) should be empty, but contains {}!".format(col,
                                                                              model.headerData(col, Qt.Vertical,
@@ -2208,7 +2267,7 @@ class Test_multiple_novel_alleles_part1(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         if skip_other_tests:
-            self.skipTest(self, "Skipping Test_null_alleles because skip_other_tests is set to True")
+            self.skipTest(self, "Skipping Test_multiple_novel_alleles_part1 because skip_other_tests is set to True")
         else:
             self.project_name = project_name
             self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "multiple")
@@ -2227,6 +2286,7 @@ class Test_multiple_novel_alleles_part1(unittest.TestCase):
                                        "ALLELES")
 
             if data:  # set partner allele back to None
+                self.log.debug("Setting partner allele back to Null")
                 query2 = "update alleles set partner_allele = Null where local_name = '{}'".format(self.local_name)
                 _, data = execute_db_query(query2, 0, log, "Return partner allele to empty",
                                            "Resetting ALLELES for test allele {}".format(self.sample_id_int),
@@ -2284,7 +2344,7 @@ class Test_multiple_novel_alleles_part1(unittest.TestCase):
         """test if BothAllelesNovelDialog input produces the intended behavior
         """
         # open MultiAlleleDialog with input data:
-        problem_dic = {'DKMS-LSL_ID000010_3DP1_1': ['ID000010', 'DKMS-LSL_ID000010_3DP1_1',
+        problem_dic = {self.local_name : [self.sample_id_int, self.local_name ,
                                                     TargetAllele(gene='KIR3DP1', target_allele='KIR3DP1*0030102:new',
                                                                  partner_allele=''),
                                                     ['003new', '004new', '001']]}

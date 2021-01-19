@@ -194,7 +194,8 @@ class NewAlleleForm(CollapsibleDialog):
     refresh_alleles = pyqtSignal(str, str)
 
     def __init__(self, log, mydb, current_project, settings, parent=None, sample_ID_int=None,
-                 sample_ID_ext=None, testing=False, incomplete_ok=False):
+                 sample_ID_ext=None, testing=False, incomplete_ok=False,
+                 startover=False):
         self.log = log
         self.mydb = mydb
         self.settings = settings
@@ -202,6 +203,7 @@ class NewAlleleForm(CollapsibleDialog):
             self.current_project = current_project
         else:
             self.current_project = ""
+        self.startover = startover
         super().__init__(parent)
         log.debug("Opening 'New Allele' Dialog...")
         self.raw_path = None
@@ -210,7 +212,10 @@ class NewAlleleForm(CollapsibleDialog):
         self.testing = testing
         self.incomplete_ok = incomplete_ok
         self.resize(1000, 800)
-        self.setWindowTitle("Add new target allele")
+        if startover:
+            self.setWindowTitle("Restart existing allele")
+        else:
+            self.setWindowTitle("Add new target allele")
         self.setWindowIcon(QIcon(general.favicon))
         self.show()
         self.blastXmlFilename = None
@@ -248,18 +253,21 @@ class NewAlleleForm(CollapsibleDialog):
         file_btn = FileButton("Choose XML or Fasta file", mypath, self)
         self.file_widget = ChoiceSection("Raw File:", [file_btn], self.tree)
         self.file_widget.choice.connect(self.get_file)
-        mypath = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\148_XML_with_1allele\ID10770715.xml"
+        mypath = r"C:/Daten/local_data/TL_issue_data/85-startover/DP1.fa"
         if self.settings["modus"] == "debugging":
             self.file_widget.field.setText(mypath)
         layout.addWidget(self.file_widget)
 
         proj_btn = QueryButton("Choose a (different) existing project",
-                               "SELECT project_name FROM projects where project_status = 'Open' order by project_name desc")
+                               "select project_name from projects where project_status = 'Open' order by project_name desc")
         new_proj_btn = NewProjectButton("Start a new project", self.log, self.mydb, self.settings)
         self.proj_widget = ChoiceSection("Project:", [proj_btn, new_proj_btn], self.tree)
         self.proj_widget.field.setText(self.current_project)
         proj_btn.change_to_normal(None)
         new_proj_btn.change_to_normal(None)
+        if self.startover:
+            proj_btn.setEnabled(False)
+            new_proj_btn.setEnabled(False)
 
         self.proj_widget.choice.connect(self.get_project)
         layout.addWidget(self.proj_widget)
@@ -360,7 +368,8 @@ class NewAlleleForm(CollapsibleDialog):
             results = typeloader.process_sequence_file(self.project, self.filetype,
                                                        self.blastXmlFile, self.targetFamily,
                                                        self.fasta_filename, self.allelesFilename,
-                                                       self.header_data, self.settings, self.log)
+                                                       self.header_data, self.settings, self.log,
+                                                       startover=self.startover)
             if not results[0]:  # something went wrong
                 if results[1] == "Incomplete sequence":
                     reply = QMessageBox.question(self, results[1], results[2], QMessageBox.Yes |
@@ -373,7 +382,8 @@ class NewAlleleForm(CollapsibleDialog):
                                                                    self.allelesFilename,
                                                                    self.header_data,
                                                                    self.settings,
-                                                                   self.log, incomplete_ok=True)
+                                                                   self.log, incomplete_ok=True,
+                                                                   startover=self.startover)
                         if not results[0]:
                             QMessageBox.warning(self, results[1], results[2])
                             return
@@ -411,6 +421,13 @@ class NewAlleleForm(CollapsibleDialog):
 
             self.success_parsing, self.myalleles, self.ENA_text = results
             if self.success_parsing:
+                if self.startover:
+                    if self.myalleles[0].gene != self.startover["gene"]:
+                        msg = f"{self.startover['local_name']} is a(n) {self.startover['gene']} allele! The uploaded file contains a(n) " \
+                              f"{self.myalleles[0].gene} sequence!\nRestarting an allele is only allowed with the " \
+                              f"same locus, otherwise the allele name would not match the sequence."
+                        QMessageBox.warning(self, "Locus does not match!", msg)
+                        return
                 if self.filetype == "XML":
                     self.allele1 = self.myalleles[0]
                     self.allele2 = self.myalleles[1]
@@ -626,6 +643,9 @@ class NewAlleleForm(CollapsibleDialog):
             else:
                 QMessageBox.warning(self, "No allele chosen", "Please choose an allele to continue!")
                 return
+
+            if self.startover:
+                self.myallele.local_name = self.startover["local_name"]
             typeloader.remove_other_allele(self.blastXmlFile, self.fasta_filename, other_allele_name, self.log)
             try:
                 self.ENA_text = typeloader.make_ENA_file(self.blastXmlFile, self.targetFamily, self.myallele,
@@ -685,7 +705,10 @@ class NewAlleleForm(CollapsibleDialog):
         layout.addWidget(self.ENA_widget, 1, 0, 1, 6)
         self.ENA_widget.setMinimumHeight(500)
 
-        self.save_btn = ProceedButton("Save new target allele", [self.ENA_widget], self.log, 2, self)
+        save_txt = "Save new target allele"
+        if self.startover:
+            save_txt = "Replace target allele"
+        self.save_btn = ProceedButton(save_txt, [self.ENA_widget], self.log, 2, self)
         layout.addWidget(self.save_btn, 0, 5)
         self.save_btn.proceed.connect(self.save_allele)
 
@@ -773,7 +796,17 @@ class NewAlleleForm(CollapsibleDialog):
                                                                                         self.project), QMessageBox.Yes |
                                                  QMessageBox.No, QMessageBox.No)
                 if reply == QMessageBox.Yes:
+
+                    if self.startover:
+                        self.log.info("Renaming old files...")
+                        for (old_file, new_file) in self.startover["rename_files"]:
+                            try:
+                                os.rename(old_file, new_file)
+                            except FileNotFoundError:
+                                self.log.debug(f"File {old_file} not found, probably already renamed")
+
                     # save sample files:
+
                     results = typeloader.save_new_allele(self.project, self.sample_name,
                                                          self.myallele.local_name, self.ENA_text,
                                                          self.filetype, self.temp_raw_file,
@@ -800,7 +833,8 @@ class NewAlleleForm(CollapsibleDialog):
                                                                                 self.ena_path,
                                                                                 self.chosen_alleles,
                                                                                 self.settings,
-                                                                                self.mydb, self.log)
+                                                                                self.mydb, self.log,
+                                                                                self.startover)
                     if success:
                         self.new_allele.emit(self.sample_name)
                         self.refresh_alleles.emit(self.project, self.sample_name)
@@ -1098,9 +1132,15 @@ if __name__ == '__main__':
     mydb = create_connection(log, mysettings["db_file"])
 
     app = QApplication(sys.argv)
-    abort_msg = "TypeLoader currently can't handle this allele out of the box, sorry!"
-    ex = NewAlleleForm(log, mydb, "20200526_ADMIN_HLA-B_NEB1", mysettings)
-    # ex = ChooseReferenceAllelesDialog(abort_msg, log, mysettings)
+
+    startover_dic = {'allele_nr': 1, 'project_nr': 1, 'local_name': 'DKMS-LSL_ID15592561_DPB1_1', 'gene': 'HLA-DPB1',
+                     'sample_id_int': 'ID15592561', 'sample_id_ext': 'DEDKM4001526', 'customer': '',
+                     'ena_submission_id': None,
+                     'ena_acception_date': None, 'ena_accession_nr': None, 'ipd_submission_id': None,
+                     'ipd_submission_nr': None,
+                     'hws_submission_nr': None, 'ref_db': 'IPD-IMGT/HLA', 'db_version': '3.42.0'}
+    ex = NewAlleleForm(log, mydb, "20201119_ADMIN_mixed_startover-85", mysettings, startover=startover_dic,
+                       sample_ID_int=startover_dic["sample_id_int"], sample_ID_ext=startover_dic["sample_id_ext"])
     ex.show()
 
     result = app.exec_()

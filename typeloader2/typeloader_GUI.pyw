@@ -92,7 +92,7 @@ class MainGUI(QMainWindow):
     def make_leftlist(self):
         """sets up the navigation area
         """
-        self.navigation = GUI_navigation.Navigation(self.log, self.settings)
+        self.navigation = GUI_navigation.Navigation(self.log, self.settings, self.mydb)
 
         desktop = QDesktopWidget()
         geometry = desktop.availableGeometry(desktop.primaryScreen())
@@ -164,7 +164,7 @@ class MainGUI(QMainWindow):
         self.view_sample.sub_lbl = QLabel(self.current_sample, self.view_sample)
         self.view_sample.layout.addWidget(self.view_sample.sub_lbl, 0, 1)
         self.view_sample.sub_lbl.setStyleSheet(general.label_style_main)
-        self.view_sample.layout.addWidget(mywidget.edit_btn, 0, 6)
+        self.view_sample.layout.addWidget(mywidget.read_btn, 0, 6)
         self.view_sample.layout.addWidget(mywidget.download_btn, 0, 7)
         self.view_sample.widget.data_changed.connect(self.on_data_changed)
         self.view_sample.widget.allele_updated.connect(self.change_allele)
@@ -338,11 +338,23 @@ class MainGUI(QMainWindow):
         log_act.setStatusTip("Download a log file to send to the TypeLoader developers.")
         self.options_menu.addAction(log_act)
 
-        ref_act = QAction("Update &Reference", self.options_menu)
+        ref_act = QAction("Refresh &Reference", self.options_menu)
         ref_act.setShortcut('Ctrl+R')
         ref_act.triggered.connect(self.open_RefreshReferenceDialog)
         ref_act.setStatusTip("Manually trigger a refresh of TypeLoader's reference files.")
         self.options_menu.addAction(ref_act)
+
+        reset_act = QAction("R&eset Reference to previous version", self.options_menu)
+        reset_act.setShortcut('Ctrl+E')
+        reset_act.triggered.connect(self.open_ResetReferenceDialog)
+        reset_act.setStatusTip("Reset one of TypeLoader's reference files to an older database version.")
+        self.options_menu.addAction(reset_act)
+
+        version_act = QAction("Show current &Versions", self.options_menu)
+        version_act.setShortcut('Ctrl+V')
+        version_act.triggered.connect(self.open_VersionDialog)
+        version_act.setStatusTip("Show the current versions of TypeLoader and the reference databases.")
+        self.options_menu.addAction(version_act)
 
     #         # generate status report:
     #         report_status_act = QAction('Generate status report', self)
@@ -430,6 +442,16 @@ class MainGUI(QMainWindow):
         """opens the 'RefreshReference' dialog
         """
         GUI_mini_dialogs.RefreshReferenceDialog(self.settings, self.log, self)
+
+    def open_ResetReferenceDialog(self):
+        """opens the 'ResetReference' dialog
+        """
+        GUI_mini_dialogs.ResetReferenceDialog(self.settings, self.log, self)
+
+    def open_VersionDialog(self):
+        """opens the 'VersionReference' dialog
+        """
+        GUI_mini_dialogs.VersionDialog(self.settings, self.log, self)
 
     def on_projects_changed(self):
         """when a new project has been created or a project been deleted,
