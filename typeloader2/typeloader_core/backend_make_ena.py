@@ -57,9 +57,10 @@ def transform(posHash):
             newPosHash["utr"] = [(),utr[-1]]
     else:
         newPosHash = copy(posHash)
-    
+
+    # to fix #162, do not add all exons but check ref allele's CDS coordinates instead
     for number, pos in exons.items():
-        newPosHash["cds"][number] = (pos[0]+offset,pos[1]+offset)
+        newPosHash["cds"][number] = (pos[0]+offset, pos[1]+offset)
 
     return newPosHash
 
