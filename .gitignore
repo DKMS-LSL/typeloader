@@ -19,8 +19,10 @@ typeloader2/TypeLoader_Setup.exe
 typeloader2/typeLoader_GUI.py
 typeloader2/ENA_Webin_CLI/test_data/*
 typeloader2/ENA_Webin_CLI/java
-/.idea
-/.venv
+*/.idea
+/.venv/*
 *.egg-info*
 /.runtest/
 /typeloader2/typeloader_installer_new.nsi
+/.idea/
+

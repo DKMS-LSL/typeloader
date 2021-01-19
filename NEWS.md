@@ -1,6 +1,22 @@
 # Version History
 
-## 2.8.2.1 (2020-08-31)
+## 2.9.0 (2020-12-10)
+### New Features:
+- New option to manually reset reference database to specific version (#171)
+- New option to show all currently used versions (for reference databases and TypeLoader itself) (#174) 
+- The used reference version is now included in IPD files (#172)
+- New "Restart Allele" option. This provides a consistent way to handle necessary sequence corrections whenever the originally used sequence turns out to have been incorrect. By using this option, the ENA and IPD submission numbers are kept but otherwise the allele is started and all files generated from scratch with a fresh input sequence file. The allele gets the comment "restarted with fresh sequence". (#85)
+- As a consequence, allele- and project files are no longer editable through TypeLoader. If you need to make edits, use the Restart Allele option.
+- Comments are now displayed in the "General" tab of the SampleView insted of the "Lab Processing" tab. This should make it more prominent. 
+- New projects: if the optional field "title" is left empty, the content of the field "pool" is copied there now. This enables easier identification of projects in the ENA webportal. (#177)
+
+### Bugfixes:
+- allele numbering after allele deletions has been fixed (#181)
+
+### Backend:
+- Updated ENA CLI to newest version 3.2.2
+
+## 2.8.3.1 (2020-08-31)
 - several small bugfixes
 
 ## 2.8.3 (2020-10-27)

@@ -30,9 +30,11 @@ The restarted allele will now look like any new target allele, with the followin
 ![Pic](images/restarted_ENA.png)
 
 - If you had already created IPD files, the IPD submission Number will be kept but marked as outdated:
+
 ![Pic](images/restarted_IPD.png)
 
 - All previous files of your allele *will be kept*, but marked with the appendix '_old_{timestamp}', containing the timestamp of the restart. This way, you always have the possibility to track the changes you made and later change your mind to restart with the original sequence etc. :
+
 ![Pic](images/restarted_files.png)
 
 **As always, TypeLoader assumes you are uploading correct sequences. Making sure that the sequence you enter is now really correct is your responsibility.** TypeLoader will check that the allele you upload during Restart has the same locus as the original allele (because otherwise, the allele name will become misleading), but otherwise it will accept any sequence as long as your input file meets the [=> usual minimal requirements](new_allele_requirements.md). **TypeLoader will NOT check or compare the new sequence to the old one in any way!**
