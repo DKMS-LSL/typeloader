@@ -92,7 +92,14 @@ def parse_blast(xml_records, target_family, query_fasta_file, settings, log):
             else:
                 closestAlleleName = potentialClosestAlleleAlignment.hit_id
 
-        ref_sequence = SeqIO.to_dict(SeqIO.parse(output_db, "fasta"))[closestAlleleName].seq
+        try:
+            ref_sequence = SeqIO.to_dict(SeqIO.parse(output_db, "fasta"))[closestAlleleName].seq
+        except KeyError:
+            local_name = os.path.splitext(os.path.basename(query_fasta_file))[0]
+            msg = f"Could not find {closestAlleleName} in current reference db!\n" \
+                  f"This was originally assigned as closest allele to {local_name}. \n\n" \
+                  f"Maybe the reference db version changed since ENA submission?"
+            raise KeyError(msg)
         query_sequence = SeqIO.to_dict(SeqIO.parse(query_fasta_file, "fasta"))[queryId].seq
         results = puzzle_HSPs_from_first_hit(hsps, ref_sequence, query_sequence, query_fasta_file)
         hsp_query, hsp_subject, hsp_match, concatHSPS, hsp_start, hsp_align_len = results
