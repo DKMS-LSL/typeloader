@@ -214,15 +214,22 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
         try:
             annotations = getCoordinates(blastOp, allelesFilename, targetFamily, settings, log, isENA=False,
                                          incomplete_ok=True)
+        except KeyError as E:
+            log.exception(E)
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(lock_file)
+            return False, E.args[0], None
+
         except Exception as E:
-            print("Blast output : ", blastOp)
+            print("Blast output file: ", blastOp)
             print(allelesFilename, targetFamily)
             log.error(E)
             log.exception(E)
+            log.info(f"Trouble with Blast output file {blastOp}")
             log.warning("Blast messed up?")
             with contextlib.suppress(FileNotFoundError):
                 os.remove(lock_file)
-            msg = "Encountered a BLAST problem!\n"
+            msg = f"Encountered a BLAST problem while tring to process {local_name}!\n"
             msg += "Please restart TypeLoader to update the reference files."
             return False, msg, None
 
