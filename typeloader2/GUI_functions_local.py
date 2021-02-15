@@ -265,8 +265,8 @@ def compare_2_files(file1, file2):
             if identical:
                 comp_text += "Changed line(s) found:\n"
                 identical = False
-            comp_text += f"[{i}] Left:\t{ref_line}\n"
-            comp_text += f"[{i}] Right:\t{query_line}\n\n"
+            comp_text += f"[ln {i + 1}] Left:\t{ref_line}\n"
+            comp_text += f"[ln {i + 1}] Right:\t{query_line}\n\n"
 
     if identical:
         comp_text += "Files are identical! :-)"
