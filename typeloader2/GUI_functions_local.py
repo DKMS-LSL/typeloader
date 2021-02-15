@@ -240,14 +240,45 @@ def get_pretypings_from_oracledb(project, local_cf, settings, log, parent=None):
     output_file = os.path.join(settings["temp_dir"], "pretypings.csv")
     db_external.write_pretypings_file(pretypings, samples, output_file, log)
     return True, output_file, not_found
-    
-           
+
+
+def compare_2_files(file1, file2):
+    """compares content of 2 text files, returns all differing lines as one string
+    """
+    with open(file1, "r") as f:
+        text1 = f.read()
+    with open(file2, "r") as f:
+        text2 = f.read()
+
+    identical = True
+    comp_text = ""
+
+    query = text2.split("\n")
+    ref = text1.split("\n")
+    for i in range(len(ref)):
+        ref_line = ref[i]
+        try:
+            query_line = query[i]
+        except IndexError:
+            query_line = ""
+        if query_line != ref_line:
+            if identical:
+                comp_text += "Changed line(s) found:\n"
+                identical = False
+            comp_text += f"[{i}] Left:\t{ref_line}\n"
+            comp_text += f"[{i}] Right:\t{query_line}\n\n"
+
+    if identical:
+        comp_text += "Files are identical! :-)"
+
+    return comp_text
+
 
 def main(log):
     user = "admin"
     project = "20190515_ADMIN_KIR_1"
     sample_id_int = "ID17040887"
-    
+
     settings = GUI_login.get_settings(user, log)
 
     # from typeloader_GUI import create_connection, close_connection
