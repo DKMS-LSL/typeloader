@@ -711,10 +711,6 @@ class ReadFileDialog(QDialog):
         lbl_view.setStyleSheet(general.label_style_2nd)
         layout.addWidget(lbl_view, 3, 0)
 
-        lbl_compare = QLabel("Choose file for comparison (optional):")
-        lbl_compare.setStyleSheet(general.label_style_2nd)
-        layout.addWidget(lbl_compare, 3, 1)
-
         if self.sample:
             self.mydir = os.path.join(self.settings["projects_dir"], self.project, self.sample)
         else:
@@ -729,14 +725,19 @@ class ReadFileDialog(QDialog):
         self.file_widget.choice.connect(view_btn.check_ready)
         layout.addWidget(view_btn, 5, 0)
 
-        choice_btn2 = FileButton("Choose File to compare", default_path=self.mydir, parent=self, log=self.log)
-        self.file_widget2 = ChoiceSection("Choose 2nd File:", [choice_btn2], self, log=self.log)
-        layout.addWidget(self.file_widget2, 4, 1)
+        if self.sample:
+            lbl_compare = QLabel("Choose file for comparison (optional):")
+            lbl_compare.setStyleSheet(general.label_style_2nd)
+            layout.addWidget(lbl_compare, 3, 1)
 
-        compare_btn = ProceedButton("Show comparison", items=[self.file_widget2.field], log=self.log)
-        compare_btn.clicked.connect(self.compare_files)
-        self.file_widget2.choice.connect(compare_btn.check_ready)
-        layout.addWidget(compare_btn, 5, 1)
+            choice_btn2 = FileButton("Choose File to compare", default_path=self.mydir, parent=self, log=self.log)
+            self.file_widget2 = ChoiceSection("Choose 2nd File:", [choice_btn2], self, log=self.log)
+            layout.addWidget(self.file_widget2, 4, 1)
+
+            compare_btn = ProceedButton("Show comparison", items=[self.file_widget2.field], log=self.log)
+            compare_btn.clicked.connect(self.compare_files)
+            self.file_widget2.choice.connect(compare_btn.check_ready)
+            layout.addWidget(compare_btn, 5, 1)
 
         self.txt_field = QPlainTextEdit(self)
         self.txt_field.setReadOnly(True)
