@@ -13,7 +13,7 @@ used by TypeLoader Overviews
 
 from PyQt5.QtSql import QSqlQueryModel, QSqlTableModel, QSqlQuery, QSqlRelationalTableModel
 from PyQt5.QtWidgets import (QTableView, QHeaderView, QItemDelegate,
-                             QGridLayout, QWidget, QMessageBox,
+                             QGridLayout, QVBoxLayout, QWidget, QMessageBox,
                              QLabel, QLineEdit, QComboBox, QMenu,
                              QAction, QApplication, QAbstractItemView,
                              QDialog, QFormLayout, QFileDialog,
@@ -698,14 +698,14 @@ class ReadFileDialog(QDialog):
         self.show()
 
     def init_UI(self):
-        layout = QGridLayout()
+        layout = QVBoxLayout()
         self.setLayout(layout)
 
         lbl_proj = QLabel("Project: {}".format(self.project))
-        layout.addWidget(lbl_proj, 0, 0, 1, 2)
+        layout.addWidget(lbl_proj)
         if self.sample:
             lbl_sampl = QLabel("Sample: {}".format(self.sample))
-            layout.addWidget(lbl_sampl, 1, 0, 1, 2)
+            layout.addWidget(lbl_sampl)
 
         if self.sample:
             self.mydir = os.path.join(self.settings["projects_dir"], self.project, self.sample)
@@ -714,21 +714,11 @@ class ReadFileDialog(QDialog):
         choice_btn = FileButton("Choose File", default_path=self.mydir, parent=self, log=self.log)
         self.file_widget = ChoiceSection("Choose File:", [choice_btn], self)
         self.file_widget.choice.connect(self.read_file)
-        layout.addWidget(self.file_widget, 2, 0, 2, 2)
-
-        self.txt_field = QPlainTextEdit(self)
-        self.txt_field.setReadOnly(True)
-        layout.addWidget(self.txt_field, 4, 0, 5, 2)
+        layout.addWidget(self.file_widget)
 
         self.close_btn = QPushButton("Close", self)
         self.close_btn.clicked.connect(self.close)
-        layout.addWidget(self.close_btn, 11, 0, 1, 2)
-
-        for row in range(12):
-            if row == 5:
-                layout.setRowStretch(row, 1)
-            else:
-                layout.setRowStretch(row, 0)
+        layout.addWidget(self.close_btn)
 
     def read_file(self, path):
         """catches path from self.file_widget,
@@ -800,8 +790,8 @@ def main():
     app = QApplication(sys.argv)
     sys.excepthook = log_uncaught_exceptions
 
-    project_name = "20201119_ADMIN_mixed_startover-85"
-    sample_id_int = "ID19454517"
+    project_name = "20201007_AL_HLA-DRB1_DR1"
+    sample_id_int = "ID16313610"
     ex = ReadFileDialog(log, project_name, sample_id_int)
     ex.show()  # Maximized()
     result = app.exec_()
