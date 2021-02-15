@@ -27,6 +27,7 @@ import sys, os, shutil
 
 import general, GUI_flipped
 from GUI_forms import ChoiceButton, FileButton, ChoiceSection, ProceedButton
+from GUI_functions_local import compare_2_files
 
 edit_on_manual_submit = QSqlTableModel.OnManualSubmit
 
@@ -685,7 +686,6 @@ class ReadFileDialog(QDialog):
         self.project = project
         self.file = None
         self.txt = ""
-        self.unsaved_changes = False
         if parent:
             self.settings = parent.settings
         else:
@@ -698,66 +698,134 @@ class ReadFileDialog(QDialog):
         self.show()
 
     def init_UI(self):
-        layout = QVBoxLayout()
+        layout = QGridLayout()
         self.setLayout(layout)
 
         lbl_proj = QLabel("Project: {}".format(self.project))
-        layout.addWidget(lbl_proj)
+        layout.addWidget(lbl_proj, 0, 0)
         if self.sample:
             lbl_sampl = QLabel("Sample: {}".format(self.sample))
-            layout.addWidget(lbl_sampl)
+            layout.addWidget(lbl_sampl, 1, 0)
+
+        lbl_view = QLabel("View a file:")
+        lbl_view.setStyleSheet(general.label_style_2nd)
+        layout.addWidget(lbl_view, 3, 0)
+
+        lbl_compare = QLabel("Choose file for comparison (optional):")
+        lbl_compare.setStyleSheet(general.label_style_2nd)
+        layout.addWidget(lbl_compare, 3, 1)
 
         if self.sample:
             self.mydir = os.path.join(self.settings["projects_dir"], self.project, self.sample)
         else:
             self.mydir = os.path.join(self.settings["projects_dir"], self.project)
+
         choice_btn = FileButton("Choose File", default_path=self.mydir, parent=self, log=self.log)
-        self.file_widget = ChoiceSection("Choose File:", [choice_btn], self)
-        self.file_widget.choice.connect(self.read_file)
-        layout.addWidget(self.file_widget)
+        self.file_widget = ChoiceSection("Choose File:", [choice_btn], self, log=self.log)
+        layout.addWidget(self.file_widget, 4, 0)
+
+        view_btn = ProceedButton("Show file", items=[self.file_widget.field], log=self.log)
+        view_btn.clicked.connect(self.read_file)
+        self.file_widget.choice.connect(view_btn.check_ready)
+        layout.addWidget(view_btn, 5, 0)
+
+        choice_btn2 = FileButton("Choose File to compare", default_path=self.mydir, parent=self, log=self.log)
+        self.file_widget2 = ChoiceSection("Choose 2nd File:", [choice_btn2], self, log=self.log)
+        layout.addWidget(self.file_widget2, 4, 1)
+
+        compare_btn = ProceedButton("Show comparison", items=[self.file_widget2.field], log=self.log)
+        compare_btn.clicked.connect(self.compare_files)
+        self.file_widget2.choice.connect(compare_btn.check_ready)
+        layout.addWidget(compare_btn, 5, 1)
+
+        self.txt_field = QPlainTextEdit(self)
+        self.txt_field.setReadOnly(True)
+        layout.addWidget(self.txt_field, 7, 0, 1, 2)
 
         self.close_btn = QPushButton("Close", self)
         self.close_btn.clicked.connect(self.close)
-        layout.addWidget(self.close_btn)
+        layout.addWidget(self.close_btn, 8, 0, 1, 2)
 
-    def read_file(self, path):
+    def check_file_mine(self, path):
+        """checks whether file belongs to an allowed dir
+         """
+        if os.path.dirname(os.path.abspath(path)) == os.path.abspath(self.mydir):
+            return True, None, None
+        else:
+            if self.sample:
+                category = "does not belong to the sample"
+            else:
+                category = "is not a project file of the project"
+            return False, "Forbidden file",
+            "This file {} you started this dialog from!".format(category)
+
+    def write_text_to_display(self, text):
+        """wipes self.txt_field and then writes the result of $text there;
+        if necessary, enlarges dialog
+        """
+        self.txt_field.setPlainText("")
+        self.txt_field.setPlainText(text)
+        self.resize(800, 600)
+
+    def read_file(self):
         """catches path from self.file_widget,
         stores it as self.file,
         reads its content and writes it to self.txt_field
         """
-        try:
-            if os.path.dirname(os.path.abspath(path)) == os.path.abspath(self.mydir):
-                self.txt_field.setPlainText("")
-                self.file = path
-                self.file_widget.field.setText(os.path.basename(path))
-                self.log.debug("Opening {}...".format(path))
-                with open(self.file, "r") as f:
-                    self.txt = f.read()
-                self.txt_field.setPlainText(self.txt)
-                self.resize(800, 600)
+        self.sender().setChecked(False)
+        path = self.file_widget.field.text()
+        file_mine, err_type, err_msg = self.check_file_mine(path)
+        if not file_mine:
+            QMessageBox.warning(self, err_type, err_msg)
+            return
 
-            else:
-                if self.sample:
-                    category = "does not belong to the sample"
-                else:
-                    category = "is not a project file of the project"
-                QMessageBox.warning(self, "Forbidden file",
-                                    "This file {} you started this dialog from!".format(category))
+        try:
+            self.file = path
+            self.log.debug("Opening {}...".format(path))
+            with open(self.file, "r") as f:
+                self.txt = f.read()
+            self.write_text_to_display(self.txt)
+
         except Exception as E:
             self.log.exception(E)
             QMessageBox.warning(self, "File problem",
                                 "An error occurred while trying to read the chosen file:\n\n{}".format(repr(E)))
 
-    def closeEvent(self, event):
-        """asks for confirmation before closing
+    def compare_files(self):
+        """compares the content of 2 TL generated text files with each other &
+        and writes results to self.txt_field
         """
-        if self.unsaved_changes:
-            QMessageBox.warning(self, "Unsaved changes", "You have unsaved changes, please save or discard them!")
-            self.log.warning("Unsaved changes must be saved or discarded before closing.")
-            self.log.debug("Not closing.")
-            event.ignore()
-        else:
-            event.accept()
+        self.sender().setChecked(False)
+
+        file1 = self.file_widget.field.text().strip()
+        file2 = self.file_widget2.field.text().strip()
+        file1_mine, err_type, err_msg = self.check_file_mine(file1)
+
+        if not file1_mine:  # only file1 is checked, to enable comparing across samples
+            QMessageBox.warning(self, err_type, err_msg)
+            return
+
+        ext1 = os.path.splitext(file1)[1]
+        ext2 = os.path.splitext(file2)[1]
+
+        if file1.endswith(".ena.txt"):
+            ext1 = ".ena.txt"
+        if file2.endswith(".ena.txt"):
+            ext2 = ".ena.txt"
+
+        if ext1 != ext2:
+            QMessageBox.warning(self, "Files too different",
+                                "File comparison only works for files of same type!")
+            return
+
+        if file1 == file2:
+            QMessageBox.warning(self, "Makes no sense",
+                                "Comparing a file with itself makes no sense!")
+            return
+
+        self.log.info(f"Comparing {file1} with  {file2}...")
+        self.txt = compare_2_files(file1, file2)
+        self.write_text_to_display(self.txt)
 
 
 # ===========================================================
