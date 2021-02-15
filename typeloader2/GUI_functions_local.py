@@ -16,12 +16,13 @@ from configparser import ConfigParser
 from PyQt5.QtWidgets import QMessageBox
 import db_internal, general, typeloader_functions, GUI_login
 
-#===========================================================
+# ===========================================================
 # parameters:
 
-local_config_file = "config_local.ini" 
+local_config_file = "config_local.ini"
 
-#===========================================================
+
+# ===========================================================
 # functions:
 
 def read_local_settings(settings, log):
@@ -32,7 +33,7 @@ def read_local_settings(settings, log):
     if settings["modus"] == "staging":
         local_config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), local_config_file)
     log.info("Reading local settings from {}...".format(local_config_file))
-    
+
     if os.path.exists(local_config_file):
         cf = ConfigParser()
         cf.read(local_config_file)
@@ -64,7 +65,7 @@ def check_nonproductive(settings):
     return permission
 
 
-def find_alleles_per_project(project, log, parent = None):
+def find_alleles_per_project(project, log, parent=None):
     """finds all alleles of a project
     """
     log.info("Finding alleles of project {}...".format(project))
@@ -77,7 +78,7 @@ def find_alleles_per_project(project, log, parent = None):
         return True, data
 
 
-def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = None):
+def make_fake_ENA_file(project, log, settings, basis="local_name", parent=None):
     """creates a pseudo-ENA reply file with random ENA accession IDs and a pseudo pretypings file,
     which can be used to create fake-IPD files before ENA has assigned official accession numbers
     """
@@ -100,7 +101,7 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
             elif basis == "old cell_line":
                 cell_line = cell_line_old
             log.debug("\t{}...".format(cell_line))
-            data2.append((sample_id_int, cell_line, mygene, target_allele, partner_allele)) # needed for pretyping file
+            data2.append((sample_id_int, cell_line, mygene, target_allele, partner_allele))  # needed for pretyping file
             fake_ID = typeloader_functions.id_generator(size=8)
             gene_type = "gene"
             if mygene in settings["pseudogenes"].split("|"):
@@ -114,12 +115,12 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
             g.write("     gtgacccact gcttgtttct gtcacaggtg aggaa                                35\n//\n")
             if mygene.startswith("KIR"):
                 kir_contained = True
-    
+
     # write fake pretyping file:
     log.info("Writing fake pretyping-file...")
     fake_file_befunde = os.path.join(settings["login_dir"], "temp", "fake_befunde.csv")
     columns = []
-    
+
     gene_dic = {}
     for g in ["HLA-A", "HLA-B", "HLA-C", "HLA-DRB1", "HLA-DQB1", "HLA-DPB1", "HLA-E",
               "HLA-F", "HLA-G", "HLA-H", "HLA-J", "HLA-K"
@@ -142,10 +143,10 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
         gene_dic[g] = mycolumns
         kir_columns += mycolumns
 
-    if not mygene in gene_dic: #not one of our standard-genes
+    if not mygene in gene_dic:  # not one of our standard-genes
         gene_dic[mygene] = ["{}_1".format(mygene), "{}_2".format(mygene)]
         columns += gene_dic[mygene]
-        
+
     default_dic = {}
     if kir_contained:
         columns += kir_columns
@@ -161,12 +162,11 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
             default_dic[col] = "A001+A001"
         elif col == "MICB":
             default_dic[col] = "B001+B001"
-            
-    
+
     with open(fake_file_befunde, "w") as g:
         header = "sample_ID_int,sample_id_ext,client,{}\n".format(",".join(columns))
         g.write(header)
-        
+
         for (sample_id_int, cell_line, mygene, target_allele, partner_allele) in data2:
             befunde = copy.copy(default_dic)
             # overwrite pretyping of target allele:
@@ -179,7 +179,7 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
                 if mygene.startswith("MIC"):
                     if not partner_allele:
                         partner_allele = "{}001".format(mygene[-1])
-                    befunde[mygene] = "{}+{}".format(target_allele, partner_allele).replace("MICA*","A")
+                    befunde[mygene] = "{}+{}".format(target_allele, partner_allele).replace("MICA*", "A")
                 else:
                     log.error("Cannot generate sensible fake pretyping: {} should have 2 columns!".format(mygene))
             else:
@@ -196,26 +196,25 @@ def make_fake_ENA_file(project, log, settings, basis = "local_name", parent = No
             pretypings = [befunde[col] for col in columns]
             myline += ",".join(pretypings) + "\n"
             g.write(myline)
-            
-     
-#     # check generated ENA file: (This will set the alleles' status to "IPD submitted"!)
-#     log.info("Checking created ENA file...")
-#     (info_dict, gene_dict) = enaemailparser.parse_embl_response(fake_file_ena)
-#      
-#     if len(info_dict.keys()) == len(gene_dict) == len(data):
-#         log.info("Success!")
-#     else:
-#         msg = "Numbers are not matching up. Something's wrong!"
-#         log.warning(msg)
-#         if parent:
-#             QMessageBox.warning(parent, "Error while generating fake ENA files", msg)
-    
+
+    #     # check generated ENA file: (This will set the alleles' status to "IPD submitted"!)
+    #     log.info("Checking created ENA file...")
+    #     (info_dict, gene_dict) = enaemailparser.parse_embl_response(fake_file_ena)
+    #
+    #     if len(info_dict.keys()) == len(gene_dict) == len(data):
+    #         log.info("Success!")
+    #     else:
+    #         msg = "Numbers are not matching up. Something's wrong!"
+    #         log.warning(msg)
+    #         if parent:
+    #             QMessageBox.warning(parent, "Error while generating fake ENA files", msg)
+
     log.debug("Fake ENA file: {}".format(fake_file_ena))
     log.debug("Fake Befunde file: {}".format(fake_file_befunde))
     return True, fake_file_ena, fake_file_befunde
 
 
-def get_pretypings_from_oracledb(project, local_cf, settings, log, parent = None):
+def get_pretypings_from_oracledb(project, local_cf, settings, log, parent=None):
     """writes pretyping file with the pretyping results from the oracle database
     """
     try:
@@ -228,8 +227,8 @@ def get_pretypings_from_oracledb(project, local_cf, settings, log, parent = None
     success, alleles = find_alleles_per_project(project, log, parent)
     if not success:
         return False, None, None
-    
-    sample_ids = [[row[0], row[3]] for row in alleles] # format [[sample_id_int, locus]]
+
+    sample_ids = [[row[0], row[3]] for row in alleles]  # format [[sample_id_int, locus]]
     if not sample_ids:
         msg = "No samples found for project {}!".format(project)
         log.error(msg)
@@ -250,20 +249,18 @@ def main(log):
     sample_id_int = "ID17040887"
     
     settings = GUI_login.get_settings(user, log)
-    
-    from typeloader_GUI import create_connection, close_connection
-    
-    db_file = settings["db_file"]
-    mydb = create_connection(log, db_file)
-    try:
-        local_user, local_cf = check_local(settings, log)
-        if local_user:
-            get_pretypings_from_oracledb(project, local_cf, settings, log, parent = None)
-    except Exception as E:
-        log.exception(E)
-    
-    close_connection(log, mydb)
-    
+
+    # from typeloader_GUI import create_connection, close_connection
+
+    # db_file = settings["db_file"]
+    # mydb = create_connection(log, db_file)
+
+    file1 = r"C:\Daten\local_data\TypeLoader\albrecht\projects\20201007_AL_HLA-DRB1_DR1\ID16313610\DKMS-LSL_ID16313610_DRB1_1.ena.txt"
+    file2 = r"C:\Daten\local_data\TypeLoader\albrecht\projects\20201007_AL_HLA-DRB1_DR1\ID16313610\DKMS-LSL_ID16313610_DRB1_1.ena.txt"
+    comp_text = compare_2_files(file1, file2)
+    print(comp_text)
+    # close_connection(log, mydb)
+
 
 if __name__ == '__main__':
     log = general.start_log(level="DEBUG")
