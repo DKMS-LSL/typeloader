@@ -37,7 +37,9 @@ The restarted allele will now look like any new target allele, with the followin
 
 ![Pic](images/restarted_files.png)
 
-**As always, TypeLoader assumes you are uploading correct sequences. Making sure that the sequence you enter is now really correct is your responsibility.** TypeLoader will check that the allele you upload during Restart has the same locus as the original allele (because otherwise, the allele name will become misleading), but otherwise it will accept any sequence as long as your input file meets the [=> usual minimal requirements](new_allele_requirements.md). **TypeLoader will NOT check or compare the new sequence to the old one in any way!**
+**As always, TypeLoader assumes you are uploading correct sequences. It is YOUR responsibility to make sure that the sequence you enter is now really correct.** TypeLoader will check that the allele you upload during Restart has the same locus as the original allele (because otherwise, the allele name will become misleading), but otherwise it will accept any sequence as long as your input file meets the [=> usual minimal requirements](new_allele_requirements.md). **TypeLoader will NOT check or compare the new sequence to the old one in any way!**
+
+To compare the new files with the original files, use the "Compare files" functionality of the [=> View Files Dialog](view_files.md). 
 
 ## Resubmitting the updated files
 

@@ -48,6 +48,6 @@ To switch a project's status, click the ``Close Project`` or ``Open Project`` bu
 In the top right area, there are two buttons that allow interaction with a project's files:
 
  * ``Download files`` opens a dialog where you can choose any of this project's files and save them to a place of your choice.
- * ``Edit a file`` opens a dialog where you can choose any of this project's files. This file will be opened in a window where you can read it. This window also allows editing. 
- 
- ![Pic](images/icon_important.png) **Do not edit project files without *VERY* good reason!** These files usually contain data about the project's submission to ENA. Therefore changes to them can lead to incongruence with ENA's data! 
+ * ``Edit a file`` opens a dialog where you can choose any of this project's files. This file will be opened in a pop-up dialog where you can read it. For details, see [=> View Files](view_files.md). 
+
+**Note that editing the files is not possible, as this might lead to discrepancies between the files and submitted data.**

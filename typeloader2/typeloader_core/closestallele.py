@@ -20,6 +20,7 @@ try:
 except ImportError:
     import errors
 
+
 ###################################################
 
 
@@ -98,7 +99,9 @@ def parse_blast(xml_records, target_family, query_fasta_file, settings, log):
             local_name = os.path.splitext(os.path.basename(query_fasta_file))[0]
             msg = f"Could not find {closestAlleleName} in current reference db!\n" \
                   f"This was originally assigned as closest allele to {local_name}. \n\n" \
-                  f"Maybe the reference db version changed since ENA submission?"
+                  f"Maybe the reference db version changed since ENA submission?\n\n" \
+                  f"Please consult the user manual under 'Error: database changed between submissions' " \
+                  f"for instructions how to proceed from here."
             raise KeyError(msg)
         query_sequence = SeqIO.to_dict(SeqIO.parse(query_fasta_file, "fasta"))[queryId].seq
         results = puzzle_HSPs_from_first_hit(hsps, ref_sequence, query_sequence, query_fasta_file)
@@ -192,7 +195,8 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
             log.warning(msg)
             raise errors.DevianceError(missing_base_num_start_query, closest_allele_name)
 
-        log.debug(f"{missing_base_num_start_ref} bases missing at alignment start (= {missing_base_num_start_query} bases of the query)")
+        log.debug(
+            f"{missing_base_num_start_ref} bases missing at alignment start (= {missing_base_num_start_query} bases of the query)")
         missing_bases_ref = ref_seq[q_start: q_start + missing_base_num_start_ref]
         missing_bases_query = query_seq[:missing_base_num_start_query]
 
@@ -233,7 +237,8 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
         log.debug(f"\t=> alignment start extended by {start_extended} bp")
 
     if missing_base_num_end_query:  # problem at sequence end
-        log.debug(f"{missing_base_num_end_ref} bases missing at alignment end (= {missing_base_num_end_query} bases of the query)")
+        log.debug(
+            f"{missing_base_num_end_ref} bases missing at alignment end (= {missing_base_num_end_query} bases of the query)")
         if missing_base_num_end_ref < 4:
             missing_bases_ref = ref_seq[-1 * missing_base_num_end_ref:]
         else:  # long section missing due to incomplete allele, use next 3 bp for alignment
@@ -287,7 +292,7 @@ def closest_allele_items(hsp_query, hsp_subject, hsp_match, closest_allele_name,
     insertionPositions = [pos + 1 for pos in range(len(hsp_subject)) if hsp_subject[pos] == "-"]
     mismatchPositions = [pos + 1 for pos in range(len(hsp_match)) if ((hsp_match[pos] == " ")
                                                                       and ((pos + 1) not in deletionPositions) and (
-                                                                      (pos + 1) not in insertionPositions))]
+                                                                              (pos + 1) not in insertionPositions))]
     # bases
     deletions = [hsp_subject[deletionPos - 1] for deletionPos in deletionPositions]
     insertions = [hsp_query[insertionPos - 1] for insertionPos in insertionPositions]

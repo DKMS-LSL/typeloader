@@ -62,11 +62,11 @@ All allele status and lab status values are [=> color-coded](colors_icons.md).
 
 ##  File Buttons 
 ###  View files 
-Clicking this button will open a dialog with which you can choose a file of this sample to view by clicking ``Choose File``.
+Clicking this button will open a dialog with which you can choose a file of this sample to view or compare with a different version of it (e.g., after you performed [=> Restart Allele](restart_allele.md)).
 
-After choosing a file, it is displayed. 
+For details, see [=> View Files](view_files.md).
 
-**Note that editing the files is not possible, as this might lead to discrepancies between the files and submitted data.** If you need to edit the sequences (e.g., because you found out that there was a mistake in the sequence), please use the [=>Restart Allele](restart_allele.md) option.
+**Note that editing the files is not possible, as this might lead to discrepancies between the files and submitted data.** If you need to edit the sequences (e.g., because you found out that there was a mistake in the sequence), please use the [=> Restart Allele](restart_allele.md) option.
 
 ###  Download a file 
 Clicking this button will open a dialog with which you can choose a file of this sample to download to a location of your choice.
