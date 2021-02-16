@@ -1,5 +1,13 @@
 # Version History
 
+## 2.10.0 (2021-02-16)
+### New Features:
+- Option to compare 2 TypeLoader generated files of the same type with each other via SampleView => View Files (#184)
+
+### Improvements:
+- Reference db updates between TypeLoader-Upload and IPD Submissions are now handled decently instead of throwing a vague BLAST error (#184)
+
+
 ## 2.9.0 (2020-12-10)
 ### New Features:
 - New option to manually reset reference database to specific version (#171)
