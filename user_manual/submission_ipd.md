@@ -61,3 +61,9 @@ Now you can close the dialog by clicking ``Close`` or the X button.
 TypeLoader will now update the allele status of each target allele to ``IPD submitted`` (as it assumes you will send the files to IPD within the day or so).
 
 Now you just have to submit the downloaded files to IPD by the method they have given you (either email or upload to a shared folder).
+
+## Troubleshooting:
+
+The following errors can occur:
+
+ - [=> Database version changed between ENA and IPD submission](err_db_changed.md)
