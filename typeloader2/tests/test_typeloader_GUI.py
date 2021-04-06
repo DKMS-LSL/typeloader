@@ -132,6 +132,9 @@ project_title = "This is an optional title information"
 project_desc = "This is an optional description information"
 project_accession = ""  ## this will be set in create project
 
+KIR_VERSION = "290"  # the KIR version with which the reference KIR files were created
+HLA_VERSION = "3412"  # this line is purely informational; the HLA version is not changed during any tests
+
 app = QApplication(sys.argv)
 
 today = datetime.datetime.now()
@@ -241,7 +244,16 @@ class TestUpdateReference(unittest.TestCase):
 
     @classmethod
     def tearDownClass(self):
-        pass
+        """reset database to the version with which the reference files were created"""
+        success, err, update_msg = typeloader_functions.perform_reference_update(self.target, self.reference_local_path,
+                                                                                 curr_settings["blast_path"], log,
+                                                                                 version=KIR_VERSION)
+        if not success:
+            log.error(err)
+            log.info(update_msg)
+
+        self.assertTrue(success, "version setback not successful!")
+        typeloader_functions.update_curr_versions(curr_settings, log)
 
     def test01_ref_update_kir_noerrors(self):
         """test that KIR is updated successfully;
@@ -385,7 +397,7 @@ class Test_1_Create_Project(unittest.TestCase):
         self.assertEqual(root.attrib["success"], "true")
         self.assertEqual(root[0].attrib["accession"], self.form.accession)
         self.assertEqual(root[1].attrib["alias"], self.form.project_name + "_sub")
-        self.assertEqual(root[2][0].text, "Submission has been committed.")
+        self.assertEqual(root[2][0].text, "This submission is a TEST submission and will be discarded within 24 hours")
 
 
 class Test_2_ProjectStatus(unittest.TestCase):
@@ -2344,10 +2356,10 @@ class Test_multiple_novel_alleles_part1(unittest.TestCase):
         """test if BothAllelesNovelDialog input produces the intended behavior
         """
         # open MultiAlleleDialog with input data:
-        problem_dic = {self.local_name : [self.sample_id_int, self.local_name ,
-                                                    TargetAllele(gene='KIR3DP1', target_allele='KIR3DP1*0030102:new',
-                                                                 partner_allele=''),
-                                                    ['003new', '004new', '001']]}
+        problem_dic = {self.local_name: [self.sample_id_int, self.local_name,
+                                         TargetAllele(gene='KIR3DP1', target_allele='KIR3DP1*0030102:new',
+                                                      partner_allele=''),
+                                         ['003new', '004new', '001']]}
         mydialog = IPD.BothAllelesNovelDialog(problem_dic, curr_settings, log)
         mybox = mydialog.choice_boxes[self.local_name]
         mybox.options[0].click()

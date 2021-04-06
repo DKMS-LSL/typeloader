@@ -49,6 +49,7 @@ def get_remote_md5checksum(db_name, IPD_db_name, log):
     """
     log.debug("\tGetting checksum of current remote file...")
     remote_checksumfile = remote_checksumfile_index["%s_checksums_file" % db_name]
+    log.info(str(remote_checksumfile))
     checksum_response = urllib.request.urlopen(remote_checksumfile, timeout=5)
     checksum_data = checksum_response.read().decode("utf-8")
 
@@ -173,6 +174,7 @@ def update_database(db_name, reference_local_path, blast_path, log, version=None
               f"Possibly, version {version} of {db_name.upper()} does not exist?"
         return False, msg
 
+    log.debug(f"\t\t=> local MD5 checksum of downloaded file: {get_local_md5checksum(local_db_file, log)}")
     log.debug("\tCreating parsed files...")
     version = hla_embl_parser.make_parsed_files(use_dbname, ref_path_temp, log)
 
