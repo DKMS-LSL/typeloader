@@ -13,6 +13,8 @@ contains classes and functions for login & user handling functionality
 # import modules:
 
 import os, sys, shutil, logging, platform, urllib
+from distutils.version import \
+    LooseVersion as parsedVersion  # TODO: replace with from packaging import version as parsedVersion (#189)
 from configparser import ConfigParser
 from PyQt5.QtWidgets import (QApplication, QDialog, QFormLayout,
                              QMessageBox, QLabel, QPushButton,
@@ -25,7 +27,6 @@ from authuser import user
 from typeloader_functions import perform_reference_update, update_curr_versions
 from typeloader_core import update_reference
 from GUI_forms import ProceedButton
-from PyQt5.Qt import QMessageBox
 
 # ===========================================================
 # parameters:
@@ -361,8 +362,10 @@ class LoginForm(QDialog):
         if error:
             if newer_version:
                 QMessageBox.information(self, error, msg)
+                log.info(msg.replace("\n\n", "\n"))
             else:
                 QMessageBox.warning(self, error, msg)
+                log.warning(msg.replace("\n\n", "\n"))
 
     def check_module_versions(self):
         """for 3rd party modules where it matters, check whether the necessary version is installed
@@ -705,7 +708,7 @@ def check_for_newer_version(myurl, repo, log):
         error = "NewVersion Error"
         return newer_version, error, msg
     else:
-        if latest_version > __version__:
+        if parsedVersion(latest_version) > parsedVersion(__version__):
             newer_version = True
             error = "Newer version available!"
             msg = "TypeLoader version {} is available!\n\n".format(latest_version)
