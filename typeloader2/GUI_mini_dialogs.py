@@ -233,6 +233,7 @@ class ResetReferenceDialog(QDialog):
 class VersionDialog(QDialog):
     """a dialog to show the current versions used by TypeLoader
     """
+
     def __init__(self, settings, log, parent=None):
         super().__init__(parent)
         self.settings = settings
@@ -269,6 +270,8 @@ class VersionDialog(QDialog):
 
         layout.addRow(QLabel("TypeLoader:"),
                       QLabel(self.TL_version))
+
+
 # ===========================================================
 # functions:
 
