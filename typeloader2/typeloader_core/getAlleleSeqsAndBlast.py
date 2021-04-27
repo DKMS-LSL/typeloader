@@ -20,14 +20,19 @@ as the GenDX XML file
 
 def getAlleleSequences(xmlFile, log):
     alleles = {}
+    log.debug("\t - parsing XML file...")
     xmlData = parseXML(xmlFile)
+    log.debug("\t - retrieving allele names...")
     alleleNames = getAlleleNames(xmlData)
+    log.debug("\t - retrieving additional data...")
     data_dic = get_additional_XML_info(xmlData, log)
 
     for alleleName in alleleNames:
+        log.debug(alleleName)
         haplotype_list = getHaplotypeIds(xmlData, alleleName)
         alleles[alleleName] = sequenceFromHaplotype(xmlData, haplotype_list)
 
+    log.debug("done")
     return alleles, data_dic
 
 
@@ -117,9 +122,11 @@ def blast_raw_seqs(input_filename, filetype, settings, log, use_given_reference=
     if filetype == "XML":
         log.debug("\tConverting xml to fasta...")
         alleles, xml_data_dic = getAlleleSequences(input_filename, log)
+        log.debug(f"\t- {len(alleles)} alleles found in XML file")
         fastaFilename = input_filename.replace(".xml", ".fa")
         with open(fastaFilename, "w") as fastaFile:
             for alleleName in list(alleles.keys()):
+                log.debug(alleleName)
                 fastaFile.write(">%s\n" % alleleName)
                 fastaFile.write("%s\n" % alleles[alleleName])
     else:

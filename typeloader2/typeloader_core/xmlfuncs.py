@@ -2,7 +2,7 @@
 
 import xmltodict
 from sys import argv
-from .errors import FileFormatError
+from .errors import FileFormatError, UnknownXMLFormatError
 
 
 def change_utf_decl(xmlFileName):
@@ -34,39 +34,26 @@ def parseXML(xmlFileName):
 
 def getAlleleNames(parsedXML):
     # look in xml for matches with minExonMismatches > 0
-
-    found_alleles_flag = False
-
-    while not found_alleles_flag:
-        try:
-            alleles = parsedXML["sample"]["matchsets"]["matchset"]["matchcombination"]["matchId"]
-            found_alleles_flag = True
-            break
-        except:
-            pass
-
+    try:
+        alleles = parsedXML["ProjectXml"]["Samples"]["Sample"]["Loci"]["Locus"]["Matching"]["Matchset"][
+            "MatchCombination"]["MatchID"]
+    except:
         try:
             alleles = parsedXML["Sample"]["Matchsets"]["Matchset"]["Matchcombination"]["MatchId"]
-            found_alleles_flag = True
-            break
         except:
-            pass
-
-        try:
-            alleles = \
-            parsedXML["ProjectXml"]["Samples"]["Sample"]["Loci"]["Locus"]["Matching"]["Matchset"]["MatchCombination"][
-                "MatchID"]
-            found_alleles_flag = True
-            break
-        except:
-            pass
-
-        try:
-            alleles = parsedXML["Locus"]["Matching"]["Matchset"]["MatchCombination"]["MatchID"]
-            found_alleles_flag = True
-            break
-        except:
-            pass
+            try:
+                alleles = parsedXML["sample"]["matchsets"]["matchset"]["matchcombination"]["matchId"]
+            except:
+                try:
+                    alleles = parsedXML["Locus"]["Matching"]["Matchset"]["MatchCombination"]["MatchID"]
+                except:
+                    # if none of the known patterns work:
+                    try:
+                        num_loci_in_file = len(parsedXML["ProjectXml"]["Samples"]["Sample"]["Loci"]["Locus"])
+                        # if > 1, TypeLoader will fail
+                    except:
+                        num_loci_in_file = False  # cannot parse this
+                    raise UnknownXMLFormatError(num_loci_in_file)
 
     allele_names = []
     for allele in alleles:

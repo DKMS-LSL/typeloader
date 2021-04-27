@@ -229,6 +229,9 @@ def upload_parse_sequence_file(raw_path, settings, log, use_given_reference=Fals
             return False, "Invalid FASTA file format", msg
         else:
             return False, "Problem with the FASTA file", msg
+    except errors.UnknownXMLFormatError as E:
+        return False, "Unsupported XML file format", E.msg
+    
     if results[0] == False:  # something went wrong
         return results
 
@@ -1335,15 +1338,14 @@ def initiate_startover_allele(project_name, sample_id_int, allele_nr, parent, se
 # main:
 
 def main(settings, log, mydb):
-    project = "20201119_ADMIN_mixed_startover-85"
-    sample = "ID15592561"
-    allele = "DKMS-LSL_ID15592561_DPB1_1"
-    nr = ""
-    new_fasta = None
-    parent = None
+    project = "20210426_ADMIN_MIC_191XML"
+    sample_id_int = "old"
+    sample_id_ext = "Blubb"
+    raw_path = r"C:\Daten\local_data\TypeLoader\staging\data_unittest\reject_xml\unsuitable.xml"
+    customer = "DKMS"
 
-    result = initiate_startover_allele(project, sample, allele, parent, settings, log)
-    startover_dic = result[-1]
+    upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, customer,
+                               settings, mydb, log)
 
 
 if __name__ == "__main__":

@@ -84,3 +84,15 @@ class FileFormatError(Exception):
     """
     def __init__(self, msg):
         self.msg = f"Sorry, TypeLoader cannot handle this input file!\n\n{msg}"
+
+
+class UnknownXMLFormatError(Exception):
+    """raised when TypeLoader encounters an input XML file that it cannot parse
+    """
+    def __init__(self, num_loci_in_file):
+        self.msg = f"Sorry, this XML file has a format that TypeLoader does not know how to read!\n\n" \
+                   f"If you think this is a valid sequence file, please contact TypeLoader support and send them the " \
+                   f"file you have been trying to upload. Hopefully, they can teach TypeLoader to handle it."
+        if num_loci_in_file:
+            self.msg += "\n\nDoes your XML file maybe contain alleles of more than 1 locus? If so, please create " \
+                        "input files restricted to one locus and try again with these."

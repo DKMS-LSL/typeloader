@@ -32,7 +32,7 @@ shutil.copyfile(os.path.join(mypath_inner, "typeloader_GUI.pyw"), os.path.join(m
 
 import typeloader_GUI
 from typeloader_core import errors, EMBLfunctions as EF, make_imgt_files as MIF, backend_make_ena as BME, \
-    imgt_text_generator as ITG, closestallele as CA
+    imgt_text_generator as ITG, closestallele as CA, getAlleleSeqsAndBlast as GASB
 import GUI_forms_new_project as PROJECT
 import GUI_forms_new_allele as ALLELE
 import GUI_forms_new_allele_bulk as BULK
@@ -2677,6 +2677,42 @@ class TestRejectionDeviance(unittest.TestCase):
          _, _, _) = typeloader_functions.upload_parse_sequence_file(self.myfile, curr_settings, log)
         with self.assertRaises(errors.DevianceError):
             closestAlleles = CA.get_closest_known_alleles(blastXmlFile, target_family, curr_settings, log)
+
+
+class TestRejectXMLFiles(unittest.TestCase):
+    """Test whether unparseable XML files are rejected with proper message (#191)
+    """
+
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping TestRejectXMLFiles because skip_other_tests is set to True")
+        else:
+            self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "reject_xml")
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test_rejection_unsuitable(self):
+        """testing whether an XML file that is not an NGSEngine file is rejected
+        """
+        myfile = os.path.join(self.mydir, "unsuitable.xml")
+        self.assertTrue(os.path.isfile(myfile))
+        with self.assertRaises(errors.UnknownXMLFormatError) as E:
+            GASB.getAlleleSequences(myfile, log)
+            msg = E.exception.msg
+            self.assertTrue(msg.endswith("Hopefully, they can teach TypeLoader to handle it."))
+
+    def test_rejection_multi_loci(self):
+        """testing whether an NGSENgine XML file containing > 1 locus is rejected with the correct msg
+        """
+        myfile = os.path.join(self.mydir, "multiloci.xml")
+        self.assertTrue(os.path.isfile(myfile))
+        with self.assertRaises(errors.UnknownXMLFormatError) as E:
+            GASB.getAlleleSequences(myfile, log)
+            msg = E.exception.msg
+            self.assertTrue(msg.endswith("input files restricted to one locus and try again with these."))
 
 
 class TestRestrictedReference(unittest.TestCase):
