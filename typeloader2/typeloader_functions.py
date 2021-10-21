@@ -231,7 +231,7 @@ def upload_parse_sequence_file(raw_path, settings, log, use_given_reference=Fals
             return False, "Problem with the FASTA file", msg
     except errors.UnknownXMLFormatError as E:
         return False, "Unsupported XML file format", E.msg
-    
+
     if results[0] == False:  # something went wrong
         return results
 
@@ -350,6 +350,9 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 return False, "Allele too divergent", E.msg
             except OverflowError as E:
                 return False, "Too many possible alignments", str(E)
+            except ValueError:
+                return False, "Something in the reference seems not up-to-date.\n" \
+                              "Please update your reference via Options => Refresh Reference and try again."
 
             genDxAlleleNames = list(closestAlleles.keys())
             for allele in genDxAlleleNames[:2]:
