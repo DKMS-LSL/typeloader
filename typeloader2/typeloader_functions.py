@@ -1092,6 +1092,11 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
 
     log.debug("\t=> looking good")
 
+    # 3.b) delete the subfolder created by webin CLI before submission, otherwise webinCLI 4.x+ will throw an error
+    log.debug("Removing ENA temp dir...")
+    ENA_sequence_dir = os.path.join(file_dic["project_dir"], "sequence")
+    shutil.rmtree(ENA_sequence_dir)
+
     ## 4. submit files via CLI
     log.debug("Submitting files...")
     submission_cmd = cmd_string + " -submit"
