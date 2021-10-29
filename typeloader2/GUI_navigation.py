@@ -625,8 +625,11 @@ class Navigation(QWidget):
             return
 
         msg = f"Are you really sure you want to upload a completely fresh input sequence for allele {sample} #{nr}?" \
-              f"\n\nBeware: if you already submitted this allele to ENA and/or IPD, you will have to later resubmit it " \
-              f"to ensure that both have the correct sequence!"
+              f"\n\nBeware: if you already submitted this allele to IPD, you will have to later resubmit it " \
+              f"to ensure that they have the correct sequence!\n" \
+              f"Otherwise, please consider simply deleting this allele and creating it from scratch, " \
+              f"as ENA sequences cannot be changed once submitted.\n\n" \
+              f"See user manual under 'Restart Allele' for details."
         proceed = ask_for_confirmation(msg, self, self.log)
         if not proceed:
             return
@@ -687,14 +690,18 @@ class Navigation(QWidget):
             msg = f"The previous files of this allele have been submitted to {' and '.join(submitted)}.\n" \
                   f"You must update these now!\n\n"
             if "ENA" in submitted:
-                msg += "To update the sequence at ENA, simply resubmit it via TypeLoader.\n\n"
-            if "IPD" in submitted:
-                msg += "To then update the sequence at IPD, use your original ENA reply file and generate a " \
+                msg += "Unfortunately, ENA does not currently allow updating existing sequences.\nYou can use " \
+                       "TypeLoader's normal ENA submission workflow, but you will get a new ENA submission number."
+
+            if "IPD" in submitted:  # submitted to IPD
+                msg += "\n\nTo then update your sequence at IPD, " \
+                       "wait for the new ENA reply file and use it to generate a " \
                        "fresh IPD-file using TypeLoader. Then send it to IPD in your usual way and ask them " \
                        "to update the sequence for you.\n\n"
 
             msg += "Your submission IDs will be kept but have been marked as 'outdated' in TypeLoader until " \
-                   "resubmission is done."
+                   "resubmission is done.\n\n" \
+                   "Please check the user manual under 'Restart Allele' for details."
             QMessageBox.information(self, "Please update your submissions", msg)
 
         self.refresh.emit(project)
