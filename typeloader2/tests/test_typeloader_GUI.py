@@ -55,18 +55,18 @@ skip_make_project = False  # set to True to skip initial cleanup and new project
 project_name = ""  # this will be set in create project
 
 samples_dic = {  # samples to test
-    "sample_1": {"input": "1395777 A.fa",
-                 "input_dir_origin": "KIR_3DP1",
-                 "local_name": "DKMS-LSL_ID000001_3DP1_1",
+    "sample_1": {"input": "input.fa",
+                 "input_dir_origin": "KIR_2DL4",
+                 "local_name": "DKMS-LSL_ID000001_2DL4_1",
                  "cell_line": "DKMS-LSL_ID000001",
-                 "gene": "KIR3DP1",
-                 "target_allele": "KIR3DP1*0030102:new",
-                 "data_unittest_dir": "new_allele_fasta",
-                 "curr_ena_file": "DKMS-LSL_ID000001_3DP1_1.ena.txt",
-                 "curr_fasta_file": "DKMS-LSL_ID000001_3DP1_1.fa",
-                 "curr_blast_file": "DKMS-LSL_ID000001_3DP1_1.blast.xml",
+                 "gene": "KIR2DL4",
+                 "target_allele": "KIR2DL4*0080401:new",
+                 "data_unittest_dir": "KIR_2DL4",
+                 "curr_ena_file": "DKMS-LSL_ID000001_2DL4_1.ena.txt",
+                 "curr_fasta_file": "DKMS-LSL_ID000001_2DL4_1.fa",
+                 "curr_blast_file": "DKMS-LSL_ID000001_2DL4_1.blast.xml",
                  "curr_ipd_befund_file": "Befunde_neu_1.csv",
-                 "curr_ipd_ena_acc_file": "ENA_Accession_3DP1",
+                 "curr_ipd_ena_acc_file": "ENA_Accession_2DL4",
                  "id_int": "ID000001",
                  "id_ext": "DEDKM000001",
                  "submission_id": "1111"},
@@ -615,8 +615,8 @@ class Test_Create_New_Allele(unittest.TestCase):
         self.assertEqual(data_content[0][4], "")  # old cell_line
         self.assertEqual(data_content[0][5], "{}_{}_{}".format(curr_settings["cell_line_token"],
                                                                samples_dic["sample_1"]["id_int"],
-                                                               "3DP1_1"))  # local_name
-        self.assertEqual(data_content[0][6], "KIR3DP1")  # gene
+                                                               "2DL4_1"))  # local_name
+        self.assertEqual(data_content[0][6], "KIR2DL4")  # gene
         self.assertEqual(data_content[0][7], "novel")  # goal
         self.assertEqual(data_content[0][8], "ENA-ready")  # allele_status
         self.assertEqual(data_content[0][14], "completed")  # lab_status
@@ -1017,8 +1017,8 @@ class Test_Send_To_IMGT(unittest.TestCase):
         self.assertEqual(data_content[0][4], "")  # old cell_line
         self.assertEqual(data_content[0][5], "{}_{}_{}".format(curr_settings["cell_line_token"],
                                                                samples_dic["sample_1"]["id_int"],
-                                                               "3DP1_1"))  # local_name
-        self.assertEqual(data_content[0][6], "KIR3DP1")  # gene
+                                                               "2DL4_1"))  # local_name
+        self.assertEqual(data_content[0][6], "KIR2DL4")  # gene
         self.assertEqual(data_content[0][7], "novel")  # goal
         self.assertEqual(data_content[0][8], "IPD submitted")  # allele_status
         self.assertEqual(data_content[0][14], "completed")  # lab_status
@@ -1026,7 +1026,7 @@ class Test_Send_To_IMGT(unittest.TestCase):
         self.assertEqual(data_content[0][31], "IPD-KIR")  # reference_database
         self.assertEqual(data_content[0][32], "2.9.0")  # database_version
         self.assertEqual(data_content[0][36], data_content_ena[0][1])  # ena_submission_id
-        self.assertEqual(data_content[0][38], "LT986596")  # ena accession number: LTxxxxxx
+        self.assertEqual(data_content[0][38], "4ST3TSE6")  # ena accession number: LTxxxxxx
         self.assertEqual(data_content[0][39], data_content_ipd[0][0])  # ipd_submission_id
         self.assertEqual(data_content[0][40],
                          "DKMS1000" + samples_dic["sample_1"]["submission_id"])  # ipd_submission_nr
@@ -1206,7 +1206,7 @@ class Test_Views(unittest.TestCase):
         self.assertEqual(model.data(model.index(1, 25)), samples_dic["sample_2"]["partner_allele"])
         self.assertEqual(model.headerData(26, Qt.Horizontal, Qt.DisplayRole), "Mismatch Position")
         self.assertEqual(model.headerData(27, Qt.Horizontal, Qt.DisplayRole), "Null Allele?")
-        self.assertEqual(model.data(model.index(0, 27)), "no")
+        self.assertEqual(model.data(model.index(0, 27)), "yes")
         self.assertEqual(model.headerData(28, Qt.Horizontal, Qt.DisplayRole), "Software (new)")
         self.assertEqual(model.data(model.index(0, 28)), "")
         self.assertEqual(model.data(model.index(1, 28)), "NGSengine")
@@ -1228,10 +1228,10 @@ class Test_Views(unittest.TestCase):
         self.assertEqual(model.headerData(36, Qt.Horizontal, Qt.DisplayRole),
                          "ENA Submission ID")  # will continually change, therefore not testing content
         self.assertEqual(model.headerData(37, Qt.Horizontal, Qt.DisplayRole), "ENA Acception Date")
-        #self.assertEqual(model.data(model.index(0, 37)), "2020-05-26")
+        # self.assertEqual(model.data(model.index(0, 37)), "2020-05-26")
         self.assertEqual(model.data(model.index(1, 37)), "")
         self.assertEqual(model.headerData(38, Qt.Horizontal, Qt.DisplayRole), "ENA Accession Nr")
-        self.assertEqual(model.data(model.index(0, 38)), "LT986596")
+        self.assertEqual(model.data(model.index(0, 38)), "4ST3TSE6")
         self.assertEqual(model.data(model.index(1, 38)), "")
 
         self.assertEqual(model.headerData(39, Qt.Horizontal, Qt.DisplayRole),
@@ -1510,11 +1510,11 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.headerData(7, Qt.Vertical, Qt.DisplayRole), "Goal")
             self.assertEqual(model.data(model.index(7, 0), Qt.DisplayRole), "novel")
             self.assertEqual(model.headerData(24, Qt.Vertical, Qt.DisplayRole), "Target Allele")
-            self.assertEqual(model.data(model.index(24, 0), Qt.DisplayRole), "KIR3DP1*0030102:new")
+            self.assertEqual(model.data(model.index(24, 0), Qt.DisplayRole), "KIR2DL4*0080401:new")
             self.assertEqual(model.headerData(25, Qt.Vertical, Qt.DisplayRole), "Partner Allele")
             self.assertEqual(model.headerData(26, Qt.Vertical, Qt.DisplayRole), "Mismatch Position")
             self.assertEqual(model.headerData(27, Qt.Vertical, Qt.DisplayRole), "Null Allele?")
-            self.assertEqual(model.data(model.index(27, 0), Qt.DisplayRole), "no")
+            self.assertEqual(model.data(model.index(27, 0), Qt.DisplayRole), "yes")
             self.assertEqual(model.headerData(28, Qt.Vertical, Qt.DisplayRole), "Software (new)")
             self.assertEqual(model.headerData(29, Qt.Vertical, Qt.DisplayRole), "Software Version")
             self.assertEqual(model.headerData(30, Qt.Vertical, Qt.DisplayRole), "Genotyping Date")
@@ -1599,7 +1599,7 @@ class Test_Views(unittest.TestCase):
             self.assertEqual(model.headerData(44, Qt.Vertical, Qt.DisplayRole), "ENA Acception Date")
             # self.assertEqual(model.data(model.index(44, 0), Qt.DisplayRole), "2020-05-26")
             self.assertEqual(model.headerData(45, Qt.Vertical, Qt.DisplayRole), "ENA Accession Nr")
-            self.assertEqual(model.data(model.index(45, 0), Qt.DisplayRole), "LT986596")
+            self.assertEqual(model.data(model.index(45, 0), Qt.DisplayRole), "4ST3TSE6")
 
         def test_tab6_IPD(self):
             """tests whether content of SampleView widget 'Details about Allele' tab 'ENA submission' is correct
@@ -2534,7 +2534,7 @@ class TestEdgecases(unittest.TestCase):
 
             # read testcases from csv file:
             self.testcases = []
-            TestCase = namedtuple("TestCase", """nr desc filename exp locus target_family closest_allele exact_match 
+            TestCase = namedtuple("TestCase", """nr desc filename exp locus target_family closest_allele exact_match
                                                  hit_start align_len query_len del_pos ins_pos mm_pos dels inss mms""")
             with open(os.path.join(self.mydir, "testcases.csv")) as f:
                 data = csv.reader(f, delimiter=",")
