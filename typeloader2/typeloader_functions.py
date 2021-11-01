@@ -1303,11 +1303,18 @@ def get_protected_values(project_name, sample_id_int, local_name, parent, log):
                      "hws_submission_nr": mark_as_outdated(hws_submission_nr),
                      "ref_db": reference_database,
                      "db_version": database_version,
-                     "kommentar": kommentar
+                     "kommentar": kommentar,
+                     "submitted_last": None
                      }
+
     for key in startover_dic:
         if startover_dic[key] == "None":
             startover_dic[key] = None
+
+    if ipd_submission_id:
+        startover_dic["submitted_last"] = "IPD"
+    elif ena_submission_id:
+        startover_dic["submitted_last"] = "ENA"
 
     return True, startover_dic
 
