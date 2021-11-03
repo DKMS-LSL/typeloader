@@ -7,7 +7,7 @@ unit tests for typeloader_GUI
 
 @author: Bianca Schoene
 '''
-
+import gzip
 import unittest
 from unittest.mock import patch
 import os, sys, re, time, platform, datetime, csv
@@ -116,6 +116,7 @@ curr_settings = GUI_login.get_settings("staging", log, cf)
 for key in settings_both:
     curr_settings[key] = settings_both[key]
 curr_settings["embl_submission"] = curr_settings["embl_submission_test"]
+typeloader_functions.update_curr_versions(curr_settings, log)
 
 embl_test_server = curr_settings["embl_submission"]
 center_name = curr_settings["xml_center_name"]
@@ -518,7 +519,6 @@ class Test_Create_New_Allele(unittest.TestCase):
         reference_file_path = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"],
                                            samples_dic["sample_1"]["data_unittest_dir"],
                                            samples_dic["sample_1"]["curr_ena_file"])
-        print(reference_file_path)
         diff_ena_files = compare_2_files(new_ena_file_path, reference_file_path)
         self.assertEqual(len(diff_ena_files["added_sings"]), 0)
         self.assertEqual(len(diff_ena_files["deleted_sings"]), 0)
@@ -767,7 +767,7 @@ class Test_Reject_Invalid_Fastas(unittest.TestCase):
 
 class Test_Send_To_ENA(unittest.TestCase):
     """
-    Send both of the fasta and xml smaples to ENA
+    Send both of the fasta and xml samples to ENA
     """
 
     @classmethod
@@ -777,6 +777,8 @@ class Test_Send_To_ENA(unittest.TestCase):
         else:
             self.project_name = project_name  # "20180710_SA_A_1292"
             self.form = ENA.ENASubmissionForm(log, mydb, self.project_name, curr_settings, parent=None)
+            self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"],
+                                      "ENA_submission")
 
     @classmethod
     def tearDownClass(self):
@@ -809,8 +811,8 @@ class Test_Send_To_ENA(unittest.TestCase):
         # do not write in database, if close btn isn't clicked
         self.form.close_btn.click()
 
-    def test_parse_ena_manifest_file(self):
-        """Parse the written ena manifest file
+    def test_parse_ena_manifest_and_flatfile(self):
+        """Parse the written ena manifest file and flatfile
         """
         path = os.path.join(curr_settings["projects_dir"], self.project_name)
         # neccessary, because timestep is not known
@@ -821,17 +823,30 @@ class Test_Send_To_ENA(unittest.TestCase):
         curr_alias = "_".join([file_split[0], file_split[1], "filesub"])
         flatfile = "_".join([file_split[0], file_split[1], "flatfile.txt.gz"])
 
-        with open(submission_file_path, "r") as f:
-            i = 0
-            for line in f:
-                if i == 0:
+        # check manifest:
+        manifest_ref_file = os.path.join(self.mydir, "manifest.txt")
+        log.debug(f"Reference file: {manifest_ref_file}")
+        replacements = {"{STUDY}": project_id,
+                        "{ALIAS}": curr_alias,
+                        "{FLATFILE}": flatfile,
+                        "{TL-VERSION}": __version__}
+        with open(manifest_ref_file) as f:
+            manifest_ref_text = f.read()
+            for mykey in replacements:
+                manifest_ref_text = manifest_ref_text.replace(mykey, replacements[mykey])
+        result = compare_2_files(query_path=submission_file_path, reference_var=manifest_ref_text)
+        self.assertEqual(len(result["added_sings"]), 0)
+        self.assertEqual(len(result["deleted_sings"]), 0)
 
-                    self.assertEqual(line, "STUDY\t{}\n".format(project_id))
-                elif i == 1:
-                    self.assertEqual(line, "NAME\t{}\n".format(curr_alias))
-                elif i == 2:
-                    self.assertEqual(line, "FLATFILE\t{}\n".format(flatfile))
-                i += 1
+        # check flatfile:
+        ref_flatfile = os.path.join(self.mydir, "flatfile.txt")
+        new_flatfile = os.path.join(path, flatfile)
+        with gzip.open(new_flatfile, "rt") as f:
+            query_text = f.read()
+
+        result = compare_2_files(query_var=query_text, reference_path=ref_flatfile)
+        self.assertEqual(len(result["added_sings"]), 0)
+        self.assertEqual(len(result["deleted_sings"]), 0)
 
     def test_parse_ena_output_and_db_entry(self):
         """
@@ -3054,8 +3069,10 @@ def compare_2_files(query_path="", reference_path="", filetype="", query_var="",
         now = today.strftime("%d/%m/%Y")
         reference_text = re.sub('DT.*Submitted\)\n.*Release\)',
                                 'DT   {} (Submitted)\nDT   {} (Release)'.format(now, now), reference_text)
-        reference_text = reference_text.replace("{TL-VERSION}",
-                                                __version__)  # replace TL-version part of reference file with current version
+
+    reference_text = reference_text.replace("{TL-VERSION}", __version__
+                                            ).replace("{KIR-VERSION}", curr_settings["db_versions"]["KIR"]
+                                                      ).replace("{HLA-VERSION}", curr_settings["db_versions"]["HLA"])
 
     diffInstance = difflib.Differ()
     diffList = list(diffInstance.compare(query_text.strip(), reference_text.strip()))
