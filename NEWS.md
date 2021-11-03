@@ -1,6 +1,9 @@
 # Version History
 
 ## 2.11.0 (2021-11-01)
+### New Features:
+- ENA files now include the TypeLoader & reference database version used to create them (#196)
+
 ### Improvements:
 - RestartAllele Workflow adjusted to the fact that ENA does not allow sequence updates anymore (#85, #176)
 - Throw meaningful errors if:
@@ -9,7 +12,8 @@
 morg
 ### Backend:
 - Updated ENA CLI to newest version 4.2.1 (#192)
- - change: fusion introns can no longer be submitted to ENA as, e.g., 3/4 and are therefore submitted as 3 (but continue to be submitted as 3/4 to IPD) (#194) 
+ - change: fusion introns can no longer be submitted to ENA as, e.g., 3/4 and are therefore submitted as 3 (but continue to be submitted as 3/4 to IPD) (#194)
+ - submission software & version can now be transmitted to ENA via flatfile (#196)
 
 ## 2.10.0 (2021-02-16)
 ### New Features:
