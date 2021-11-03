@@ -6,12 +6,14 @@ import textwrap
 
 
 def make_globaldata(species="Homo sapiens", gene_tag="", gene="", allele="", partial="", product_DE="", product_FT="",
-                    function="", seqLen="", cellline="", codonstart="1", pseudogene=""):
+                    function="", seqLen="", cellline="", codonstart="1", pseudogene="", TL_version="",
+                    db_name="", db_version=""):
     globaldata = {"{species}": species, "{gene_tag}": gene_tag, "{gene}": gene, "{allele}": allele,
                   "{partial}": partial,
                   "{product_DE}": product_DE, "{product_FT}": product_FT, "{function}": function,
                   "{sequence length}": seqLen,
-                  "{cell line}": cellline, "{reading frame}": codonstart, "{pseudogene}": pseudogene}
+                  "{cell line}": cellline, "{reading frame}": codonstart, "{pseudogene}": pseudogene,
+                  "{TL_version}": TL_version, "{db_name}": db_name, "{db_version}": db_version}
     return globaldata
 
 

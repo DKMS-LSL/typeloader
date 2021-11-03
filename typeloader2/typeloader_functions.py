@@ -480,11 +480,13 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                                   settings, log, newAlleleName, existing_values=existing_values)
                 myallele.null_allele = null_allele
                 myalleles = [myallele]
+                db_name = targetFamily.upper()
                 generalData = BME.make_globaldata(gene_tag=gene_tag, gene=geneName, allele=newAlleleName,
                                                   product_DE=productName_DE, product_FT=productName_FT,
                                                   function=function, species=flatfile_dic["species"],
                                                   seqLen=str(len(sequence)), cellline=myallele.local_name,
-                                                  pseudogene=pseudogene)
+                                                  pseudogene=pseudogene, TL_version=settings["TL_version"],
+                                                  db_name=db_name, db_version=settings["db_versions"][db_name])
                 ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, null_allele) + BME.make_genemodel(
                     BE.backend_dict, generalData, enaPosHash, extraInformation, features) + BME.make_footer(
                     BE.backend_dict, sequence)
@@ -527,6 +529,7 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log, incomplete_
             log.info(msg)
         allele.productName_FT = allele.productName_FT + " null allele" if allele.null_allele else allele.productName_FT
 
+    db_name = targetFamily.upper()
     generalData = BME.make_globaldata(gene_tag="gene",
                                       gene=allele.geneName,
                                       allele=allele.newAlleleName,
@@ -535,7 +538,10 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log, incomplete_
                                       function=flatfile_dic["function_hla"],
                                       species=flatfile_dic["species"],
                                       seqLen=str(len(sequence)),
-                                      cellline=allele.local_name)
+                                      cellline=allele.local_name,
+                                      TL_version=settings["TL_version"],
+                                      db_name=db_name,
+                                      db_version=settings["db_versions"][db_name])
     ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, allele.null_allele)
     ENA_text += BME.make_genemodel(BE.backend_dict, generalData, enaPosHash,
                                    extraInformation, features)
