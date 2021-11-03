@@ -415,11 +415,13 @@ def make_md5(concat_FF, log):
         return checksum
 
 
-def make_manifest(manifest_file, ENA_ID, submission_alias, flatfile, log):
+def make_manifest(manifest_file, ENA_ID, submission_alias, flatfile, TL_version, log):
     with open(manifest_file, "w") as g:
         g.write("STUDY\t{}\n".format(ENA_ID))
         g.write("NAME\t{}\n".format(submission_alias))
         g.write("FLATFILE\t{}\n".format(os.path.basename(flatfile)))
+        g.write("SUBMISSION_TOOL\tTypeLoader\n")
+        g.write("SUBMISSION_TOOL_VERSION\t{}\n".format(TL_version))
     log.debug("\tmanifest file written to {}".format(manifest_file))
 
 

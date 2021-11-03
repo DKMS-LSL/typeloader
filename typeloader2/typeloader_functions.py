@@ -1073,7 +1073,8 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
     ## 2. create a manifest file
     log.debug("Creating submission manifest...")
     try:
-        EF.make_manifest(file_dic["manifest"], ENA_ID, submission_alias, file_dic["concat_FF_zip"], log)
+        EF.make_manifest(file_dic["manifest"], ENA_ID, submission_alias, file_dic["concat_FF_zip"],
+                         settings["TL_version"], log)
     except Exception as E:
         log.error("Could not create manifest file!")
         log.exception(E)
