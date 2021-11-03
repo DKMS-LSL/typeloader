@@ -360,11 +360,13 @@ def connect_ftp(command, file, username, password, ftp_server, log, modus):
     return (return_string)
 
 
-def replace_fusion_intron_if_present(line, log):
+def adjust_flatfile_before_submission(line, log):
     """looks for fusion intron annotations (which arise around deleted exons, see #194)
     and replaces them with the number of the first involved intron only
     to concur with new ENA annotation requirements of webin CLI 4.X+.
-    This only affects the concatenated flatfile, not the individual .ena.txt files.
+    Also removes the "CC   (file created with TypeLoader Version X)" line.
+
+    All of this only affects the concatenated flatfile, not the individual .ena.txt files.
     """
     if line.startswith("FT        "):
         match = re.search(FUSION_INTRON_PATTERN, line)
@@ -373,6 +375,8 @@ def replace_fusion_intron_if_present(line, log):
             replacement = f'/{matching.split("/")[1]}'
             line = line.replace(matching, replacement)
             log.debug("\tReplaced a fusion intron annotation to concur with ENA requirements")
+    elif line.startswith("CC   (file created with"):
+        line = ""
     return line
 
 
@@ -390,7 +394,7 @@ def concatenate_flatfile(files, concat_FF_zip, log):
             j += 1
             with open(file, "r") as f:
                 for line in f:
-                    line = replace_fusion_intron_if_present(line, log)
+                    line = adjust_flatfile_before_submission(line, log)
                     i += 1
                     line_dic[i] = (j, sequence)
                     g.write(line)
