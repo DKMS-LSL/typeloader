@@ -24,6 +24,7 @@ NEW_VERSION = "2.8.2.1"
 BUILD_DIR = r"build/exe.win32-3.6"
 INSTALLER_SCRIPT = "typeloader_installer.nsi"
 INSTALLER_SCRIPT_NEW = "typeloader_installer_new.nsi"
+NSIS_PATH = r"C:\Program Files (x86)\NSIS\makensis.exe"
 IGNORE_FILES = [pathlib.Path(BUILD_DIR, "config_base.ini"),
                 pathlib.Path(BUILD_DIR, "config_company.ini"),
                 ]
@@ -224,8 +225,21 @@ def adjust_installer(missing_files, deprecated_files, log):
     log.info(f"\t=> removed {removed_files} deprecated file(s)")
 
 
-def wrap_up(changes, log):
-    """ties up loose all ends
+def compile_installer(log):
+    """compiles the new installer script into a new Setup.exe using NSIS
+    """
+    log.info("Compiling installer with NSIS...")
+    if not os.path.isfile(NSIS_PATH):
+        log.warning(f"\t=> Could not find NSIS under {NSIS_PATH}. Please adjust path and run again.")
+        return
+
+    cmd = [NSIS_PATH, "/NOTIFYHWND", "134742", os.path.abspath(INSTALLER_SCRIPT)]
+    subprocess.call(cmd, shell=True)
+    log.info("\t\t=> Success!")
+
+
+def wrap_up_and_compile_installer(changes, log):
+    """ties up all loose ends and compiles the new installer into a Setup.exe
     """
     log.info("Wrapping up...")
     log.info("\tReplacing installer-script with updated version...")
@@ -242,8 +256,10 @@ def wrap_up(changes, log):
     else:
         log.info("No changes were necessary! The old installer script is still good to go. :-)")
 
-    log.info(f"Please open {INSTALLER_SCRIPT} in HM NIS Edit and compile the script.")
-    log.info("Then test the new installer thoroughly before deploying!")
+    compile_installer(log)
+
+    log.info("The new installer can be found in this directory as TypeLoader_Setup.exe. \n"
+             "Please test it thoroughly before deploying!")
 
 
 # ===========================================================
@@ -261,7 +277,8 @@ def main(log):
     if missing_files or deprecated_files:
         changes = True
     adjust_installer(missing_files, deprecated_files, log)
-    wrap_up(changes, log)
+
+    wrap_up_and_compile_installer(changes, log)
 
 
 if __name__ == "__main__":
