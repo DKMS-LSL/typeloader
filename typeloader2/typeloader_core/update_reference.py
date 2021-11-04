@@ -175,7 +175,7 @@ def update_database(db_name, reference_local_path, blast_path, log, version=None
     log.debug(f"\tdownloading new file from {remote_db_file}...")
     local_db_file = os.path.join(ref_path_temp, "%s.dat" % use_dbname)
     try:
-        with urllib.request.urlopen(remote_db_file, timeout=10) as db_response, open(local_db_file, "wb") as db_local:
+        with urllib.request.urlopen(remote_db_file, timeout=20) as db_response, open(local_db_file, "wb") as db_local:
             shutil.copyfileobj(db_response, db_local)
             log.debug("\t => successfully downloaded new {} file".format(db_name))
     except urllib.error.HTTPError:
