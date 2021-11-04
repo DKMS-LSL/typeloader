@@ -155,8 +155,11 @@ def update_curr_versions(settings, log):
     db_versions = {}
     for db_name in ["hla", "KIR"]:
         version_file = os.path.join(reference_path, f"curr_version_{db_name}.txt")
-        with open(version_file, "r") as f:
-            version = f.read().strip()
+        try:
+            with open(version_file, "r") as f:
+                version = f.read().strip()
+        except IOError:
+            version = None
         db_name = db_name.upper()
         log.info(f"\tcurrent {db_name} version is {version}")
         db_versions[db_name] = version
