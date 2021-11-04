@@ -1,6 +1,6 @@
 # Version History
 
-## 2.11.0 (2021-11-01)
+## 2.11.0 (2021-11-04)
 ### New Features:
 - ENA files now include the TypeLoader & reference database version used to create them (#196)
 
@@ -9,7 +9,7 @@
 - Throw meaningful errors if:
   - the input XML file cannot be handled (#191)
   - the reference db has probably gone stale (#193)
-morg
+
 ### Backend:
 - Updated ENA CLI to newest version 4.2.1 (#192)
  - change: fusion introns can no longer be submitted to ENA as, e.g., 3/4 and are therefore submitted as 3 (but continue to be submitted as 3/4 to IPD) (#194)
