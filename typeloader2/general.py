@@ -119,7 +119,8 @@ header_translation_dic = {"locus": "GENE",
                           }
 
 soundfile = os.path.join(os.path.dirname(__file__), "sound_done.mp3")
-soundfile_2 = soundfile = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname((__file__)))), "sound_done.mp3")
+soundfile_2 = os.path.join(os.path.dirname(os.path.dirname(__file__)), "sound_done.mp3")
+soundfile_3 = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "sound_done.mp3")
 # ===========================================================
 # classes:
 
@@ -303,21 +304,17 @@ def play_sound():
     """
     try:
         import playsound
-        playsound.playsound(soundfile)
-        return True
+        for myfile in [soundfile, soundfile_2, soundfile_3]:
+            try:
+                playsound.playsound(myfile)
+                return True
+            except playsound.PlaysoundException:
+                pass
+
+        return False
 
     except ImportError:
         return False
-
-    except playsound.PlaysoundException:
-        try:
-            playsound.playsound(os.path.basename(soundfile))
-            return True
-
-        except playsound.PlaysoundException:
-            playsound.playsound(soundfile_2)
-            return True
-
 
 
 # ===========================================================
