@@ -615,13 +615,17 @@ def check_update_needed(reference_local_path, log, skip_if_updated_today=False):
     db_list = ["hla", "kir"]
 
     update_me = []
+    messages = []
     for db_name in db_list:
-        new_version_found, _ = update_reference.check_database(db_name, reference_local_path, log,
+        new_version_found, msg = update_reference.check_database(db_name, reference_local_path, log,
                                                                skip_if_updated_today=skip_if_updated_today)
         if new_version_found:
             update_me.append(db_name.upper())
+        else:
+            if msg.startswith("Could not reach"):
+                messages.append(msg)
 
-    return update_me
+    return update_me, messages
 
 
 def check_for_reference_updates(log, settings, parent):
@@ -637,7 +641,7 @@ def check_for_reference_updates(log, settings, parent):
     blast_path = settings["blast_path"]
     reference_local_path = settings["reference_local_path"]
 
-    update_me = check_update_needed(reference_local_path, log)
+    update_me, messages = check_update_needed(reference_local_path, log)
 
     if update_me:
         targets = " and ".join(update_me)
@@ -649,6 +653,11 @@ def check_for_reference_updates(log, settings, parent):
         if reply == QMessageBox.No:
             log.info("User chose not to update the database.")
             return
+
+    if messages:
+        msg = "\n".join(messages)
+        msg += "\n\nKeeping old reference version(s) for now."
+        QMessageBox.information(parent, "Problem during reference check", msg)
 
     handle_reference_update(update_me, reference_local_path, blast_path, parent, settings, log)
 

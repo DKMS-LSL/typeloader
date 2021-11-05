@@ -4,7 +4,7 @@
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "TypeLoader"
-!define PRODUCT_VERSION "2.8.2.1"
+!define PRODUCT_VERSION "2.11.0"
 !define PRODUCT_PUBLISHER "DKMS Life Science Lab GmbH"
 !define PRODUCT_WEB_SITE "https://github.com/DKMS-LSL/typeloader"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\typeloader.exe"
@@ -328,7 +328,8 @@ Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
   File "build\exe.win32-3.6\config_raw.ini"
   SetOutPath "$INSTDIR\ENA_Webin_CLI"
-  File "build\exe.win32-3.6\ENA_Webin_CLI\webin-cli-3.1.0.jar"
+  File "build\exe.win32-3.6\ENA_Webin_CLI\webin-cli-4.2.1.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-3.1.0.jar"
   Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-2.2.0.jar"
   Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-1.8.4.jar"
   SetOutPath "$INSTDIR\icons"
@@ -9278,6 +9279,8 @@ Section Uninstall
   Delete "$SMPROGRAMS\typeloader\typeloader.lnk"
 
   Delete "$INSTDIR\lib\cx_Oracle.cp36-win32.pyd"
+
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.2.1.jar"
 
   RMDir "$SMPROGRAMS\typeloader"
   RMDir "$INSTDIR\tables"

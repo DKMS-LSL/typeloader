@@ -155,8 +155,11 @@ def update_curr_versions(settings, log):
     db_versions = {}
     for db_name in ["hla", "KIR"]:
         version_file = os.path.join(reference_path, f"curr_version_{db_name}.txt")
-        with open(version_file, "r") as f:
-            version = f.read().strip()
+        try:
+            with open(version_file, "r") as f:
+                version = f.read().strip()
+        except IOError:
+            version = None
         db_name = db_name.upper()
         log.info(f"\tcurrent {db_name} version is {version}")
         db_versions[db_name] = version
@@ -408,7 +411,9 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                     if msg == "Your XML file was empty":  # TODO: test this (seems to not be caught correctly)
                         empty_xml = True
                 if empty_xml:
-                    return False, "BLAST hickup", "The generated blast.xml-file was empty. This was probably a BLAST hickup. Please restart TypeLoader and try again!"
+                    return False, "BLAST hickup", "The generated blast.xml-file was empty. This was probably a BLAST " \
+                                                  "hickup. Please refresh your reference database " \
+                                                  "or restart TypeLoader, and then try again!"
                 else:
                     return False, "Input File Error", repr(E)
             except OverflowError as E:
