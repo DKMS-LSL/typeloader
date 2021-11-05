@@ -16,6 +16,8 @@ import gzip
 import pycurl
 import re
 
+FUSION_INTRON_PATTERN = re.compile('/number=\d+/\d+')
+
 
 def check_fasta_valid(fasta):
     """checks whether the file opened as fasta conforms to basic fasta format
@@ -358,6 +360,26 @@ def connect_ftp(command, file, username, password, ftp_server, log, modus):
     return (return_string)
 
 
+def adjust_flatfile_before_submission(line, log):
+    """looks for fusion intron annotations (which arise around deleted exons, see #194)
+    and replaces them with the number of the first involved intron only
+    to concur with new ENA annotation requirements of webin CLI 4.X+.
+    Also removes the "CC   (file created with TypeLoader Version X)" line.
+
+    All of this only affects the concatenated flatfile, not the individual .ena.txt files.
+    """
+    if line.startswith("FT        "):
+        match = re.search(FUSION_INTRON_PATTERN, line)
+        if match:
+            matching = match.group()
+            replacement = f'/{matching.split("/")[1]}'
+            line = line.replace(matching, replacement)
+            log.debug("\tReplaced a fusion intron annotation to concur with ENA requirements")
+    elif line.startswith("CC   (file created with"):
+        line = ""
+    return line
+
+
 def concatenate_flatfile(files, concat_FF_zip, log):
     """concatenates all text files into one gzipped text file;
     returns True if that file has any content, else False
@@ -372,6 +394,7 @@ def concatenate_flatfile(files, concat_FF_zip, log):
             j += 1
             with open(file, "r") as f:
                 for line in f:
+                    line = adjust_flatfile_before_submission(line, log)
                     i += 1
                     line_dic[i] = (j, sequence)
                     g.write(line)
@@ -396,11 +419,13 @@ def make_md5(concat_FF, log):
         return checksum
 
 
-def make_manifest(manifest_file, ENA_ID, submission_alias, flatfile, log):
+def make_manifest(manifest_file, ENA_ID, submission_alias, flatfile, TL_version, log):
     with open(manifest_file, "w") as g:
         g.write("STUDY\t{}\n".format(ENA_ID))
         g.write("NAME\t{}\n".format(submission_alias))
         g.write("FLATFILE\t{}\n".format(os.path.basename(flatfile)))
+        g.write("SUBMISSION_TOOL\tTypeLoader\n")
+        g.write("SUBMISSION_TOOL_VERSION\t{}\n".format(TL_version))
     log.debug("\tmanifest file written to {}".format(manifest_file))
 
 

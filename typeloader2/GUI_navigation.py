@@ -624,39 +624,62 @@ class Navigation(QWidget):
         if not proceed:
             return
 
-        msg = f"Are you really sure you want to upload a completely fresh input sequence for allele {sample} #{nr}?" \
-              f"\n\nBeware: if you already submitted this allele to ENA and/or IPD, you will have to later resubmit it " \
-              f"to ensure that both have the correct sequence!"
-        proceed = ask_for_confirmation(msg, self, self.log)
-        if not proceed:
-            return
-
         success, msg, db_versions, startover_dic = typeloader_functions.initiate_startover_allele(project,
                                                                                                   sample,
                                                                                                   nr,
                                                                                                   self,
                                                                                                   self.settings,
                                                                                                   self.log)
-        if success:
-            self.restart_data = (project, status, startover_dic)
-            if msg:
-                if db_versions:
-                    (target, prev_version) = db_versions
-                    switch_db = QMessageBox.question(self, "Database version changed meanwhile", msg,
-                                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-                    if switch_db == QMessageBox.Yes:
-                        self.log.debug(f"User chose to update db {target} to {prev_version}...")
-                        dialog = ResetReferenceDialog(self.settings, self.log, self, target_value=prev_version)
-                        dialog.db_reset_done.connect(self.call_NewAlleleForm)
-                    else:
-                        self.log.debug(f"User chose to keep db {target} at current version...")
-                        self.callNewAlleleDialogNow.emit(True)
-                else:
-                    QMessageBox.warning(self, "Something happened...", msg)
-                    self.log.warning(msg)
-                    self.log.info("Not proceeding...")
+        if not success:
+            QMessageBox.warning(self, "Something happened...", msg)
+            self.log.warning(msg)
+            self.log.info("Not proceeding...")
+            return
+
+        self.restart_data = (project, status, startover_dic)
+
+        msg = f"Are you really sure you want to upload a completely fresh input sequence for allele {sample} #{nr}?"
+
+        text_block = "the cleanest approach is to simply delete this allele{ENA_SUBMITTED?} " \
+                     "and upload the corrected sequence as a new TypeLoader allele, " \
+                     "starting the submission of this allele from scratch.\n" \
+                     "This is because ENA sequences currently CANNOT be changed once submitted.\n\n" \
+                     "See user manual under 'Restart Allele' for details." \
+                     "\n\nContinue 'restart allele' workflow anyway?"
+
+        if startover_dic["submitted_last"] == "IPD":
+            msg += "\n\nBeware: if you have already submitted this allele to IPD, you will have to resubmit it later " \
+                   "to ensure that they have the correct sequence!\n\n" \
+                   "Otherwise, "
+            replacement = ""
+
+        else:
+            if startover_dic["submitted_last"] == "ENA":
+                msg += "\n\nSince you haven't submitted this allele to IPD, yet, "
+                replacement = ", withdraw its old submission from ENA,"
+
             else:
-                self.callNewAlleleDialogNow.emit(True)
+                msg += "\n\nSince you haven't submitted this allele to IPD, yet, "
+                replacement = ""
+
+        msg += text_block.replace("{ENA_SUBMITTED?}", replacement)
+
+        proceed = ask_for_confirmation(msg, self, self.log)
+        if not proceed:
+            return
+
+        if db_versions:
+            (target, prev_version) = db_versions
+            switch_db = QMessageBox.question(self, "Database version changed meanwhile", msg,
+                                             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if switch_db == QMessageBox.Yes:
+                self.log.debug(f"User chose to update db {target} to {prev_version}...")
+                dialog = ResetReferenceDialog(self.settings, self.log, self, target_value=prev_version)
+                dialog.db_reset_done.connect(self.call_NewAlleleForm)
+            else:
+                self.log.debug(f"User chose to keep db {target} at current version...")
+
+        self.callNewAlleleDialogNow.emit(True)
 
     @pyqtSlot(bool)
     def call_NewAlleleForm(self, start_now):
@@ -672,29 +695,40 @@ class Navigation(QWidget):
             dialog.new_allele.connect(self.prompt_resubmission)
 
     @pyqtSlot(str)
-    def prompt_resubmission(self, new_allele):
+    def prompt_resubmission(self, _):
         """Once the resetted sequence has been saved, check whether the previous version was already submitted to ENA and/or IPD.
          If yes, tell the user to update their submissions.
          """
         (project, status, startover_dic) = self.restart_data
-        submitted = []
-        if startover_dic['ena_submission_id']:
-            submitted.append("ENA")
-        if startover_dic['ipd_submission_nr']:
-            submitted.append("IPD")
+        if startover_dic["submitted_last"]:
+            text_block1 = "Unfortunately, ENA does not currently allow updating existing sequences.\n" \
+                          "Please use TypeLoader's normal ENA submission workflow to submit your updated squence " \
+                          "to ENA. You will then get a new ENA accession number."
 
-        if submitted:
-            msg = f"The previous files of this allele have been submitted to {' and '.join(submitted)}.\n" \
-                  f"You must update these now!\n\n"
-            if "ENA" in submitted:
-                msg += "To update the sequence at ENA, simply resubmit it via TypeLoader.\n\n"
-            if "IPD" in submitted:
-                msg += "To then update the sequence at IPD, use your original ENA reply file and generate a " \
+            text_block2 = "\n\nPlease check the user manual under 'Restart Allele' for details."
+
+            msg = f"The previous files of this allele have been submitted to "
+
+            if startover_dic["submitted_last"] == "ENA":
+                msg += "ENA.\nYou must resubmit these now!\n\n"
+
+                msg += text_block1 + " Afterwards, you can delete the old sequence at ENA and use the new " \
+                                     "accession number to submit the allele to IPD."
+                msg += text_block2
+
+            else:
+                msg += "ENA and (possibly) IPD.\n You must update these submissions now!\n\n"
+
+                msg += text_block1
+
+                msg += "\n\nTo update your sequence at IPD, " \
+                       "wait for the new ENA reply file and use it to generate a " \
                        "fresh IPD-file using TypeLoader. Then send it to IPD in your usual way and ask them " \
                        "to update the sequence for you.\n\n"
 
-            msg += "Your submission IDs will be kept but have been marked as 'outdated' in TypeLoader until " \
-                   "resubmission is done."
+                msg += "Your ENA accession number and IPD submission number will be kept for now, but both have been " \
+                       "marked as 'outdated' in TypeLoader until you create a new IPD file." + text_block2
+
             QMessageBox.information(self, "Please update your submissions", msg)
 
         self.refresh.emit(project)

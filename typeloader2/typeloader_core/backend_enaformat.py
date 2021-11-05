@@ -5,6 +5,7 @@ XX
 AC   XXX;
 XX
 DE   {species}, {partial} {gene} gene for {product_DE}, cell line {cell line}, allele {allele}
+CC   (file created with TypeLoader version {TL_version} based on {db_name} release {db_version})
 XX
 FH   Key             Location/Qualifiers
 FH
@@ -25,6 +26,7 @@ XX
 AC   XXX;
 XX
 DE   {species}, {partial} {gene} pseudogene, cell line {cell line}, null allele {allele}
+CC   (file created with TypeLoader version {TL_version} based on {db_name} release {db_version})
 XX
 FH   Key             Location/Qualifiers
 FH

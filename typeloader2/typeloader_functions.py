@@ -155,8 +155,11 @@ def update_curr_versions(settings, log):
     db_versions = {}
     for db_name in ["hla", "KIR"]:
         version_file = os.path.join(reference_path, f"curr_version_{db_name}.txt")
-        with open(version_file, "r") as f:
-            version = f.read().strip()
+        try:
+            with open(version_file, "r") as f:
+                version = f.read().strip()
+        except IOError:
+            version = None
         db_name = db_name.upper()
         log.info(f"\tcurrent {db_name} version is {version}")
         db_versions[db_name] = version
@@ -229,6 +232,9 @@ def upload_parse_sequence_file(raw_path, settings, log, use_given_reference=Fals
             return False, "Invalid FASTA file format", msg
         else:
             return False, "Problem with the FASTA file", msg
+    except errors.UnknownXMLFormatError as E:
+        return False, "Unsupported XML file format", E.msg
+
     if results[0] == False:  # something went wrong
         return results
 
@@ -347,6 +353,9 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                 return False, "Allele too divergent", E.msg
             except OverflowError as E:
                 return False, "Too many possible alignments", str(E)
+            except ValueError:
+                return False, "Something in the reference seems not up-to-date.\n" \
+                              "Please update your reference via Options => Refresh Reference and try again."
 
             genDxAlleleNames = list(closestAlleles.keys())
             for allele in genDxAlleleNames[:2]:
@@ -402,7 +411,9 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                     if msg == "Your XML file was empty":  # TODO: test this (seems to not be caught correctly)
                         empty_xml = True
                 if empty_xml:
-                    return False, "BLAST hickup", "The generated blast.xml-file was empty. This was probably a BLAST hickup. Please restart TypeLoader and try again!"
+                    return False, "BLAST hickup", "The generated blast.xml-file was empty. This was probably a BLAST " \
+                                                  "hickup. Please refresh your reference database " \
+                                                  "or restart TypeLoader, and then try again!"
                 else:
                     return False, "Input File Error", repr(E)
             except OverflowError as E:
@@ -474,11 +485,13 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
                                   settings, log, newAlleleName, existing_values=existing_values)
                 myallele.null_allele = null_allele
                 myalleles = [myallele]
+                db_name = targetFamily.upper()
                 generalData = BME.make_globaldata(gene_tag=gene_tag, gene=geneName, allele=newAlleleName,
                                                   product_DE=productName_DE, product_FT=productName_FT,
                                                   function=function, species=flatfile_dic["species"],
                                                   seqLen=str(len(sequence)), cellline=myallele.local_name,
-                                                  pseudogene=pseudogene)
+                                                  pseudogene=pseudogene, TL_version=settings["TL_version"],
+                                                  db_name=db_name, db_version=settings["db_versions"][db_name])
                 ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, null_allele) + BME.make_genemodel(
                     BE.backend_dict, generalData, enaPosHash, extraInformation, features) + BME.make_footer(
                     BE.backend_dict, sequence)
@@ -521,6 +534,7 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log, incomplete_
             log.info(msg)
         allele.productName_FT = allele.productName_FT + " null allele" if allele.null_allele else allele.productName_FT
 
+    db_name = targetFamily.upper()
     generalData = BME.make_globaldata(gene_tag="gene",
                                       gene=allele.geneName,
                                       allele=allele.newAlleleName,
@@ -529,7 +543,10 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log, incomplete_
                                       function=flatfile_dic["function_hla"],
                                       species=flatfile_dic["species"],
                                       seqLen=str(len(sequence)),
-                                      cellline=allele.local_name)
+                                      cellline=allele.local_name,
+                                      TL_version=settings["TL_version"],
+                                      db_name=db_name,
+                                      db_version=settings["db_versions"][db_name])
     ENA_text = BME.make_header(BE.backend_dict, generalData, enaPosHash, allele.null_allele)
     ENA_text += BME.make_genemodel(BE.backend_dict, generalData, enaPosHash,
                                    extraInformation, features)
@@ -1061,7 +1078,8 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
     ## 2. create a manifest file
     log.debug("Creating submission manifest...")
     try:
-        EF.make_manifest(file_dic["manifest"], ENA_ID, submission_alias, file_dic["concat_FF_zip"], log)
+        EF.make_manifest(file_dic["manifest"], ENA_ID, submission_alias, file_dic["concat_FF_zip"],
+                         settings["TL_version"], log)
     except Exception as E:
         log.error("Could not create manifest file!")
         log.exception(E)
@@ -1088,6 +1106,11 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
         return [ENA_response], False, "ENA validation error", ENA_response, problem_samples
 
     log.debug("\t=> looking good")
+
+    # 3.b) delete the subfolder created by webin CLI before submission, otherwise webinCLI 4.x+ will throw an error
+    log.debug("Removing ENA temp dir...")
+    ENA_sequence_dir = os.path.join(file_dic["project_dir"], "sequence")
+    shutil.rmtree(ENA_sequence_dir)
 
     ## 4. submit files via CLI
     log.debug("Submitting files...")
@@ -1292,11 +1315,18 @@ def get_protected_values(project_name, sample_id_int, local_name, parent, log):
                      "hws_submission_nr": mark_as_outdated(hws_submission_nr),
                      "ref_db": reference_database,
                      "db_version": database_version,
-                     "kommentar": kommentar
+                     "kommentar": kommentar,
+                     "submitted_last": None
                      }
+
     for key in startover_dic:
         if startover_dic[key] == "None":
             startover_dic[key] = None
+
+    if ipd_submission_id:
+        startover_dic["submitted_last"] = "IPD"
+    elif ena_submission_id:
+        startover_dic["submitted_last"] = "ENA"
 
     return True, startover_dic
 
@@ -1335,15 +1365,14 @@ def initiate_startover_allele(project_name, sample_id_int, allele_nr, parent, se
 # main:
 
 def main(settings, log, mydb):
-    project = "20201119_ADMIN_mixed_startover-85"
-    sample = "ID15592561"
-    allele = "DKMS-LSL_ID15592561_DPB1_1"
-    nr = ""
-    new_fasta = None
-    parent = None
+    project = "20210426_ADMIN_MIC_191XML"
+    sample_id_int = "old"
+    sample_id_ext = "Blubb"
+    raw_path = r"C:\Daten\local_data\TypeLoader\staging\data_unittest\reject_xml\unsuitable.xml"
+    customer = "DKMS"
 
-    result = initiate_startover_allele(project, sample, allele, parent, settings, log)
-    startover_dic = result[-1]
+    upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, customer,
+                               settings, mydb, log)
 
 
 if __name__ == "__main__":
