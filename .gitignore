@@ -20,6 +20,7 @@ typeloader2/typeLoader_GUI.py
 typeloader2/ENA_Webin_CLI/test_data/*
 typeloader2/ENA_Webin_CLI/java
 typeloader2/tests/test_temp.py
+typeloader2/installer*
 */.idea
 /.venv/*
 *.egg-info*
