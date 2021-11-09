@@ -1174,6 +1174,13 @@ def submit_alleles_to_ENA(project_name, ENA_ID, samples, files, settings, log):
         settings,
         log)
 
+    try:
+        webin_file = os.path.join(file_dic["project_dir"], "webin-cli.report")
+        new_path = os.path.join(file_dic["project_dir"], f"{analysis_alias}_webin-cli.report")
+        os.rename(webin_file, new_path)
+    except IOError:
+        pass
+
     return success, file_dic, ena_results, problem_samples, err_type, msg
 
 

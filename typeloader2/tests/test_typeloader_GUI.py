@@ -857,7 +857,7 @@ class Test_Send_To_ENA(unittest.TestCase):
         manifest_file = list(filter(lambda x: re.search(r'^PRJEB.*manifest.txt', x), os.listdir(path)))[0]
         file_split = manifest_file.split("_")
         curr_sub_id = "_".join([file_split[0], file_split[1]])
-        webin_report = os.path.join(path, "webin-cli.report")
+        webin_report = os.path.join(path, f"{curr_sub_id}_webin-cli.report")
 
         query = "PRAGMA table_info (ENA_SUBMISSIONS)"
         success, data_info = execute_db_query(query,
