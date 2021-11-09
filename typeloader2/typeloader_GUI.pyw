@@ -239,7 +239,7 @@ class MainGUI(QMainWindow):
             if i == 1:  # AllelesOverview
                 if not self.view_ov_alleles.widget.header_fixed:
                     self.view_ov_alleles.widget.add_headers()  # very slow => should only happen on demand
-                    general.play_sound()
+                    general.play_sound(self.log)
             self.Stack.setCurrentIndex(i)
             if i == 0:
                 sender = self.sender().text()

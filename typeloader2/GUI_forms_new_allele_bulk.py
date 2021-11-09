@@ -179,7 +179,7 @@ class NewAlleleBulkForm(CollapsibleDialog):
         self.ok_btn.setEnabled(True)
         self.proceed_sections(0, 1)
         self.refresh_project.emit(self.project)
-        general.play_sound()
+        general.play_sound(self.log)
         return True
         
         

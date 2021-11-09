@@ -3015,7 +3015,7 @@ class TestPlaySound(unittest.TestCase):
     def test_play_sound(self):
         """test that sound was played
          """
-        played = general.play_sound()
+        played = general.play_sound(log)
         self.assertTrue(played)
 
 

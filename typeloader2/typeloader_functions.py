@@ -135,7 +135,7 @@ def perform_reference_update(db_name, reference_local_path, blast_path, log, ver
                                                                version=version)
     except Exception as E:
         log.exception("Reference update failed!")
-        general.play_sound()
+        general.play_sound(log)
         msg = f"Could not update the reference database(s). Please try again!\n\nError: {repr(E)}"
         return False, "Reference update failed", msg
 

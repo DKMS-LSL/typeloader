@@ -349,7 +349,7 @@ class ENASubmissionForm(CollapsibleDialog):
                 QMessageBox.warning(self, err_type, msg)
                 self.submission_successful = False
                 self.cleanup_submission_failed()
-            general.play_sound()
+            general.play_sound(self.log)
 
         except Exception as E:
             self.log.exception(E)
