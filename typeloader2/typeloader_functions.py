@@ -1099,7 +1099,7 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
     validate_cmd = cmd_string + " -validate"
     success, ENA_response, _, problem_samples = EF.handle_webin_CLI(validate_cmd, "validate", submission_alias,
                                                                     file_dic["project_dir"],
-                                                                    line_dic, log)
+                                                                    line_dic, settings, log)
     if not success:
         log.error("Validation by ENA's Webin-CLI failed!")
         log.error(ENA_response)
@@ -1121,7 +1121,7 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
                                                                                                         submission_alias,
                                                                                                         file_dic[
                                                                                                             "project_dir"],
-                                                                                                        line_dic, log,
+                                                                                                        line_dic, settings, log,
                                                                                                         timeout=timeout)
     submission_accession_number = None  # used to be contained in ENA's reply, but has been deprecated with the start of Webin-CLI
 

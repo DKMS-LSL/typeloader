@@ -500,7 +500,7 @@ def parse_ENA_report(report_file, line_dic, log):
     return text, problem_samples
 
 
-def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic, log, timeout=None):
+def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic, settings, log, timeout=None):
     """calls the command-string via webin-CLI and parses the output
     """
     from subprocess import check_output, CalledProcessError, TimeoutExpired
@@ -520,7 +520,7 @@ def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic,
         output = check_output(cmd_string, timeout=timeout).decode("utf-8")
     except CalledProcessError as E:
         log.error("ENA's Webin-CLI threw an error after this command:")
-        log.error(cmd_string)
+        log.error(cmd_string.replace(settings["ftp_pwd"], "****"))
         output = E.output.decode("utf-8")
     except TimeoutExpired:
         log.error(f"Timeout expired: gave up after {timeout} seconds!")
