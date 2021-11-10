@@ -1,5 +1,10 @@
 # Version History
 
+## 2.11.0.1 (2021-11-10)
+## Bugfixes:
+- if playsound doesn't work, just skip it
+- rename webin-cli.report after submissions to avoid overwriting (#199)
+
 ## 2.11.0 (2021-11-04)
 ### New Features:
 - ENA files now include the TypeLoader & reference database version used to create them (#196)
