@@ -448,7 +448,8 @@ def make_ENA_CLI_command_string(manifest_file, project_dir, settings, log):
 
     # create command:
     log.debug("Creating command for Webin-CLI...")
-    cmd = ['java', '-jar', '"{}"'.format(CLI_file), '-context', 'sequence', '-manifest', manifest_file,
+    cmd = ['java', '-jar', '"{}"'.format(CLI_file), '-context', 'sequence', '-manifest',
+           '"{}"'.format(manifest_file),
            '-userName', settings["ftp_user"], '-password', settings["ftp_pwd"], '-centerName',
            '"{}"'.format(settings["xml_center_name"]),
            '-inputDir', '"{}"'.format(project_dir), '-outputDir', '"{}"'.format(project_dir)]
