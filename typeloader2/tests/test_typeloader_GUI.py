@@ -3017,6 +3017,9 @@ class TestPlaySound(unittest.TestCase):
          """
         played = general.play_sound(log)
         self.assertTrue(played)
+        # make sound distinguishable from normal running sounds, so tester knows tests are through
+        general.play_sound(log)
+        general.play_sound(log)
 
 
 # ===========================================================

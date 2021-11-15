@@ -1088,16 +1088,15 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
 
     ## 3. validate files via CLI
     log.debug("Validating submission files using ENA's Webin-CLI...")
-    cmd_string, msg = EF.make_ENA_CLI_command_string(file_dic["manifest"], file_dic["project_dir"], settings, log)
+    ena_cmd, msg = EF.make_ENA_CLI_command_string(file_dic["manifest"], file_dic["project_dir"], settings, log)
 
-    if not cmd_string:
+    if not ena_cmd:
         log.error("Could not generate command for Webin-CLI!")
         return False, False, "Webin-CLI command problem", msg, []
 
     log.debug("Validating command and files...")
 
-    validate_cmd = cmd_string + " -validate"
-    success, ENA_response, _, problem_samples = EF.handle_webin_CLI(validate_cmd, "validate", submission_alias,
+    success, ENA_response, _, problem_samples = EF.handle_webin_CLI(ena_cmd, "validate", submission_alias,
                                                                     file_dic["project_dir"],
                                                                     line_dic, settings, log)
     if not success:
@@ -1114,9 +1113,8 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
 
     ## 4. submit files via CLI
     log.debug("Submitting files...")
-    submission_cmd = cmd_string + " -submit"
     timeout = int(settings["timeout_ena"])
-    successful_transmit, ENA_response, analysis_accession_number, problem_samples = EF.handle_webin_CLI(submission_cmd,
+    successful_transmit, ENA_response, analysis_accession_number, problem_samples = EF.handle_webin_CLI(ena_cmd,
                                                                                                         "submit",
                                                                                                         submission_alias,
                                                                                                         file_dic[
