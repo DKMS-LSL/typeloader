@@ -4,7 +4,7 @@
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "TypeLoader"
-!define PRODUCT_VERSION "2.11.0.2"
+!define PRODUCT_VERSION "2.11.0.2_beta2"
 !define PRODUCT_PUBLISHER "DKMS Life Science Lab GmbH"
 !define PRODUCT_WEB_SITE "https://github.com/DKMS-LSL/typeloader"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\typeloader.exe"
@@ -331,7 +331,8 @@ Section "MainSection" SEC01
   File "build\exe.win32-3.6\blastn\msvcr120.dll"
   SetOutPath "$INSTDIR"
   SetOutPath "$INSTDIR\ENA_Webin_CLI"
-  File "build\exe.win32-3.6\ENA_Webin_CLI\webin-cli-4.2.1.jar"
+  File "build\exe.win32-3.6\ENA_Webin_CLI\webin-cli-4.2.2.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.2.1.jar"
   Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-3.1.0.jar"
   Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-2.2.0.jar"
   Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-1.8.4.jar"
@@ -11382,6 +11383,8 @@ Section Uninstall
   Delete "$INSTDIR\tables\ena_submissions.csv"
   Delete "$INSTDIR\tables\ipd_submissions.csv"
   Delete "$INSTDIR\tables\samples.csv"
+
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.2.2.jar"
 
   RMDir "$SMPROGRAMS\typeloader"
   Delete "$INSTDIR\lib\PyQt5\bindings\QtWidgets\qabstractspinbox.sip"
