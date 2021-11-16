@@ -815,8 +815,10 @@ class Test_Send_To_ENA(unittest.TestCase):
         """Parse the written ena manifest file and flatfile
         """
         path = os.path.join(curr_settings["projects_dir"], self.project_name)
-        # neccessary, because timestep is not known
-        submission_file = list(filter(lambda x: re.search(r'^PRJEB.*manifest.txt', x), os.listdir(path)))[0]
+        # neccessary because timestamp is not known:
+        manifest_files = list(filter(lambda x: re.search(r'^PRJEB.*manifest.txt', x), os.listdir(path)))
+        self.assertTrue(len(manifest_files) > 0)
+        submission_file = manifest_files[0]
         file_split = submission_file.split("_")
         submission_file_path = os.path.join(path, submission_file)
         project_id = file_split[0]

@@ -518,10 +518,12 @@ def handle_webin_CLI(ena_cmd, modus, submission_alias, project_dir, line_dic, se
             output_txt += "Please install Java and then restart TypeLoader!"
             return False, output_txt, None, []
 
+    output = None
     try:
         result = run(ena_cmd, stdout=PIPE, stderr=PIPE)
-        result.check_returncode()
         output = result.stdout.decode("utf-8")
+        log.debug(output)
+        result.check_returncode()
 
     except CalledProcessError as E:
         log.error("ENA's Webin-CLI threw an error after this command:")
@@ -597,7 +599,7 @@ def handle_webin_CLI(ena_cmd, modus, submission_alias, project_dir, line_dic, se
 
 if __name__ == "__main__":
     log = logging.getLogger()
-    manifest_file = r"C:\Daten\local_data\TypeLoader\admin\projects\20211115_ADMIN_HLA-B_NEB1\PRJEB48776_20211115090419_manifest.txt"
+    manifest_file = r"C:\Daten\local_data\TypeLoader\admin\projects\20211115_ADMIN_HLA-B_NEB1\PRJEB48776_20211116092519_manifest.txt"
     project_dir = r"C:\Daten\local_data\TypeLoader\admin\projects\20211115_ADMIN_HLA-B_NEB1"
     settings = {"ftp_user": "submission@dkms-lab.de",
                 "ftp_pwd": "DKMS2805",
