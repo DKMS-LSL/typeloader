@@ -521,6 +521,7 @@ def handle_webin_CLI(ena_cmd, modus, submission_alias, project_dir, line_dic, se
     output = None
     try:
         result = run(ena_cmd, stdout=PIPE, stderr=PIPE)
+        log.debug(result)
         output = result.stdout.decode("utf-8")
         log.debug(output)
         result.check_returncode()
