@@ -511,7 +511,7 @@ def handle_webin_CLI(ena_cmd, modus, submission_alias, project_dir, line_dic, se
     ena_cmd = ena_cmd + [f"-{modus}"]
 
     # check whether Java is installed:
-    if modus == "submit":
+    if modus == "validate":
         return_code = os.system("java -version")
         if return_code != 0:
             output_txt = "ERROR: could not find Java on your system!\n\n"
