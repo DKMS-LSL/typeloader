@@ -521,18 +521,23 @@ def handle_webin_CLI(ena_cmd, modus, submission_alias, project_dir, line_dic, se
     output = None
     try:
         result = run(ena_cmd, stdout=PIPE, stderr=PIPE)
-        log.debug(result)
-        output = result.stdout.decode("utf-8")
-        log.debug(output)
+        stderr = result.stderr.decode("utf-8").strip()
+        if stderr:
+            log.debug("Stderr:")
+            log.debug(stderr)
+
+        output = result.stdout.decode("utf-8") + stderr
         result.check_returncode()
 
     except CalledProcessError as E:
         log.error("ENA's Webin-CLI threw an error after this command:")
         cmd_safe = ['****' if item == settings["ftp_pwd"] else item for item in ena_cmd]
         log.error(cmd_safe)
-        output_txt = E.output.decode("utf-8")
+
         log.info("Output:")
+        output_txt = E.output.decode("utf-8")
         log.info(output_txt)
+
     except TimeoutExpired:
         log.error(f"Timeout expired: gave up after {timeout} seconds!")
         output_txt = f"Sorry, could not reach ENA within the given timeout threshold ({timeout} seconds).\n\n"
@@ -540,7 +545,9 @@ def handle_webin_CLI(ena_cmd, modus, submission_alias, project_dir, line_dic, se
         return False, output_txt, None, []
 
     if not output:
-        output = "Webin-CLI generated no output at all! :-("
+        output = "Webin-CLI generated no output at all! :-(\nSee log file for details."
+        output += ""
+        log.debug(result)
     output_list = [line.rstrip() for line in output.split("\n") if line]  # make list and remove newlines
     log.debug("Output:")
     log.debug(output)
