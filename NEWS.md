@@ -1,9 +1,15 @@
 # Version History
 
-## 2.11.0.1 (2021-11-10)
+## 2.11.1 (2021-11-25)
+- Updated ENA CLI to newest version 4.2.3 (#201)
+
+## Improvements:
+- rename webin-cli.report after submissions to avoid overwriting (#199)
+- Extended logging for webin-cli call (#198)
+
 ## Bugfixes:
 - if playsound doesn't work, just skip it
-- rename webin-cli.report after submissions to avoid overwriting (#199)
+- check for java installation before 1st webin-cli call
 
 ## 2.11.0 (2021-11-04)
 ### New Features:
