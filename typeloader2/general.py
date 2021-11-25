@@ -297,7 +297,7 @@ def delete_sample():
     pass
 
 
-def play_sound():
+def play_sound(log):
     """plays a sound when called, to get user's attention after a long job finishes;
     does nothing if playsound isn't installed
     :return: bool (True if sound was played, False if it wasn't because playsound is not installed)
@@ -306,10 +306,13 @@ def play_sound():
         import playsound
         for myfile in [soundfile, soundfile_2, soundfile_3]:
             try:
+                log.debug(f"Playing sound from {myfile}")
                 playsound.playsound(myfile)
                 return True
             except playsound.PlaysoundException:
                 pass
+            except:  # playsound really isn't that important
+                return False
 
         return False
 
