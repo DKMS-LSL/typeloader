@@ -6,8 +6,9 @@ update_referce.py
 handles updating of the reference data for TypeLoader
 """
 import os
-import re, subprocess, shutil
+import re, subprocess, shutil, socket
 import urllib.request
+from urllib.error import URLError
 import hashlib
 from time import time
 
@@ -175,13 +176,20 @@ def update_database(db_name, reference_local_path, blast_path, log, version=None
     log.debug(f"\tdownloading new file from {remote_db_file}...")
     local_db_file = os.path.join(ref_path_temp, "%s.dat" % use_dbname)
     try:
-        with urllib.request.urlopen(remote_db_file, timeout=20) as db_response, open(local_db_file, "wb") as db_local:
+        with urllib.request.urlopen(remote_db_file, timeout=60) as db_response, open(local_db_file, "wb") as db_local:
             shutil.copyfileobj(db_response, db_local)
             log.debug("\t => successfully downloaded new {} file".format(db_name))
     except urllib.error.HTTPError:
         msg = f"Sorry, could not find file {remote_db_file}!\n\n" \
               f"Possibly, version {version} of {db_name.upper()} does not exist?"
         return False, msg
+    except urllib.error.URLError as E:
+        if type(E.reason) == socket.timeout:
+            msg = "Reference file took too long to download. :-( Maybe the connection is slow? " \
+                  "Please try again in a few minutes!"
+            return False, msg
+        else:
+            raise
 
     log.debug(f"\t\t=> local MD5 checksum of downloaded file: {get_local_md5checksum(local_db_file, log)}")
     log.debug("\tCreating parsed files...")
@@ -325,3 +333,4 @@ if __name__ == '__main__':
     reference_local_path = r"C:\Daten\local_data\TypeLoader\_general\reference_data"
 
     success, msg = update_database("hla", reference_local_path, blast_path, log, version="3390")
+    print(success, msg)
