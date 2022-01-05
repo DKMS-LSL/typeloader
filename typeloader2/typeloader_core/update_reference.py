@@ -33,6 +33,26 @@ remote_checksumfile_index = {
 }
 
 
+def read_remote_file(myurl, proxy, timeout, log, return_binary=False):
+    """reads a remote file from a given URL, either using the given proxy or not if none is given,
+    returns the data as string
+    """
+    if proxy:
+        log.debug("Using proxy...")
+        proxy_handler = urllib.request.ProxyHandler({"https": proxy})
+        opener = urllib.request.build_opener(proxy_handler)
+    else:
+        log.debug("Not using proxy...")
+        opener = urllib.request.build_opener()
+
+    with opener.open(myurl, timeout=timeout) as request:
+        html = request.read()
+        if return_binary:
+            return html
+        data = html.decode("UTF-8", "ignore")
+    return data
+
+
 def local_file_from_today(local_ref_file, log):
     """checks last modified date of local file, returns True if it was modified today, else False
     """
@@ -45,14 +65,14 @@ def local_file_from_today(local_ref_file, log):
     return False
 
 
-def get_remote_md5checksum(db_name, IPD_db_name, log):
+def get_remote_md5checksum(db_name, IPD_db_name, proxy, log):
     """retrieves MD5 checksum from IPD's checksum_file 
     """
     log.debug("\tGetting checksum of current remote file...")
     remote_checksumfile = remote_checksumfile_index["%s_checksums_file" % db_name]
     log.info(str(remote_checksumfile))
-    checksum_response = urllib.request.urlopen(remote_checksumfile, timeout=5)
-    checksum_data = checksum_response.read().decode("utf-8")
+
+    checksum_data = read_remote_file(remote_checksumfile, proxy, 10, log)
 
     # The checksum_data are in lines of the form MD5 (hla.dat) = 2dde3a26abf52c11a70aae7fa8f14666\n
     pattern = ".*%s.dat\) = (.*)\n" % IPD_db_name
@@ -121,7 +141,7 @@ def move_files(ref_path_temp, ref_path, target, log):
             shutil.move(src_path, target_path)
 
 
-def check_database(db_name, reference_local_path, log, skip_if_updated_today=True):
+def check_database(db_name, reference_local_path, proxy, log, skip_if_updated_today=True):
     """checks IPD Github account for new releases
     """
     log.info("Checking {} for IPD update...".format(db_name.upper()))
@@ -137,7 +157,7 @@ def check_database(db_name, reference_local_path, log, skip_if_updated_today=Tru
                 return False, "Reference file was already updated today"
         local_md5 = get_local_md5checksum(local_reference_file, log)
 
-        remote_md5 = get_remote_md5checksum(db_name, use_dbname, log)
+        remote_md5 = get_remote_md5checksum(db_name, use_dbname, proxy, log)
         if not remote_md5:
             log.info("Aborting attempt to update the {} reference".format(db_name))
             return False, f"Could not reach or parse IPD's checksum file for {db_name}!"
@@ -156,7 +176,7 @@ def check_database(db_name, reference_local_path, log, skip_if_updated_today=Tru
     return True, msg
 
 
-def update_database(db_name, reference_local_path, blast_path, log, version=None):
+def update_database(db_name, reference_local_path, blast_path, proxy, log, version=None):
     """updates a reference database
     """
     log.info("Retrieving new database version for {}...".format(db_name))
@@ -176,20 +196,19 @@ def update_database(db_name, reference_local_path, blast_path, log, version=None
     log.debug(f"\tdownloading new file from {remote_db_file}...")
     local_db_file = os.path.join(ref_path_temp, "%s.dat" % use_dbname)
     try:
-        with urllib.request.urlopen(remote_db_file, timeout=60) as db_response, open(local_db_file, "wb") as db_local:
-            shutil.copyfileobj(db_response, db_local)
-            log.debug("\t => successfully downloaded new {} file".format(db_name))
+        db_response = read_remote_file(remote_db_file, proxy, 60, log, return_binary=True)
+        with open(local_db_file, "wb") as db_local:
+            db_local.write(db_response)
+        log.debug("\t => successfully downloaded new {} file".format(db_name))
+        md5 = get_local_md5checksum(local_db_file, log)
+        log.debug(f"\t => MD5 of downloaded file: {md5}")
     except urllib.error.HTTPError:
         msg = f"Sorry, could not find file {remote_db_file}!\n\n" \
               f"Possibly, version {version} of {db_name.upper()} does not exist?"
         return False, msg
-    except urllib.error.URLError as E:
-        if type(E.reason) == socket.timeout:
-            msg = "Reference file took too long to download. :-( Maybe the connection is slow? " \
-                  "Please try again in a few minutes!"
-            return False, msg
-        else:
-            raise
+    except socket.timeout:
+        msg = "Reference file took too long to download. :-( Maybe the connection is slow or you need a proxy?"
+        return False, msg
 
     log.debug(f"\t\t=> local MD5 checksum of downloaded file: {get_local_md5checksum(local_db_file, log)}")
     log.debug("\tCreating parsed files...")
@@ -311,26 +330,27 @@ pass
 
 # ===========================================================
 # main:
-def main():
-    log = start_log(level="DEBUG")
-    log.info("<Start>")
-    db_list = ["hla", "kir"]
-    blast_path = r"Y:\Projects\typeloader\blast-2.7.1+\bin"
-    reference_local_path = r"Y:\Projects\typeloader\temp\_general\reference_data"
-
-    for db_name in db_list:
-        new_version, msg = check_database(db_name, reference_local_path, log, skip_if_updated_today=False)
-        if new_version:
-            success, update_msg = update_database(db_name, reference_local_path, blast_path, log)
-
-    log.info("<End>")
-
-
+# def main():
+#     log = start_log(level="DEBUG")
+#     log.info("<Start>")
+#     db_list = ["hla", "kir"]
+#     blast_path = r"Y:\Projects\typeloader\blast-2.7.1+\bin"
+#     reference_local_path = r"Y:\Projects\typeloader\temp\_general\reference_data"
+#
+#     for db_name in db_list:
+#         new_version, msg = check_database(db_name, reference_local_path, log, skip_if_updated_today=False)
+#         if new_version:
+#             success, update_msg = update_database(db_name, reference_local_path, blast_path, log)
+#
+#     log.info("<End>")
+#
+#
 if __name__ == '__main__':
     log = start_log(level="DEBUG")
     log.info("<Start>")
     blast_path = r"C:\Daten\local_tools\blast\bin"
     reference_local_path = r"C:\Daten\local_data\TypeLoader\_general\reference_data"
+    proxy = "10.78.205.144:3128"
 
-    success, msg = update_database("hla", reference_local_path, blast_path, log, version="3390")
+    success, msg = update_database("hla", reference_local_path, blast_path, proxy, log, version="3390")
     print(success, msg)

@@ -115,7 +115,7 @@ class Allele:
 # functions:
 
 
-def perform_reference_update(db_name, reference_local_path, blast_path, log, version=None):
+def perform_reference_update(db_name, reference_local_path, blast_path, proxy, log, version=None):
     """call trigger reference update of a database
 
     :param db_name: HLA or KIR
@@ -131,7 +131,8 @@ def perform_reference_update(db_name, reference_local_path, blast_path, log, ver
 
     blast_dir = os.path.dirname(blast_path)
     try:
-        success, update_msg = update_reference.update_database(db_name, reference_local_path, blast_dir, log,
+        success, update_msg = update_reference.update_database(db_name, reference_local_path,
+                                                               blast_dir, proxy, log,
                                                                version=version)
     except Exception as E:
         log.exception("Reference update failed!")
