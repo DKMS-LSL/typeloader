@@ -519,8 +519,13 @@ def handle_webin_CLI(ena_cmd, modus, submission_alias, project_dir, line_dic, se
             return False, output_txt, None, []
 
     output = None
+    env = dict(os.environ)
+    proxy = settings["proxy"]
+    if proxy:
+        env['http_proxy'] = proxy
+        env['https_proxy'] = proxy
     try:
-        result = run(ena_cmd, stdout=PIPE, stderr=PIPE)
+        result = run(ena_cmd, stdout=PIPE, stderr=PIPE, env=env)
         stderr = result.stderr.decode("utf-8").strip()
         if stderr:
             log.debug("Stderr:")
