@@ -9,6 +9,8 @@ useGenesList = ["HLA-A_1", "HLA-A_2", "HLA-B_1", "HLA-B_2", "HLA-C_1", "HLA-C_2"
                 "HLA-DRB1_1", "HLA-DRB1_2", "HLA-DQB1_1", "HLA-DQB1_2", "HLA-DPB1_1", "HLA-DPB1_2", 
                 "HLA-E_1", "HLA-E_2", 
                 "HLA-DPA1_1", "HLA-DPA1_2", "HLA-DQA1_1", "HLA-DQA1_2",
+                "HLA-DMA1_1", "HLA-DMA1_2", "HLA-DMB1_1", "HLA-DMB1_2",
+                "HLA-DOA1_1", "HLA-DOA1_2", "HLA-DOB1_1", "HLA-DOB1_2",
                 "HLA-F_1", "HLA-F_2", "HLA-G_1", "HLA-G_2", "HLA-H_1", "HLA-H_2",
                 "HLA-K_1", "HLA-K_2", "HLA-J_1", "HLA-J_2",
                 "MICA", "MICB",
