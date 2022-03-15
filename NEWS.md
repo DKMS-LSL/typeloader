@@ -1,5 +1,10 @@
 # Version History
 
+## 2.12.1 (2022-02-18)
+### Bugfixes:
+- fix pretypings files for HLA-DMA, -DMB, -DOA, -DOB (#208)
+- fix "all IPD-required loci present in pretypings" check
+
 ## 2.12.0 (2022-02-18)
 ### New Features:
 - Added support for non-classical HLA class II genes HLA-DMA, -DMB, -DOA, -DOB (#208)
