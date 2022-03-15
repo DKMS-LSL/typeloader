@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: cp1252 -*-
-'''
+"""
 Created on 16.05.2019
 
 db_external.py
@@ -8,7 +8,7 @@ db_external.py
 functionality to interact with databases outside of TypeLoader
 
 @author: Bianca Schoene
-'''
+"""
 
 # import modules:
 
@@ -48,7 +48,7 @@ def open_connection(scheme, log):
     """
     log.info("Opening database connection to {}...".format(scheme.name))
     try:
-        conn_string = r'%s/%s@%s/%s' %(scheme.user, scheme.pwd, scheme.host, scheme.db)
+        conn_string = r"%s/%s@%s/%s" %(scheme.user, scheme.pwd, scheme.host, scheme.db)
         conn = cx_Oracle.connect(conn_string)
         cursor = conn.cursor()
     except Exception as E:
@@ -221,7 +221,7 @@ def split_2DL5AB(GL, cursor, log):
 
     proc_name = "GL_STRINGS_MGMT.SPLIT_GL_STRING_2DL5@ngsa"
     proc_params = [GL]
-    proc_params2 = [2, 'KIR', 'J', 'J', '2DL5', 'J', '2DL5', 'N']
+    proc_params2 = [2, "KIR", "J", "J", "2DL5", "J", "2DL5", "N"]
     success, values = call_procedure(proc_name, proc_params, 2, proc_params2, cursor, log)
     if success:
         log.info("\t=> Success!")
@@ -363,10 +363,10 @@ def get_pretypings_from_limsrep(input_params, local_cf, log):
     samples = [[sample_id] for [sample_id, _] in input_params]
     query_pretypings = "SELECT gene, allele1, allele2 FROM LIMSREP.NEXTYPE_DONOR_BEFU WHERE LIMS_DONOR_ID = :1"
     data_pretypings = query_many(ngsrep_scheme, query_pretypings, samples, log)
-    
+
     query_samples = "select lims_donor_id, spendernr, auftraggeber from limsrep.lims_auftraege where lims_donor_id = :1"
     data_samples = query_many(ngsrep_scheme, query_samples, samples, log)
-    
+
     # reformat data:
     log.info("Reformatting sample infos...")
     sample_dic = {}
@@ -400,24 +400,25 @@ def write_pretypings_file(pretypings, samples, output_file, log):
     """generate pretypings file
     """
     log.info("Writing pretypings to file {}...".format(output_file))
-    columns = ['HLA-A_1', 'HLA-A_2', 'HLA-B_1', 'HLA-B_2', 'HLA-C_1', 'HLA-C_2', 'HLA-DRB1_1', 'HLA-DRB1_2', 
-               'HLA-DQB1_1', 'HLA-DQB1_2', 'HLA-DPB1_1', 'HLA-DPB1_2', 'HLA-E_1', 'HLA-E_2', 'MICA', 'MICB', 
-               'KIR2DL1-1', 'KIR2DL1-2', 'KIR2DL1-3', 'KIR2DL1-4', 'KIR2DL2-1', 'KIR2DL2-2', 'KIR2DL2-3', 'KIR2DL2-4', 
-               'KIR2DL3-1', 'KIR2DL3-2', 'KIR2DL3-3', 'KIR2DL3-4', 'KIR2DL4-1', 'KIR2DL4-2', 'KIR2DL4-3', 'KIR2DL4-4', 
-               'KIR2DL5A-1', 'KIR2DL5A-2', 'KIR2DL5A-3', 'KIR2DL5A-4', 'KIR2DL5B-1', 'KIR2DL5B-2', 'KIR2DL5B-3',
-               'KIR2DL5B-4', 'KIR2DP1-1', 'KIR2DP1-2', 'KIR2DP1-3', 'KIR2DP1-4',
-               'KIR2DS1-1', 'KIR2DS1-2', 'KIR2DS1-3', 'KIR2DS1-4', 'KIR2DS2-1', 'KIR2DS2-2', 'KIR2DS2-3', 'KIR2DS2-4', 
-               'KIR2DS3-1', 'KIR2DS3-2', 'KIR2DS3-3', 'KIR2DS3-4', 'KIR2DS4-1', 'KIR2DS4-2', 'KIR2DS4-3', 'KIR2DS4-4', 
-               'KIR2DS5-1', 'KIR2DS5-2', 'KIR2DS5-3', 'KIR2DS5-4', 'KIR3DL1-1', 'KIR3DL1-2', 'KIR3DL1-3', 'KIR3DL1-4', 
-               'KIR3DL2-1', 'KIR3DL2-2', 'KIR3DL2-3', 'KIR3DL2-4', 'KIR3DL3-1', 'KIR3DL3-2', 'KIR3DL3-3', 'KIR3DL3-4', 
-               'KIR3DP1-1', 'KIR3DP1-2', 'KIR3DP1-3', 'KIR3DP1-4', 'KIR3DS1-1', 'KIR3DS1-2', 'KIR3DS1-3', 'KIR3DS1-4']
+    columns = ["HLA-A_1", "HLA-A_2", "HLA-B_1", "HLA-B_2", "HLA-C_1", "HLA-C_2", "HLA-DRB1_1", "HLA-DRB1_2",
+               "HLA-DQB1_1", "HLA-DQB1_2", "HLA-DPB1_1", "HLA-DPB1_2", "HLA-E_1", "HLA-E_2",
                "HLA-DPA1_1", "HLA-DPA1_2", "HLA-DQA1_1", "HLA-DQA1_2",
                "HLA-DMA_1", "HLA-DMA_2", "HLA-DMB_1", "HLA-DMB_2",
                "HLA-DOA_1", "HLA-DOA_2", "HLA-DOB_1", "HLA-DOB_2",
+               "MICA", "MICB",
+               "KIR2DL1-1", "KIR2DL1-2", "KIR2DL1-3", "KIR2DL1-4", "KIR2DL2-1", "KIR2DL2-2", "KIR2DL2-3", "KIR2DL2-4",
+               "KIR2DL3-1", "KIR2DL3-2", "KIR2DL3-3", "KIR2DL3-4", "KIR2DL4-1", "KIR2DL4-2", "KIR2DL4-3", "KIR2DL4-4",
+               "KIR2DL5A-1", "KIR2DL5A-2", "KIR2DL5A-3", "KIR2DL5A-4", "KIR2DL5B-1", "KIR2DL5B-2", "KIR2DL5B-3",
+               "KIR2DL5B-4", "KIR2DP1-1", "KIR2DP1-2", "KIR2DP1-3", "KIR2DP1-4",
+               "KIR2DS1-1", "KIR2DS1-2", "KIR2DS1-3", "KIR2DS1-4", "KIR2DS2-1", "KIR2DS2-2", "KIR2DS2-3", "KIR2DS2-4",
+               "KIR2DS3-1", "KIR2DS3-2", "KIR2DS3-3", "KIR2DS3-4", "KIR2DS4-1", "KIR2DS4-2", "KIR2DS4-3", "KIR2DS4-4",
+               "KIR2DS5-1", "KIR2DS5-2", "KIR2DS5-3", "KIR2DS5-4", "KIR3DL1-1", "KIR3DL1-2", "KIR3DL1-3", "KIR3DL1-4",
+               "KIR3DL2-1", "KIR3DL2-2", "KIR3DL2-3", "KIR3DL2-4", "KIR3DL3-1", "KIR3DL3-2", "KIR3DL3-3", "KIR3DL3-4",
+               "KIR3DP1-1", "KIR3DP1-2", "KIR3DP1-3", "KIR3DP1-4", "KIR3DS1-1", "KIR3DS1-2", "KIR3DS1-3", "KIR3DS1-4"]
 
     with open(output_file, "w", newline = "") as g:
         data = csv.writer(g, delimiter=",")
-        header = ['sample_ID_int', 'sample_id_ext', 'client'] + columns
+        header = ["sample_ID_int", "sample_id_ext", "client"] + columns
         data.writerow(header)
         
         i = 0
@@ -467,7 +468,7 @@ def read_local_settings(log):
 def main(log):
     from GUI_login import get_settings
 
-    alleles = [['ID17530942', 'KIR2DL5B']
+    alleles = [["ID17530942", "KIR2DL5B"]
                ]
     local_cf = read_local_settings(log)
     pretypings, samples, not_found = get_pretypings_from_limsrep(alleles, local_cf, log)
@@ -484,7 +485,7 @@ def main(log):
     # write_pretypings_file(pretypings, samples, output_file, log)
     
         
-if __name__ == '__main__':
+if __name__ == "__main__":
     log = general.start_log(level="DEBUG")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
     main(log)
