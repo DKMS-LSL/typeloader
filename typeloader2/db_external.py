@@ -411,6 +411,9 @@ def write_pretypings_file(pretypings, samples, output_file, log):
                'KIR2DS5-1', 'KIR2DS5-2', 'KIR2DS5-3', 'KIR2DS5-4', 'KIR3DL1-1', 'KIR3DL1-2', 'KIR3DL1-3', 'KIR3DL1-4', 
                'KIR3DL2-1', 'KIR3DL2-2', 'KIR3DL2-3', 'KIR3DL2-4', 'KIR3DL3-1', 'KIR3DL3-2', 'KIR3DL3-3', 'KIR3DL3-4', 
                'KIR3DP1-1', 'KIR3DP1-2', 'KIR3DP1-3', 'KIR3DP1-4', 'KIR3DS1-1', 'KIR3DS1-2', 'KIR3DS1-3', 'KIR3DS1-4']
+               "HLA-DPA1_1", "HLA-DPA1_2", "HLA-DQA1_1", "HLA-DQA1_2",
+               "HLA-DMA_1", "HLA-DMA_2", "HLA-DMB_1", "HLA-DMB_2",
+               "HLA-DOA_1", "HLA-DOA_2", "HLA-DOB_1", "HLA-DOB_2",
 
     with open(output_file, "w", newline = "") as g:
         data = csv.writer(g, delimiter=",")
