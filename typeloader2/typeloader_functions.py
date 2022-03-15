@@ -1112,6 +1112,11 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
     ENA_sequence_dir = os.path.join(file_dic["project_dir"], "sequence")
     shutil.rmtree(ENA_sequence_dir)
 
+    # # debug: stop submission before sending:
+    # ena_cmd_str = " ".join(ena_cmd)
+    # msg = f"stopped before executing ENA call. Here it is:\n\n{ena_cmd_str}"
+    # return None, False, "Did not submit", msg, []
+
     ## 4. submit files via CLI
     log.debug("Submitting files...")
     timeout = int(settings["timeout_ena"])
