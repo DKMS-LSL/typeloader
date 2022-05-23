@@ -246,8 +246,11 @@ class TestUpdateReference(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         """reset database to the version with which the reference files were created"""
-        success, err, update_msg = typeloader_functions.perform_reference_update(self.target, self.reference_local_path,
-                                                                                 curr_settings["blast_path"], log,
+        success, err, update_msg = typeloader_functions.perform_reference_update(self.target,
+                                                                                 self.reference_local_path,
+                                                                                 curr_settings["blast_path"],
+                                                                                 curr_settings["proxy"],
+                                                                                 log,
                                                                                  version=KIR_VERSION)
         if not success:
             log.error(err)
@@ -266,7 +269,8 @@ class TestUpdateReference(unittest.TestCase):
     def test02_ref_update_kir_check_ok(self):
         """test that after the update, the .dat file checksum is equal to that in the reference repo
          """
-        update_me = check_update_needed(self.reference_local_path, log, skip_if_updated_today=False)
+        update_me = check_update_needed(self.reference_local_path, curr_settings["proxy"], log,
+                                        skip_if_updated_today=False)
         self.assertTrue("KIR" not in update_me)
 
 

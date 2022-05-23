@@ -519,8 +519,23 @@ def handle_webin_CLI(ena_cmd, modus, submission_alias, project_dir, line_dic, se
             return False, output_txt, None, []
 
     output = None
+    proxy = settings["proxy"]
+
+    if proxy:
+        log.debug(f"Using proxy {proxy}...")
+        s = proxy.split(":")
+        if len(s) < 2:
+            log.warning("Weird format for proxy! Proxy format should be host:port!")
+        else:
+            host = s[0]
+            port = s[1]
+
+            ena_cmd = [ena_cmd[0]] + \
+                      ["-DproxySet=true", f"-Dhttps.proxyHost={host}", f"-Dhttps.proxyPort={port}"] + \
+                      ena_cmd[1:]
+
     try:
-        result = run(ena_cmd, stdout=PIPE, stderr=PIPE)
+        result = run(ena_cmd, stdout=PIPE, stderr=PIPE)#, env=env)
         stderr = result.stderr.decode("utf-8").strip()
         if stderr:
             log.debug("Stderr:")

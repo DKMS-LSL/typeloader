@@ -12,7 +12,7 @@ contains classes and functions for login & user handling functionality
 
 # import modules:
 
-import os, sys, shutil, logging, platform, urllib
+import os, sys, shutil, logging, platform
 from distutils.version import \
     LooseVersion as parsedVersion  # TODO: replace with from packaging import version as parsedVersion (#189)
 from configparser import ConfigParser
@@ -164,6 +164,13 @@ class LoginForm(QDialog):
         pickle_file = os.path.join(self.root_path, "_general", "user.pickle")
         log.debug("pickle_file: {}".format(pickle_file))
         self.user_db = user.User(os.path.join(pickle_file))
+
+        # get proxy from company config:
+        cf2 = ConfigParser()
+        log.debug("Reading company config from {}...".format(os.path.abspath(company_config_file)))
+        cf2.read(company_config_file)
+        self.proxy = cf2.get("Company", "proxy")
+        log.debug("proxy path: {}".format(self.proxy))
 
         self.init_UI()
         self.check_latest_version(self.log)
@@ -358,7 +365,7 @@ class LoginForm(QDialog):
         """
         github_repo = r"https://github.com/DKMS-LSL/typeloader"
         github_init = r"https://raw.githubusercontent.com/DKMS-LSL/typeloader/master/typeloader2/__init__.py"
-        newer_version, error, msg = check_for_newer_version(github_init, github_repo, log)
+        newer_version, error, msg = check_for_newer_version(github_init, github_repo, self.proxy, log)
         if error:
             if newer_version:
                 QMessageBox.information(self, error, msg)
@@ -588,7 +595,8 @@ def handle_reference_update(update_me, reference_local_path, blast_path, parent,
     msges = []
     updated = []
     for db_name in update_me:
-        success, err_type, msg = perform_reference_update(db_name, reference_local_path, blast_path, log)
+        success, err_type, msg = perform_reference_update(db_name, reference_local_path, blast_path,
+                                                          settings["proxy"], log)
         if not success:
             if parent:
                 QMessageBox.warning(parent, err_type, msg)
@@ -605,7 +613,7 @@ def handle_reference_update(update_me, reference_local_path, blast_path, parent,
     return updated
 
 
-def check_update_needed(reference_local_path, log, skip_if_updated_today=False):
+def check_update_needed(reference_local_path, proxy, log, skip_if_updated_today=False):
     """check whether any of the references need to be updated (use MD5 check on .dat files)
 
     :param log: logger instance
@@ -617,7 +625,7 @@ def check_update_needed(reference_local_path, log, skip_if_updated_today=False):
     update_me = []
     messages = []
     for db_name in db_list:
-        new_version_found, msg = update_reference.check_database(db_name, reference_local_path, log,
+        new_version_found, msg = update_reference.check_database(db_name, reference_local_path, proxy, log,
                                                                skip_if_updated_today=skip_if_updated_today)
         if new_version_found:
             update_me.append(db_name.upper())
@@ -640,8 +648,9 @@ def check_for_reference_updates(log, settings, parent):
     """
     blast_path = settings["blast_path"]
     reference_local_path = settings["reference_local_path"]
+    proxy = settings["proxy"]
 
-    update_me, messages = check_update_needed(reference_local_path, log)
+    update_me, messages = check_update_needed(reference_local_path, proxy, log)
 
     if update_me:
         targets = " and ".join(update_me)
@@ -673,16 +682,15 @@ def startup(user, curr_time, log):
     return settings_dic
 
 
-def get_latest_version(myurl, repo, log):
+def get_latest_version(myurl, repo, proxy, log):
     """retrieves latest version from __init__.py in the official GitHub repo
     """
     log.debug("\tRetrieving latest TypeLoader version from {}...".format(myurl))
     version = None
     msg = None
     try:
-        with urllib.request.urlopen(myurl, timeout=10) as url:
-            html = url.read()
-            content = html.decode("UTF-8", "ignore")
+        content = update_reference.read_remote_file(myurl, proxy, 10, log)
+
         for line in content.split("\n"):
             if line.startswith("__version__"):
                 if '"' in line:
@@ -705,14 +713,14 @@ def get_latest_version(myurl, repo, log):
         return version, msg
 
 
-def check_for_newer_version(myurl, repo, log):
+def check_for_newer_version(myurl, repo, proxy, log):
     """compares latest version with current version 
      and returns 'please update' message if necessary
     """
     log.info("Checking for never version...")
     newer_version = False
     error = None
-    latest_version, msg = get_latest_version(myurl, repo, log)
+    latest_version, msg = get_latest_version(myurl, repo, proxy, log)
     if not latest_version:  # could not get current version from github
         error = "NewVersion Error"
         return newer_version, error, msg

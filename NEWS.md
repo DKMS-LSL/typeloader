@@ -1,5 +1,23 @@
 # Version History
 
+## 2.12.1 (2022-02-18)
+### Bugfixes:
+- fix pretypings files for HLA-DMA, -DMB, -DOA, -DOB (#208)
+- fix "all IPD-required loci present in pretypings" check
+
+## 2.12.0 (2022-02-18)
+### New Features:
+- Added support for non-classical HLA class II genes HLA-DMA, -DMB, -DOA, -DOB (#208)
+
+## Improvements & Bugfixes:
+- improve timeout for reference downloads (#205)
+  - increase timeout to 60 seconds to help users on a slow connection
+  - handle timeout gracefully
+
+### Backend:
+- Updated ENA CLI to newest version 4.3.0 (#209)
+- route all calls to external sites through proxy if specified (#206) 
+
 ## 2.11.1 (2021-11-25)
 - Updated ENA CLI to newest version 4.2.3 (#201)
 

@@ -115,7 +115,7 @@ class Allele:
 # functions:
 
 
-def perform_reference_update(db_name, reference_local_path, blast_path, log, version=None):
+def perform_reference_update(db_name, reference_local_path, blast_path, proxy, log, version=None):
     """call trigger reference update of a database
 
     :param db_name: HLA or KIR
@@ -131,7 +131,8 @@ def perform_reference_update(db_name, reference_local_path, blast_path, log, ver
 
     blast_dir = os.path.dirname(blast_path)
     try:
-        success, update_msg = update_reference.update_database(db_name, reference_local_path, blast_dir, log,
+        success, update_msg = update_reference.update_database(db_name, reference_local_path,
+                                                               blast_dir, proxy, log,
                                                                version=version)
     except Exception as E:
         log.exception("Reference update failed!")
@@ -1110,6 +1111,11 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
     log.debug("Removing ENA temp dir...")
     ENA_sequence_dir = os.path.join(file_dic["project_dir"], "sequence")
     shutil.rmtree(ENA_sequence_dir)
+
+    # # debug: stop submission before sending:
+    # ena_cmd_str = " ".join(ena_cmd)
+    # msg = f"stopped before executing ENA call. Here it is:\n\n{ena_cmd_str}"
+    # return None, False, "Did not submit", msg, []
 
     ## 4. submit files via CLI
     log.debug("Submitting files...")

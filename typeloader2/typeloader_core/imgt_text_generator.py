@@ -191,7 +191,7 @@ def make_befund_text(befund, self_name, myallele, closestAllele, geneMap, differ
                 alleles = alleles.replace(self_name, closestAllele.split("*")[1])
         
         befundText += otherAllelesString.replace("{gene}", gene).replace("{alleleNames}", alleles)
-    check_all_required_loci(befundText, gene, myallele, alleles, self_name, log)
+    check_all_required_loci(befundText, myallele.gene, myallele, alleles, self_name, log)
     return befundText
 
 
