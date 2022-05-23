@@ -207,7 +207,8 @@ class ResetReferenceDialog(QDialog):
                                             self.settings["general_dir"],
                                             self.settings["reference_dir"])
 
-        success, err_type, msg = perform_reference_update(db_name, reference_local_path, blast_path, self.log,
+        success, err_type, msg = perform_reference_update(db_name, reference_local_path, blast_path,
+                                                          self.settings["proxy"], self.log,
                                                           version=version)
         self.log.info(msg.replace("\n", " "))
         if success:

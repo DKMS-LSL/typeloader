@@ -246,8 +246,11 @@ class TestUpdateReference(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         """reset database to the version with which the reference files were created"""
-        success, err, update_msg = typeloader_functions.perform_reference_update(self.target, self.reference_local_path,
-                                                                                 curr_settings["blast_path"], log,
+        success, err, update_msg = typeloader_functions.perform_reference_update(self.target,
+                                                                                 self.reference_local_path,
+                                                                                 curr_settings["blast_path"],
+                                                                                 curr_settings["proxy"],
+                                                                                 log,
                                                                                  version=KIR_VERSION)
         if not success:
             log.error(err)
@@ -266,7 +269,8 @@ class TestUpdateReference(unittest.TestCase):
     def test02_ref_update_kir_check_ok(self):
         """test that after the update, the .dat file checksum is equal to that in the reference repo
          """
-        update_me = check_update_needed(self.reference_local_path, log, skip_if_updated_today=False)
+        update_me = check_update_needed(self.reference_local_path, curr_settings["proxy"], log,
+                                        skip_if_updated_today=False)
         self.assertTrue("KIR" not in update_me)
 
 
@@ -815,8 +819,10 @@ class Test_Send_To_ENA(unittest.TestCase):
         """Parse the written ena manifest file and flatfile
         """
         path = os.path.join(curr_settings["projects_dir"], self.project_name)
-        # neccessary, because timestep is not known
-        submission_file = list(filter(lambda x: re.search(r'^PRJEB.*manifest.txt', x), os.listdir(path)))[0]
+        # neccessary because timestamp is not known:
+        manifest_files = list(filter(lambda x: re.search(r'^PRJEB.*manifest.txt', x), os.listdir(path)))
+        self.assertTrue(len(manifest_files) > 0)
+        submission_file = manifest_files[0]
         file_split = submission_file.split("_")
         submission_file_path = os.path.join(path, submission_file)
         project_id = file_split[0]
@@ -857,7 +863,7 @@ class Test_Send_To_ENA(unittest.TestCase):
         manifest_file = list(filter(lambda x: re.search(r'^PRJEB.*manifest.txt', x), os.listdir(path)))[0]
         file_split = manifest_file.split("_")
         curr_sub_id = "_".join([file_split[0], file_split[1]])
-        webin_report = os.path.join(path, "webin-cli.report")
+        webin_report = os.path.join(path, f"{curr_sub_id}_webin-cli.report")
 
         query = "PRAGMA table_info (ENA_SUBMISSIONS)"
         success, data_info = execute_db_query(query,
@@ -3015,8 +3021,11 @@ class TestPlaySound(unittest.TestCase):
     def test_play_sound(self):
         """test that sound was played
          """
-        played = general.play_sound()
+        played = general.play_sound(log)
         self.assertTrue(played)
+        # make sound distinguishable from normal running sounds, so tester knows tests are through
+        general.play_sound(log)
+        general.play_sound(log)
 
 
 # ===========================================================

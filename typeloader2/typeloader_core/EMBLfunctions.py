@@ -448,15 +448,14 @@ def make_ENA_CLI_command_string(manifest_file, project_dir, settings, log):
 
     # create command:
     log.debug("Creating command for Webin-CLI...")
-    cmd = ['java', '-jar', '"{}"'.format(CLI_file), '-context', 'sequence', '-manifest', manifest_file,
+    cmd = ['java', '-jar', CLI_file, '-context', 'sequence', '-manifest', manifest_file,
            '-userName', settings["ftp_user"], '-password', settings["ftp_pwd"], '-centerName',
            '"{}"'.format(settings["xml_center_name"]),
-           '-inputDir', '"{}"'.format(project_dir), '-outputDir', '"{}"'.format(project_dir)]
+           '-inputDir', project_dir, '-outputDir', project_dir]
 
     if settings["use_ena_server"] != "PROD":  # use TEST server
         cmd.append("-test")
 
-    cmd = " ".join(cmd)
     log.debug("\t=> done")
 
     return cmd, None
@@ -500,35 +499,73 @@ def parse_ENA_report(report_file, line_dic, log):
     return text, problem_samples
 
 
-def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic, log, timeout=None):
+def handle_webin_CLI(ena_cmd, modus, submission_alias, project_dir, line_dic, settings, log, timeout=None):
     """calls the command-string via webin-CLI and parses the output
     """
-    from subprocess import check_output, CalledProcessError, TimeoutExpired
+    from subprocess import run, PIPE, CalledProcessError, TimeoutExpired
     success = False
     ENA_submission_ID = None
     problem_samples = []
     report = None
 
+    ena_cmd = ena_cmd + [f"-{modus}"]
+
     # check whether Java is installed:
-    return_code = os.system("java -version")
-    if return_code != 0:
-        output_txt = "ERROR: could not find Java on your system!\n\n"
-        output_txt += "Please install Java and then restart TypeLoader!"
-        return False, output_txt, None, []
+    if modus == "validate":
+        return_code = os.system("java -version")
+        if return_code != 0:
+            output_txt = "ERROR: could not find Java on your system!\n\n"
+            output_txt += "Please install Java and then restart TypeLoader!"
+            return False, output_txt, None, []
+
+    output = None
+    proxy = settings["proxy"]
+
+    if proxy:
+        log.debug(f"Using proxy {proxy}...")
+        s = proxy.split(":")
+        if len(s) < 2:
+            log.warning("Weird format for proxy! Proxy format should be host:port!")
+        else:
+            host = s[0]
+            port = s[1]
+
+            ena_cmd = [ena_cmd[0]] + \
+                      ["-DproxySet=true", f"-Dhttps.proxyHost={host}", f"-Dhttps.proxyPort={port}"] + \
+                      ena_cmd[1:]
 
     try:
-        output = check_output(cmd_string, timeout=timeout).decode("utf-8")
+        result = run(ena_cmd, stdout=PIPE, stderr=PIPE)#, env=env)
+        stderr = result.stderr.decode("utf-8").strip()
+        if stderr:
+            log.debug("Stderr:")
+            log.debug(stderr)
+
+        output = result.stdout.decode("utf-8") + stderr
+        result.check_returncode()
+
     except CalledProcessError as E:
         log.error("ENA's Webin-CLI threw an error after this command:")
-        log.error(cmd_string)
-        output = E.output.decode("utf-8")
+        cmd_safe = ['****' if item == settings["ftp_pwd"] else item for item in ena_cmd]
+        log.error(cmd_safe)
+
+        log.info("Output:")
+        output_txt = E.output.decode("utf-8")
+        log.info(output_txt)
+
     except TimeoutExpired:
         log.error(f"Timeout expired: gave up after {timeout} seconds!")
         output_txt = f"Sorry, could not reach ENA within the given timeout threshold ({timeout} seconds).\n\n"
         output_txt += "Either increase the threshold via Settings => Preferences, or try again later."
         return False, output_txt, None, []
 
+    if not output:
+        output = "Webin-CLI generated no output at all! :-(\nSee log file for details."
+        output += ""
+        log.debug(result)
     output_list = [line.rstrip() for line in output.split("\n") if line]  # make list and remove newlines
+    log.debug("Output:")
+    log.debug(output)
     if output_list:
         last_line = output_list[-1]
     else:
@@ -544,6 +581,7 @@ def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic,
             output_txt = "ERROR: ENA rejected your files (validation failed):\n\n"
             report = os.path.join(project_dir, "sequence", submission_alias, "validate",
                                   "{}_{}_flatfile.txt.gz.report".format(s[0], s[1]))
+
     elif modus == "submit":
         if "The submission has been completed successfully." in last_line \
                 or "The TEST submission has been completed successfully." in last_line:
@@ -563,15 +601,18 @@ def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic,
                 report_content, problem_samples = parse_ENA_report(report, line_dic, log)
             except FileNotFoundError:
                 error_lines = [line for line in output_list if not line.startswith("INFO")]
+                if not error_lines:
+                    [line for line in output_list]
                 report_content = "\n".join(error_lines) + "\n"
             output_txt += report_content
         else:
             output_txt = "ERROR: ENA rejected your files:\n\n" + "\n".join(output_list)
+            output_txt += "\tNo report file was created."
 
         output_txt += "\nThe complete submission has been rejected."
 
     else:
-        if " -test " in cmd_string:
+        if "-test" in ena_cmd:
             output_txt += "\n\nThis submission is a TEST submission and will be discarded within 24 hours."
 
     output_txt = output_txt.replace("  ", "\n")  # break weird long lines in ENA-reply
@@ -581,12 +622,126 @@ def handle_webin_CLI(cmd_string, modus, submission_alias, project_dir, line_dic,
 
 if __name__ == "__main__":
     log = logging.getLogger()
-    manifest_file = r"\\nasdd12\daten\data\Typeloader\admin\projects\20190625_ADMIN_mixed_ENA-Test2\PRJEB33198_20190625155412_manifest.txt"
-    project_dir = r"\\nasdd12\daten\data\Typeloader\admin\projects\20190625_ADMIN_mixed_ENA-Test2"
+    manifest_file = r"C:\Daten\local_data\TypeLoader\admin\projects\20211115_ADMIN_HLA-B_NEB1\PRJEB48776_20211116092519_manifest.txt"
+    project_dir = r"C:\Daten\local_data\TypeLoader\admin\projects\20211115_ADMIN_HLA-B_NEB1"
     settings = {"ftp_user": "submission@dkms-lab.de",
                 "ftp_pwd": "DKMS2805",
                 "xml_center_name": "DKMS LIFE SCIENCE LAB",
                 "use_ena_server": "TEST"}
-    cmd, msg = make_ENA_CLI_command_string(manifest_file, project_dir, settings, log)
+    ena_cmd, msg = make_ENA_CLI_command_string(manifest_file, project_dir, settings, log)
+    print(ena_cmd)
+    line_dic = {1: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 2: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                3: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                4: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 5: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                6: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                7: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 8: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                9: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                10: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 11: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                12: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 13: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                14: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 15: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                16: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 17: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                18: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 19: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                20: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 21: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                22: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 23: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                24: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 25: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                26: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 27: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                28: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 29: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                30: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 31: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                32: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 33: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                34: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 35: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                36: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 37: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                38: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 39: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                40: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 41: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                42: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 43: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                44: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 45: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                46: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 47: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                48: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 49: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                50: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 51: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                52: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 53: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                54: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 55: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                56: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 57: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                58: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 59: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                60: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 61: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                62: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 63: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                64: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 65: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                66: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 67: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                68: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 69: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                70: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 71: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                72: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 73: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                74: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 75: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                76: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 77: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                78: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 79: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                80: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 81: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                82: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 83: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                84: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 85: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                86: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 87: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                88: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 89: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                90: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 91: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                92: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 93: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                94: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 95: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                96: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 97: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                98: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 99: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                100: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 101: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                102: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 103: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                104: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 105: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                106: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 107: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                108: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 109: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                110: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 111: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                112: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 113: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                114: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 115: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                116: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 117: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                118: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 119: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                120: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 121: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                122: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 123: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                124: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 125: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                126: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 127: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                128: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 129: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                130: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 131: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                132: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 133: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                134: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 135: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                136: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 137: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                138: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 139: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                140: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 141: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                142: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 143: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                144: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 145: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                146: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 147: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                148: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 149: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                150: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 151: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                152: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 153: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                154: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 155: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                156: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 157: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                158: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 159: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                160: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 161: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                162: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 163: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                164: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 165: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                166: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 167: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                168: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 169: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                170: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 171: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                172: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 173: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                174: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 175: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                176: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 177: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                178: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 179: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                180: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 181: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                182: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 183: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                184: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 185: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                186: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 187: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                188: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 189: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                190: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 191: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                192: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 193: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                194: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 195: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                196: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 197: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                198: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 199: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                200: (1, 'DKMS-LSL_ID11537498_DPB1_3'), 201: (1, 'DKMS-LSL_ID11537498_DPB1_3'),
+                202: (1, 'DKMS-LSL_ID11537498_DPB1_3')}
 
-    handle_webin_CLI(cmd + " -validate", log)
+    modus = "validate"
+    submission_alias = "PRJEB48776_20211115090419"
+
+    import shutil
+    try:
+        shutil.rmtree(os.path.join(project_dir, "sequence"))
+    except FileNotFoundError:
+        pass
+
+    success, output_txt, ENA_submission_ID, problem_samples = handle_webin_CLI(ena_cmd, modus, submission_alias, project_dir, line_dic, settings, log)
+    print(output_txt)

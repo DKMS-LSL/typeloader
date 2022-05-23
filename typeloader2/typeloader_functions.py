@@ -115,7 +115,7 @@ class Allele:
 # functions:
 
 
-def perform_reference_update(db_name, reference_local_path, blast_path, log, version=None):
+def perform_reference_update(db_name, reference_local_path, blast_path, proxy, log, version=None):
     """call trigger reference update of a database
 
     :param db_name: HLA or KIR
@@ -131,11 +131,12 @@ def perform_reference_update(db_name, reference_local_path, blast_path, log, ver
 
     blast_dir = os.path.dirname(blast_path)
     try:
-        success, update_msg = update_reference.update_database(db_name, reference_local_path, blast_dir, log,
+        success, update_msg = update_reference.update_database(db_name, reference_local_path,
+                                                               blast_dir, proxy, log,
                                                                version=version)
     except Exception as E:
         log.exception("Reference update failed!")
-        general.play_sound()
+        general.play_sound(log)
         msg = f"Could not update the reference database(s). Please try again!\n\nError: {repr(E)}"
         return False, "Reference update failed", msg
 
@@ -1088,18 +1089,17 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
 
     ## 3. validate files via CLI
     log.debug("Validating submission files using ENA's Webin-CLI...")
-    cmd_string, msg = EF.make_ENA_CLI_command_string(file_dic["manifest"], file_dic["project_dir"], settings, log)
+    ena_cmd, msg = EF.make_ENA_CLI_command_string(file_dic["manifest"], file_dic["project_dir"], settings, log)
 
-    if not cmd_string:
+    if not ena_cmd:
         log.error("Could not generate command for Webin-CLI!")
         return False, False, "Webin-CLI command problem", msg, []
 
     log.debug("Validating command and files...")
 
-    validate_cmd = cmd_string + " -validate"
-    success, ENA_response, _, problem_samples = EF.handle_webin_CLI(validate_cmd, "validate", submission_alias,
+    success, ENA_response, _, problem_samples = EF.handle_webin_CLI(ena_cmd, "validate", submission_alias,
                                                                     file_dic["project_dir"],
-                                                                    line_dic, log)
+                                                                    line_dic, settings, log)
     if not success:
         log.error("Validation by ENA's Webin-CLI failed!")
         log.error(ENA_response)
@@ -1112,16 +1112,20 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
     ENA_sequence_dir = os.path.join(file_dic["project_dir"], "sequence")
     shutil.rmtree(ENA_sequence_dir)
 
+    # # debug: stop submission before sending:
+    # ena_cmd_str = " ".join(ena_cmd)
+    # msg = f"stopped before executing ENA call. Here it is:\n\n{ena_cmd_str}"
+    # return None, False, "Did not submit", msg, []
+
     ## 4. submit files via CLI
     log.debug("Submitting files...")
-    submission_cmd = cmd_string + " -submit"
     timeout = int(settings["timeout_ena"])
-    successful_transmit, ENA_response, analysis_accession_number, problem_samples = EF.handle_webin_CLI(submission_cmd,
+    successful_transmit, ENA_response, analysis_accession_number, problem_samples = EF.handle_webin_CLI(ena_cmd,
                                                                                                         "submit",
                                                                                                         submission_alias,
                                                                                                         file_dic[
                                                                                                             "project_dir"],
-                                                                                                        line_dic, log,
+                                                                                                        line_dic, settings, log,
                                                                                                         timeout=timeout)
     submission_accession_number = None  # used to be contained in ENA's reply, but has been deprecated with the start of Webin-CLI
 
@@ -1173,6 +1177,13 @@ def submit_alleles_to_ENA(project_name, ENA_ID, samples, files, settings, log):
         file_dic,
         settings,
         log)
+
+    try:
+        webin_file = os.path.join(file_dic["project_dir"], "webin-cli.report")
+        new_path = os.path.join(file_dic["project_dir"], f"{analysis_alias}_webin-cli.report")
+        os.rename(webin_file, new_path)
+    except IOError:
+        log.debug("No webin-cli.report file found")
 
     return success, file_dic, ena_results, problem_samples, err_type, msg
 
