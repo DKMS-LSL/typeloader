@@ -1,5 +1,8 @@
 # Version History
 
+## 2.12.2 (2022-05-24)
+- adjusted required loci for KIR alleles to new IPD standards (#211)
+
 ## 2.12.1 (2022-02-18)
 ### Bugfixes:
 - fix pretypings files for HLA-DMA, -DMB, -DOA, -DOB (#208)
