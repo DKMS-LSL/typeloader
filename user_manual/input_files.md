@@ -10,9 +10,12 @@ See [=> Sequence Requirements](new_allele_requirements.md) to check the minimum 
 ## Fasta files
 Fasta files should contain exactly one sequence. (If they contain more than that, only the first sequence is used. To add multiple fasta sequences at once, use the [=> Bulk Fasta Upload](new_allele_bulk.md).)
 
-![important](images/icon_important.png) **The files MUST follow FASTA format conventions! (see below)**
+![important](images/icon_important.png) **The files MUST follow FASTA format conventions! (see further below)**
 
-**Optionally**, you can use the sequence header to pass data along to TypeLoader, which it will then store for your allele. This should be a list of key-value pairs separated by ";", like in this example:
+![important](images/icon_important.png) **For KIR alleles, the locus MUST be provided! (see directly below)**
+Otherwise, TypeLoader will try and fail to map your allele against the HLA database.
+
+**Optionally**, you can use the sequence header to pass further data along to TypeLoader, which it will then store for your allele. This should be a list of key-value pairs separated by ";", like in this example:
 
 ![fasta-header example](images/fasta_header.png)
 
