@@ -98,8 +98,8 @@ class MainGUI(QMainWindow):
         geometry = desktop.availableGeometry(desktop.primaryScreen())
         self.settings["screen_width"] = geometry.width()
         self.settings["screen_height"] = geometry.height()
-        self.navigation.setMaximumWidth(self.settings["screen_width"] / 6.0)
-        self.navigation.setMinimumWidth(self.settings["screen_width"] / 7.0)
+        self.navigation.setMaximumWidth(self.settings["screen_width"] / 6)
+        self.navigation.setMinimumWidth(self.settings["screen_width"] / 7)
 
         self.grid.addWidget(self.navigation, 0, 0)
         self.navigation.changed_allele.connect(self.change_allele)
