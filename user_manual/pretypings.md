@@ -5,14 +5,19 @@ For every submitted allele, IPD requires, among other data, genotyping results f
 You can fill this file either manually or automatically, if your LIMS etc. provides such functionality.
 
 ## Required loci
-The following loci are the minimum acceptable pretyping profile for IPD submissions:
- 
+The following loci are the minimum acceptable pretyping profile:
+
+**[Submissions to IMGT/HLA](https://www.ebi.ac.uk/ipd/imgt/hla/submission/) (i.e., HLA and MIC alleles):**
  * HLA-A
  * HLA-B
  * HLA-DRB1
  * the gene you are submitting
 
-However, **IPD strongly encourages adding as much genotyping data about the sample as you have.**
+**[Submissions to IPD/KIR](https://www.ebi.ac.uk/ipd/kir/submission/) (i.e., KIR alleles):**
+  * all KIR loci except for the pseudogenes, at least on presence/absence level. (i.e., KIR2DL1 - 5, KIR2DS1 - 5, KIR3DL1 - 3, KIR3DS1)
+  * the gene you are submitting on allele level 
+
+However, **IPD strongly encourages adding as much additional genotyping data about the sample as you have.**
 
 ## The file
 The pretypings file must be a .csv file (comma separated text file). You can generate these from Excel or any text editor. **The delimiter used must be comma or semicolon.**

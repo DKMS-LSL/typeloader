@@ -113,17 +113,27 @@ def reformat_partner_allele(alleles, myallele, length, delimiter, log):
 def check_all_required_loci(befund_text, gene, target_allele, alleles, allele_name, log):
     """makes sure all loci required by IPD have a pretyping
     """
-    required = ["HLA-A", "HLA-B", "HLA-DRB1", gene]
+    if gene.startswith("KIR"):
+        required = ["KIR2DL1", "KIR2DL2", "KIR2DL3", "KIR2DL4", "KIR2DL5A", "KIR2DL5B",
+                    "KIR2DS1", "KIR2DS2", "KIR2DS3", "KIR2DS4", "KIR2DS5",
+                    "KIR3DL1", "KIR3DL2", "KIR3DL3", "KIR3DS1",
+                    gene]
+        required_text = "all KIR loci except the pseudogenes on presence/absence level, plus allele level for"
+    else:
+        required = ["HLA-A", "HLA-B", "HLA-DRB1", gene]
+        required_text = "HLA-A, -B, -DQB1 and"
     missing = []
     for locus in required:
-        if not locus in befund_text:
+        if locus not in befund_text:
             missing.append(locus)
     if missing:
-        log.warning("No pretyping found for {}. IPD requires at least HLA-A, -B, -DQB1 and the target gene of your novel allele!".format(",".join(missing)))
+        log.warning(f"No pretyping found for {', '.join(missing)}. "
+                    f"IPD requires at least {required_text} the target gene of your novel allele!")
         raise InvalidPretypingError(target_allele, "", allele_name, gene, 
-                                    "pretyping for {} missing".format(" and ".join(sorted(missing))))
-        
-    
+                                    f"pretyping for {' and '.join(sorted(missing))} missing")
+    return True
+
+
 def make_befund_text(befund, self_name, myallele, closestAllele, geneMap, differencesText, log):
 #     print("befund = ", befund)
 #     print("self_name =", self_name)

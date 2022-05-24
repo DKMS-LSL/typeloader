@@ -101,4 +101,9 @@ def getOtherAlleles(befundFile):
 
 if __name__ == '__main__':
     befundFile = r"C:\Daten\local_data\TL_issue_data\Befunde_DR_10.csv"
-    getOtherAlleles(befundFile)
+    befundFile = r"\\nasdd12\daten\data\Typeloader\staging\data_unittest\confirmation_file\Befunde_3DP1_1.csv"
+    befund, customer_dic = getOtherAlleles(befundFile)
+
+    for ID in befund:
+        for locus in befund[ID]:
+            print(locus, befund[ID][locus])

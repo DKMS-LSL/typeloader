@@ -2471,8 +2471,8 @@ class Test_pretyping_valid(unittest.TestCase):
             myfile = os.path.join(self.mydir, "samples.csv")
             log.debug("Reading samples.csv from {}...".format(myfile))
             SampleObject = namedtuple("SampleObject", """name description closest_allele gene
-                                                        target_allele partner_allele
-                                                        target_family diff_text final_result error_exp""")
+                                                            target_allele partner_allele
+                                                            target_family diff_text final_result error_exp""")
             self.samples = {}
             with open(myfile) as f:
                 data = csv.reader(f, delimiter=",")
@@ -2537,6 +2537,131 @@ class Test_pretyping_valid(unittest.TestCase):
                     if s.gene in line:
                         self.assertEqual(line, "FT                  /{}".format(s.final_result),
                                          "Error in {}: {}".format(s.name, s.description))  # check result correct
+
+    def test_check_all_required_loci_present_KIR(self):
+        KIR_gene = "KIR3DL2"
+        KIR_allele_name = "023new"
+        KIR_target_allele = TargetAllele(gene='KIR3DL2', target_allele='KIR3DL2*023:new', partner_allele='')
+        KIR_befund_ok = '''
+            FT                  /KIR2DL1*="001+001"
+            FT                  /KIR2DL2*="001+001"
+            FT                  /KIR2DL3*="001+001"
+            FT                  /KIR2DL4*="001+001"
+            FT                  /KIR2DL5A*="001+001"
+            FT                  /KIR2DL5B*="001+001"
+            FT                  /KIR2DS1*="001+001"
+            FT                  /KIR2DS2*="NEG"
+            FT                  /KIR2DS3*="POS"
+            FT                  /KIR2DS4*="001+001"
+            FT                  /KIR2DS5*="001+001"
+            FT                  /KIR3DL1*="001+001"
+            FT                  /KIR3DL2*="023:new+001"
+            FT                  /KIR3DL3*="001+001"
+            FT                  /KIR3DS1*="001+001"
+            '''
+        KIR_befund_bad = '''
+            FT                  /KIR2DL1*="001+001"
+            FT                  /KIR2DL2*="001+001"
+            FT                  /KIR2DL3*="001+001"
+            FT                  /KIR2DL4*="001+001"
+            FT                  /KIR2DL5*="A001+B001"
+            FT                  /KIR2DS1*="001+001"
+            FT                  /KIR2DS2*="NEG"
+            FT                  /KIR2DS3*="POS"
+            FT                  /KIR2DS4*="001+001"
+            FT                  /KIR2DS5*="001+001"
+            FT                  /KIR3DL1*="001+001"
+            FT                  /KIR3DL2*="023:new+001"
+            FT                  /KIR3DL3*="001+001"
+            FT                  /KIR3DS1*="001+001"
+            '''
+        KIR_befund_missing = ''' 
+            FT                  /KIR2DL1*="001+001"
+            FT                  /KIR2DL4*="001+001"
+            FT                  /KIR2DL5A*="001+001"
+            FT                  /KIR2DL5B*="001+001"
+            FT                  /KIR2DP1*="001+001"
+            FT                  /KIR2DS1*="001+001"
+            FT                  /KIR2DS2*="001+001"
+            FT                  /KIR2DS3*="001+001"
+            FT                  /KIR2DS4*="001+001"
+            FT                  /KIR2DS5*="001+001"
+            FT                  /KIR3DL1*="001+001"
+            FT                  /KIR3DL2*="023:new+001"
+            FT                  /KIR3DL3*="001+001"
+            FT                  /KIR3DP1*="001+001"
+            FT                  /KIR3DS1*="001+001"
+            '''
+
+        HLA_befund_ok = '''
+            FT                  /HLA-A*="01:01:01:01,03:01:02"
+            FT                  /HLA-B*="01:01,01:01"
+            FT                  /HLA-DRB1*="01:01,01:01"
+            FT                  /HLA-DQB1*="01:01,01:01"
+            FT                  /HLA-DPB1*="01:01,01:01"
+            FT                  /HLA-E*="01:01,01:01"
+            FT                  /MICA*="001,001"
+            FT                  /MICB*="001,001"
+            '''
+        HLA_befund_missing = '''
+            FT                  /HLA-A*="01:01:01:01,03:01:02"
+            FT                  /HLA-DQB1*="01:01,01:01"
+            FT                  /HLA-DPB1*="01:01,01:01"
+            FT                  /HLA-E*="01:01,01:01"
+            FT                  /MICA*="001,001"
+            FT                  /MICB*="001,001"
+            '''
+        HLA_gene = "HLA-A"
+        HLA_allele_name = "01:new"
+        HLA_target_allele = TargetAllele(gene='HLA-A', target_allele='HLA-A*01:new', partner_allele='HLA-A*03:01:02')
+
+        MIC_befund_ok = '''
+                FT                  /HLA-A*="01:01:01:01,03:01:02"
+                FT                  /HLA-B*="01:01,01:01"
+                FT                  /HLA-DRB1*="01:01,01:01"
+                FT                  /HLA-DQB1*="01:01,01:01"
+                FT                  /HLA-DPB1*="01:01,01:01"
+                FT                  /HLA-E*="01:01,01:01"
+                FT                  /MICA*="001:01,003:01"
+                FT                  /MICB*="001,001"
+                '''
+        MIC_befund_missing = '''
+                FT                  /HLA-A*="01:01:01:01,03:01:02"
+                FT                  /HLA-B*="01:01,01:01"
+                FT                  /HLA-DQB1*="01:01,01:01"
+                FT                  /HLA-DPB1*="01:01,01:01"
+                FT                  /HLA-E*="01:01,01:01"
+                FT                  /MICB*="001,001"
+                '''
+        MIC_gene = "MICA"
+        MIC_allele_name = "001:new"
+        MIC_target_allele = TargetAllele(gene='MICA', target_allele='MICA*001:new', partner_allele='MICA*003:01')
+
+        param_dic = {"KIR": (KIR_gene, KIR_allele_name, KIR_target_allele),
+                     "HLA": (HLA_gene, HLA_allele_name, HLA_target_allele),
+                     "MIC": (MIC_gene, MIC_allele_name, MIC_target_allele)}
+
+        for (target, befund_text, exp_err) in [("KIR", KIR_befund_ok, False),
+                                               ("KIR", KIR_befund_missing, "pretyping for KIR2DL2 and KIR2DL3 missing"),
+                                               ("KIR", KIR_befund_bad, "pretyping for KIR2DL5A and KIR2DL5B missing"),
+                                               ("HLA", HLA_befund_ok, False),
+                                               ("HLA", HLA_befund_missing, "pretyping for HLA-B and HLA-DRB1 missing"),
+                                               ("MIC", MIC_befund_ok, False),
+                                               ("MIC", MIC_befund_missing, "pretyping for HLA-DRB1 and MICA missing")
+                                               ]:
+            (gene, allele_name, target_allele) = param_dic[target]
+
+            if exp_err:
+                with self.assertRaises(errors.InvalidPretypingError):
+                    ITG.check_all_required_loci(befund_text, gene, target_allele, [], allele_name, log)
+                try:
+                    ITG.check_all_required_loci(befund_text, gene, target_allele, [], allele_name, log)
+                except errors.InvalidPretypingError as E:
+                    self.assertEqual(E.problem, exp_err)
+
+            else:
+                ok = ITG.check_all_required_loci(befund_text, gene, target_allele, [], allele_name, log)
+                self.assertTrue(ok)
 
 
 class TestEdgecases(unittest.TestCase):
