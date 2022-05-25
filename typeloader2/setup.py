@@ -38,7 +38,7 @@ if sys.platform == "win32":
     base = "Win32GUI"
 
 setup(name="TypeLoader",
-      version="2.11.0",
+      version="2.12.2",
       description="TypeLoader",
       options={"build_exe": build_exe_options},
       executables=[Executable("typeloader_GUI.pyw",
