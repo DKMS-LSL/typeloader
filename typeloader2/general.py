@@ -16,6 +16,7 @@ import sys, os, datetime, shutil, platform
 from collections import defaultdict
 from PyQt5.QtGui import QFont
 import GUI_stylesheet as stylesheet
+import pathlib
 
 # ===========================================================
 # parameters & settings:
@@ -118,9 +119,9 @@ header_translation_dic = {"locus": "GENE",
                           "date": "new_timestamp"
                           }
 
-soundfile = os.path.join(os.path.dirname(__file__), "sound_done.mp3")
-soundfile_2 = os.path.join(os.path.dirname(os.path.dirname(__file__)), "sound_done.mp3")
-soundfile_3 = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "sound_done.mp3")
+soundfile = pathlib.Path(__file__).parent / 'sound_done.mp3'
+soundfile_2 = pathlib.Path(__file__).parent.parent / 'sound_done.mp3'
+soundfile_3 = pathlib.Path(__file__).parent.parent.parent / 'sound_done.mp3'
 # ===========================================================
 # classes:
 

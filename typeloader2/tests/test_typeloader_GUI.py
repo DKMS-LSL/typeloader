@@ -2575,7 +2575,7 @@ class Test_pretyping_valid(unittest.TestCase):
             FT                  /KIR3DL3*="001+001"
             FT                  /KIR3DS1*="001+001"
             '''
-        KIR_befund_missing = ''' 
+        KIR_befund_missing = '''
             FT                  /KIR2DL1*="001+001"
             FT                  /KIR2DL4*="001+001"
             FT                  /KIR2DL5A*="001+001"
@@ -3131,26 +3131,26 @@ class TestCleanStuff(unittest.TestCase):
             shutil.rmtree(os.path.join(curr_settings["projects_dir"], project_name))
 
 
-class TestPlaySound(unittest.TestCase):
-    """Play sound when finished
-    """
-
-    @classmethod
-    def setUpClass(self):
-        pass
-
-    @classmethod
-    def tearDownClass(self):
-        pass
-
-    def test_play_sound(self):
-        """test that sound was played
-         """
-        played = general.play_sound(log)
-        self.assertTrue(played)
-        # make sound distinguishable from normal running sounds, so tester knows tests are through
-        general.play_sound(log)
-        general.play_sound(log)
+# class TestPlaySound(unittest.TestCase):
+#     """Play sound when finished
+#     """
+#
+#     @classmethod
+#     def setUpClass(self):
+#         pass
+#
+#     @classmethod
+#     def tearDownClass(self):
+#         pass
+#
+#     def test_play_sound(self):
+#         """test that sound was played
+#          """
+#         played = general.play_sound(log)
+#         self.assertTrue(played)
+#         # make sound distinguishable from normal running sounds, so tester knows tests are through
+#         general.play_sound(log)
+#         general.play_sound(log)
 
 
 # ===========================================================
@@ -3302,3 +3302,6 @@ sys.excepthook = log_uncaught_exceptions
 cases = suiteFactory(*caseFactory())
 runner = unittest.TextTestRunner(verbosity=2, failfast=True)
 runner.run(cases)
+general.play_sound(log)
+general.play_sound(log)
+general.play_sound(log)
