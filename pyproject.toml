@@ -11,14 +11,15 @@ readme = "README.md"
 repository = "https://github.com/DKMS-LSL/typeloader"
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.10"
 PyQt5 = "^5.15.0"
 Biopython = "^1.77"
-pycurl = "^7.43.0"
 xmltodict = "^0.12.0"
 playsound = "^1.2.2"
 cx_Freeze = "6.1"
 cx_Oracle = "^8.0.0"
+packaging = "^21.3"
+requests = "^2.27.1"
 
 [tool.poetry.dev-dependencies]
 
