@@ -286,9 +286,9 @@ class NewProjectForm(QDialog):
                         proxy = self.settings["proxy"]
                         self.output_file = os.path.join(self.project_dir, self.project_name + "_output.xml")
 
-                        userpwd = "{}:{}".format(self.settings["ftp_user"], self.settings["ftp_pwd"])
                         study_err = EF.submit_project_ENA(self.submission_file, self.project_filename, "PROJECT",
-                                                          server, proxy, self.output_file, userpwd)
+                                                          server, proxy, self.output_file,
+                                                          self.settings["ftp_user"], self.settings["ftp_pwd"])
                         if study_err:
                             self.log.exception(study_err)
                             QMessageBox.warning(self, "Error during ENA submission!",
