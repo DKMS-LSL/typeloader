@@ -20,8 +20,8 @@ import general
 # ===========================================================
 # parameters:
 
-NEW_VERSION = "2.12.0"
-BUILD_DIR = r"build/exe.win32-3.6"
+NEW_VERSION = "2.12.2"
+BUILD_DIR = r"build/exe.win-amd64-3.8"
 INSTALLER_SCRIPT = "typeloader_installer.nsi"
 INSTALLER_SCRIPT_NEW = "typeloader_installer_new.nsi"
 NSIS_PATH = r"C:\Program Files (x86)\NSIS\makensis.exe"
@@ -258,7 +258,11 @@ def wrap_up_and_compile_installer(changes, log):
 
     compile_installer(log)
 
-    log.info("The new installer can be found in this directory as TypeLoader_Setup.exe. \n"
+    new_name = f"TypeLoader_Setup_V{NEW_VERSION}.exe"
+    os.rename("TypeLoader_Setup.exe", new_name)
+
+
+    log.info(f"The new installer can be found in this directory as {new_name}. \n"
              "Please test it thoroughly before deploying!")
 
 
