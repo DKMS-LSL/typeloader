@@ -20,8 +20,10 @@ import general
 # ===========================================================
 # parameters:
 
-NEW_VERSION = "2.12.2"
+NEW_VERSION = "2.13.0"
+#BUILD_DIR = r"build/exe.win32-3.6"
 BUILD_DIR = r"build/exe.win-amd64-3.8"
+
 INSTALLER_SCRIPT = "typeloader_installer.nsi"
 INSTALLER_SCRIPT_NEW = "typeloader_installer_new.nsi"
 NSIS_PATH = r"C:\Program Files (x86)\NSIS\makensis.exe"

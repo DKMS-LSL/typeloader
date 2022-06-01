@@ -11,12 +11,18 @@ import sys, os
 from cx_Freeze import setup, Executable
 
 # remove dummy table files
-for myfile in os.listdir("tables"):
+for myfile in os.listdir(os.path.join(os.path.dirname(__file__), "tables")):
     if "dummy" in myfile:
         os.remove(os.path.join("tables", myfile))
 
 build_exe_options = {"includes": ["authuser",
                                   "typeloader_core",
+                                  "docu",
+                                  "tables/"
+                                  "icons",
+                                  "blastn",
+                                  "sample_files",
+                                  "ENA_Webin_CLI"
                                   ],
                      "include_files": ["config_raw.ini",
                                        "config_base.ini",
@@ -31,6 +37,11 @@ build_exe_options = {"includes": ["authuser",
                                        ],
                      "excludes": ["tkinter",
                                   "unittest",
+                                  "logs/",
+                                  "temp/",
+                                  "installer/",
+                                  "flowcharts/",
+                                  "reference_data2/"
                                   ]}
 
 base = None
@@ -38,7 +49,7 @@ if sys.platform == "win32":
     base = "Win32GUI"
 
 setup(name="TypeLoader",
-      version="2.12.2",
+      version="2.13.0",
       description="TypeLoader",
       options={"build_exe": build_exe_options},
       executables=[Executable("typeloader_GUI.pyw",
