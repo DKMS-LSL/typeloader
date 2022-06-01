@@ -9,7 +9,7 @@ __license__ = "MIT"
 __maintainer__ = "Bianca Schoene"
 __email__ = "schoene@dkms-lab.de"
 
-__version__ = "2.12.2"
+__version__ = "2.13.0-RC1"
 __status__ = "productive"
 __all__ = ["__init__",
            "db_external",
