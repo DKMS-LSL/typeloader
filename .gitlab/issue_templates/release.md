@@ -21,9 +21,8 @@
 - [ ] checkout the release branch in your local development repo
 - [ ] update the version number in ``setup.py``
 - [ ] update NEW_VERSION in ``typeloader_installer_updater.py``, then run it
-- [ ] using ``NIS Edit``, compile the installer by opening the new ``typeloader2/typeloader_installer.nsi`` and selecting „Compile“ (not "Compile and Run", as TypeLoader should be tested without elevated rights)
 - [ ] test the installer locally ⇒ make any necessary changes and commit them to the release branch
-- [ ] using ``OwnCloud``, copy the installer to a ``Windows10`` computer outside the LSL-network.
+- [ ] using ``FTApi``, copy the installer to a ``Windows10`` computer outside the LSL-network.
 - [ ] if it is not present already, install the previous version by using the old installer from the previous ``GitHub`` release.
 - [ ] create a test login and perform a ``Basic Feature Check``
 - [ ] with the new installer, update the existing version and perform a ``Basic Feature Check``. This should confirm that updating works as expected.

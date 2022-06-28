@@ -4,7 +4,7 @@ import general
 # ===========================================================
 # parameters:
 
-installer = "typeloader_installer_new.nsi"  # name of the current installer.nsi file
+installer = "typeloader_installer.nsi"  # name of the current installer.nsi file
 install_path = r"C:\Program Files (x86)\TypeLoader"  # path where TypeLoader was installed
 
 # ===========================================================

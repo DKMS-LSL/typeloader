@@ -13,8 +13,7 @@ contains classes and functions for login & user handling functionality
 # import modules:
 
 import os, sys, shutil, logging, platform
-from distutils.version import \
-    LooseVersion as parsedVersion  # TODO: replace with from packaging import version as parsedVersion (#189)
+from packaging.version import parse as parsedVersion  # 189
 from configparser import ConfigParser
 from PyQt5.QtWidgets import (QApplication, QDialog, QFormLayout,
                              QMessageBox, QLabel, QPushButton,
@@ -41,6 +40,7 @@ __version__ = general.read_package_variable("__version__")
 
 # ===========================================================
 # classes:
+
 
 class NewUserForm(QDialog):
     """a dialog to add a new user
@@ -626,7 +626,7 @@ def check_update_needed(reference_local_path, proxy, log, skip_if_updated_today=
     messages = []
     for db_name in db_list:
         new_version_found, msg = update_reference.check_database(db_name, reference_local_path, proxy, log,
-                                                               skip_if_updated_today=skip_if_updated_today)
+                                                                 skip_if_updated_today=skip_if_updated_today)
         if new_version_found:
             update_me.append(db_name.upper())
         else:

@@ -13,7 +13,7 @@ import os
 import shlex
 import subprocess
 import gzip
-import pycurl
+import requests
 import re
 
 FUSION_INTRON_PATTERN = re.compile('/number=\d+/\d+')
@@ -118,31 +118,26 @@ def write_file(data_string, path, log, pretty=True):
         return True
 
 
-def submit_project_ENA(submission_xml, type_xml, filetype, embl_server, proxy, output_filename, userpwd):
-    with open(output_filename, "wb") as g:
-        c = pycurl.Curl()
-        c.setopt(c.URL, embl_server)
-        c.setopt(c.POST, 1)
-        data = [("SUBMISSION",
-                 (c.FORM_FILE, submission_xml)),
-                ("{}".format(filetype),
-                 (c.FORM_FILE, type_xml))]
-        c.setopt(c.HTTPPOST, data)
-        c.setopt(pycurl.PROXY, proxy)
-        c.setopt(pycurl.SSL_VERIFYPEER,
-                 0)  # FIXME: (future) use certificates! https://stackoverflow.com/questions/8332643/pycurl-and-ssl-cert
-        c.setopt(pycurl.SSL_VERIFYHOST, 0)
-        c.setopt(pycurl.USERPWD, userpwd)
-        c.setopt(c.WRITEFUNCTION, g.write)
-        try:
-            c.perform()
-            err = None
-        except Exception as E:
-            err = E
-        finally:
-            c.close()
+def submit_project_ENA(submission_xml, type_xml, filetype, embl_server, proxy, output_filename, user, pwd):
+    files = {"SUBMISSION": open(submission_xml, "rb"),
+             filetype: open(type_xml, "rb")}
+    proxies = {}
+    if proxy:
+        proxies["https"] = proxy
+        proxies["http"] = proxy
 
-    return err
+    response = requests.post(embl_server,
+                             auth=(user, pwd),
+                             files=files,
+                             proxies=proxies
+                             )
+
+    reply = response.content.decode("utf-8")
+    if not response.status_code == 200:
+        return reply
+
+    with open(output_filename, "w") as g:
+        g.write(reply)
 
 
 ## create a readable XML
@@ -535,7 +530,7 @@ def handle_webin_CLI(ena_cmd, modus, submission_alias, project_dir, line_dic, se
                       ena_cmd[1:]
 
     try:
-        result = run(ena_cmd, stdout=PIPE, stderr=PIPE)#, env=env)
+        result = run(ena_cmd, stdout=PIPE, stderr=PIPE)  # , env=env)
         stderr = result.stderr.decode("utf-8").strip()
         if stderr:
             log.debug("Stderr:")
@@ -745,10 +740,12 @@ if __name__ == "__main__":
     submission_alias = "PRJEB48776_20211115090419"
 
     import shutil
+
     try:
         shutil.rmtree(os.path.join(project_dir, "sequence"))
     except FileNotFoundError:
         pass
 
-    success, output_txt, ENA_submission_ID, problem_samples = handle_webin_CLI(ena_cmd, modus, submission_alias, project_dir, line_dic, settings, log)
+    success, output_txt, ENA_submission_ID, problem_samples = handle_webin_CLI(ena_cmd, modus, submission_alias,
+                                                                               project_dir, line_dic, settings, log)
     print(output_txt)

@@ -1,5 +1,9 @@
 # Version History
 
+## 2.13.0 (2022-06-01)
+### Backend:
+- now uses Python 3.10 (#215)
+
 ## 2.12.2 (2022-05-24)
 - adjusted required loci for KIR alleles to new IPD standards (#211)
 
