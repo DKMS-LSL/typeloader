@@ -4,48 +4,58 @@ import datetime
 import re
 from copy import copy
 import textwrap
+
 if __name__ == '__main__':
     from imgtformat import *
     from errors import BothAllelesNovelError, InvalidPretypingError
-else:    
+else:
     from .imgtformat import *
     from .errors import BothAllelesNovelError, InvalidPretypingError
 
+
 def make_genemodel_text(enaFile, sequence, partial_UTR5, partial_UTR3):
     enaHandle = open(enaFile)
-    enaText = enaHandle.read().replace("\r","\n").replace("\n\n","\n")
+    enaText = enaHandle.read().replace("\r", "\n").replace("\n\n", "\n")
     enaHandle.close()
 
     sequenceLength = len(sequence)
 
     # we are being very lazy here and working with the already generated FT lines format instead of recreating them from the gene model
-    gmodel_regex = re.compile("(((FT(.*?)(CDS(.*?)\n))((.*?)\n){5,6}))(((FT(.*?)(exon|intron)((.*?)\n){4,5}){1,})((FT(.*?)exon((.*?)\n){4})))", re.MULTILINE)
+    gmodel_regex = re.compile(
+        "(((FT(.*?)(CDS(.*?)\n))((.*?)\n){5,6}))(((FT(.*?)(exon|intron)((.*?)\n){4,5}){1,})((FT(.*?)exon((.*?)\n){4})))",
+        re.MULTILINE)
 
     cdsText = gmodel_regex.search(enaText).expand("\\3")
-    cdsText = cdsText.replace("             ","            ")
+    cdsText = cdsText.replace("             ", "            ")
 
     cdsStart = int(cdsText.split("..")[0].split("(")[1])
     cdsEnd = int(cdsText.split("..")[-1].split(")")[0])
 
-    if cdsStart > 1: 
+    if cdsStart > 1:
         fiveUtrText = fiveUtrString.replace("{fiveUtrEnd}", str(cdsStart - 1))
         if partial_UTR5:
             fiveUtrText += "\nFT                  \partial"
-    else: 
+    else:
         fiveUtrText = ""
 
-    if cdsEnd < sequenceLength: threeUtrText = threeUtrString.replace("{threeUtrStart}",str(cdsEnd + 1)).replace("{threeUtrEnd}",str(sequenceLength))
-    else: threeUtrText = ""
+    if cdsEnd < sequenceLength:
+        threeUtrText = threeUtrString.replace("{threeUtrStart}", str(cdsEnd + 1)).replace("{threeUtrEnd}",
+                                                                                          str(sequenceLength))
+    else:
+        threeUtrText = ""
 
     enaExonIntronText = gmodel_regex.search(enaText).expand("\\9")
-    enaExonIntronText = enaExonIntronText.replace("/p","\\p").replace("/n","\\n").replace("exon","Exon").replace("intron","Intron")
+    enaExonIntronText = enaExonIntronText.replace("/p", "\\p").replace("/n", "\\n").replace("exon", "Exon").replace(
+        "intron", "Intron")
     if cdsStart > 1: enaExonIntronText = enaExonIntronText.replace(" 1..", " %s.." % str(cdsStart))
-    if cdsEnd < sequenceLength: enaExonIntronText = enaExonIntronText.replace("..%s" % str(sequenceLength), "..%s" % str(cdsEnd))
+    if cdsEnd < sequenceLength: enaExonIntronText = enaExonIntronText.replace("..%s" % str(sequenceLength),
+                                                                              "..%s" % str(cdsEnd))
     enaExonIntronLines = enaExonIntronText.strip().split("\n")
     imgtExonIntronLines = []
 
     for enaExonIntronLine in enaExonIntronLines:
-        if (enaExonIntronLine.find("gene") != -1) or (enaExonIntronLine.find("allele") != -1): continue
+        if (enaExonIntronLine.find("gene") != -1) or (enaExonIntronLine.find("allele") != -1):
+            continue
         else:
             if enaExonIntronLine.find("number") != -1:
                 lineParts = enaExonIntronLine.split("=")
@@ -54,14 +64,15 @@ def make_genemodel_text(enaFile, sequence, partial_UTR5, partial_UTR3):
             else:
                 imgtExonIntronLines.append(enaExonIntronLine)
 
-    imgtExonIntronText = "\n".join([imgtExonIntronLine.replace("          ","         ").replace("            ","           ") \
-                                    for imgtExonIntronLine in imgtExonIntronLines])
+    imgtExonIntronText = "\n".join(
+        [imgtExonIntronLine.replace("          ", "         ").replace("            ", "           ") \
+         for imgtExonIntronLine in imgtExonIntronLines])
 
     imgtGeneModelText = ""
     imgtGeneModelText += cdsText
     if len(fiveUtrText): imgtGeneModelText += "%s\n" % fiveUtrText
-    imgtGeneModelText += "%s\n" % (imgtExonIntronText.replace("\\"," \\"))
-    if len(threeUtrText): 
+    imgtGeneModelText += "%s\n" % (imgtExonIntronText.replace("\\", " \\"))
+    if len(threeUtrText):
         imgtGeneModelText += "%s\n" % threeUtrText
         if partial_UTR3:
             imgtGeneModelText += "FT                  \partial\n"
@@ -85,7 +96,7 @@ def reformat_partner_allele(alleles, myallele, length, delimiter, log):
                 if i != j:
                     if not alleles[j].split(":")[0] in myallele.partner_allele:
                         match = False
-            if match: # if all remaining alleles are part of myallele.partner_allele
+            if match:  # if all remaining alleles are part of myallele.partner_allele
                 partners = []
                 for k, a in enumerate(alleles):
                     if k != i:
@@ -96,11 +107,11 @@ def reformat_partner_allele(alleles, myallele, length, delimiter, log):
                 partner = delimiter.join(partners)
                 reformated_alleles = [alleles[i], partner]
                 appendix = "s are" if len(alleles) > 2 else " is"
-                log.info("\t => Success: {} is self, partner allele{} {}!".format(alleles[i], appendix, 
+                log.info("\t => Success: {} is self, partner allele{} {}!".format(alleles[i], appendix,
                                                                                   partner))
                 success = True
                 continue
-                        
+
     if success:
         alleles = reformated_alleles
 
@@ -129,24 +140,24 @@ def check_all_required_loci(befund_text, gene, target_allele, alleles, allele_na
     if missing:
         log.warning(f"No pretyping found for {', '.join(missing)}. "
                     f"IPD requires at least {required_text} the target gene of your novel allele!")
-        raise InvalidPretypingError(target_allele, "", allele_name, gene, 
+        raise InvalidPretypingError(target_allele, "", allele_name, gene,
                                     f"pretyping for {' and '.join(sorted(missing))} missing")
     return True
 
 
 def make_befund_text(befund, self_name, myallele, closestAllele, geneMap, differencesText, log):
-#     print("befund = ", befund)
-#     print("self_name =", self_name)
-#     print("myallele =", myallele)
-#     print("closestAllele =", closestAllele)
-#     print("geneMap =", geneMap)
-#     print("differencesText = ", differencesText)
+    # print("befund = ", befund)
+    # print("self_name =", self_name)
+    # print("myallele =", myallele)
+    # print("closestAllele =", closestAllele)
+    # print("geneMap =", geneMap)
+    # print("differencesText = ", differencesText)
     befundText = ""
     alleles = []
     confirmation = False
     if differencesText.startswith("CC   Confirmation"):
         confirmation = True
-        
+
     for gene in list(befund.keys()):
         genesystem = gene[:3]
         length = None
@@ -156,32 +167,40 @@ def make_befund_text(befund, self_name, myallele, closestAllele, geneMap, differ
         elif genesystem in ["KIR", "MIC"]:
             length = 3
             if genesystem == "KIR":
-                delimiter = "+" # for KIR, use a plus as allele separator (normal GL strings)
-        
+                delimiter = "+"  # for KIR, use a plus as allele separator (normal GL strings)
+
         if length:
             myalleles = [allele.zfill(length) for allele in befund[gene]]
         else:
             myalleles = befund[gene]
         alleles = delimiter.join(myalleles)
-        
+
         if not gene.startswith("KIR"):
             if "|" in alleles:
-                raise InvalidPretypingError(myallele, myalleles, "", gene, "Pretyping contains '|'! GL-Strings are only accepted for KIR!")
-         
+                raise InvalidPretypingError(myallele, myalleles, "", gene,
+                                            "Pretyping contains '|'! GL-Strings are only accepted for KIR!")
+
+        if "ERROR" in alleles:
+            raise InvalidPretypingError(myallele, myalleles, "", gene,
+                                        "Pretyping contains 'ERROR'! Please fix before continuing!")
+
         if gene == myallele.gene:
             # check for consistency:
             mystring = alleles.lower()
-            if "pos" in mystring: # target locus not allowed to be POS
-                log.warning("Invalid Pretyping: pretyping for target locus should not contain POS. Please adjust pretyping file!")
-                raise InvalidPretypingError(myallele, myalleles, self_name, gene, "POS is not acceptable pretyping for a target locus")
+            if "pos" in mystring:  # target locus not allowed to be POS
+                log.warning(
+                    "Invalid Pretyping: pretyping for target locus should not contain POS. Please adjust pretyping file!")
+                raise InvalidPretypingError(myallele, myalleles, self_name, gene,
+                                            "POS is not acceptable pretyping for a target locus")
                 return
-                
+
             i = mystring.count("new") + mystring.count("xxx")
-            if i == 0: # no pretyping marked as new
+            if i == 0:  # no pretyping marked as new
                 if not confirmation:
-                    raise InvalidPretypingError(myallele, myalleles, self_name, gene, "no allele marked as new in pretyping")
+                    raise InvalidPretypingError(myallele, myalleles, self_name, gene,
+                                                "no allele marked as new in pretyping")
                     return
-                
+
             if i > 1:
                 log.info("Target locus {} has {} novel alleles".format(myallele.gene, i))
                 success, alleles = reformat_partner_allele(myalleles, myallele, length, delimiter, log)
@@ -189,29 +208,29 @@ def make_befund_text(befund, self_name, myallele, closestAllele, geneMap, differ
                     log.warning("Please indicate self!".format(myallele.gene, i))
                     raise BothAllelesNovelError(myallele, myalleles)
                     return
-                
+
             else:
-                if self_name.replace(":new", "").replace("new","") not in mystring:
-                    log.warning("Invalid Pretyping: allele_name '{}:new' not found in pretyping for target locus. Please adjust pretyping file!".format(self_name))
+                if self_name.replace(":new", "").replace("new", "") not in mystring:
+                    log.warning(
+                        "Invalid Pretyping: allele_name '{}:new' not found in pretyping for target locus. Please adjust pretyping file!".format(
+                            self_name))
                     raise InvalidPretypingError(myallele, myalleles, self_name, gene,
                                                 "assigned allele name not found in pretyping")
                     return
-            
+
             if confirmation:
                 alleles = alleles.replace(self_name, closestAllele.split("*")[1])
-        
+
         befundText += otherAllelesString.replace("{gene}", gene).replace("{alleleNames}", alleles)
     check_all_required_loci(befundText, myallele.gene, myallele, alleles, self_name, log)
     return befundText
 
 
 def make_diff_line(differences, imgtDiff, self_name, closestAllele):
-
     baseText = "%s differs from %s like so : "
     diffText = baseText % (self_name, closestAllele)
 
     diffsExist = False
-
 
     mm, mmPos, deltn, deltnPos, instn, instnPos = differences["mismatches"], imgtDiff["mismatchPositions"], \
                                                   differences["deletions"], differences["deletionPositions"], \
@@ -219,49 +238,52 @@ def make_diff_line(differences, imgtDiff, self_name, closestAllele):
 
     codonDiff = imgtDiff["mmCodons"]
 
-
     mismatchText = ""
     for mmIndex in range(len(mm)):
         mismatchPos, codonStatus = mmPos[mmIndex]
-        if not codonStatus: mismatchText += "pos %s (%s -> %s);" % (mmPos[mmIndex][0], mm[mmIndex][1], mm[mmIndex][0])
+        if not codonStatus:
+            mismatchText += "pos %s (%s -> %s);" % (mmPos[mmIndex][0], mm[mmIndex][1], mm[mmIndex][0])
         else:
             mismatchText += "pos %s in codon %s (%s -> %s);" % \
-                            (mmPos[mmIndex][0], codonDiff[mmIndex][0], codonDiff[mmIndex][1][1], codonDiff[mmIndex][1][0])
+                            (mmPos[mmIndex][0], codonDiff[mmIndex][0], codonDiff[mmIndex][1][1],
+                             codonDiff[mmIndex][1][0])
 
     if len(mismatchText):
         diffText += "Mismatches = %s. " % mismatchText
         diffsExist = True
 
-    deletionText = ",".join(["pos %s (%s)" % (deltnPos[deltnIndex], deltn[deltnIndex]) for deltnIndex in range(len(deltn))])
+    deletionText = ",".join(
+        ["pos %s (%s)" % (deltnPos[deltnIndex], deltn[deltnIndex]) for deltnIndex in range(len(deltn))])
     if len(deletionText):
         diffText += "Deletions = %s. " % deletionText
         diffsExist = True
 
-    insertionText = ",".join(["pos %s (%s)" % (instnPos[instnIndex], instn[instnIndex]) for instnIndex in range(len(instn))])
+    insertionText = ",".join(
+        ["pos %s (%s)" % (instnPos[instnIndex], instn[instnIndex]) for instnIndex in range(len(instn))])
     if len(insertionText):
         diffText += "Insertions = %s. " % insertionText
         diffsExist = True
 
-    if diffsExist: return diffText
-    else: 
+    if diffsExist:
+        return diffText
+    else:
         return "Confirmation of {}".format(closestAllele)
 
+
 def make_imgt_footer(sequence, sequencewidth=60):
-
-
-    footerop = footer.replace("{sequence length}",str(len(sequence)))
-    footerop = footerop.replace("{countA}",str(sequence.count("A")))
-    footerop = footerop.replace("{countG}",str(sequence.count("G")))
-    footerop = footerop.replace("{countT}",str(sequence.count("T")))
-    footerop = footerop.replace("{countC}",str(sequence.count("C")))
+    footerop = footer.replace("{sequence length}", str(len(sequence)))
+    footerop = footerop.replace("{countA}", str(sequence.count("A")))
+    footerop = footerop.replace("{countG}", str(sequence.count("G")))
+    footerop = footerop.replace("{countT}", str(sequence.count("T")))
+    footerop = footerop.replace("{countC}", str(sequence.count("C")))
 
     tempseq = copy(sequence)
-    tempseq = tempseq.replace("A","").replace("G","").replace("T","").replace("C","")
+    tempseq = tempseq.replace("A", "").replace("G", "").replace("T", "").replace("C", "")
     othercount = len(tempseq)
 
     footerop = footerop.replace("{countOther}", str(othercount))
 
-    seqlines = textwrap.wrap(sequence,sequencewidth)
+    seqlines = textwrap.wrap(sequence, sequencewidth)
     seqstring = ""
 
     padspace = " " * 5
@@ -272,10 +294,10 @@ def make_imgt_footer(sequence, sequencewidth=60):
         if len(seqline) < 60:
             sepbases = 5 - (len(seqline) // 10)
             nobases = 60 - len(seqline)
-            currseq = " ".join(textwrap.wrap(seqline,10))
+            currseq = " ".join(textwrap.wrap(seqline, 10))
             currseqstring = padspace + currseq + (" " * (sepbases + nobases)) + padspace + str(len(sequence))
         else:
-            currseq = " ".join(textwrap.wrap(seqline,10))
+            currseq = " ".join(textwrap.wrap(seqline, 10))
             currseqstring = padspace + currseq + padspace + str(count) + "\n"
         seqstring += currseqstring.lower()
 
@@ -284,10 +306,9 @@ def make_imgt_footer(sequence, sequencewidth=60):
     return footerop
 
 
-def make_imgt_text(submissionId, cellLine, local_name, myallele, enaId, befund, closestAllele, diffToClosest, 
+def make_imgt_text(submissionId, cellLine, local_name, myallele, enaId, befund, closestAllele, diffToClosest,
                    imgtDiff, enafile, sequence, geneMap, missing_bp_start, missing_bp_end,
                    settings, log):
-    
     [locus, self_name] = closestAllele.split("*")
     if locus.startswith("KIR"):
         db_name = "KIR"
@@ -297,21 +318,21 @@ def make_imgt_text(submissionId, cellLine, local_name, myallele, enaId, befund, 
         db_name = "HLA"
 
     diffLine = make_diff_line(diffToClosest, imgtDiff, "{}*{}".format(locus, self_name), closestAllele)
-    differencesText = refAlleleDiffString.replace("{text}", diffLine)    
+    differencesText = refAlleleDiffString.replace("{text}", diffLine)
     otherAllelesText = make_befund_text(befund, self_name, myallele, closestAllele, geneMap, differencesText, log)
-    
+
     partial_UTR5, partial_UTR3 = False, False
     if missing_bp_start:
         partial_UTR5 = True
     if missing_bp_end:
         partial_UTR3 = True
-        
+
     genemodelText = make_genemodel_text(enafile, sequence, partial_UTR5, partial_UTR3)
     footerText = make_imgt_footer(sequence)
     todaystr = datetime.datetime.now().strftime('%d/%m/%Y')
 
     imgtText = header
-    
+
     # reformat names & emails for presence or absence of optional parts:
     user_name = settings["user_name"]
     if settings["address_form"]:
@@ -322,7 +343,7 @@ def make_imgt_text(submissionId, cellLine, local_name, myallele, enaId, befund, 
     emails = settings["lab_contact_email"]
     if settings["email"]:
         emails = settings["email"] + "," + emails
-    
+
     replace_placeholders = [("{submission_id}", submissionId),
                             ("{sequence length}", str(len(sequence))),
                             ("{allele_counter}", "1"),
@@ -354,14 +375,16 @@ def make_imgt_text(submissionId, cellLine, local_name, myallele, enaId, befund, 
                             ]
     for (placeholder, replacement) in replace_placeholders:
         imgtText = imgtText.replace(placeholder, replacement)
-    
+
     imgtText += genemodelText
     imgtText += footerText
 
     return imgtText
 
+
 if __name__ == '__main__':
     import logging
+
     log = logging.getLogger(__name__)
     log.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(levelname)s [%(asctime)s] - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
@@ -385,7 +408,8 @@ if __name__ == '__main__':
     self_name = "013new"
     closestAllele = "MICB*004:01:01"
     TargetAllele = namedtuple("TargetAllele", "gene target_allele partner_allele")
-    myallele = TargetAllele(gene='KIR3DS1', target_allele='KIR3DS1*0130101:new', partner_allele='KIR3DS1*0130101 or 3DS1*0130101')
+    myallele = TargetAllele(gene='KIR3DS1', target_allele='KIR3DS1*0130101:new',
+                            partner_allele='KIR3DS1*0130101 or 3DS1*0130101')
     geneMap = {'gene': ['HLA', 'KIR'], 'targetFamily': 'KIR'}
     differencesText = "CC   KIR3DS1*013new differs from KIR3DS1*0130101 like so : Mismatches = pos 1158 in codon 375 (AGG -> AGA);. "
 
