@@ -237,10 +237,10 @@ def get_pretypings_from_oracledb(project, local_cf, settings, log, parent=None):
             QMessageBox.warning(parent, "Pretypings error", msg)
         return False, None, None
 
-    pretypings, samples, not_found = db_external.get_pretypings_from_limsrep(sample_ids, local_cf, log)
+    pretypings, samples, problems = db_external.get_pretypings_from_limsrep(sample_ids, local_cf, log)
     output_file = os.path.join(settings["temp_dir"], "pretypings.csv")
     db_external.write_pretypings_file(pretypings, samples, output_file, log)
-    return True, output_file, not_found
+    return True, output_file, problems
 
 
 def compare_2_files(file1, file2):
