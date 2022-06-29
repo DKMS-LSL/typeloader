@@ -368,14 +368,25 @@ if __name__ == '__main__':
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(formatter)
     log.addHandler(stream_handler)
-    
+
     from collections import namedtuple
-    befund =  {'HLA-A': ['01:02|24:02:01G', '02:01:01G'], 'HLA-B': ['39:06:02G', '48:01:01G'], 'HLA-C': ['08:01:01G', '07:02:01G'], 'HLA-DRB1': ['08:02:01G', '14:06:01'], 'HLA-DQB1': ['04:02', '03:01:01'], 'HLA-DPB1': ['04:02', '04:02'], 'HLA-E': ['01:01:01G', '01:03:01G'], 'MICB': ['004:new', '005:new']}
-    self_name = "004:new"
+
+    befund = {'HLA-A': ['03:01:01G', '25:01:01G'], 'HLA-B': ['35:01:01G', '40:01:01G'],
+              'HLA-C': ['03:CZJEH', '04:01:01G'], 'HLA-DRB1': ['01:CWDSV', '13:02:01'],
+              'HLA-DQB1': ['05:CAVTD', '06:BKKPG'], 'HLA-DPB1': ['03:CENAD', '04:DCGFG'],
+              'HLA-E': ['01:03:01G', '01:03:02G'], 'HLA-DPA1': ['01:CESVC', '01:CESVC'],
+              'HLA-DQA1': ['01:CAVSX', '01:CAVSY'], 'MICA': ['002:01/002:02/110', '008:01/008:03/008:04'],
+              'MICB': ['004:01/028', '014:01/015'], 'KIR2DL1': ['00101/00201'], 'KIR2DL2': ['00301'],
+              'KIR2DL3': ['00201'], 'KIR2DL4': ['00501', '00802'], 'KIR2DL5A': ['00101/00104/01201/01202|NEG'],
+              'KIR2DL5B': ['00601/00602/00603/00801/00803/00804/00805|NEG'], 'KIR2DP1': ['00301'], 'KIR2DS1': ['POS'],
+              'KIR2DS2': ['00101/002|00101'], 'KIR2DS3': ['NEG'], 'KIR2DS4': ['00601'], 'KIR2DS5': ['00201'],
+              'KIR3DL1': ['00401'], 'KIR3DL2': ['POS'], 'KIR3DL3': ['POS'], 'KIR3DP1': ['001/00302/004/00901', '01501'],
+              'KIR3DS1': ['013new']}
+    self_name = "013new"
     closestAllele = "MICB*004:01:01"
     TargetAllele = namedtuple("TargetAllele", "gene target_allele partner_allele")
-    myallele = TargetAllele(gene='MICB', target_allele='MICB*004:new', partner_allele='MICB*005:new')
-    geneMap =  {'gene': ['HLA', 'KIR'], 'targetFamily': 'HLA'}
-    differencesText =  "CC   MICB*004:new differs from MICB*004:01:01 like so : [...]" 
+    myallele = TargetAllele(gene='KIR3DS1', target_allele='KIR3DS1*0130101:new', partner_allele='KIR3DS1*0130101 or 3DS1*0130101')
+    geneMap = {'gene': ['HLA', 'KIR'], 'targetFamily': 'KIR'}
+    differencesText = "CC   KIR3DS1*013new differs from KIR3DS1*0130101 like so : Mismatches = pos 1158 in codon 375 (AGG -> AGA);. "
 
     make_befund_text(befund, self_name, myallele, closestAllele, geneMap, differencesText, log)
