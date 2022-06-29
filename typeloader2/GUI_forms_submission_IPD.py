@@ -606,24 +606,24 @@ class IPDSubmissionForm(CollapsibleDialog):
         """creates pretypings file from oracle database
         """
         try:
-            success, pretypings_file, samples_not_found = get_pretypings_from_oracledb(self.project, self.local_cf,
-                                                                                       self.settings, self.log, self)
+            success, pretypings_file, problems = get_pretypings_from_oracledb(self.project, self.local_cf,
+                                                                              self.settings, self.log, self)
         except Exception as E:
             self.log.exception(E)
             QMessageBox.warning(self, "Error while generating pretypings file",
                                 "Could not generate the pretypings file:\n\n{}".format(repr(E)))
             success = False
+            problems = []
         if success:
-            if samples_not_found:
+            if problems:
                 QMessageBox.information(self, "Not all pretypings found",
-                                        "Could not find pretypings for the following {} samples: \n- {}".format(
-                                            len(samples_not_found),
-                                            "\n-".join(samples_not_found)))
+                                        "Problems occurred when retrieving the following pretypings: \n- {}".format(
+                                            "\n- ".join(problems)))
 
             try:
                 suggested_path = os.path.join(self.settings["default_saving_dir"], "pretypings.csv")
                 chosen_path = \
-                QFileDialog.getSaveFileName(self, "Download generated pretypings file...", suggested_path)[0]
+                    QFileDialog.getSaveFileName(self, "Download generated pretypings file...", suggested_path)[0]
                 self.log.info("Saving generated pretypings file under {}...".format(chosen_path))
                 shutil.copy(pretypings_file, chosen_path)
                 self.befund_widget.field.setText(chosen_path)
