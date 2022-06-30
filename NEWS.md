@@ -1,5 +1,8 @@
 # Version History
 
+## 2.13.1 (2022-06-29)
+- Bugfix for internal: handle invalid KIR2DL5 pretypings in the local db (#219)
+
 ## 2.13.0 (2022-06-01)
 ### Backend:
 - now uses Python 3.10 (#215)

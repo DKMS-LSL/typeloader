@@ -185,9 +185,6 @@ def call_procedure(procname: str,
         log.error(f"The following exception occurred when executing {procname}: ")
         log.error(E)
         log.exception(E)
-        conn = cursor.connection
-        cursor.close()
-        conn.close()
         return success, None
 
 pass
@@ -237,8 +234,9 @@ def split_2DL5AB(GL, cursor, log):
         B_alleles = B.replace("2DL5B*", "")
     else:
         log.info("\t=> Procedure call did not work. :-(")
-        A_alleles = ""
-        B_alleles = ""
+        log.info(f"Input-GL was {GL}")
+        A_alleles = "ERROR"
+        B_alleles = "ERROR"
 
     return A_alleles, B_alleles
 
@@ -370,6 +368,7 @@ def get_pretypings_from_limsrep(input_params, local_cf, log):
     # reformat data:
     log.info("Reformatting sample infos...")
     sample_dic = {}
+    problems = []
     not_found = []
     for i, result in enumerate(data_samples):
         if result:
@@ -377,6 +376,7 @@ def get_pretypings_from_limsrep(input_params, local_cf, log):
             sample_dic[sample_id_int] = [sample_id_int, sample_id_ext, client]
         else:
             [sample_id_int] = samples[i]
+            problems.append(f"{sample_id_int}: no pretypings found, ignoring")
             not_found.append(sample_id_int)
     
     log.info("Reformatting pretypings...")
@@ -388,12 +388,16 @@ def get_pretypings_from_limsrep(input_params, local_cf, log):
             if not sample_id_int in not_found:
                 log.info("\t{}...".format(sample_id_int))
                 pretypings[sample_id_int] = reformat_pretypings(allele_data, gene, cursor, log)
+                for col in sorted(pretypings[sample_id_int]):
+                    pretyping = pretypings[sample_id_int][col]
+                    if pretyping == "ERROR":
+                        problems.append(f"{sample_id_int}: could not handle {col}, please fix manually!")
     except Exception:
         close_connection(conn, cursor, log)
         raise
     close_connection(conn, cursor, log)
     log.info("=> reformatting complete!")
-    return pretypings, sample_dic, not_found
+    return pretypings, sample_dic, problems
 
 
 def write_pretypings_file(pretypings, samples, output_file, log):
@@ -468,15 +472,17 @@ def read_local_settings(log):
 def main(log):
     from GUI_login import get_settings
 
-    alleles = [["ID17530942", "KIR2DL5B"]
+    alleles = [['ID20271311', 'KIR3DS1'],
+               ['ID20284746', 'KIR3DS1'],
+               ['IDblubb', 'KIR3DS1'],
                ]
     local_cf = read_local_settings(log)
-    pretypings, samples, not_found = get_pretypings_from_limsrep(alleles, local_cf, log)
+    pretypings, samples, problems = get_pretypings_from_limsrep(alleles, local_cf, log)
 
     for sample in pretypings:
         for col in pretypings[sample]:
-            if col.startswith("KIR2DL5"):
-                print(col, pretypings[sample][col])
+            print(col, pretypings[sample][col])
+    print(problems)
 
     # typing = "00101A/00104A/00601B/00602B/00603B/00801B/00803B/01201A/01202A"
     # split_2DL5AB(typing, log)
