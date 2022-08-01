@@ -27,4 +27,4 @@ typeloader2/installer*
 /.runtest/
 /typeloader2/typeloader_installer_new.nsi
 /.idea/
-
+*.log

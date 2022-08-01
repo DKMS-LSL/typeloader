@@ -107,8 +107,9 @@ settings_both = {"reference_dir": "reference_data_unittest",
                  "ipd_submissions": "IPD-submissions",
                  }
 
-log = general.start_log(level="DEBUG")
+log = general.start_log(level="DEBUG", info_to_file="typeloader_tests.log")
 __version__ = general.read_package_variable("__version__")
+log.info(f"Running TypeLoader tests for version {__version__}...")
 # assemble settings for testing:
 cf = ConfigParser()
 cf.read(os.path.join(mypath_inner, base_config_file))
