@@ -45,7 +45,7 @@ if sys.platform == "win32":
     base = "Win32GUI"
 
 setup(name="TypeLoader",
-      version="2.13.0",
+      version="2.13.2",
       description="TypeLoader",
       package_dir={"": "."},
       options={"build_exe": build_exe_options},
