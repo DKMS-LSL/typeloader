@@ -20,8 +20,7 @@ import general
 # ===========================================================
 # parameters:
 
-NEW_VERSION = "2.13.0"
-#BUILD_DIR = r"build/exe.win32-3.6"
+NEW_VERSION = "2.13.2"
 BUILD_DIR = r"build/exe.win-amd64-3.10"
 
 INSTALLER_SCRIPT = "typeloader_installer.nsi"

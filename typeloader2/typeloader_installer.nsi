@@ -4,7 +4,7 @@
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "TypeLoader"
-!define PRODUCT_VERSION "2.13.0"
+!define PRODUCT_VERSION "2.13.2"
 !define PRODUCT_PUBLISHER "DKMS Life Science Lab GmbH"
 !define PRODUCT_WEB_SITE "https://github.com/DKMS-LSL/typeloader"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\typeloader.exe"
@@ -18220,7 +18220,8 @@ Section "MainSection" SEC01
   File "build\exe.win-amd64-3.10\blastn\MSVCR120.dll"
   SetOutPath "$INSTDIR"
   SetOutPath "$INSTDIR\ENA_Webin_CLI"
-  File "build\exe.win-amd64-3.10\ENA_Webin_CLI\webin-cli-4.4.0.jar"
+  File "build\exe.win-amd64-3.10\ENA_Webin_CLI\webin-cli-5.0.0.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.4.0.jar"
   SetOutPath "$INSTDIR\icons"
   File "build\exe.win-amd64-3.10\icons\construction.png"
   File "build\exe.win-amd64-3.10\icons\done4.png"
@@ -24627,6 +24628,8 @@ Section Uninstall
   Delete "$INSTDIR\lib\win32com\test\testPyScriptlet.js"
   Delete "$INSTDIR\lib\win32com\test\testxslt.js"
   Delete "$INSTDIR\lib\win32com\test\testxslt.xsl"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-5.0.0.jar"
+
   RMDir "$INSTDIR\lib\certifi"
 
   Delete "$INSTDIR\python310.dll"

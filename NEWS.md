@@ -1,5 +1,9 @@
 # Version History
 
+## 2.13.2 (2022-08-31)
+### Backend:
+- update ENA webin CLI to 5.0.0 because of upcoming deprecation (#225)
+
 ## 2.13.1 (2022-06-29)
 - Bugfix for internal: handle invalid KIR2DL5 pretypings in the local db (#219)
 
