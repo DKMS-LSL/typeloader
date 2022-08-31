@@ -1,0 +1,49 @@
+# <type>(optional scope)!: (If applied, this commit will...) <subject> [ISSUE-ID]
+# |<----  Using a Maximum Of 50 Characters  ---->|
+
+
+# --------------------
+# <type> can be
+#    feature       new feature
+#    fix           bug fix
+#    build         Changes to the build system or external dependencies
+#    refactor      refactoring production code
+#    release       marks a commit with version bump
+#    remove        removes a feature
+#    style         formatting, missing semi colons, etc; no code change
+#    docs          changes to documentation
+#    output        output of R scripts; no code change
+#    test          adding or refactoring tests; no production code change
+#    chore         updating grunt tasks etc; no production code change
+#    ci            changes to continuous integration system
+# --------------------
+# Explain why this change is being made
+# |<----   Try To Limit Each Line to a Maximum Of 72 Characters   ---->|
+
+
+# Provide links or keys to any relevant tickets, articles or other resources
+# Categorize relevant issues
+# Relates to #YT-2, #YT-3
+# ^YT-1 Status <start progress>/<finish implementation> | Closes #1
+
+
+# Provide hints to automatically generate changelogs
+# Changelog: <entry>
+
+# --------------------
+# <entry> can be
+#    added         for new features
+#    changed       for changes in existing functionality
+#    deprecated    for soon-to-be removed features
+#    removed       for now removed features
+#    fixed         for any bug fixes
+#    security      in case of vulnerabilities
+# --------------------
+# Remember to
+#  - Capitalize the subject line
+#  - Use the imperative mood in the subject line
+#  - Do not end the subject line with a period
+#  - Separate subject from body with a blank line
+#  - Use the body to explain what and why vs. how
+#  - Can use multiple lines with "-" for bullet points in body
+# --------------------
