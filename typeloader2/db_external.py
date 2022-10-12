@@ -206,41 +206,6 @@ def split_GL_string(GL_string):
             return alleles
     
 
-def split_2DL5AB(GL, cursor, log):
-    """
-    splits the KIR2DL5 GL-string into 2 separate GL strings for 2DL5A and 2DL5B
-
-    :param GL: GL-string for KIR2DL5, combining both A and B
-    :param cursor: cursor to a connection to the nextype archive
-    :param log: logger instance
-    """
-    log.info("Splitting 2DL5-alleles...")
-
-    proc_name = "GL_STRINGS_MGMT.SPLIT_GL_STRING_2DL5@ngsa"
-    proc_params = [GL]
-    proc_params2 = [2, "KIR", "J", "J", "2DL5", "J", "2DL5", "N"]
-    success, values = call_procedure(proc_name, proc_params, 2, proc_params2, cursor, log)
-    if success:
-        log.info("\t=> Success!")
-        [part1, part2] = values
-        if "2DL5A" in part1:
-            A = part1
-            B = part2
-        else:
-            A = part2
-            B = part1
-
-        A_alleles = A.replace("2DL5A*", "")
-        B_alleles = B.replace("2DL5B*", "")
-    else:
-        log.info("\t=> Procedure call did not work. :-(")
-        log.info(f"Input-GL was {GL}")
-        A_alleles = "ERROR"
-        B_alleles = "ERROR"
-
-    return A_alleles, B_alleles
-
-
 def fill_pretypings_dic(mylocus, alleles, pretypings_dic):
     """ add data of one locus to pretypings_dic, separated into 4 columns for 4 possible alleles
     """
@@ -318,20 +283,17 @@ def reformat_pretypings(allele_data, gene, cursor, log, fields = 2):
             if mylocus != gene:
                 GL = "POS"
         if mylocus == "KIR2DL5":
-            alleles = [GL]  # keep GL intact and split later by A and B
+            alleles = "unknown"  # keep GL intact and split later by A and B
         else:
             alleles = split_GL_string(GL)
         fill_pretypings_dic(mylocus, alleles, pretypings_dic)
 
     # postprocessing for 2DL5A/B:
-    if "KIR2DL5-1" in pretypings_dic:  # if pretypings contain 2DL5
-        GL = pretypings_dic["KIR2DL5-1"]
-        GLs = split_2DL5AB(GL, cursor, log)  # list of GL strings separated by A and B
-        loci = ["KIR2DL5A", "KIR2DL5B"]
-
-        for i in range(len(GLs)):
-            alleles = split_GL_string(GLs[i])
-            fill_pretypings_dic(loci[i], alleles, pretypings_dic)
+    if "KIR2DL5-1" in pretypings_dic:  # if pretypings contain 2DL5, separate into 2DL5A/B
+        for gene in ["KIR2DL5A", "KIR2DL5B"]:
+            pretypings_dic[f"{gene}-1"] = "unknown"
+            for n in range(2, 5):
+                pretypings_dic[f"{gene}-{n}"] = ""
 
         for col in ["KIR2DL5-1", "KIR2DL5-2", "KIR2DL5-3", "KIR2DL5-4"]:
             pretypings_dic.pop(col, None)
