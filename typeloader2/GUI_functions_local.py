@@ -124,7 +124,7 @@ def make_fake_ENA_file(project, log, settings, basis="local_name", parent=None):
     gene_dic = {}
     for g in ["HLA-A", "HLA-B", "HLA-C", "HLA-DRB1", "HLA-DQB1", "HLA-DPB1", "HLA-E",
               "HLA-F", "HLA-G", "HLA-H", "HLA-J", "HLA-K",
-              "HLA-DMA", "HLA-DMB", "HLA-DOA", "HLA-DOB"
+              "HLA-DMA", "HLA-DMB", "HLA-DOA", "HLA-DOB", "HLA-DQA1", "HLA-DPA1"
               ]:
         mycolumns = [f"{g}_1", f"{g}_2"]
         gene_dic[g] = mycolumns
