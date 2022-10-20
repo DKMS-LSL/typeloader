@@ -1,11 +1,15 @@
 # Version History
 
 ## 2.13.2 (2022-08-31)
+### Bugfixes for local:
+- set KIR2DL5 pretypings to "unknown" to avoid phasing ambiguities (#230)
+- add DQA1 and DPA1 to pretypings (#228)
+
 ### Backend:
-- update ENA webin CLI to 5.0.0 because of upcoming deprecation (#225)
+- update ENA webin CLI to 5.1.0 (#231)
 
 ## 2.13.1 (2022-06-29)
-- Bugfix for internal: handle invalid KIR2DL5 pretypings in the local db (#219)
+- Bugfix for local: handle invalid KIR2DL5 pretypings in the local db (#219)
 
 ## 2.13.0 (2022-06-01)
 ### Backend:
