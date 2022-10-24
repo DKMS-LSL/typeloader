@@ -51,8 +51,13 @@ def rebuild_exe(log):
 
     # re-build:
     log.info("\tRe-building...")
-    subprocess.call(["poetry", "run", "python", "setup.py", "build"], shell=True)
-    log.info("\t\t=> Success!")
+    ret_code = subprocess.call(["poetry", "run", "python", "setup.py", "build"], shell=True)
+    if ret_code == 0:
+        log.info("\t\t=> Success!")
+        return True
+    else:
+        log.error("\t\tBuild failed!")
+        return False
 
 
 def gather_files(build_dir, log):
@@ -275,17 +280,19 @@ def wrap_up_and_compile_installer(changes, log):
 def main(log):
     rebuild = general.confirm("Should I completely rebuild the TypeLoader.exe?")
     if rebuild:
-        rebuild_exe(log)
+        success = rebuild_exe(log)
     else:
         log.info("\t=> User chose not to re-build")
+        success = True
 
-    missing_files, deprecated_files, = check_old_script_for_consistency_with_new_files(log)
-    changes = False
-    if missing_files or deprecated_files:
-        changes = True
-    adjust_installer(missing_files, deprecated_files, log)
+    if success:
+        missing_files, deprecated_files, = check_old_script_for_consistency_with_new_files(log)
+        changes = False
+        if missing_files or deprecated_files:
+            changes = True
+        adjust_installer(missing_files, deprecated_files, log)
 
-    wrap_up_and_compile_installer(changes, log)
+        wrap_up_and_compile_installer(changes, log)
     
     general.play_sound(log)
 
