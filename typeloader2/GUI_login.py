@@ -613,7 +613,7 @@ def handle_reference_update(update_me, reference_local_path, blast_path, parent,
     return updated
 
 
-def check_update_needed(reference_local_path, proxy, log, skip_if_updated_today=False):
+def check_update_needed(reference_local_path, proxy, log, skip_if_updated_today=True):
     """check whether any of the references need to be updated (use MD5 check on .dat files)
 
     :param log: logger instance

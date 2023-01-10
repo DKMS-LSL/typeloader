@@ -6,11 +6,12 @@ update_referce.py
 handles updating of the reference data for TypeLoader
 """
 import os
+import datetime
 import re, subprocess, shutil, socket
 import urllib.request
 from urllib.error import URLError
 import hashlib
-from time import time
+from typing import Tuple
 
 if __name__ == "__main__":
     import hla_embl_parser
@@ -53,16 +54,30 @@ def read_remote_file(myurl, proxy, timeout, log, return_binary=False):
     return data
 
 
-def local_file_from_today(local_ref_file, log):
-    """checks last modified date of local file, returns True if it was modified today, else False
+def read_local_md5_checkfile(ref_path: str, db_name: str, log) -> Tuple[str | None, bool]:
+    """Get md5 checksum and last modified date of local reference file.
+
+    Returns Tuple of (md5, modified_today):
+        - md5 = md5 of current .dat file (None if checksum-file not found)
+        - modified_today = True if modified today, else False
     """
-    modify_date = os.path.getmtime(local_ref_file)
-    now = time()
-    diff = now - modify_date
-    if diff < 86400:  # 60 sec * 60 min * 24 h = file from today
-        log.info("\tReference file was already updated today => not updating again")
-        return True
-    return False
+    log.info("\tGetting MD5 checksum of local file...")
+    curr_md5_file = os.path.join(ref_path, f"curr_md5_{db_name}.txt")
+    if not os.path.exists(curr_md5_file):
+        return None, False
+
+    with open(curr_md5_file, "r") as f:
+        line = f.read().strip()
+        [md5, timestamp] = line.split()
+        log.debug(f"\t\t=> MD5 of local file: {md5}")
+        log.debug(f"\t\t=> last updated: {timestamp}")
+
+    today = datetime.datetime.now().strftime('%d.%m.%y')
+    if timestamp == today:
+        log.debug("\t\t=> file already updated today")
+        return md5, True
+
+    return md5, False
 
 
 def get_remote_md5checksum(db_name, IPD_db_name, proxy, log):
@@ -142,7 +157,7 @@ def move_files(ref_path_temp, ref_path, target, log):
 
 
 def check_database(db_name, reference_local_path, proxy, log, skip_if_updated_today=True):
-    """checks IPD Github account for new releases
+    """checks IPD GitHub account for new releases
     """
     log.info("Checking {} for IPD update...".format(db_name.upper()))
     if db_name == "kir":
@@ -151,11 +166,11 @@ def check_database(db_name, reference_local_path, proxy, log, skip_if_updated_to
         use_dbname = db_name
 
     local_reference_file = os.path.join(reference_local_path, "{}.dat".format(use_dbname))
+    local_md5, updated_today = read_local_md5_checkfile(reference_local_path, use_dbname, log)
     if os.path.isfile(local_reference_file):
         if skip_if_updated_today:
-            if local_file_from_today(local_reference_file, log):
+            if updated_today:
                 return False, "Reference file was already updated today"
-        local_md5 = get_local_md5checksum(local_reference_file, log)
 
         remote_md5 = get_remote_md5checksum(db_name, use_dbname, proxy, log)
         if not remote_md5:
@@ -195,13 +210,14 @@ def update_database(db_name, reference_local_path, blast_path, proxy, log, versi
 
     log.debug(f"\tdownloading new file from {remote_db_file}...")
     local_db_file = os.path.join(ref_path_temp, "%s.dat" % use_dbname)
+
     try:
         db_response = read_remote_file(remote_db_file, proxy, 60, log, return_binary=True)
         with open(local_db_file, "wb") as db_local:
             db_local.write(db_response)
         log.debug("\t => successfully downloaded new {} file".format(db_name))
-        md5 = get_local_md5checksum(local_db_file, log)
-        log.debug(f"\t => MD5 of downloaded file: {md5}")
+        local_md5 = get_local_md5checksum(local_db_file, log)
+        log.debug(f"\t => MD5 of downloaded file: {local_md5}")
     except urllib.error.HTTPError:
         msg = f"Sorry, could not find file {remote_db_file}!\n\n" \
               f"Possibly, version {version} of {db_name.upper()} does not exist?"
@@ -210,13 +226,17 @@ def update_database(db_name, reference_local_path, blast_path, proxy, log, versi
         msg = "Reference file took too long to download. :-( Maybe the connection is slow or you need a proxy?"
         return False, msg
 
-    log.debug(f"\t\t=> local MD5 checksum of downloaded file: {get_local_md5checksum(local_db_file, log)}")
     log.debug("\tCreating parsed files...")
     version = hla_embl_parser.make_parsed_files(use_dbname, ref_path_temp, log)
 
     success, msg = make_blast_db(use_dbname, ref_path_temp, blast_path, log)
 
     if success:
+        curr_md5_file = os.path.join(ref_path_temp, f"curr_md5_{use_dbname}.txt")
+        log.debug(f"Writing md5 checksum to local file {curr_md5_file}...")
+        with open(curr_md5_file, "w") as g:
+            g.write(f"{local_md5} {datetime.datetime.now().strftime('%d.%m.%y')}")
+
         update_msg = f"Updated the reference data for {db_name.upper()} to version {version}."
         move_files(ref_path_temp, reference_local_path, db_name, log)
     else:
@@ -326,7 +346,6 @@ def start_log(include_lines=False, error_to_email=False, info_to_file=False,
 
 
 pass
-
 
 # ===========================================================
 # main:
