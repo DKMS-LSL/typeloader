@@ -82,7 +82,7 @@ class NewProjectForm(QDialog):
 
         self.gene_entry = QLineEdit(self)
         self.gene_entry.setFocus()
-        self.gene_entry.setFixedWidth(175)
+        self.gene_entry.setMinimumWidth(175)
         layout.addRow("Gene:", self.gene_entry)
         self.gene_entry.setWhatsThis("The gene analyzed in this project. Use 'mixed' for multiple genes.")
 
