@@ -403,7 +403,7 @@ class Test_1_Create_Project(unittest.TestCase):
         self.assertEqual(root.attrib["success"], "true")
         self.assertEqual(root[0].attrib["accession"], self.form.accession)
         self.assertEqual(root[1].attrib["alias"], self.form.project_name + "_sub")
-        self.assertEqual(root[2][0].text, "This submission is a TEST submission and will be discarded within 24 hours")
+        self.assertEqual(root[2][-1].text, "This submission is a TEST submission and will be discarded within 24 hours")
 
 
 class Test_2_ProjectStatus(unittest.TestCase):

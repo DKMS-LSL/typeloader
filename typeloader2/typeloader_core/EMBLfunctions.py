@@ -165,15 +165,21 @@ def generate_project_xml(title, description, alias, center_name):
 
 
 def generate_submission_project_xml(alias, center_name, project_xml_filename):
-    xml_root = Element('SUBMISSION')
-    xml_root.set('alias', alias)
-    xml_root.set('center_name', center_name)
-    xml_actions = SubElement(xml_root, 'ACTIONS')
-    xml_action = SubElement(xml_actions, 'ACTION')
-    xml_add = SubElement(xml_action, 'ADD')
-    xml_add.set('source', os.path.basename(project_xml_filename))
-    xml_add.set('schema', 'project')
-    return xml_root
+    root = Element('SUBMISSION')
+    root.set('alias', alias)
+    root.set('center_name', center_name)
+
+    actions = SubElement(root, 'ACTIONS')
+    # specify project xml:
+    action1 = SubElement(actions, 'ACTION')
+    add_action = SubElement(action1, 'ADD')
+    add_action.set('source', os.path.basename(project_xml_filename))
+    add_action.set('schema', 'project')
+    # specify immediate release to public:
+    action2 = SubElement(actions, 'ACTION')
+    SubElement(action2, 'RELEASE')
+
+    return root
 
 
 def generate_analysis_xml(title, description, alias, accession, center_name, concat_FF_zip, md5_checksum):
