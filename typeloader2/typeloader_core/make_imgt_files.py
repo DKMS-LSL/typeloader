@@ -7,7 +7,6 @@ from configparser import ConfigParser
 
 from .befundparser import getOtherAlleles
 from .coordinates import getCoordinates
-from .enaemailparser import parse_embl_response
 from .imgt_text_generator import make_imgt_text
 from .errors import BothAllelesNovelError, InvalidPretypingError
 from os import path
@@ -17,13 +16,6 @@ alleleFromEnaRegex = re.compile("(DE(.*?)allele(.*))")
 
 
 # geneMap = {"gene":[hla, kir]}
-
-def parse_email(ena_email_file):
-    # Parse the ENA email to map the cell line numbers (DKMS-LSL-*-*) to the ENA assigned accession numbers
-    # 23.01.2018: get targetFamily from ENA response
-    cellLineEna, gene = parse_embl_response(ena_email_file)
-    return (cellLineEna, gene)
-
 
 def get_cellLine_patient_map(cellLine_patient_file):
     # This file maps the cell lines to the patient ids
@@ -132,7 +124,9 @@ def make_imgt_data(project_dir, samples, file_dic, allele_dic, cellEnaIdMap, gen
     geneMap = {"gene": [settings["gene_hla"], settings["gene_kir"]]}
     (patientBefundMap, customer_dic) = getPatientBefund(befund_csv_file)
     if not patientBefundMap:
-        msg = customer_dic
+        msg = str(customer_dic)
+        if not msg:
+            msg = "Could not read pretypings file!"
         log.warning(msg)
         return False, msg, None
 

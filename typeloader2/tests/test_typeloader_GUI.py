@@ -49,7 +49,7 @@ from PyQt5.QtCore import Qt, QTimer, QModelIndex
 # ===========================================================
 # test parameters:
 
-delete_all_stuff_at_the_end = True  # deletes database entries and project directory
+delete_all_stuff_at_the_end = False  # deletes database entries and project directory
 skip_other_tests = False  # set to True to skip all tests except the current WiP (out-comment it there in setUpClass)
 skip_make_project = False  # set to True to skip initial cleanup and new project creation
 project_name = ""  # this will be set in create project
@@ -66,7 +66,7 @@ samples_dic = {  # samples to test
                  "curr_fasta_file": "DKMS-LSL_ID000001_2DL4_1.fa",
                  "curr_blast_file": "DKMS-LSL_ID000001_2DL4_1.blast.xml",
                  "curr_ipd_befund_file": "Befunde_neu_1.csv",
-                 "curr_ipd_ena_acc_file": "ENA_Accession_2DL4",
+                 "ena_acc": "4ST3TSE6",
                  "id_int": "ID000001",
                  "id_ext": "DEDKM000001",
                  "submission_id": "1111"},
@@ -83,17 +83,17 @@ samples_dic = {  # samples to test
                  "curr_blast_file": "DKMS-LSL_ID14278154_A_1.blast.xml",
                  "curr_gendx_file": "DKMS-LSL_ID14278154_A_1.xml",
                  "curr_ipd_befund_file": "Befunde_A_WDH.csv",
-                 "curr_ipd_ena_acc_file": "AccessionNumbers_A_WDH",
                  "id_int": "ID14278154",
                  "id_ext": "1348480",
                  "submission_id": "2222"},
     "sample_3": {"input_dir_origin": "confirmation_file",
                  "local_name": "DKMS-LSL_ID15390636_3DP1_1",
                  "cell_line": "DKMS-LSL_ID15390636",
+                 "gene": "HLA-DPB1",
                  "curr_ipd_befund_file": "Befunde_3DP1_1.csv",
-                 "curr_ipd_ena_acc_file": "ENA_Accession_3DP1_1",
                  "blast_file_name": "DKMS-LSL_ID15390636_3DP1_1.blast.xml",
                  "ena_file_name": "DKMS-LSL_ID15390636_3DP1_1.ena.txt",
+                 "ena_acc": "LT986495",
                  "id_int": "ID15390636",
                  "id_ext": "1370324_A",
                  "submission_id": "3333",
@@ -954,17 +954,17 @@ class Test_Send_To_IMGT(unittest.TestCase):
         """
         # click to proceed to section 2
         self.form.ok_btn1.click()
-        ENA_file = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"],
-                                samples_dic["sample_1"]["input_dir_origin"],
-                                samples_dic["sample_1"]["curr_ipd_ena_acc_file"])
-        log.debug("ENA-file: {}".format(ENA_file))
-        self.form.ENA_file_widget.field.setText(ENA_file)
         befund_file = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"],
                                    samples_dic["sample_1"]["input_dir_origin"],
                                    samples_dic["sample_1"]["curr_ipd_befund_file"])
         log.debug("befund-file: {}".format(befund_file))
         self.form.befund_widget.field.setText(befund_file)
 
+        # mock ENA accession retrieval:
+        self.form.ENA_id_map = {samples_dic["sample_1"]["local_name"]: samples_dic["sample_1"]["ena_acc"]}
+        self.form.ENA_gene_map = {samples_dic["sample_1"]["local_name"]: samples_dic["sample_1"]["gene"]}
+
+        # create IPD files:
         log.debug("Clicking ok_btn2...")
         self.form.ok_btn2.check_ready()
         self.form.ok_btn2.click()
@@ -1069,12 +1069,10 @@ class Test_Send_To_IMGT(unittest.TestCase):
         befund_file = os.path.join(ipd_submission_path, samples_dic["sample_1"]["curr_ipd_befund_file"])
         ipd_output_file = os.path.join(ipd_submission_path,
                                        "DKMS1000" + samples_dic["sample_1"]["submission_id"] + ".txt")
-        ena_acc_file = os.path.join(ipd_submission_path, samples_dic["sample_1"]["curr_ipd_ena_acc_file"])
         output_zip_file = os.path.join(ipd_submission_path, data_content_ipd[0][0] + ".zip")
 
         self.assertTrue(os.path.exists(befund_file))
         self.assertTrue(os.path.exists(ipd_output_file))
-        self.assertTrue(os.path.exists(ena_acc_file))
         self.assertTrue(os.path.exists(output_zip_file))
 
     # @unittest.skip("demonstrating skipping")
@@ -1810,8 +1808,8 @@ class Test_Make_IMGT_Files_py(unittest.TestCase):
             self.file_dic = {
                 samples_dic["sample_3"]["local_name"]: {"blast_xml": samples_dic["sample_3"]["blast_file_name"],
                                                         "ena_file": samples_dic["sample_3"]["ena_file_name"]}}
-            self.ENA_id_map, self.ENA_gene_map = MIF.parse_email(
-                os.path.join(self.data_dir, samples_dic["sample_3"]["curr_ipd_ena_acc_file"]))
+            self.ENA_id_map = {samples_dic["sample_3"]["local_name"]: samples_dic["sample_3"]["ena_acc"]}
+            self.ENA_gene_map = {samples_dic["sample_3"]["local_name"]: samples_dic["sample_3"]["gene"]}
             self.pretypings = os.path.join(self.data_dir, samples_dic["sample_3"]["curr_ipd_befund_file"])
             self.curr_time = time.strftime("%Y%m%d%H%M%S")
             self.subm_id = "IPD_{}".format(self.curr_time)
@@ -1878,12 +1876,11 @@ class TestMakeIMGTFilesWith5PrimeOverhang(unittest.TestCase):
             self.allele_dic = {self.local_name: TargetAllele(gene='KIR2DS3',
                                                              target_allele='KIR2DS3*0020103:new',
                                                              partner_allele='KIR2DS3*0010301')}
+
             self.ENA_id_map = {self.local_name: '15368J48'}
             self.ENA_gene_map = {self.local_name: 'KIR2DS3'}
 
-            self.diff_string = "KIR2DS3*002new differs from KIR2DS3*0020103 like so : Mismatches = pos 447 in codon 128"
-            self.diff_string += " (TGC -> TGA);pos 6267 (G -> T);pos 6303 (T -> C);pos 6307 (T -> G);pos 6390 (G -> A);"
-            self.diff_string += "pos 6392 (A -> G);. Deletions = pos 15069 (T). Insertions = pos 15038 (C)."
+            self.diff_string = "KIR2DS3*002new differs from KIR2DS3*0020103 like so : Mismatches = pos 447 in codon 128 (TGC -> TGA);pos 6267 (G -> T);pos 6303 (T -> C);pos 6307 (T -> G);pos 6390 (G -> A);pos 6392 (A -> G);. Deletions = pos 15069 (T). Insertions = pos 15038 (C)."
 
             typeloader_functions.upload_new_allele_complete(self.project_name, self.sample_id_int, "bla",
                                                             self.fasta_file, "DKMS", curr_settings, mydb, log)
@@ -2217,15 +2214,16 @@ class Test_MIC(unittest.TestCase):
             self.target_allele = "MICA*001:new"
             self.partner_allele = ""
             self.gene = "MICA"
+            self.ena_acc = "CT5H1R7V"
 
             self.data_dir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"],
                                          "MIC")  # input and reference files
             raw_path = os.path.join(self.data_dir, self.fasta_name)
-            self.ena_reply_file = os.path.join(self.data_dir, "fake_ENA_reply.txt")
+            self.ENA_id_map = {self.local_name: self.ena_acc}
+            self.ENA_gene_map = {self.local_name: self.gene}
             self.pretypings = os.path.join(self.data_dir, "fake_befunde.csv")
             self.ref_ipd_file = os.path.join(self.data_dir, "DKMS10005555.txt")
             log.debug("Pretypings file: {}".format(self.pretypings))
-            log.debug("ENA reply file: {}".format(self.ena_reply_file))
 
             self.output_dir = os.path.join(curr_settings["projects_dir"], project_name, self.sample_id_int)
             self.xml_file = "{}.blast.xml".format(self.local_name)
@@ -2265,7 +2263,6 @@ class Test_MIC(unittest.TestCase):
         self.samples = [(self.sample_id_int, self.local_name, self.IPD_filename)]
         self.file_dic = {self.local_name: {"blast_xml": self.xml_file,
                                            "ena_file": self.ena_file}}
-        self.ENA_id_map, self.ENA_gene_map = MIF.parse_email(self.ena_reply_file)
         self.allele_dic = {self.local_name:
                                TargetAllele(self.gene,
                                             target_allele=self.target_allele,
@@ -2310,7 +2307,8 @@ class Test_multiple_novel_alleles_part1(unittest.TestCase):
             self.local_name = 'DKMS-LSL_ID000010_3DP1_1'
             self.input_file = os.path.join(self.mydir, "ID000010.fa")
             self.pretypings = os.path.join(self.mydir, "Befunde.csv")
-            self.ena_response_file = os.path.join(self.mydir, "ENA_reply")
+            self.gene = "KIR3DP1"
+            self.ena_acc = "LT986596"
 
             log.info("Check if allele already uploaded...")
             query = "select sample_id_int from alleles where local_name = '{}'".format(self.local_name)
@@ -2339,6 +2337,8 @@ class Test_multiple_novel_alleles_part1(unittest.TestCase):
 
             # prepare IPDSubmissionForm:
             self.form = IPD.IPDSubmissionForm(log, mydb, self.project_name, curr_settings, parent=None)
+            self.form.ENA_id_map = {self.local_name: self.ena_acc}
+            self.form.ENA_gene_map = {self.local_name: self.gene}
 
     @classmethod
     def tearDownClass(self):
@@ -2356,7 +2356,6 @@ class Test_multiple_novel_alleles_part1(unittest.TestCase):
         self.form.ok_btn1.click()
         # add files:
         log.info("Choosing files...")
-        self.form.ENA_file_widget.field.setText(self.ena_response_file)
         self.form.befund_widget.field.setText(self.pretypings)
         self.form.ok_btn2.check_ready()
         self.form.ok_btn2.click()
@@ -2417,8 +2416,12 @@ class Test_multiple_novel_alleles_part2(unittest.TestCase):
             self.input_file = os.path.join(self.mydir, "ID000010.fa")
             self.pretypings = os.path.join(self.mydir, "Befunde.csv")
             self.ena_response_file = os.path.join(self.mydir, "ENA_reply")
+            self.ena_acc = "LT986596"
+            self.gene = "KIR3DP1"
             # prepare IPDSubmissionForm:
             self.form = IPD.IPDSubmissionForm(log, mydb, self.project_name, curr_settings, parent=None)
+            self.form.ENA_id_map = {self.local_name: self.ena_acc}
+            self.form.ENA_gene_map = {self.local_name: self.gene}
 
     @classmethod
     def tearDownClass(self):
@@ -2429,7 +2432,6 @@ class Test_multiple_novel_alleles_part2(unittest.TestCase):
         """test if target allele with multiple novel alleles according to pretyping
         but unfitting target_allele/partner_allele correctly trigger the BothAllelesNovelDialog
         """
-        self.form = IPD.IPDSubmissionForm(log, mydb, self.project_name, curr_settings, parent=None)
         # choose project:
         log.info("Choosing project...")
         self.form.proj_widget.field.setText(self.project_name)
@@ -2437,10 +2439,10 @@ class Test_multiple_novel_alleles_part2(unittest.TestCase):
         self.form.ok_btn1.click()
         # add files:
         log.info("Choosing files...")
-        self.form.ENA_file_widget.field.setText(self.ena_response_file)
         self.form.befund_widget.field.setText(self.pretypings)
         self.form.ok_btn2.check_ready()
         self.form.ok_btn2.click()
+
         # select alleles:
         log.info("Selecting alleles...")
         if not self.form.project_files.check_dic[0].isChecked():
@@ -3303,6 +3305,6 @@ sys.excepthook = log_uncaught_exceptions
 cases = suiteFactory(*caseFactory())
 runner = unittest.TextTestRunner(verbosity=2, failfast=True)
 runner.run(cases)
-general.play_sound(log)
-general.play_sound(log)
-general.play_sound(log)
+# general.play_sound(log)
+# general.play_sound(log)
+# general.play_sound(log)

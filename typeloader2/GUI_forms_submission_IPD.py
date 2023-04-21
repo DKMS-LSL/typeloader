@@ -24,7 +24,7 @@ from PyQt5.Qt import pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QIcon
 
 import general, db_internal
-from typeloader_core import make_imgt_files as MIF
+from typeloader_core import make_imgt_files as MIF, ena_accession_retrieval as EAR
 from GUI_forms import (CollapsibleDialog, ChoiceSection, FileChoiceTable,
                        FileButton, ProceedButton, QueryButton, check_project_open)
 from GUI_forms_submission_ENA import ProjectInfoTable
@@ -338,7 +338,7 @@ class IPDFileChoiceTable(FileChoiceTable):
 		cell_line_old, gene, target_allele, partner_allele
 		from alleles
          join files on alleles.sample_id_int = files.sample_id_int and alleles.allele_nr = files.allele_nr
-        """.format(project)  #TODO: is this format() still necessary or leftover code?
+        """.format(project)  # TODO: is this format() still necessary or leftover code?
         num_columns = 10
         header = ["Submit?", "Nr", "Sample", "Allele", "Allele Status", "ENA submission ID", "IPD submission ID"]
         if parent:
@@ -435,10 +435,15 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.add_filter = ""
         self.title = ""
         self.description = ""
+        self.study_nr = ""
         self.imgt_files = {}
         self.submission_successful = False
         self.accepted = False
         self.multis_handled = False
+        self.ENA_timestamp = ""
+        self.add_filter2 = ""
+        self.ENA_id_map = {}
+        self.ENA_gene_map = {}
         self.show()
         ok, msg = settings_ok("IPD", self.settings, self.log)
         if not ok:
@@ -506,6 +511,25 @@ class IPDSubmissionForm(CollapsibleDialog):
                 self.log.info("\t=> I'll go check, wait here.")
                 return False
 
+    def get_study_nr(self) -> bool:
+        """Retrieve the ENA project ID from the internal database and store it in self.study_nr.
+        """
+        query = f"select ENA_ID_PROJECT from PROJECTS where PROJECT_NAME = '{self.project}'"
+        success, data = db_internal.execute_query(query, 1, self.log,
+                                                  "retrieving the ENA project ID for this project",
+                                                  "Database error", self)
+        if success:
+            try:
+                self.study_nr = data[0][0]
+            except IndexError:
+                print(data)
+                QMessageBox.warning(self, "Database error", "Could not find study nr for this project in database")
+                return False
+            return True
+        else:
+            QMessageBox.warning(self, "Database problem", data)
+            return False
+
     @pyqtSlot(int)
     def proceed_to2(self, _):
         """proceed to next section
@@ -517,6 +541,10 @@ class IPDSubmissionForm(CollapsibleDialog):
             return
 
         self.project = self.proj_widget.field.text()
+        success = self.get_study_nr()
+        if not success:
+            return
+
         proj_open = check_project_open(self.project, self.log, self)
         if not proj_open:
             msg = f"Project {self.project} is currently closed! You cannot create IPD-files from closed projects.\n"
@@ -537,14 +565,6 @@ class IPDSubmissionForm(CollapsibleDialog):
         mywidget.setLayout(layout)
 
         mypath = self.settings["raw_files_path"]
-        ENA_file_btn = FileButton("Upload email attachment from ENA reply", mypath, parent=self)
-        self.ENA_file_widget = ChoiceSection("ENA reply file:", [ENA_file_btn], self, label_width=self.label_width)
-        if self.settings["modus"] == "debugging":
-            self.ENA_file_widget.field.setText(
-                r"H:\Projekte\Bioinformatik\Typeloader\example files\both_new\KIR\invalid_ENA.txt")
-            ENA_file_btn.change_to_normal()
-
-        layout.addWidget(self.ENA_file_widget, 1, 0)
 
         befund_file_btn = FileButton("Choose file with pretypings for each sample", mypath, parent=self)
         self.befund_widget = ChoiceSection("Pretyping file:", [befund_file_btn], self, label_width=self.label_width)
@@ -554,14 +574,14 @@ class IPDSubmissionForm(CollapsibleDialog):
             self.befund_widget.field.setText(
                 r"H:\Projekte\Bioinformatik\Typeloader\example files\both_new\KIR\invalid_pretypings.csv")
             befund_file_btn.change_to_normal()
-        layout.addWidget(self.befund_widget, 2, 0)
+        layout.addWidget(self.befund_widget, 0, 0, 3, 1)
 
-        self.ok_btn2 = ProceedButton("Proceed", [self.ENA_file_widget.field, self.befund_widget.field], self.log, 0)
+        self.ok_btn2 = ProceedButton("Proceed", [self.befund_widget.field], self.log, 0)
         self.proj_widget.choice.connect(self.ok_btn2.check_ready)
         self.befund_widget.choice.connect(self.ok_btn2.check_ready)
-        layout.addWidget(self.ok_btn2, 1, 1, 3, 1)
+        layout.addWidget(self.ok_btn2, 2, 1)
         self.ok_btn2.proceed.connect(self.proceed_to3)
-        self.sections.append(("(2) Upload ENA reply file:", mywidget))
+        self.sections.append(("(2) Upload pretypings file:", mywidget))
 
         # add hidden button to create fake ENA response & fake pretyping file:
         local_user, self.local_cf = check_local(self.settings, self.log)
@@ -572,34 +592,37 @@ class IPDSubmissionForm(CollapsibleDialog):
             layout.addWidget(self.pretypings_btn, 1, 1)
 
             if check_nonproductive(self.settings):  # only visible for non-productive LSL users
-                self.fake_btn = QPushButton("Generate fake input files")
+                self.fake_btn = QPushButton("Generate fake input")
                 self.fake_btn.setStyleSheet(general.btn_style_local)
-                self.fake_btn.clicked.connect(self.create_fake_input_files)
+                self.fake_btn.clicked.connect(self.create_fake_input_file)
                 layout.addWidget(self.fake_btn, 0, 1)
 
     @pyqtSlot()
-    def create_fake_input_files(self):
-        """creates a fake ENA reply file & pretypinsg file
+    def create_fake_input_file(self):
+        """creates a fake pretypinsg file
         which can be used to create fake IPD files of any alleles in this project;
         this functionality can be used to create IPD formatted files for alleles 
          that have not been submitted to ENA or have not received an ENA identifier, yet
         """
-        self.log.info("Creating fake ENA response file & fake pretypings file...")
+        self.log.info("Creating fake pretypings file...")
         try:
-            success, ena_file, pretypings_file = make_fake_ENA_file(self.project, self.log, self.settings, "local_name",
-                                                                    self)
+            success, pretypings_file, self.ENA_id_map, self.ENA_gene_map = make_fake_ENA_file(self.project,
+                                                                                              self.log,
+                                                                                              self.settings,
+                                                                                              "local_name",
+                                                                                              self)
         except Exception as E:
             self.log.exception(E)
             QMessageBox.warning(self, "Problem", "Could not generate fake files:\n\n{}".format(repr(E)))
             success = False
+            pretypings_file = "None"
 
         if success:
-            self.ENA_file_widget.field.setText(ena_file)
             self.befund_widget.field.setText(pretypings_file)
             self.fake_btn.setStyleSheet(general.btn_style_normal)
             self.ok_btn2.check_ready()
         else:
-            QMessageBox.warning(self, ena_file, pretypings_file)
+            QMessageBox.warning(self, pretypings_file)
 
     @pyqtSlot()
     def get_pretypings(self):
@@ -635,25 +658,42 @@ class IPDSubmissionForm(CollapsibleDialog):
                 self.pretypings_btn.setChecked(False)
             self.ok_btn2.check_ready()
 
-    def parse_ENA_file(self):
-        """parses the ENA reply file,
-        stores results and adjusts filter for IPDFileChoiceTable
+    def get_ENA_accessions(self):
+        """Retrieve the accession numbers of this project from ENA's server,
+        store results and adjust filter for IPDFileChoiceTable.
         """
-        self.ENA_reply_file = self.ENA_file_widget.field.text().strip()
-        self.ENA_timestamp = general.get_file_creation_date(self.ENA_reply_file, self.settings, self.log)
-        self.ENA_id_map, self.ENA_gene_map = MIF.parse_email(self.ENA_reply_file)
+        self.ENA_timestamp = general.timestamp("%Y-%m-%d")
+        if self.ENA_id_map:
+            self.log.info("Using self-generated fake ENA IDs...")
+        else:
+            self.log.info("Retrieving ENA accession numbers from ENA server...")
+            results = self._get_ENA_results_from_server()
+            if results[0]:  # retrieval successful
+                self.ENA_id_map, self.ENA_gene_map = results
+            else:
+                msg = results[1]
+                QMessageBox.warning(self, "ENA Accession Error", msg)
+                return False
+
         key = "', '".join(sorted(self.ENA_id_map.keys()))
         self.add_filter = " and alleles.local_name in ('{}')".format(key)
         self.add_filter2 = " and alleles.cell_line_old in ('{}')".format(key)
+        return True
+
+    def _get_ENA_results_from_server(self):
+        return EAR.get_ENA_results(self.study_nr, self.log)
 
     @pyqtSlot(int)
     def proceed_to3(self, _):
         """proceed to next section
         """
         self.log.debug("proceed_to_3")
-        self.parse_ENA_file()
-        self.refresh_section3()
-        self.proceed_sections(1, 2)
+        success = self.get_ENA_accessions()
+        if success:
+            self.refresh_section3()
+            self.proceed_sections(1, 2)
+        else:
+            self.close()
 
     def refresh_section3(self, keep_choices=False):
         """refreshes data in section3 after project has been changed
@@ -776,7 +816,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         os.makedirs(mydir, exist_ok=True)
 
         try:
-            for myfile in [self.ENA_reply_file, self.pretypings]:
+            for myfile in [self.pretypings]:
                 new_path = os.path.join(mydir, os.path.basename(myfile))
                 shutil.copy(myfile, new_path)
                 myfile = new_path

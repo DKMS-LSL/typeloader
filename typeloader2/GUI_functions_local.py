@@ -91,30 +91,21 @@ def make_fake_ENA_file(project, log, settings, basis="local_name", parent=None):
 
     # write fake ENA file:
     log.info("Writing fake ENA file...")
-    fake_file_ena = os.path.join(settings["login_dir"], "temp", "fake_ENA_reply.txt")
     data2 = []
     kir_contained = False
-    with open(fake_file_ena, "w") as g:
-        for [sample_id_int, cell_line_old, local_name, mygene, target_allele, partner_allele] in data:
-            if basis == "local_name":
-                cell_line = local_name
-            elif basis == "old cell_line":
-                cell_line = cell_line_old
-            log.debug("\t{}...".format(cell_line))
-            data2.append((sample_id_int, cell_line, mygene, target_allele, partner_allele))  # needed for pretyping file
-            fake_ID = typeloader_functions.id_generator(size=8)
-            gene_type = "gene"
-            if mygene in settings["pseudogenes"].split("|"):
-                gene_type = "pseudogene"
-            g.write("ID   {}; SV 1; linear; genomic DNA; STD; XXX; 35 BP.\nXX\n".format(fake_ID))
-            g.write("FH   Key             Location/Qualifiers\nFT   source          1..35\n")
-            g.write('FT                   /cell_line="{}"\n'.format(cell_line))
-            g.write("FT   CDS             join(1..35)\n")
-            g.write('FT                   /{}="{}"\nXX\n'.format(gene_type, mygene))
-            g.write("SQ   Sequence 35 BP; 1267 A; 928 C; 1161 G; 880 T; 0 other;\n")
-            g.write("     gtgacccact gcttgtttct gtcacaggtg aggaa                                35\n//\n")
-            if mygene.startswith("KIR"):
-                kir_contained = True
+
+    # create fake ENA content:
+    log.info("Assembling fake ENA reply content...")
+    ENA_id_map = {}
+    ENA_gene_map = {}
+
+    for [sample_id_int, cell_line_old, local_name, mygene, target_allele, partner_allele] in data:
+        data2.append((sample_id_int, local_name, mygene, target_allele, partner_allele))  # needed for pretyping file
+        fake_ID = typeloader_functions.id_generator(size=8)
+        ENA_gene_map[local_name] = mygene
+        ENA_id_map[local_name] = fake_ID
+        if mygene.startswith("KIR"):
+            kir_contained = True
 
     # write fake pretyping file:
     log.info("Writing fake pretyping-file...")
@@ -198,21 +189,8 @@ def make_fake_ENA_file(project, log, settings, basis="local_name", parent=None):
             myline += ",".join(pretypings) + "\n"
             g.write(myline)
 
-    #     # check generated ENA file: (This will set the alleles' status to "IPD submitted"!)
-    #     log.info("Checking created ENA file...")
-    #     (info_dict, gene_dict) = enaemailparser.parse_embl_response(fake_file_ena)
-    #
-    #     if len(info_dict.keys()) == len(gene_dict) == len(data):
-    #         log.info("Success!")
-    #     else:
-    #         msg = "Numbers are not matching up. Something's wrong!"
-    #         log.warning(msg)
-    #         if parent:
-    #             QMessageBox.warning(parent, "Error while generating fake ENA files", msg)
-
-    log.debug("Fake ENA file: {}".format(fake_file_ena))
     log.debug("Fake Befunde file: {}".format(fake_file_befunde))
-    return True, fake_file_ena, fake_file_befunde
+    return True, fake_file_befunde, ENA_id_map, ENA_gene_map
 
 
 def get_pretypings_from_oracledb(project, local_cf, settings, log, parent=None):

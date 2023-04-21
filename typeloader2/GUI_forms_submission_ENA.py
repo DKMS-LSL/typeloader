@@ -164,6 +164,8 @@ class ENASubmissionForm(CollapsibleDialog):
         self.submission_successful = False
         self.accepted = True
         self.problem_samples = []
+        self.file_dic = {}
+        self.ena_results = {}
         self.show()
 
         ok, msg = settings_ok("ENA", self.settings, self.log)
