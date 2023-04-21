@@ -665,6 +665,7 @@ if __name__ == '__main__':
 
             # implement db bugfixes:
             patches.patch_database(settings_dic, __version__, log)
+            patches.patch_database2(settings_dic, __version__, log)
 
             mydb = create_connection(log, db_file)
 

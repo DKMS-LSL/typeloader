@@ -395,8 +395,65 @@ def patch_database(settings, version, log):
     
     if success:
         update_last_tl_version(settings, version, log)
-    
-    
+
+
+# ================================================
+# new patch in V2.14.0: add country and collection date
+
+def add_date_and_country_to_SAMPLES(conn, cursor, log):
+    """table SAMPLES: adds missing columns country + collection_date
+    """
+    log.info("Checking if columns already present...")
+
+    checkup_query = "PRAGMA table_info(samples)"
+    data = db_internal.query_database(checkup_query, None, log, cursor)
+    columns = [row[1] for row in data]
+
+    if not "COUNTRY" in columns:
+        log.info("Adding columns country + collection_date to table SAMPLES...")
+        for column in ["COUNTRY", "COLLECTION_DATE"]:
+            add_query = f"ALTER TABLE samples add column {column} TEXT"
+            cursor.execute(add_query)
+        conn.commit()
+    else:
+        log.info("\t=> already there, no patching needed")
+
+    log.info("\t=> Done")
+
+
+def patch_database2(settings, version, log):
+    """patches the SQLite database of the current user (Version 2.14)
+    """
+    log.info("Patching database for spatiotemporal fields if necessary...")
+
+    try:
+        last_patched_tl_version = settings["last_tl_version"]
+    except KeyError:
+        last_patched_tl_version = ""
+    if last_patched_tl_version > "2.13.2":
+        log.info("\t=> database up to date")
+        return
+    log.info("\t=> patching needed!")
+
+    try:
+        conn, cursor = db_internal.open_connection(settings["db_file"], log)
+
+        add_date_and_country_to_SAMPLES(conn, cursor, log)
+        log.info("Everything patched successfully!")
+
+        cursor.close()
+        conn.close()
+        success = True
+        log.info("Connection closed.")
+    except Exception as E:
+        log.exception(E)
+        log.error(E)
+        success = False
+
+    if success:
+        update_last_tl_version(settings, version, log)
+
+
 pass
 #===========================================================
 # main:
@@ -436,16 +493,17 @@ if __name__ == '__main__':
     log = general.start_log(level="DEBUG")
     log.info("<Start patches.py>")
     app = QApplication(sys.argv)
-    cf = GUI_login.get_basic_cf()
-    root_path = cf.get("Paths", "root_path")
-    patchme = check_patching_necessary(root_path, log)
-    if patchme:
-        request_user_input(root_path, app, log)
-        execute_patches(root_path, log)
+    # cf = GUI_login.get_basic_cf()
+    # root_path = cf.get("Paths", "root_path")
+    # patchme = check_patching_necessary(root_path, log)
+    # if patchme:
+    #     request_user_input(root_path, app, log)
+    #     execute_patches(root_path, log)
 
-#     settings = GUI_login.get_settings("admin", log)
-#     prepare_fresh_file_for_debugging(settings, log)
-#     patch_database(settings, __version__, log)
+    settings = GUI_login.get_settings("admin", log)
+    # prepare_fresh_file_for_debugging(settings, log)
+    # patch_database(settings, __version__, log)
+    patch_database2(settings, __version__, log)
     
     log.info("<End patches.py>")
     
