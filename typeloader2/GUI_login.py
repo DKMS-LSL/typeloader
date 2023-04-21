@@ -610,6 +610,13 @@ def handle_reference_update(update_me, reference_local_path, blast_path, parent,
 
     update_curr_versions(settings, log)
 
+    # also update list of countries:
+    if update_me:
+        success, msg = update_reference.update_country_data(reference_local_path, settings["proxy"], log)
+        if not success:
+            if parent:
+                QMessageBox.warning(parent, "Metadata reference update failed", msg)
+
     return updated
 
 

@@ -6,12 +6,14 @@ update_referce.py
 handles updating of the reference data for TypeLoader
 """
 import os
+from pathlib import Path
 import datetime
 import re, subprocess, shutil, socket
 import urllib.request
 from urllib.error import URLError
 import hashlib
 from typing import Tuple
+import logging
 
 if __name__ == "__main__":
     import hla_embl_parser
@@ -32,6 +34,9 @@ remote_checksumfile_index = {
     "kir_checksums_file": "https://raw.githubusercontent.com/DKMS-LSL/IPDKIR/Latest/md5checksum.txt",
     "hla_checksums_file": "https://raw.githubusercontent.com/DKMS-LSL/IMGTHLA/Latest/md5checksum.txt"
 }
+
+COUNTRY_URL = "https://raw.githubusercontent.com/DKMS-LSL/typeloader_reference_parser/master/data/countries.csv"
+COUNTRY_FILE = "collection_country_options.csv"
 
 
 def read_remote_file(myurl, proxy, timeout, log, return_binary=False):
@@ -273,6 +278,30 @@ def make_restricted_db(db_name, ref_path, restricted_to, target_dir, blast_path,
     return success, msg
 
 
+def update_country_data(target_dir: str, proxy: str, log: logging.Logger) -> Tuple[bool, str | None]:
+    """Get current list of possible countries from GitHub and store them locally.
+
+    Returns tuple:
+        - success (bool)
+        - error message (if any encountered, else None)
+    """
+    log.info("Retrieving current country list...")
+    try:
+        data = read_remote_file(COUNTRY_URL, proxy=proxy, timeout=20, log=log)
+    except Exception as E:
+        return False, f"Could not retrieve list of possible countries from {COUNTRY_URL}:\n\n{E}"
+
+    log.info("Updating local file...")
+    country_file = Path(target_dir) / COUNTRY_FILE
+
+    with open(country_file, "w") as g:
+        g.write(data)
+    log.info("Success!")
+    return True, None
+
+
+# ========================================================
+
 def start_log(include_lines=False, error_to_email=False, info_to_file=False,
               debug_to_file=False,
               elaborate=False, level="DEBUG"):
@@ -280,7 +309,7 @@ def start_log(include_lines=False, error_to_email=False, info_to_file=False,
     if log file is wanted, info_to_file should be the log file destination (path/filename);
     default logging level is set to DEBUG
     """
-    import logging, socket, os
+    import socket
 
     script_name = os.path.basename(__file__)
     log = logging.getLogger(script_name)
@@ -367,9 +396,6 @@ pass
 if __name__ == '__main__':
     log = start_log(level="DEBUG")
     log.info("<Start>")
-    blast_path = r"C:\Daten\local_tools\blast\bin"
-    reference_local_path = r"C:\Daten\local_data\TypeLoader\_general\reference_data"
-    proxy = "10.78.205.144:3128"
-
-    success, msg = update_database("hla", reference_local_path, blast_path, proxy, log, version="3390")
-    print(success, msg)
+    # proxy = "10.78.205.144:3128"
+    reference_dir = r"\\nasdd12\daten\data\Typeloader\_general\reference_data"
+    update_country_data(reference_dir, None, log)
