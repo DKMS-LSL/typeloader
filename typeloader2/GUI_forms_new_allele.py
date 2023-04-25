@@ -13,7 +13,7 @@ widgits for adding new sequences or new projects to TypeLoader
 # import modules:
 
 import sys, os
-import re
+from collections import defaultdict
 
 from PyQt5.QtWidgets import (QApplication, QGroupBox, QMessageBox,
                              QGridLayout, QFormLayout, QVBoxLayout,
@@ -60,10 +60,14 @@ class QueryBox(QDialog):
     """
     sample_data = pyqtSignal(str, str, str, str)
 
-    def __init__(self, log, settings, parent=None):
+    def __init__(self, log, settings, header_data=None, parent=None):
         super().__init__()
         self.settings = settings
         self.log = log
+        if header_data:
+            self.header_data = header_data
+        else:
+            self.header_data = defaultdict(None)
         self.init_UI()
         self.setWindowIcon(QIcon(general.favicon))
         if self.settings["modus"] == "debugging":
@@ -75,10 +79,10 @@ class QueryBox(QDialog):
         self.setLayout(layout)
         self.title = "Add sample information"
 
-        self.sample_int_field = QLineEdit(self)
+        self.sample_int_field = QLineEdit(self.header_data["SAMPLE_ID_INT"], self)
         layout.addRow(QLabel("Internal Sample-ID:"), self.sample_int_field)
 
-        self.sample_ext_field = QLineEdit(self)
+        self.sample_ext_field = QLineEdit(self.header_data["Spendernummer"], self)
         layout.addRow(QLabel("External Sample-ID:"), self.sample_ext_field)
 
         layout.addRow(QLabel(""))
@@ -91,9 +95,13 @@ class QueryBox(QDialog):
         countries = typeloader.assemble_country_list(self.settings, self.log)
         self.sample_provenance_field.addItems(countries)
         layout.addRow(QLabel("Sample Provenance:"), self.sample_provenance_field)
+        self.sample_provenance_field.setCurrentText(self.header_data["provenance"])
 
-        self.sample_date_field = QLineEdit(self)
-        self.sample_date_field.setPlaceholderText("at least the year; format YYYY-MM-DD")
+        if self.header_data["collection_date"]:
+            self.sample_date_field = QLineEdit(self.header_data["collection_date"], self)
+        else:
+            self.sample_date_field = QLineEdit(self)
+            self.sample_date_field.setPlaceholderText("at least the year; format YYYY-MM-DD")
         layout.addRow(QLabel("Date of Sample Collection:"), self.sample_date_field)
 
         self.ok_btn = QPushButton("Done", self)
@@ -125,10 +133,12 @@ class QueryBox(QDialog):
         """for debugging & development: generate random IDs & put them in QueryBox fields
         """
         import string
-        sample_ID = "ID1" + typeloader.id_generator(7, string.digits)
-        self.sample_int_field.setText(sample_ID)
-        spender = "DEDKM" + typeloader.id_generator(7, string.digits)
-        self.sample_ext_field.setText(spender)
+        if not self.sample_int_field.text():
+            sample_ID = "ID1" + typeloader.id_generator(7, string.digits)
+            self.sample_int_field.setText(sample_ID)
+        if not self.sample_ext_field.text():
+            spender = "DEDKM" + typeloader.id_generator(7, string.digits)
+            self.sample_ext_field.setText(spender)
 
 
 class AlleleSection(QGroupBox):
@@ -279,7 +289,7 @@ class NewAlleleForm(CollapsibleDialog):
         file_btn = FileButton("Choose XML or Fasta file", mypath, self)
         self.file_widget = ChoiceSection("Raw File:", [file_btn], self.tree)
         self.file_widget.choice.connect(self.get_file)
-        mypath = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\243_spatiotemporal-data\3DS1_no_header.fa"
+        mypath = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\243_spatiotemporal-data\3DS1_with_header.fa"
         if self.settings["modus"] == "debugging":
             self.file_widget.field.setText(mypath)
         layout.addWidget(self.file_widget)
@@ -383,7 +393,7 @@ class NewAlleleForm(CollapsibleDialog):
 
             if not self.sample_name:
                 self.log.debug("Asking for sample info...")
-                self.qbox = QueryBox(self.log, self.settings, self)
+                self.qbox = QueryBox(self.log, self.settings, self.header_data, self)
                 self.qbox.sample_data.connect(self.get_sample_data_from_queryBox)
                 self.qbox.exec_()
             if not self.sample_name:

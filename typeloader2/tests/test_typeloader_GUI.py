@@ -69,7 +69,10 @@ samples_dic = {  # samples to test
                  "ena_acc": "4ST3TSE6",
                  "id_int": "ID000001",
                  "id_ext": "DEDKM000001",
-                 "submission_id": "1111"},
+                 "submission_id": "1111",
+                 "customer": "DKMS",
+                 "provenance": "United Kingdom",
+                 "collection_date": "2024-04-25"},
     "sample_2": {"input": "5597571 A.xml",
                  "input_dir_origin": "A_MM",
                  "local_name": "DKMS-LSL_ID14278154_A_1",
@@ -722,13 +725,20 @@ class Test_Create_New_Allele(unittest.TestCase):
                                                  "Can't get rows from {}",
                                                  "SAMPLES")
 
-        self.assertEqual(len(data_content), 2)  # should be 2 - fasta & xml file
+        self.assertEqual(len(data_content), 2)  # should be 2 rows - fasta & xml file
         # sample_1: fasta
         self.assertEqual(data_content[0][0], samples_dic["sample_1"]["id_int"])  # sample_id_in
         self.assertEqual(data_content[0][1], samples_dic["sample_1"]["id_ext"])  # sample_id_ext
+        self.assertEqual(data_content[0][2], samples_dic["sample_1"]["cell_line"])
+        self.assertEqual(data_content[0][3], samples_dic["sample_1"]["customer"])
+        self.assertEqual(data_content[0][4], samples_dic["sample_1"]["provenance"])
+        self.assertEqual(data_content[0][5], samples_dic["sample_1"]["collection_date"])
         # sample_2: xml
         self.assertEqual(data_content[1][0], samples_dic["sample_2"]["id_int"])  # sample_id_in
         self.assertEqual(data_content[1][1], samples_dic["sample_2"]["id_ext"])  # sample_id_ext
+        self.assertEqual(data_content[1][2], samples_dic["sample_2"]["cell_line"])  # sample_id_ext
+        for field in [data_content[1][3], data_content[1][4], data_content[1][5]]:  # these are not specified in XML
+            self.assertFalse(field)
 
 
 class Test_Reject_Invalid_Fastas(unittest.TestCase):
@@ -752,7 +762,8 @@ class Test_Reject_Invalid_Fastas(unittest.TestCase):
         """
         myfile = os.path.join(self.mydir, "invalid1_noHeader.fasta")
         success, msg = typeloader_functions.upload_new_allele_complete(self.project_name, "X", "test", myfile,
-                                                                       "DKMS", "Germany", "2024", curr_settings, mydb, log)
+                                                                       "DKMS", "Germany", "2024", curr_settings, mydb,
+                                                                       log)
         self.assertFalse(success)
         self.assertEqual(msg, "Problem with the FASTA file: FASTA files should have a header starting with >")
 
@@ -761,7 +772,8 @@ class Test_Reject_Invalid_Fastas(unittest.TestCase):
         """
         myfile = os.path.join(self.mydir, "invalid2_noSeq.fasta")
         success, msg = typeloader_functions.upload_new_allele_complete(self.project_name, "X", "test", myfile,
-                                                                       "DKMS", "Germany", "2024", curr_settings, mydb, log)
+                                                                       "DKMS", "Germany", "2024", curr_settings, mydb,
+                                                                       log)
         self.assertFalse(success)
         self.assertEqual(msg,
                          "Problem with the FASTA file: FASTA files must contain a valid nucleotide sequence after the header!")
@@ -771,7 +783,8 @@ class Test_Reject_Invalid_Fastas(unittest.TestCase):
         """
         myfile = os.path.join(self.mydir, "invalid3_emptyHeader.fasta")
         success, msg = typeloader_functions.upload_new_allele_complete(self.project_name, "X", "test", myfile,
-                                                                       "DKMS", "Germany", "2024", curr_settings, mydb, log)
+                                                                       "DKMS", "Germany", "2024", curr_settings, mydb,
+                                                                       log)
         self.assertFalse(success)
         self.assertEqual(msg,
                          "Problem with the FASTA file: This input FASTA file has an empty header! Please put something after the '>'!")
