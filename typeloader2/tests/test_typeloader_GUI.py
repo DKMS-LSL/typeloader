@@ -282,7 +282,7 @@ class Test_1_Create_Project(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         if skip_make_project:
-            self.skipTest(self, "Skipping Create Test because skip_other_tests is set to True")
+            self.skipTest(self, "Skipping Create Test because skip_make_project is set to True")
         else:
             self.form = PROJECT.NewProjectForm(log, mydb, curr_settings)
             self.form.project_dir = ""  # not initially set in form
@@ -300,6 +300,7 @@ class Test_1_Create_Project(unittest.TestCase):
     def tearDownClass(self):
         pass
 
+    @unittest.skipIf(skip_other_tests, "skip_other_tests is set to True")
     def test_1_reject_invalid(self):
         """make sure invalid entries are rejected properly
         """
@@ -343,6 +344,7 @@ class Test_1_Create_Project(unittest.TestCase):
         project_name = self.form.project_name
         project_accession = self.form.accession
 
+    @unittest.skipIf(skip_other_tests, "skip_other_tests is set to True")
     def test_3_parse_project_name(self):
         """
         parse project name
@@ -351,12 +353,14 @@ class Test_1_Create_Project(unittest.TestCase):
         new_project = "_".join([date, "SA", project_gene, project_pool])
         self.assertEqual(self.form.project_name, new_project)
 
+    @unittest.skipIf(skip_other_tests, "skip_other_tests is set to True")
     def test_4_dir_exists(self):
         """
         If project dir is created?
         """
         self.assertTrue(os.path.exists(self.form.project_dir))
 
+    @unittest.skipIf(skip_other_tests, "skip_other_tests is set to True")
     def test_5_projectfiles_exists(self):
         """
         If project files are created successfull
@@ -368,6 +372,7 @@ class Test_1_Create_Project(unittest.TestCase):
         self.assertTrue(os.path.exists(self.form.submission_file))
         self.assertTrue(os.path.exists(self.form.output_file))
 
+    @unittest.skipIf(skip_other_tests, "skip_other_tests is set to True")
     def test_6_parse_project_xml(self):
         """
         Parse the written project XML file
@@ -380,6 +385,7 @@ class Test_1_Create_Project(unittest.TestCase):
         self.assertEqual(root[0][0].text, project_title)
         self.assertEqual(root[0][1].text, project_desc)
 
+    @unittest.skipIf(skip_other_tests, "skip_other_tests is set to True")
     def test_7_parse_submission_xml(self):
         """
         Parse the written submission XML file
@@ -392,6 +398,7 @@ class Test_1_Create_Project(unittest.TestCase):
         self.assertEqual(root[0][0][0].attrib["schema"], "project")
         self.assertEqual(root[0][0][0].attrib["source"], self.form.project_name + ".xml")
 
+    @unittest.skipIf(skip_other_tests, "skip_other_tests is set to True")
     def test_8_parse_output_xml(self):
         """
         Parse the written output XML file
@@ -745,7 +752,7 @@ class Test_Reject_Invalid_Fastas(unittest.TestCase):
         """
         myfile = os.path.join(self.mydir, "invalid1_noHeader.fasta")
         success, msg = typeloader_functions.upload_new_allele_complete(self.project_name, "X", "test", myfile,
-                                                                       "DKMS", curr_settings, mydb, log)
+                                                                       "DKMS", "Germany", "2024", curr_settings, mydb, log)
         self.assertFalse(success)
         self.assertEqual(msg, "Problem with the FASTA file: FASTA files should have a header starting with >")
 
@@ -754,7 +761,7 @@ class Test_Reject_Invalid_Fastas(unittest.TestCase):
         """
         myfile = os.path.join(self.mydir, "invalid2_noSeq.fasta")
         success, msg = typeloader_functions.upload_new_allele_complete(self.project_name, "X", "test", myfile,
-                                                                       "DKMS", curr_settings, mydb, log)
+                                                                       "DKMS", "Germany", "2024", curr_settings, mydb, log)
         self.assertFalse(success)
         self.assertEqual(msg,
                          "Problem with the FASTA file: FASTA files must contain a valid nucleotide sequence after the header!")
@@ -764,7 +771,7 @@ class Test_Reject_Invalid_Fastas(unittest.TestCase):
         """
         myfile = os.path.join(self.mydir, "invalid3_emptyHeader.fasta")
         success, msg = typeloader_functions.upload_new_allele_complete(self.project_name, "X", "test", myfile,
-                                                                       "DKMS", curr_settings, mydb, log)
+                                                                       "DKMS", "Germany", "2024", curr_settings, mydb, log)
         self.assertFalse(success)
         self.assertEqual(msg,
                          "Problem with the FASTA file: This input FASTA file has an empty header! Please put something after the '>'!")
@@ -1270,23 +1277,25 @@ class Test_Views(unittest.TestCase):
         self.assertEqual(model.headerData(47, Qt.Horizontal, Qt.DisplayRole), "External Sample ID")
         self.assertEqual(model.headerData(48, Qt.Horizontal, Qt.DisplayRole), "Cell Line")
         self.assertEqual(model.headerData(49, Qt.Horizontal, Qt.DisplayRole), "Customer")
-        self.assertEqual(model.headerData(50, Qt.Horizontal, Qt.DisplayRole), "Project Name")
-        self.assertEqual(model.headerData(51, Qt.Horizontal, Qt.DisplayRole), "ENA Submission ID")
-        self.assertEqual(model.headerData(52, Qt.Horizontal, Qt.DisplayRole), "Alleles in ENA Submission")
-        self.assertEqual(model.headerData(53, Qt.Horizontal, Qt.DisplayRole), "Timestamp Sent (ENA Submission)")
-        self.assertEqual(model.headerData(54, Qt.Horizontal, Qt.DisplayRole), "Timestamp Confirmed (ENA Submission)")
-        self.assertEqual(model.headerData(55, Qt.Horizontal, Qt.DisplayRole), "Analysis Accession Nr")
-        self.assertEqual(model.headerData(56, Qt.Horizontal, Qt.DisplayRole), "Submission Accession Nr")
-        self.assertEqual(model.headerData(57, Qt.Horizontal, Qt.DisplayRole), "ENA Submission successful?")
-        self.assertEqual(model.headerData(58, Qt.Horizontal, Qt.DisplayRole), "IPD Submission ID")
-        self.assertEqual(model.headerData(59, Qt.Horizontal, Qt.DisplayRole), "Alleles in IPD Submission")
-        self.assertEqual(model.headerData(60, Qt.Horizontal, Qt.DisplayRole), "Timestamp Ready (IPD Submission)")
-        self.assertEqual(model.headerData(61, Qt.Horizontal, Qt.DisplayRole), "Timestamp Confirmed (IPD Submission)")
-        self.assertEqual(model.headerData(62, Qt.Horizontal, Qt.DisplayRole), "IPD Submission successful?")
+        self.assertEqual(model.headerData(50, Qt.Horizontal, Qt.DisplayRole), "Provenance")
+        self.assertEqual(model.headerData(51, Qt.Horizontal, Qt.DisplayRole), "Collection Date")
+        self.assertEqual(model.headerData(52, Qt.Horizontal, Qt.DisplayRole), "Project Name")
+        self.assertEqual(model.headerData(53, Qt.Horizontal, Qt.DisplayRole), "ENA Submission ID")
+        self.assertEqual(model.headerData(54, Qt.Horizontal, Qt.DisplayRole), "Alleles in ENA Submission")
+        self.assertEqual(model.headerData(55, Qt.Horizontal, Qt.DisplayRole), "Timestamp Sent (ENA Submission)")
+        self.assertEqual(model.headerData(56, Qt.Horizontal, Qt.DisplayRole), "Timestamp Confirmed (ENA Submission)")
+        self.assertEqual(model.headerData(57, Qt.Horizontal, Qt.DisplayRole), "Analysis Accession Nr")
+        self.assertEqual(model.headerData(58, Qt.Horizontal, Qt.DisplayRole), "Submission Accession Nr")
+        self.assertEqual(model.headerData(59, Qt.Horizontal, Qt.DisplayRole), "ENA Submission successful?")
+        self.assertEqual(model.headerData(60, Qt.Horizontal, Qt.DisplayRole), "IPD Submission ID")
+        self.assertEqual(model.headerData(61, Qt.Horizontal, Qt.DisplayRole), "Alleles in IPD Submission")
+        self.assertEqual(model.headerData(62, Qt.Horizontal, Qt.DisplayRole), "Timestamp Ready (IPD Submission)")
+        self.assertEqual(model.headerData(63, Qt.Horizontal, Qt.DisplayRole), "Timestamp Confirmed (IPD Submission)")
+        self.assertEqual(model.headerData(64, Qt.Horizontal, Qt.DisplayRole), "IPD Submission successful?")
 
         # check expected empty columns:
         empty_columns = [9, 10, 11, 12, 13, 15, 17, 18, 19, 22, 23, 26,
-                         33, 34, 35, 41, 42, 43, 61]
+                         33, 34, 35, 41, 42, 43, 63]
         for col in empty_columns:
             for row in [0, 1]:
                 self.assertEqual(model.data(model.index(row, col)), "",
@@ -1883,7 +1892,8 @@ class TestMakeIMGTFilesWith5PrimeOverhang(unittest.TestCase):
             self.diff_string = "KIR2DS3*002new differs from KIR2DS3*0020103 like so : Mismatches = pos 447 in codon 128 (TGC -> TGA);pos 6267 (G -> T);pos 6303 (T -> C);pos 6307 (T -> G);pos 6390 (G -> A);pos 6392 (A -> G);. Deletions = pos 15069 (T). Insertions = pos 15038 (C)."
 
             typeloader_functions.upload_new_allele_complete(self.project_name, self.sample_id_int, "bla",
-                                                            self.fasta_file, "DKMS", curr_settings, mydb, log)
+                                                            self.fasta_file, "DKMS", "Germany", "2024",
+                                                            curr_settings, mydb, log)
 
     @classmethod
     def tearDownClass(self):
@@ -2076,6 +2086,67 @@ The problem-alleles were NOT added. Please fix them and try again!"""
         self.assertEqual(result, expected_result)
 
 
+class Test_provenance_and_collection_date(unittest.TestCase):
+    """
+    test correct handling of spatiotemporal data
+    """
+
+    @classmethod
+    def setUpClass(self):
+        if skip_other_tests:
+            self.skipTest(self, "Skipping Test_provenance_and_collection_date because skip_other_tests is set to True")
+        else:
+            self.ok_dates = ["2024", "2021-01", "2023-12-01", "2222-22-22"]
+            self.bad_dates = ["None", "1.1.2002", "01.01.2002", "01. May 2002", "May 2002"]
+            self.ok_provenances = ["Germany", "USA", "United Kingdom"]
+            self.bad_provenances = ["Blue", "United States", "UK"]
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test_dates(self):
+        """
+        test that date checks work as expected
+        """
+        for mydate in self.ok_dates:
+            ok, msg = typeloader_functions.check_date(mydate)
+            assert ok
+            assert not msg
+
+        for mydate in self.bad_dates:
+            ok, msg = typeloader_functions.check_date(mydate)
+            assert not ok
+            assert msg.startswith("Dates need to be formatted ISO8601 compliant")
+
+    def test_provenances_happy(self):
+        """test that all approved provenances are ok, and that all 'missing' options are listed last"""
+        ok_provenances = typeloader_functions.assemble_country_list(curr_settings, log)
+
+        missing_found = False
+        missing_options_listed_last = True
+
+        for country in ok_provenances:
+            if country.startswith("missing"):
+                missing_found = True
+            else:
+                if missing_found:
+                    missing_options_listed_last = False
+        assert missing_options_listed_last
+
+        ok, msg = typeloader_functions.check_countries_ok(ok_provenances, curr_settings, log)
+        assert ok
+        assert not msg
+
+    def test_provenances_sad(self):
+        """test correct refusal of incorrect provenance options"""
+        ok, msg = typeloader_functions.check_countries_ok(self.bad_provenances, curr_settings, log)
+        assert not ok
+        assert msg == "All items must be exactly spelled like in the official list!\n" \
+                      "The following items do not match: \n" \
+                      "\t- 'Blue'\t- 'United States'\t- 'UK'"
+
+
 class TestIncompleteSequences(unittest.TestCase):
     """
     test if TypeLoader correctly handles sequences with incomplete UTR3
@@ -2124,7 +2195,8 @@ class TestIncompleteSequences(unittest.TestCase):
                 exp_success = False
 
             success, msg = typeloader_functions.upload_new_allele_complete(self.project_name, case.sample_id_int,
-                                                                           "test", raw_path, "DKMS", curr_settings,
+                                                                           "test", raw_path, "DKMS", "Germany", "2024",
+                                                                           curr_settings,
                                                                            mydb, log, incomplete_ok=incomplete_ok)
             self.assertEqual(success, exp_success)
             if not success:
@@ -2231,7 +2303,8 @@ class Test_MIC(unittest.TestCase):
 
             success, msg = typeloader_functions.upload_new_allele_complete(project_name, self.sample_id_int, "test",
                                                                            raw_path,
-                                                                           "DKMS", curr_settings, mydb, log,
+                                                                           "DKMS", "Germany", "2024",
+                                                                           curr_settings, mydb, log,
                                                                            incomplete_ok=True)
             self.assertTrue(success, msg)
 

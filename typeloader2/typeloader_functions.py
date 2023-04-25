@@ -13,9 +13,13 @@ contains calls to TypeLoader_core and handling thereof
 
 # import modules:
 import os, shutil
+import re
+from pathlib import Path
 import string, random, time
 from collections import defaultdict
 from Bio import SeqIO
+
+from typing import List, Optional, Tuple
 
 from typeloader_core import (EMBLfunctions as EF, coordinates as COO, backend_make_ena as BME,
                              backend_enaformat as BE, getAlleleSeqsAndBlast as GASB,
@@ -36,6 +40,10 @@ flatfile_dic = {"function_hla": "antigen presenting molecule",
                 "productname_kir_long": "Human Killer-cell Immunoglobulin-like Receptor",
                 "productname_kir_short": "Killer-cell Immunoglobulin-like Receptor",
                 "species": "Homo sapiens"}
+
+PROVENANCE_SOURCE_URL = "https://www.insdc.org/submitting-standards/country-qualifier-vocabulary/"
+
+DATE_PATTERN = "^\d{4}(-\d{2})?(-\d{2})?$"
 
 
 # ===========================================================
@@ -127,7 +135,7 @@ def perform_reference_update(db_name, reference_local_path, blast_path, proxy, l
     db_name = db_name.lower()
     if db_name not in ["hla", "kir"]:
         return False, "Unknown reference type", \
-               f"'{db_name}' is an unknown reference. Please select 'hla' or 'kir'!"
+            f"'{db_name}' is an unknown reference. Please select 'hla' or 'kir'!"
 
     blast_dir = os.path.dirname(blast_path)
     try:
@@ -627,7 +635,8 @@ def save_new_allele(project, sample_name, local_name, ENA_text,
 def save_new_allele_to_db(allele, project,
                           filetype, raw_file, fasta_filename, blastXmlFile,
                           header_data, targetFamily,
-                          ena_path, restricted_alleles, settings, mydb, log, startover=False):
+                          ena_path, restricted_alleles, settings, mydb, log, startover=False,
+                          ):
     """save new allele to internal database
     """
     try:
@@ -738,9 +747,16 @@ def save_new_allele_to_db(allele, project,
             if data != [[0]] or startover_allele:  # if sample already known, don't re-enter it
                 pass
             else:
-                update_samples_query = """INSERT INTO samples
-                (SAMPLE_ID_INT, SAMPLE_ID_EXT, CELL_LINE) values ('{}', '{}', '{}')
-                """.format(allele.sample_id_int, header_data["Spendernummer"], allele.cell_line)
+                update_samples_query = f"""INSERT INTO samples
+                (SAMPLE_ID_INT, SAMPLE_ID_EXT, CELL_LINE, CUSTOMER, COUNTRY, COLLECTION_DATE) 
+                values ('{allele.sample_id_int}', 
+                        '{header_data["Spendernummer"]}', 
+                        '{allele.cell_line}',
+                        '{header_data["Customer"]}',
+                        '{header_data["provenance"]}',
+                        '{header_data["collection_date"]}'
+                )
+                """
                 update_queries.append(update_samples_query)
         else:
             return (False, False, False)
@@ -786,6 +802,7 @@ def parse_bulk_csv(csv_file, settings, log):
     error_dic = defaultdict(list)
     alleles = []
     allowed_extensions = settings["fasta_extensions"].split("|")
+    allowed_countries = assemble_country_list(settings, log)
     i = 0
     with open(csv_file, "r") as f:
         data = csv.reader(f, delimiter=",")
@@ -800,15 +817,15 @@ def parse_bulk_csv(csv_file, settings, log):
                         myfile = row[2].strip()
                         mypath = os.path.join(mydir, myfile)
                         if not os.path.isfile(mypath):
-                            msg = "Could not find file {}".format(mypath)
+                            msg = f"Could not find file {mypath}"
                             error_dic[nr].append(msg)
-                            log.warning("{}: File not found: {}".format(nr, mypath))
+                            log.warning(f"{nr}: File not found: {mypath}")
                             err = True
                         extension = os.path.splitext(mypath)[-1].lower()
                         if not extension in allowed_extensions:
-                            msg = "{} file found! Bulk-upload is only supported for fasta files!".format(extension)
+                            msg = f"{extension} file found! Bulk-upload is only supported for fasta files!"
                             error_dic[nr].append(msg)
-                            log.warning("{}: {} is not a fasta file".format(nr, myfile))
+                            log.warning(f"{nr}: {myfile} is not a fasta file")
                             err = True
                         sample_id_int = row[3].strip()
                         sample_id_ext = row[4].strip()
@@ -818,10 +835,26 @@ def parse_bulk_csv(csv_file, settings, log):
                             incomplete_ok = True
                         else:
                             incomplete_ok = False
+                        provenance = row[7].strip()
+                        if provenance and provenance not in allowed_countries:
+                            msg = f"{nr}: '{provenance}' is not a valid provenance! See {PROVENANCE_SOURCE_URL} for valid options!"
+                            log.warning(msg)
+                            error_dic[nr].append(msg)
+                            err = True
+                        sample_date = row[8].strip()
+                        if sample_date:
+                            if not sample_date in allowed_countries:  # this contains the 'missing' options
+                                date_ok, msg = check_date(sample_date)
+                                if not date_ok:
+                                    msg = f"{nr}: {msg}".replace("\n", " ")
+                                    log.warning(msg)
+                                    error_dic[nr].append(msg)
+                                    err = True
                         if not err:
-                            myallele = [nr, sample_id_int, sample_id_ext, mypath, customer, incomplete_ok]
+                            myallele = [nr, sample_id_int, sample_id_ext, mypath, customer, incomplete_ok, provenance,
+                                        sample_date]
                             alleles.append(myallele)
-    log.info("\t=> {} processable alleles found in {} rows".format(len(alleles), i))
+    log.info(f"\t=> {len(alleles)} processable alleles found in {i} rows")
     return alleles, error_dic, i
 
 
@@ -853,6 +886,7 @@ def handle_new_allele_parsing(project_name, sample_id_int, sample_id_ext, raw_pa
 
 
 def upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_path, customer,
+                               provenance, sample_date,
                                settings, mydb, log, incomplete_ok=False, use_restricted_db=False,
                                startover=False):
     """adds one new target sequence to TypeLoader
@@ -868,9 +902,19 @@ def upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_p
     (header_data, filetype, sample_name, targetFamily,
      temp_raw_file, blastXmlFile, fasta_filename, allelesFilename) = results
 
+    # overwrite file-header entries with parameters, if they were given:
+    overwrite_dic = {"sample_id_int": sample_id_int,
+                     "Customer": customer,
+                     "provenance": provenance,
+                     "collection_date": sample_date}
     if sample_id_int:
         sample_name = sample_id_int
-        header_data["sample_id_int"] = sample_id_int
+    for key in overwrite_dic:
+        new_val = overwrite_dic[key]
+        if new_val:
+            header_data[key] = new_val
+
+    # process sequence file:
     results = process_sequence_file(project_name, filetype, blastXmlFile,
                                     targetFamily, fasta_filename, allelesFilename,
                                     header_data, settings, log, incomplete_ok=incomplete_ok)
@@ -920,10 +964,11 @@ def bulk_upload_new_alleles(csv_file, project, settings, mydb, log):
     successful = []
     alleles_uploaded = []
     for allele in alleles:
-        [nr, sample_id_int, sample_id_ext, raw_path, customer, incomplete_ok] = allele
+        [nr, sample_id_int, sample_id_ext, raw_path, customer, incomplete_ok, provenance, sample_date] = allele
         log.info("Uploading #{}: {}...".format(nr, sample_id_int))
-        success, msg = upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, customer, settings,
-                                                  mydb, log, incomplete_ok=incomplete_ok)
+        success, msg = upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, customer, provenance,
+                                                  sample_date,
+                                                  settings, mydb, log, incomplete_ok=incomplete_ok)
         if success:
             local_name = msg
             successful.append("  - #{}: {}".format(nr, local_name))
@@ -1125,7 +1170,8 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
                                                                                                         submission_alias,
                                                                                                         file_dic[
                                                                                                             "project_dir"],
-                                                                                                        line_dic, settings, log,
+                                                                                                        line_dic,
+                                                                                                        settings, log,
                                                                                                         timeout=timeout)
     submission_accession_number = None  # used to be contained in ENA's reply, but has been deprecated with the start of Webin-CLI
 
@@ -1189,10 +1235,10 @@ def submit_alleles_to_ENA(project_name, ENA_ID, samples, files, settings, log):
 
 
 def upload_allele_with_restricted_db(project_name, sample_id_int, sample_id_ext, raw_path,
-                                     customer, reference_alleles,
+                                     customer, provenance, sample_date, reference_alleles,
                                      settings, mydb, log):
     """re-attempts upload of a target allele file, using a restricted reference database.
-    This can become necessary if TL cannot automatically find a goo reference allele. (#149)
+    This can become necessary if TL cannot automatically find a good reference allele. (#149)
 
     :param project_name: name of the project where the target allele should go
     :param sample_id_int: internal sample ID for the target allele
@@ -1218,7 +1264,7 @@ def upload_allele_with_restricted_db(project_name, sample_id_int, sample_id_ext,
         return False, "Error while trying to create restricted reference database", msg
 
     success, msg = upload_new_allele_complete(project_name, sample_id_int,
-                                              sample_id_ext, raw_path, customer,
+                                              sample_id_ext, raw_path, customer, provenance, sample_date,
                                               settings, mydb, log,
                                               use_restricted_db=restricted_db)
     return success, msg
@@ -1372,6 +1418,85 @@ def initiate_startover_allele(project_name, sample_id_int, allele_nr, parent, se
     return True, None, None, startover_dic
 
 
+def read_raw_country_list(settings, log):
+    """Read list of countries from reference file."""
+    log.info("Reading list of countries...")
+    reference_path = Path(settings["root_path"]) / settings["general_dir"] / settings["reference_dir"]
+    country_file = reference_path / update_reference.COUNTRY_FILE
+
+    countries = []
+    with country_file.open() as f:
+        for line in f:
+            countries.append(line.strip())
+    log.info(f"\t=> {len(countries)} options found!")
+    return countries
+
+
+def sort_country_list(countries, favourites, log):
+    """Sort list of countries by placing favourites first.
+
+    Keep rest of sorting intact, which should be alphabetical.
+    """
+    log.info("Re-sorting list of countries by user preference...")
+
+    countries = sorted(countries, key=lambda country: (country not in favourites))
+
+    log.info("\t=> Done")
+    return countries
+
+
+def assemble_country_list(settings, log):
+    """Assemble list of country options in conveniently sorted order."""
+    raw_countries = read_raw_country_list(settings, log)
+
+    # add options for missing data:
+    missing_options = [  # source: https://www.insdc.org/submitting-standards/missing-value-reporting/
+        "data agreement established pre-2023",
+        "third party data",
+        "human-identifiable"
+    ]
+    for option in missing_options:
+        raw_countries.append(f"missing: {option}")
+
+    # resort by preferences:
+    try:
+        favs = settings["fav_provenances"].split("|")
+        raw_countries = sort_country_list(raw_countries, favs, log)
+    except KeyError:
+        log.info("No favourite provenances declared => alphabetical order kept")
+
+    countries = [""] + raw_countries  # first element must be empty to keep default empty
+
+    return countries
+
+
+def check_countries_ok(countries: List[str], settings: dict, log) -> Tuple[bool, Optional[str]]:
+    """Check all items in countries whether they are allowed."""
+    log.info(f"Checking if '{countries}' are valid provenances...")
+    possible_countries = assemble_country_list(settings, log)
+    not_ok = []
+    for c in countries:
+        if c not in possible_countries:
+            not_ok.append(c)
+    if not_ok:
+        msg = "All items must be exactly spelled like in the official list!\n" \
+              f"The following items do not match: \n"
+        for c in not_ok:
+            msg += f"\t- '{c}'"
+        return False, msg
+
+    return True, None
+
+
+def check_date(mydate: str) -> Tuple[bool, str | None]:
+    """Check whether a date at least looks like a halfway valid ISO8601 date."""
+    if not re.match(DATE_PATTERN, mydate):
+        msg = "Dates need to be formatted ISO8601 compliant and contain at least the year!" \
+              "\ne.g. 2024 or 2024-04 or 2024-04-21"
+        return False, msg
+    return True, None
+
+
 # ===========================================================
 # main:
 
@@ -1382,8 +1507,10 @@ def main(settings, log, mydb):
     raw_path = r"C:\Daten\local_data\TypeLoader\staging\data_unittest\reject_xml\unsuitable.xml"
     customer = "DKMS"
 
-    upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, customer,
-                               settings, mydb, log)
+    # upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, customer, provenance, sample_date,
+    #                            settings, mydb, log)
+    bulk_csv = Path(__file__).parent / "sample_files/bulk_upload.csv"
+    alleles, error_dic, i = parse_bulk_csv(bulk_csv, settings, log)
 
 
 if __name__ == "__main__":

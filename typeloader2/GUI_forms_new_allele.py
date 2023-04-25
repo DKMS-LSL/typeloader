@@ -13,10 +13,11 @@ widgits for adding new sequences or new projects to TypeLoader
 # import modules:
 
 import sys, os
+import re
 
 from PyQt5.QtWidgets import (QApplication, QGroupBox, QMessageBox,
                              QGridLayout, QFormLayout, QVBoxLayout,
-                             QTextEdit, QLabel, QLineEdit, QCheckBox, QHBoxLayout, QFrame)
+                             QTextEdit, QLabel, QLineEdit, QCheckBox, QHBoxLayout, QFrame, QComboBox)
 from PyQt5.Qt import QWidget, pyqtSlot, pyqtSignal, QDialog, QPushButton
 from PyQt5.QtGui import QIcon
 from pickle import load
@@ -32,6 +33,7 @@ from GUI_forms import (CollapsibleDialog, ChoiceSection, ChoiceButton, ChoiceTab
                        FileButton, ProceedButton, QueryButton, NewProjectButton,
                        check_project_open)
 from GUI_misc import settings_ok
+from typeloader_functions import DATE_PATTERN
 
 
 # ===========================================================
@@ -56,7 +58,7 @@ def log_uncaught_exceptions(cls, exception, tb):
 class QueryBox(QDialog):
     """requests data from user that is not given via the file
     """
-    sample_data = pyqtSignal(str, str)
+    sample_data = pyqtSignal(str, str, str, str)
 
     def __init__(self, log, settings, parent=None):
         super().__init__()
@@ -79,6 +81,21 @@ class QueryBox(QDialog):
         self.sample_ext_field = QLineEdit(self)
         layout.addRow(QLabel("External Sample-ID:"), self.sample_ext_field)
 
+        layout.addRow(QLabel(""))
+
+        separator = QLabel("The following can also be provided later, but are necessary for ENA:")
+        separator.setStyleSheet("font-weight: bold")
+        layout.addRow(separator)
+
+        self.sample_provenance_field = QComboBox(self)
+        countries = typeloader.assemble_country_list(self.settings, self.log)
+        self.sample_provenance_field.addItems(countries)
+        layout.addRow(QLabel("Sample Provenance:"), self.sample_provenance_field)
+
+        self.sample_date_field = QLineEdit(self)
+        self.sample_date_field.setPlaceholderText("at least the year; format YYYY-MM-DD")
+        layout.addRow(QLabel("Date of Sample Collection:"), self.sample_date_field)
+
         self.ok_btn = QPushButton("Done", self)
         layout.addRow(self.ok_btn)
         self.ok_btn.clicked.connect(self.on_clicked)
@@ -89,10 +106,19 @@ class QueryBox(QDialog):
         self.log.debug("Getting info from query_box")
         sample_int = self.sample_int_field.text().strip()
         sample_ext = self.sample_ext_field.text().strip()
+        sample_country = self.sample_provenance_field.currentText().strip()
+        sample_date = self.sample_date_field.text().strip()
+
+        if sample_date:
+            ok, msg = typeloader.check_date(sample_date)
+            if not ok:
+                QMessageBox.warning(self, "Bad date", msg)
+                return
+
         if sample_int and sample_ext:
             # TODO: (future) add sanity checks for sample names?
-            self.log.debug("QueryBox emits ('{}', '{}')".format(sample_int, sample_ext))
-            self.sample_data.emit(sample_int, sample_ext)
+            self.log.debug(f"QueryBox emits ('{sample_int}', '{sample_ext}', '{sample_country}', '{sample_date}')")
+            self.sample_data.emit(sample_int, sample_ext, sample_country, sample_date)
             self.close()
 
     def fill_with_random_values(self):
@@ -253,7 +279,7 @@ class NewAlleleForm(CollapsibleDialog):
         file_btn = FileButton("Choose XML or Fasta file", mypath, self)
         self.file_widget = ChoiceSection("Raw File:", [file_btn], self.tree)
         self.file_widget.choice.connect(self.get_file)
-        mypath = r"C:/Daten/local_data/TL_issue_data/85-startover/DP1.fa"
+        mypath = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\243_spatiotemporal-data\3DS1_no_header.fa"
         if self.settings["modus"] == "debugging":
             self.file_widget.field.setText(mypath)
         layout.addWidget(self.file_widget)
@@ -294,14 +320,16 @@ class NewAlleleForm(CollapsibleDialog):
         self.project = project.strip()
         self.log.debug("Chose project {}...".format(self.project))
 
-    @pyqtSlot(str, str)
-    def get_sample_data_from_queryBox(self, sample_ID_int, sample_ID_ext):
+    @pyqtSlot(str, str, str, str)
+    def get_sample_data_from_queryBox(self, sample_ID_int, sample_ID_ext, sample_country, sample_date):
         """accepts the data entered via QueryBox and stores it in self.header_data
         """
         self.header_data["LIMS_DONOR_ID"] = sample_ID_int
         self.sample_name = sample_ID_int
         self.header_data["Spendernummer"] = sample_ID_ext
         self.sample_id_ext = sample_ID_ext
+        self.header_data["provenance"] = sample_country
+        self.header_data["collection_date"] = sample_date
 
     @pyqtSlot(int)
     def upload_file(self, _=None):
@@ -1133,14 +1161,8 @@ if __name__ == '__main__':
 
     app = QApplication(sys.argv)
 
-    startover_dic = {'allele_nr': 1, 'project_nr': 1, 'local_name': 'DKMS-LSL_ID15592561_DPB1_1', 'gene': 'HLA-DPB1',
-                     'sample_id_int': 'ID15592561', 'sample_id_ext': 'DEDKM4001526', 'customer': '',
-                     'ena_submission_id': None,
-                     'ena_acception_date': None, 'ena_accession_nr': None, 'ipd_submission_id': None,
-                     'ipd_submission_nr': None,
-                     'hws_submission_nr': None, 'ref_db': 'IPD-IMGT/HLA', 'db_version': '3.42.0'}
-    ex = NewAlleleForm(log, mydb, "20201119_ADMIN_mixed_startover-85", mysettings, startover=startover_dic,
-                       sample_ID_int=startover_dic["sample_id_int"], sample_ID_ext=startover_dic["sample_id_ext"])
+    ex = NewAlleleForm(log, mydb, "20230421_ADMIN_mix_1", mysettings)
+    #ex = QueryBox(log, mysettings, None)
     ex.show()
 
     result = app.exec_()

@@ -1,5 +1,5 @@
-nr,file_dir,file_name,sample_id_int,sample_id_ext,customer,incomplete_ok
-1,T:\Skripte\TypeLoader2\src\sample_files,HLA-A_01-01-01-01.fa,IDTest-HLA01,SampleBlue,DKMS,
-2,T:\Skripte\TypeLoader2\src\sample_files,KIR2DL1_0020101.fa,IDTest-KIR01,SampleRed,DKMS,
-3,T:\Skripte\TypeLoader2\src\sample_files,KIR2DL4_0010201.fa,IDTest-KIR01,SampleRed,DKMS,
-4,T:\Skripte\TypeLoader2\src\sample_files,MICA_002_01.fa,IDTest-MIC01,SampleYellow,DKMS,
+nr,file_dir,file_name,sample_id_int,sample_id_ext,customer,incomplete_ok,provenance,collection_date
+1,T:\Skripte\TypeLoader2\typeloader2\sample_files,HLA-A_01-01-01-01.fa,IDTest-HLA01b,SampleBlue,DKMS,,Germany,2024-01-02
+2,T:\Skripte\TypeLoader2\typeloader2\sample_files,KIR2DL1_0020101.fa,IDTest-KIR01b,SampleRed,Test,,France,2024
+3,T:\Skripte\TypeLoader2\typeloader2\sample_files,KIR2DL4_0010201.fa,IDTest-KIR01b,SampleRed,DKMS,,France,2024-02
+4,T:\Skripte\TypeLoader2\typeloader2\sample_files,MICA_002_01.fa,IDTest-MIC01b,SampleYellow,DKMS,,missing: data agreement established pre-2023,missing: data agreement established pre-2023

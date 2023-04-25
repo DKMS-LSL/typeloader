@@ -99,6 +99,8 @@ class SampleTable(InvertedTable):
         self.model.setHeaderData(1, Qt.Horizontal, "External Donor-ID")
         self.model.setHeaderData(2, Qt.Horizontal, "Cell Line")
         self.model.setHeaderData(3, Qt.Horizontal, "Customer")
+        self.model.setHeaderData(4, Qt.Horizontal, "Provenance")
+        self.model.setHeaderData(5, Qt.Horizontal, "Collection Date")
         self.setMaximumHeight(170)
         self.setMaximumWidth(400)
         self.table.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)

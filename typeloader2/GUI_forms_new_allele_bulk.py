@@ -94,7 +94,7 @@ class NewAlleleBulkForm(CollapsibleDialog):
         self.file_widget = ChoiceSection("Raw File:", [file_btn], self.tree)
         self.file_widget.choice.connect(self.get_file)
         if self.settings["modus"] == "debugging":
-            self.file_widget.field.setText(r"H:\Projekte\Bioinformatik\Typeloader\example files\bulk_upload3.csv")
+            self.file_widget.field.setText(r"C:\Users\schoene\WorkFolders\Code\typeloader2\typeloader2\sample_files\bulk_upload.csv")
         layout.addWidget(self.file_widget)
         
         proj_btn = QueryButton("Choose a (different) existing project", "SELECT project_name FROM projects where project_status = 'Open' order by project_name desc") 

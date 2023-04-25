@@ -13,6 +13,7 @@ implements retroactive changes to the database or config files
 import os, sys
 import re
 from configparser import ConfigParser
+import packaging
 
 from PyQt5.QtWidgets import (QApplication, QLabel, QMessageBox,
                              QDialog, QLineEdit, QFormLayout)
@@ -370,7 +371,7 @@ def patch_database(settings, version, log):
         last_patched_tl_version = settings["last_tl_version"]
     except KeyError:
         last_patched_tl_version = ""
-    if last_patched_tl_version > "2.1.0":
+    if packaging.version.parse(last_patched_tl_version) > packaging.version.parse("2.1.0"):
         log.info("\t=> database up to date")
         return
     log.info("\t=> patching needed!")
@@ -430,7 +431,7 @@ def patch_database2(settings, version, log):
         last_patched_tl_version = settings["last_tl_version"]
     except KeyError:
         last_patched_tl_version = ""
-    if last_patched_tl_version > "2.13.2":
+    if packaging.version.parse(last_patched_tl_version) > packaging.version.parse("2.13.2"):
         log.info("\t=> database up to date")
         return
     log.info("\t=> patching needed!")
