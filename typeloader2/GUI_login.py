@@ -517,6 +517,7 @@ def get_settings(user, log, cf=None):
         elif settings_dic[key] == "a short acronym of your company; use only letters or hyphens!":
             settings_dic[key] = ""
     settings_dic["TL_version"] = __version__
+    settings_dic["running_modus"] = "normal"
 
     if "timeout_ena" not in settings_dic:
         settings_dic["timeout_ena"] = "300"

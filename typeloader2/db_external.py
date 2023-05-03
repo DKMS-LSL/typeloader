@@ -14,48 +14,57 @@ functionality to interact with databases outside of TypeLoader
 
 import sys, os, csv
 import cx_Oracle
-import general
 
-#===========================================================
+from typing import List, Tuple, Dict
+
+import general
+import typeloader_functions
+
+# ===========================================================
 # parameters:
 
-from __init__ import __version__
+__version__ = general.read_package_variable("__version__")
 
-#===========================================================
+
+# ===========================================================
 # classes:
 
 class DB_scheme():
     """database scheme object,
     contains data necessary to connect to it
     """
+
     def __init__(self, name, db, host, user, pwd):
         self.name = name
         self.db = db
         self.host = host
         self.user = user
         self.pwd = pwd
-    
+
     def __repr__(self):
         return self.name
 
+
 pass
-#===========================================================
+
+
+# ===========================================================
 # general db functions:
- 
+
 def open_connection(scheme, log):
     """opens an oracle connection to the specified database scheme,
     returns a connection object and cursor
     """
     log.info("Opening database connection to {}...".format(scheme.name))
     try:
-        conn_string = r"%s/%s@%s/%s" %(scheme.user, scheme.pwd, scheme.host, scheme.db)
+        conn_string = r"%s/%s@%s/%s" % (scheme.user, scheme.pwd, scheme.host, scheme.db)
         conn = cx_Oracle.connect(conn_string)
         cursor = conn.cursor()
     except Exception as E:
         log.error("\t=> Could not connect!")
         log.exception(E)
         return None, None
-    
+
     log.info("\t=> Success!")
     return conn, cursor
 
@@ -75,7 +84,7 @@ def close_connection(conn, cursor, log):
     log.info("\t=> db connection closed")
 
 
-def query_database(scheme, query, log, return_columns = False):
+def query_database(scheme, query, log, return_columns=False):
     """(for SELECT statements)
     queries a database scheme,
     returns list of all data (cursor.fetchall()) and list of column names
@@ -87,7 +96,7 @@ def query_database(scheme, query, log, return_columns = False):
     data = None
     columns = []
     try:
-        if return_columns:# generate list of column names:
+        if return_columns:  # generate list of column names:
             desc = cursor.description
             columns = [x[0] for x in desc]
         # get data:
@@ -103,9 +112,9 @@ def query_database(scheme, query, log, return_columns = False):
         return data, columns
     else:
         return data
-    
 
-def query_many(scheme, query, items, log, return_columns = False):
+
+def query_many(scheme, query, items, log, return_columns=False):
     """(for SELECT statements with multiple datasets)
     queries a database scheme,
     returns list of all data (cursor.fetchall()) and list of column names;
@@ -122,7 +131,7 @@ def query_many(scheme, query, items, log, return_columns = False):
             cursor.execute(None, data_set)
             data = cursor.fetchall()
             final_data.append(data)
-    
+
         # generate list of column names:
         desc = cursor.description
         columns = [x[0] for x in desc]
@@ -132,7 +141,7 @@ def query_many(scheme, query, items, log, return_columns = False):
         log.exception(E)
         log.info(query)
         sys.exit()
-    
+
     log.info("\t=> Success!")
     close_connection(conn, cursor, log)
     if return_columns:
@@ -187,8 +196,11 @@ def call_procedure(procname: str,
         log.exception(E)
         return success, None
 
+
 pass
-#===========================================================
+
+
+# ===========================================================
 # specialized TypeLoader functions:
 
 
@@ -196,15 +208,15 @@ def split_GL_string(GL_string):
     """splits GL-string into alleles;
     if it becomes too complicated, reduce to POS
     """
-    if "|" in GL_string: # pretyping contains phasing
-        return [GL_string] # put everything into first field
+    if "|" in GL_string:  # pretyping contains phasing
+        return [GL_string]  # put everything into first field
     else:
         alleles = GL_string.split("+")
-        if len(alleles) > 4: # GCN > 4 is probably incorrect
+        if len(alleles) > 4:  # GCN > 4 is probably incorrect
             return ["POS"]
         else:
             return alleles
-    
+
 
 def fill_pretypings_dic(mylocus, alleles, pretypings_dic):
     """ add data of one locus to pretypings_dic, separated into 4 columns for 4 possible alleles
@@ -217,7 +229,7 @@ def fill_pretypings_dic(mylocus, alleles, pretypings_dic):
             pretypings_dic[col_name] = ""
 
 
-def reformat_pretypings(allele_data, gene, cursor, log, fields = 2):
+def reformat_pretypings(allele_data, gene, cursor, log, fields=2):
     """reformat the pretypings data from limsrep into the right format for the pretypings file
     """
     pretypings_dic = {}
@@ -255,8 +267,11 @@ def reformat_pretypings(allele_data, gene, cursor, log, fields = 2):
                         items = items[:-1]
                         allele1 = typing_2DS4 + "+" + allele1
                     else:
-                        log.error("KIR2DS4N handling only works correctly if the 2DS4N row is directly preceded by 2DS4. Here, it is preceded by {} insteads. Rejecting!".format(KIR_loci[-1]))
-                        raise ValueError("Could not correctly puzzle KIR2DS4 and 2DS4N together. Please contact the TypeLoader staff!")
+                        log.error(
+                            "KIR2DS4N handling only works correctly if the 2DS4N row is directly preceded by 2DS4. Here, it is preceded by {} insteads. Rejecting!".format(
+                                KIR_loci[-1]))
+                        raise ValueError(
+                            "Could not correctly puzzle KIR2DS4 and 2DS4N together. Please contact the TypeLoader staff!")
                         return None
 
                 elif locus == "2DL5":
@@ -264,9 +279,9 @@ def reformat_pretypings(allele_data, gene, cursor, log, fields = 2):
 
                 else:
                     KIR_loci.append(mylocus)
-                    
+
                 items.append([allele1, ])
-            
+
     # reformat KIR:
     for i, params in enumerate(items):
         mylocus = KIR_loci[i]
@@ -299,29 +314,29 @@ def reformat_pretypings(allele_data, gene, cursor, log, fields = 2):
             pretypings_dic.pop(col, None)
 
     return pretypings_dic
-    
+
 
 def get_pretypings_from_limsrep(input_params, local_cf, log):
     """retrieves pretypings directly from LIMSREP,
     returns them as dict of dicts:  pretypings[sample_id_int] = {column_name: column_content}
     """
     log.info("Retrieving raw pretypings from external database...")
-    ngsrep_scheme = DB_scheme(name = local_cf.get("db", "dbname_ngsrep"),
-                       db = local_cf.get("db", "SID_ngsrep"),
-                       host = local_cf.get("db", "dbserver_ngsrep"),
-                       user = local_cf.get("db", "dbuser_ngsrep"),
-                       pwd = local_cf.get("db", "dbpwd_ngsrep")
-                       )
-    
-    ngsm_scheme = DB_scheme(name = local_cf.get("db", "dbname_ngsm"),
-                       db = local_cf.get("db", "SID_ngsm"),
-                       host = local_cf.get("db", "dbserver_ngsm"),
-                       user = local_cf.get("db", "dbuser_ngsm"),
-                       pwd = local_cf.get("db", "dbpwd_ngsm")
-                       )
-    
+    ngsrep_scheme = DB_scheme(name=local_cf.get("db", "dbname_ngsrep"),
+                              db=local_cf.get("db", "SID_ngsrep"),
+                              host=local_cf.get("db", "dbserver_ngsrep"),
+                              user=local_cf.get("db", "dbuser_ngsrep"),
+                              pwd=local_cf.get("db", "dbpwd_ngsrep")
+                              )
+
+    ngsm_scheme = DB_scheme(name=local_cf.get("db", "dbname_ngsm"),
+                            db=local_cf.get("db", "SID_ngsm"),
+                            host=local_cf.get("db", "dbserver_ngsm"),
+                            user=local_cf.get("db", "dbuser_ngsm"),
+                            pwd=local_cf.get("db", "dbpwd_ngsm")
+                            )
+
     samples = [[sample_id] for [sample_id, _] in input_params]
-    query_pretypings = "SELECT gene, allele1, allele2 FROM LIMSREP.NEXTYPE_DONOR_BEFU WHERE LIMS_DONOR_ID = :1"
+    query_pretypings = "select gene, allele1, allele2 from limsrep.nextype_donor_befu where lims_donor_id = :1"
     data_pretypings = query_many(ngsrep_scheme, query_pretypings, samples, log)
 
     query_samples = "select lims_donor_id, spendernr, auftraggeber from limsrep.lims_auftraege where lims_donor_id = :1"
@@ -340,7 +355,7 @@ def get_pretypings_from_limsrep(input_params, local_cf, log):
             [sample_id_int] = samples[i]
             problems.append(f"{sample_id_int}: no pretypings found, ignoring")
             not_found.append(sample_id_int)
-    
+
     log.info("Reformatting pretypings...")
     conn, cursor = open_connection(ngsm_scheme, log)
     try:
@@ -382,11 +397,11 @@ def write_pretypings_file(pretypings, samples, output_file, log):
                "KIR3DL2-1", "KIR3DL2-2", "KIR3DL2-3", "KIR3DL2-4", "KIR3DL3-1", "KIR3DL3-2", "KIR3DL3-3", "KIR3DL3-4",
                "KIR3DP1-1", "KIR3DP1-2", "KIR3DP1-3", "KIR3DP1-4", "KIR3DS1-1", "KIR3DS1-2", "KIR3DS1-3", "KIR3DS1-4"]
 
-    with open(output_file, "w", newline = "") as g:
+    with open(output_file, "w", newline="") as g:
         data = csv.writer(g, delimiter=",")
         header = ["sample_ID_int", "sample_id_ext", "client"] + columns
         data.writerow(header)
-        
+
         i = 0
         for sample in pretypings:
             row = samples[sample]
@@ -406,13 +421,15 @@ def write_pretypings_file(pretypings, samples, output_file, log):
             data.writerow(row)
             i += 1
             if not_found:
-                log.debug("\t{}: no pretypings found for {} columns: {}".format(sample, len(not_found), ",".join(not_found)))
+                log.debug(
+                    "\t{}: no pretypings found for {} columns: {}".format(sample, len(not_found), ",".join(not_found)))
     log.info("\t=> written {} rows for {} alleles".format(i, len(samples)))
-                
-        
+
 
 pass
-#===========================================================
+
+
+# ===========================================================
 # main:
 
 def read_local_settings(log):
@@ -431,31 +448,147 @@ def read_local_settings(log):
     return cf
 
 
+def write_auftraggeber(local_cf, settings, log):
+    """Store current Auftraggeber-List as database table."""
+    input_file = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\243_spatiotemporal-data\Account_Export.csv"
+    scheme = DB_scheme(name=local_cf.get("db", "dbname_write"),
+                       db=local_cf.get("db", "SID_write"),
+                       host=local_cf.get("db", "dbserver_write"),
+                       user=local_cf.get("db", "dbuser_write"),
+                       pwd=local_cf.get("db", "dbpwd_write")
+                       )
+    table_name = "LIMS_AUFTRAGGEBER"
+    conn, cursor = open_connection(scheme, log)
+
+    valid_countries = typeloader_functions.read_raw_country_list(settings, log)
+
+    try:
+
+        # make table:
+        create_sql = f"""CREATE TABLE {table_name}
+                       ("ABBREVIATION" VARCHAR2(20 BYTE) NOT NULL, 
+                        "COUNTRY" VARCHAR2(50 BYTE) NOT NULL, 
+                        "INSDC_COUNTRY" VARCHAR2(100 BYTE) NOT NULL,
+                        "COUNTRY_CODE" VARCHAR2(2 BYTE)
+                       ) 
+                        """
+
+        try:
+            cursor.execute(f"DROP TABLE {table_name}")
+        except:
+            pass
+        cursor.execute(create_sql)
+
+        # fill table with data:
+        i = 0
+        with open(input_file) as f:
+            data = csv.reader(f, delimiter=",")
+            for row in data:
+                if len(row) > 2 and row[0] != "Abbreviation LIMS":
+                    i += 1
+                    abbrev = row[0].strip()
+                    country = row[1].strip()
+                    country_code = row[2].strip()
+                    insdc_country = row[3].strip()
+
+                    if insdc_country not in valid_countries:
+                        log.error(
+                            f"{insdc_country} is not a valid country! Check https://www.insdc.org/submitting-standards/country-qualifier-vocabulary/!")
+                        insdc_country = ""
+
+                    insert_query = f"""INSERT INTO {table_name}
+                    (ABBREVIATION, COUNTRY, INSDC_COUNTRY, COUNTRY_CODE)
+                    values ('{abbrev}', '{country}', '{insdc_country}', '{country_code}')
+                    """
+                    cursor.execute(insert_query)
+
+        conn.commit()
+        log.info(f"=> written {i} rows from {input_file} to {table_name}!")
+
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_countries_and_dates_from_oracle_db(samples: List[str], log) -> Dict[str, Tuple[str, str, str]]:
+    """Retrieve spatiotemporal data from database.
+
+    returns: spatiotemporal_dic[sample_id_int] = (provenance, collection_date)
+    """
+    log.info("Retrieving provenance and collection_date from external database...")
+    local_cf = read_local_settings(log)
+
+    ngsrep_scheme = DB_scheme(name=local_cf.get("db", "dbname_ngsrep"),
+                              db=local_cf.get("db", "SID_ngsrep"),
+                              host=local_cf.get("db", "dbserver_ngsrep"),
+                              user=local_cf.get("db", "dbuser_ngsrep"),
+                              pwd=local_cf.get("db", "dbpwd_ngsrep")
+                              )
+
+    items = [[sample_id] for sample_id in samples]
+    query = """select distinct lims_donor_id, to_char(anlagedatum, 'YYYY'), auftraggeber, insdc_country 
+                from limsrep.lims_auftraege auftrag
+                  left join ngsrep.lims_auftraggeber kunde
+                    on auftrag.auftraggeber = kunde.abbreviation
+                where lims_donor_id = :1
+            """
+    data = query_many(ngsrep_scheme, query, items, log)
+
+    spatiotemporal_dic = {}
+    missing_str = "missing: third party data"
+    for i in range(len(samples)):
+        donor_id = samples[i]
+        row = data[i]
+        if row:
+            (donor_id, year, customer, country) = row[0]
+        else:
+            (year, country, customer) = (missing_str, missing_str, "")
+            log.info(f"\t found no data for {donor_id} in database, "
+                     f"setting collection_date and provenance to '{missing_str}'")
+
+        if not country:
+            country = missing_str
+            log.info(f"\t found no country data for {donor_id} (aufraggeber: {customer}), "
+                     f"setting provenance to '{missing_str}'")
+        if not year:
+            year = missing_str
+            log.info(f"\t found no date for {donor_id} (aufraggeber: {customer}), "
+                     f"setting collection_date to '{missing_str}'")
+
+        spatiotemporal_dic[donor_id] = (country, year, customer)
+
+    return spatiotemporal_dic
+
+
 def main(log):
     from GUI_login import get_settings
-
-    alleles = [['ID20271311', 'KIR3DS1'],
-               ['ID20284746', 'KIR3DS1'],
-               ['IDblubb', 'KIR3DS1'],
-               ]
+    settings = get_settings("admin", log)
     local_cf = read_local_settings(log)
-    pretypings, samples, problems = get_pretypings_from_limsrep(alleles, local_cf, log)
 
-    for sample in pretypings:
-        for col in pretypings[sample]:
-            print(col, pretypings[sample][col])
-    print(problems)
+    # alleles = [['ID20271311', 'KIR3DS1'],
+    #            ['ID20284746', 'KIR3DS1'],
+    #            ['IDblubb', 'KIR3DS1'],
+    #            ]
+    #
+    # pretypings, samples, problems = get_pretypings_from_limsrep(alleles, local_cf, log)
+    #
+    # for sample in pretypings:
+    #     for col in pretypings[sample]:
+    #         print(col, pretypings[sample][col])
+    # print(problems)
 
     # typing = "00101A/00104A/00601B/00602B/00603B/00801B/00803B/01201A/01202A"
     # split_2DL5AB(typing, log)
 
-
     # write_pretypings_file(pretypings, samples, output_file, log)
-    
-        
+
+    # write_auftraggeber(local_cf, settings, log)
+    samples = ['ID19710265', 'ID14252097', '12345']
+    get_countries_and_dates_from_oracle_db(samples, log)
+
+
 if __name__ == "__main__":
     log = general.start_log(level="DEBUG")
     log.info("<Start {} V{}>".format(os.path.basename(__file__), __version__))
     main(log)
     log.info("<End>")
-

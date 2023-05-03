@@ -24,7 +24,7 @@ from typing import List, Optional, Tuple
 from typeloader_core import (EMBLfunctions as EF, coordinates as COO, backend_make_ena as BME,
                              backend_enaformat as BE, getAlleleSeqsAndBlast as GASB,
                              closestallele as CA, errors, update_reference)
-import general, db_internal
+import general, db_internal, db_external
 
 # ===========================================================
 # parameters:
@@ -123,7 +123,8 @@ class Allele:
 # functions:
 
 
-def perform_reference_update(db_name, reference_local_path, blast_path, proxy, log, version=None):
+def perform_reference_update(db_name: str, reference_local_path: str, blast_path: str, proxy: str | None, log,
+                             version: str = None) -> Tuple[bool, str | None, str]:
     """call trigger reference update of a database
 
     :param db_name: HLA or KIR
@@ -156,7 +157,7 @@ def perform_reference_update(db_name, reference_local_path, blast_path, proxy, l
     return success, err, update_msg
 
 
-def update_curr_versions(settings, log):
+def update_curr_versions(settings: dict, log) -> None:
     """gets the current version of the reference databases
     """
     log.info(f"Getting current database versions...")
@@ -176,8 +177,8 @@ def update_curr_versions(settings, log):
     settings["db_versions"] = db_versions
 
 
-def toggle_project_status(proj_name, curr_status, log, values=["Open", "Closed"],
-                          texts=["Close Project", "Reopen Project"], parent=None):
+def toggle_project_status(proj_name: str, curr_status: str, log, values=["Open", "Closed"],
+                          texts=["Close Project", "Reopen Project"], parent=None) -> Tuple[bool, str, int]:
     """toggles the status of a given project between 'Open' and 'Closed';
     returns success (bool) + the new status (str)
     """
@@ -198,7 +199,7 @@ def toggle_project_status(proj_name, curr_status, log, values=["Open", "Closed"]
         return success, curr_status, 0
 
 
-def upload_parse_sequence_file(raw_path, settings, log, use_given_reference=False):
+def upload_parse_sequence_file(raw_path: str, settings: dict, log, use_given_reference: str | bool = False):
     """uploads file from raw_path to temp_dir and parses it
     """
     log.debug("Uploading file {} to temp location...".format(raw_path))
@@ -264,7 +265,7 @@ def upload_parse_sequence_file(raw_path, settings, log, use_given_reference=Fals
     return True, sample_name, filetype, temp_raw_file, blastXmlFile, targetFamily, fasta_filename, allelesFilename, header_data
 
 
-def reformat_header_data(header_data, sample_id_ext, log):
+def reformat_header_data(header_data: dict, sample_id_ext: str | None, log):
     """translates header data into columns
     """
     log.debug("Translating header...")
@@ -292,7 +293,7 @@ def reformat_header_data(header_data, sample_id_ext, log):
         header_data["Spendernummer"] = sample_id_ext
 
 
-def remove_other_allele(blast_xml_file, fasta_file, other_allele_name, log, replace=True):
+def remove_other_allele(blast_xml_file: str, fasta_file: str, other_allele_name: str, log, replace: bool = True):
     """removes the non-chosen allele from an XML input file and the generated fasta file
     so it will not later create difficulties (#115)
     """
@@ -341,8 +342,9 @@ def remove_other_allele(blast_xml_file, fasta_file, other_allele_name, log, repl
     log.debug("\t=> Done!")
 
 
-def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_filename,
-                          allelesFilename, header_data, settings, log, incomplete_ok=False, startover=False):
+def process_sequence_file(project: str, filetype: str, blastXmlFile: str, targetFamily: str, fasta_filename: str,
+                          allelesFilename: str, header_data: dict, settings: dict, log, incomplete_ok=False,
+                          startover=False):
     log.debug("Processing sequence file...")
     if startover:
         allele_nr = startover["allele_nr"]
@@ -512,7 +514,7 @@ def process_sequence_file(project, filetype, blastXmlFile, targetFamily, fasta_f
         return False, "Error while processing the sequence file", repr(E)
 
 
-def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log, incomplete_ok=False):
+def make_ENA_file(blastXmlFile: str, targetFamily: str, allele: Allele, settings: dict, log, incomplete_ok=False):
     """creates ENA file for allele chosen from XML file
     """
     log.debug("Creating ENA text...")
@@ -565,9 +567,9 @@ def make_ENA_file(blastXmlFile, targetFamily, allele, settings, log, incomplete_
     return ENA_text
 
 
-def move_files_to_sample_dir(project, sample_name, local_name, filetype,
-                             temp_raw_file, blastXmlFile, fasta_filename,
-                             settings, log):
+def move_files_to_sample_dir(project: str, sample_name: str, local_name: str, filetype: str,
+                             temp_raw_file: str, blastXmlFile: str, fasta_filename: str,
+                             settings: dict, log):
     """creates sample_dir and moves all sequence files there,
     renames them to cell line
     """
@@ -585,9 +587,10 @@ def move_files_to_sample_dir(project, sample_name, local_name, filetype,
     return sample_dir, raw_file, fasta_filename, blastXmlFile
 
 
-def save_new_allele(project, sample_name, local_name, ENA_text,
-                    filetype, temp_raw_file, blastXmlFile, fasta_filename, restricted_db_path,
-                    settings, log):
+def save_new_allele(project: str, sample_name: str, local_name: str, ENA_text: str,
+                    filetype: str, temp_raw_file: str, blastXmlFile: str, fasta_filename: str,
+                    restricted_db_path: str | bool,
+                    settings: dict, log):
     """saves files of new target allele and writes ENA file
     """
     log.debug("Saving files for allele {}...".format(local_name))
@@ -632,10 +635,10 @@ def save_new_allele(project, sample_name, local_name, ENA_text,
     return (True, None, None, files)
 
 
-def save_new_allele_to_db(allele, project,
-                          filetype, raw_file, fasta_filename, blastXmlFile,
-                          header_data, targetFamily,
-                          ena_path, restricted_alleles, settings, mydb, log, startover=False,
+def save_new_allele_to_db(allele: str, project: str,
+                          filetype: str, raw_file: str, fasta_filename: str, blastXmlFile: str,
+                          header_data: dict, targetFamily: str,
+                          ena_path: str, restricted_alleles: str | bool, settings: dict, mydb, log, startover=False,
                           ):
     """save new allele to internal database
     """
@@ -793,7 +796,7 @@ def save_new_allele_to_db(allele, project,
         return (False, "Error during allele saving", msg)
 
 
-def parse_bulk_csv(csv_file, settings, log):
+def parse_bulk_csv(csv_file: str, settings: dict, log):
     """parses a bulk upload csv file,
     returns list of alleles to upload
     """
@@ -858,8 +861,8 @@ def parse_bulk_csv(csv_file, settings, log):
     return alleles, error_dic, i
 
 
-def handle_new_allele_parsing(project_name, sample_id_int, sample_id_ext, raw_path, customer,
-                              settings, log, use_restricted_db=False):
+def handle_new_allele_parsing(project_name: str, sample_id_int: str, sample_id_ext: str, raw_path: str, customer: str,
+                              settings: dict, log, use_restricted_db=False):
     """handles step one of the uploading of one new allele to TL;
     called by NewAlleleForm and upload_new_allele_complete()
     """
@@ -885,9 +888,9 @@ def handle_new_allele_parsing(project_name, sample_id_int, sample_id_ext, raw_pa
     return True, results
 
 
-def upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_path, customer,
-                               provenance, sample_date,
-                               settings, mydb, log, incomplete_ok=False, use_restricted_db=False,
+def upload_new_allele_complete(project_name: str, sample_id_int: str, sample_id_ext: str, raw_path: str, customer: str,
+                               provenance: str, sample_date: str,
+                               settings: dict, mydb, log, incomplete_ok=False, use_restricted_db=False,
                                startover=False):
     """adds one new target sequence to TypeLoader
     """
@@ -955,7 +958,7 @@ def upload_new_allele_complete(project_name, sample_id_int, sample_id_ext, raw_p
         return False, "{}: {}".format(err_type, msg)
 
 
-def bulk_upload_new_alleles(csv_file, project, settings, mydb, log):
+def bulk_upload_new_alleles(csv_file: str, project: str, settings: dict, mydb, log):
     """performs bulk uploading, parsing and saving of new target alleles
     specified in a .csv file
     """
@@ -999,7 +1002,7 @@ def bulk_upload_new_alleles(csv_file, project, settings, mydb, log):
     return report, errors_found, alleles_uploaded
 
 
-def delete_sample(sample, nr, project, settings, log, parent=None):
+def delete_sample(sample: str, nr, project: str, settings: dict, log, parent=None):
     """delete a sample from the database & file system
     """
     log.info(f"Deleting {sample} allele #{nr} from project {project}...")
@@ -1066,7 +1069,7 @@ def delete_sample(sample, nr, project, settings, log, parent=None):
         f"=> Sample {sample} #{nr} of project {project} successfully deleted from database and file system")
 
 
-def delete_all_samples_from_project(project_name, settings, log, parent=None):
+def delete_all_samples_from_project(project_name: str, settings: str, log, parent=None):
     log.info("Deleting all samples from project {}...".format(project_name))
     query = "select sample_id_int, allele_nr from ALLELES where project_name = '{}'".format(project_name)
     _, data = db_internal.execute_query(query, 2, log, "Getting samples from ALLELES table", "Sample Deletion Error",
@@ -1075,14 +1078,14 @@ def delete_all_samples_from_project(project_name, settings, log, parent=None):
         delete_sample(sample_id_int, nr, project_name, settings, log)
 
 
-def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
+def id_generator(size: int = 8, chars=string.ascii_uppercase + string.digits):
     """generates a random string of length {size},
     using characters given in {chars}
     """
     return ''.join(random.choices(chars, k=size))
 
 
-def create_ENA_filenames(project_name, ENA_ID, settings, log):
+def create_ENA_filenames(project_name: str, ENA_ID: str, settings: dict, log):
     """creates the filenames for all files needed for ENA sequence submission,
     returns them as a dict
     """
@@ -1103,8 +1106,9 @@ def create_ENA_filenames(project_name, ENA_ID, settings, log):
     return file_dic, curr_time, analysis_alias
 
 
-def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_time, samples, input_files, file_dic,
-                                    settings, log):
+def submit_sequences_to_ENA_via_CLI(project_name: str, ENA_ID: str, analysis_alias: str, curr_time: str,
+                                    samples, input_files, file_dic,
+                                    settings: dict, log):
     """handles submission of sequences via ENA's Webin-CLI & creation of all files for this
     """
     log.info("Submitting sequences to ENA...")
@@ -1190,12 +1194,12 @@ def submit_sequences_to_ENA_via_CLI(project_name, ENA_ID, analysis_alias, curr_t
     return ena_results, True, None, None, problem_samples
 
 
-def submit_alleles_to_ENA(project_name, ENA_ID, samples, files, settings, log):
+def submit_alleles_to_ENA(project_name: str, ENA_ID: str, samples, files, settings: dict, log):
     """handles submission of a set of allele files to ENA
 
     :param project_name: name of the project the alleles belong to
     :param ENA_ID: ENA's internal ID (PRJEB-ID) of the project
-    :param samples: list of alleles to submit, format: [[project_name, str(allele_nr)]]
+    :param samples: list of alleles to submit, format: [[project_name, str(allele_nr), sample_id_int]]
     :param files: list of corresponding ENA files, format: ['project_dir/sample_id_int/allele_name.ena.txt']
     :param settings: the user's settings_dic
     :param log: logger instance
@@ -1234,9 +1238,9 @@ def submit_alleles_to_ENA(project_name, ENA_ID, samples, files, settings, log):
     return success, file_dic, ena_results, problem_samples, err_type, msg
 
 
-def upload_allele_with_restricted_db(project_name, sample_id_int, sample_id_ext, raw_path,
-                                     customer, provenance, sample_date, reference_alleles,
-                                     settings, mydb, log):
+def upload_allele_with_restricted_db(project_name: str, sample_id_int: str, sample_id_ext: str, raw_path: str,
+                                     customer: str, provenance: str, sample_date: str, reference_alleles,
+                                     settings: dict, mydb, log):
     """re-attempts upload of a target allele file, using a restricted reference database.
     This can become necessary if TL cannot automatically find a good reference allele. (#149)
 
@@ -1270,7 +1274,7 @@ def upload_allele_with_restricted_db(project_name, sample_id_int, sample_id_ext,
     return success, msg
 
 
-def collect_old_files_for_renaming(project_name, sample_id_int, allele_nr, parent, settings, log):
+def collect_old_files_for_renaming(project_name: str, sample_id_int: str, allele_nr, parent, settings, log):
     log.debug("\tFinding old files in database...")
     file_query = f"""select alleles.local_name, raw_file, fasta, blast_xml, ena_file, 
                         ipd_submission_file, ipd_submission_nr
@@ -1311,7 +1315,7 @@ def collect_old_files_for_renaming(project_name, sample_id_int, allele_nr, paren
     return True, local_name, rename_me
 
 
-def mark_as_outdated(value):
+def mark_as_outdated(value: str):
     """if value exists, mark it with a suffix as outdated
     """
     suffix = "_outdated!"
@@ -1323,7 +1327,7 @@ def mark_as_outdated(value):
     return value
 
 
-def get_protected_values(project_name, sample_id_int, local_name, parent, log):
+def get_protected_values(project_name: str, sample_id_int: str, local_name: str, parent, log):
     log.debug("Getting protected values from db...")
 
     query = f"""select allele_nr, project_nr, gene, reference_database, database_version, 
@@ -1388,7 +1392,7 @@ def get_protected_values(project_name, sample_id_int, local_name, parent, log):
     return True, startover_dic
 
 
-def initiate_startover_allele(project_name, sample_id_int, allele_nr, parent, settings, log):
+def initiate_startover_allele(project_name: str, sample_id_int: str, allele_nr, parent, settings: dict, log):
     log.info(f"Initiating startover...")
 
     success, err_msg, rename_files = collect_old_files_for_renaming(project_name, sample_id_int, allele_nr, parent,
@@ -1418,7 +1422,7 @@ def initiate_startover_allele(project_name, sample_id_int, allele_nr, parent, se
     return True, None, None, startover_dic
 
 
-def read_raw_country_list(settings, log):
+def read_raw_country_list(settings: dict, log) -> List[str]:
     """Read list of countries from reference file."""
     log.info("Reading list of countries...")
     reference_path = Path(settings["root_path"]) / settings["general_dir"] / settings["reference_dir"]
@@ -1432,7 +1436,7 @@ def read_raw_country_list(settings, log):
     return countries
 
 
-def sort_country_list(countries, favourites, log):
+def sort_country_list(countries: List[str], favourites: List[str], log) -> List[str]:
     """Sort list of countries by placing favourites first.
 
     Keep rest of sorting intact, which should be alphabetical.
@@ -1445,7 +1449,7 @@ def sort_country_list(countries, favourites, log):
     return countries
 
 
-def assemble_country_list(settings, log):
+def assemble_country_list(settings: dict, log) -> List[str]:
     """Assemble list of country options in conveniently sorted order."""
     raw_countries = read_raw_country_list(settings, log)
 
@@ -1497,6 +1501,158 @@ def check_date(mydate: str) -> Tuple[bool, str | None]:
     return True, None
 
 
+def get_existing_spatiotemporal_data(samples: List[str], log, parent=None) -> dict | bool:
+    """Get customer, provenance and collection_date values of all samples from TypeLoader database.
+
+    returns: existing_data_dic[sample_id_int] = {"country": country,
+                                                 "collection_date": collection_date,
+                                                 "customer": customer}
+             OR False, if query not successfull (=> displays error popup to parent)
+    """
+    samples_str = "', '".join(samples)
+    get_query = f"""select sample_id_int, country, collection_date, customer 
+                    from SAMPLES 
+                    where sample_id_int in ('{samples_str}')
+                    """
+    success, data = db_internal.execute_query(get_query, 4, log,
+                                              "getting existing spatiotemporal data from internal database",
+                                              err_type="Database Error", parent=parent)
+    if not success:
+        return False
+
+    existing_data_dic = {}
+    for (sample_id_int, country, collection_date, customer) in data:
+        existing_data_dic[sample_id_int] = {"country": country,
+                                            "collection_date": collection_date,
+                                            "customer": customer}
+    return existing_data_dic
+
+
+def integrate_spatiotemporal_data(new_spatiotemporal_dic: dict, existing_data_dic: dict) -> Tuple[
+    defaultdict, defaultdict, List[str]]:
+    """Integrate customer, provenance and collection_date from oracle database with already defined values.
+
+    :param new_spatiotemporal_dic: contains results from oracle db
+    :param existing_data_dic: contains content of already defined fields
+
+    :returns:
+        - missing: defaultdict with fields for which no data was found in oracle db:
+                missing[sample_id_int] = ["field name"]
+        - already_defined: defaultdict with fields that would be overwritten
+                already_defined[sample_id_int] = [("field name", TL_value, oracle_db_value))
+        - update_queries: list of queries to update each sample (1 query per sample)
+                => only empty fields are filled with the values from oracle db
+                => everything else is kept as it is
+    """
+    update_queries = []
+    already_defined = defaultdict(list)
+    missing = defaultdict(list)
+    for sample_id_int in sorted(new_spatiotemporal_dic.keys()):
+        (country, year, customer) = new_spatiotemporal_dic[sample_id_int]
+        old_country = existing_data_dic[sample_id_int]["country"]
+        if old_country:
+            if country != old_country:
+                already_defined[sample_id_int].append(("provenance", old_country, country))
+            country = old_country
+
+        old_date = existing_data_dic[sample_id_int]["collection_date"]
+        if old_date:
+            if year != old_date:
+                already_defined[sample_id_int].append(("collection date", old_date, year))
+            year = old_date
+
+        old_customer = existing_data_dic[sample_id_int]["customer"]
+        if old_customer:
+            if customer != old_customer:
+                already_defined[sample_id_int].append(("customer", old_customer, customer))
+            customer = old_customer
+
+        for (name, var) in [("customer", customer), ("provenance", country), ("collection date", year)]:
+            if name == "customer":
+                customer = var
+            if not var or var == "missing: third party data":
+                if name == "provenance":
+                    name = f"provenance (customer: {customer})"
+                missing[sample_id_int].append(name)
+
+        update_query = f"""update SAMPLES
+                                    set country = '{country}', collection_date = '{year}', customer = '{customer}'
+                                    where sample_id_int = '{sample_id_int}'
+                                    """
+        update_queries.append(update_query)
+
+    return missing, already_defined, update_queries
+
+
+def report_spatiotemporal_updates(missing: defaultdict, already_defined: defaultdict) -> str:
+    """Generate a human-friendly message with all events except for updating of previously empty fields.
+    """
+    msg = ""
+    if missing:
+        msg += f"The following {len(missing)} samples had missing values in the oracle database:\n"
+        for sample in missing:
+            msg += f" - {sample}: {', '.join(missing[sample])}\n"
+        msg += "=> Using 'missing: third party data'"
+        if ": customer" in msg:
+            msg += " (Customer fields for unknown left empty)"
+
+    msg2 = ""
+    if already_defined:
+        msg2 = f"The following {len(already_defined)} samples had already defined values, which were kept:\n"
+        for sample in already_defined:
+            predefined = already_defined[sample]
+            if len(predefined) > 1:
+                msg2 += f" - {sample}:\n"
+                for (name, old_value, new_value) in predefined:
+                    if new_value == "missing: third party data" or (name == "customer" and not new_value):
+                        new_value = "no data"
+                    else:
+                        new_value = f"'{new_value}'"
+                    msg2 += f"    {name}: '{old_value}' (database: {new_value})\n"
+            else:
+                (name, old_value, new_value) = predefined[0]
+                if new_value == "missing: third party data" or (name == "customer" and not new_value):
+                    new_value = "no data"
+                else:
+                    new_value = f"'{new_value}'"
+                msg2 += f" - {sample}: {name}: '{old_value}' (database: {new_value})\n"
+
+    msg = "\n\n".join([msg, msg2]).strip()
+    return msg
+
+def update_spatiotemporal_data(samples: List[str], mydb, log, parent=None) -> Tuple[bool, str]:
+    """Handle updating of customer, provenance and collection_date from oracle database.
+
+    :returns:
+        - success: bool
+        - msg: str (empty if nothing noteworthy occurred)
+            (noteworthy:    - no data found for a field
+                            - discrepancy between data already saved in TypeLoader and oracle db result
+                              (In these cases, the original TL data is kept and NOT overwritten.))
+    """
+    log.info(f"Updating provenance and collection_date from external database for {len(samples)} samples...")
+
+    existing_data_dic = get_existing_spatiotemporal_data(samples, log, parent)
+
+    new_spatiotemporal_dic = db_external.get_countries_and_dates_from_oracle_db(samples, log)
+
+    missing, already_defined, update_queries = integrate_spatiotemporal_data(new_spatiotemporal_dic, existing_data_dic)
+
+    success = db_internal.execute_transaction(update_queries, mydb, log,
+                                              "updating provenance and collection_date for this project",
+                                              "Database error", parent)
+
+    msg = report_spatiotemporal_updates(missing, already_defined)
+
+    if msg:
+        log.info(msg)
+    if success:
+        log.info("\t=> successfully updated provenance and collection_date!")
+    else:
+        log.info("=> provenance and collection_date update failed!")
+    return success, msg
+
+
 # ===========================================================
 # main:
 
@@ -1509,8 +1665,12 @@ def main(settings, log, mydb):
 
     # upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, customer, provenance, sample_date,
     #                            settings, mydb, log)
-    bulk_csv = Path(__file__).parent / "sample_files/bulk_upload.csv"
-    alleles, error_dic, i = parse_bulk_csv(bulk_csv, settings, log)
+    # bulk_csv = Path(__file__).parent / "sample_files/bulk_upload.csv"
+    # alleles, error_dic, i = parse_bulk_csv(bulk_csv, settings, log)
+
+    samples = ['IDTest-HLA01', 'IDTest-KIR01', 'IDTest-KIR01', 'IDTest-MIC01']
+    success, msg = update_spatiotemporal_data(samples, mydb, log)
+    print(msg)
 
 
 if __name__ == "__main__":

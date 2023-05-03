@@ -13,6 +13,7 @@ from unittest.mock import patch
 import os, sys, re, time, platform, datetime, csv
 import difflib  # compare strings
 import shutil
+import copy
 from random import randint
 from configparser import ConfigParser
 
@@ -42,7 +43,7 @@ import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_s
 import GUI_mini_dialogs
 import typeloader_functions
 from GUI_login import base_config_file, check_update_needed
-
+import db_external
 from PyQt5.QtWidgets import (QApplication)
 from PyQt5.QtCore import Qt, QTimer, QModelIndex
 
@@ -120,6 +121,7 @@ curr_settings = GUI_login.get_settings("staging", log, cf)
 for key in settings_both:
     curr_settings[key] = settings_both[key]
 curr_settings["embl_submission"] = curr_settings["embl_submission_test"]
+curr_settings["running_modus"] = "automatic tests"
 typeloader_functions.update_curr_versions(curr_settings, log)
 
 embl_test_server = curr_settings["embl_submission"]
@@ -801,9 +803,14 @@ class Test_Send_To_ENA(unittest.TestCase):
             self.skipTest(self, "Skipping Submission to ENA because skip_other_tests is set to True")
         else:
             self.project_name = project_name  # "20180710_SA_A_1292"
-            self.form = ENA.ENASubmissionForm(log, mydb, self.project_name, curr_settings, parent=None)
             self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"],
                                       "ENA_submission")
+            self.donor = samples_dic["sample_1"]["id_int"]
+            self.provenance = samples_dic["sample_1"]["provenance"]
+            self.collection_date = samples_dic["sample_1"]["collection_date"]
+            self.customer = samples_dic["sample_1"]["customer"]
+
+            self.form = ENA.ENASubmissionForm(log, mydb, self.project_name, curr_settings, parent=None)
 
     @classmethod
     def tearDownClass(self):
@@ -814,7 +821,7 @@ class Test_Send_To_ENA(unittest.TestCase):
         """
         Takes the 2 samples out of Test_Create_New_Allele
         """
-        # ok button clickable, if project was choosen [setUpClass]
+        # ok button clickable, if project was chosen [setUpClass]
         self.form.ok_btn.click()
 
         # they are activated by initialisation, but to be sure...
@@ -835,6 +842,15 @@ class Test_Send_To_ENA(unittest.TestCase):
         self.form.submit_btn.click()
         # do not write in database, if close btn isn't clicked
         self.form.close_btn.click()
+
+    def test_spatiotemporal_data_string(self):
+        """Ensure that the displayed text of update_spatiotemporal_data() is correct."""
+        msg_exp = f"""The following 1 samples had already defined values, which were kept:
+ - {self.donor}:
+    provenance: '{self.provenance}' (database: no data)
+    collection date: '{self.collection_date}' (database: no data)
+    customer: '{self.customer}' (database: no data)"""
+        self.assertEqual(self.form.spatiotemporal_msg, msg_exp)
 
     def test_parse_ena_manifest_and_flatfile(self):
         """Parse the written ena manifest file and flatfile
@@ -2101,11 +2117,12 @@ The problem-alleles were NOT added. Please fix them and try again!"""
 
 class Test_provenance_and_collection_date(unittest.TestCase):
     """
-    test correct handling of spatiotemporal data
+    test correct recognition of entries for spatiotemporal data as ok or bad
     """
 
     @classmethod
     def setUpClass(self):
+        oracle_results = {}
         if skip_other_tests:
             self.skipTest(self, "Skipping Test_provenance_and_collection_date because skip_other_tests is set to True")
         else:
@@ -2113,6 +2130,26 @@ class Test_provenance_and_collection_date(unittest.TestCase):
             self.bad_dates = ["None", "1.1.2002", "01.01.2002", "01. May 2002", "May 2002"]
             self.ok_provenances = ["Germany", "USA", "United Kingdom"]
             self.bad_provenances = ["Blue", "United States", "UK"]
+            self.sample_dic = {"ID12230832": {"collection_date": "2015",  # happy
+                                              "customer": "DKMS",
+                                              "country": "Germany"},
+                               "ID18958619": {"collection_date": "2020",  # happy
+                                              "customer": "DKMSPL",
+                                              "country": "Poland"},
+                               "ID18819935": {"collection_date": "2020",  # customer already defined
+                                              "customer": "DKMS-BMST",
+                                              "country": "India"},
+                               "ID17080773": {"collection_date": "2018",  # customer and country already defined
+                                              "customer": "X_Test_02",
+                                              "country": "missing: third party data"},
+                               "ID1": {"customer": "",  # sample not in database
+                                       "collection_date": "missing: third party data",
+                                       "country": "missing: third party data"}
+                               }
+            self.already_defined_dic = copy.deepcopy(self.sample_dic)
+            self.already_defined_dic["ID17080773"]["customer"] = "Elrond"
+            self.already_defined_dic["ID17080773"]["country"] = "Rivendell"
+            self.already_defined_dic["ID18819935"]["customer"] = "BMST"
 
     @classmethod
     def tearDownClass(self):
@@ -2158,6 +2195,64 @@ class Test_provenance_and_collection_date(unittest.TestCase):
         assert msg == "All items must be exactly spelled like in the official list!\n" \
                       "The following items do not match: \n" \
                       "\t- 'Blue'\t- 'United States'\t- 'UK'"
+
+    def test_oracle_db_results(self):
+        samples = list(self.sample_dic.keys())
+        results = db_external.get_countries_and_dates_from_oracle_db(samples, log)
+        self.assertTrue(results)
+
+        for sample in self.sample_dic:
+            self.assertTrue(sample in results)
+            (country, year, customer) = results[sample]
+            self.assertEqual(country, self.sample_dic[sample]["country"])
+            self.assertEqual(year, self.sample_dic[sample]["collection_date"])
+            self.assertEqual(customer, self.sample_dic[sample]["customer"])
+        self.__class__.oracle_results = results
+
+    def test_integration(self):
+        oracle_results = self.__class__.oracle_results
+        results = typeloader_functions.integrate_spatiotemporal_data(oracle_results, self.already_defined_dic)
+        missing, already_defined, update_queries = results
+        report = typeloader_functions.report_spatiotemporal_updates(missing, already_defined)
+
+        self.assertEqual(sorted(list(missing.keys())), ['ID1'])
+        self.assertEqual(missing['ID1'], ['customer',
+                                          'provenance (customer: )',
+                                          'collection date'])
+
+        self.assertEqual(sorted(list(already_defined.keys())), ['ID17080773', 'ID18819935'])
+        self.assertEqual(already_defined['ID17080773'], [('provenance', 'Rivendell', 'missing: third party data'),
+                                                         ('customer', 'Elrond', 'X_Test_02')])
+        self.assertEqual(already_defined['ID18819935'], [('customer', 'BMST', 'DKMS-BMST')])
+
+        queries_exp = []
+        for sample in sorted(self.already_defined_dic.keys()):
+            country = self.already_defined_dic[sample]["country"]
+            year = self.already_defined_dic[sample]["collection_date"]
+            customer = self.already_defined_dic[sample]["customer"]
+            query = f"""update SAMPLES
+                        set country = '{country}', collection_date = '{year}', customer = '{customer}'
+                        where sample_id_int = '{sample}'
+                    """
+            queries_exp.append(query)
+
+        self.assertEqual(len(update_queries), len(queries_exp))
+        for i in range(len(queries_exp)):
+            query = " ".join(update_queries[i].split())  # set all whitespace to ' '
+            query_exp = " ".join(queries_exp[i].split())  # set all whitespace to ' '
+            self.assertEqual(query, query_exp)
+
+        report_exp = """The following 1 samples had missing values in the oracle database:
+ - ID1: customer, provenance (customer: ), collection date
+=> Using 'missing: third party data' (Customer fields for unknown left empty)
+
+The following 2 samples had already defined values, which were kept:
+ - ID17080773:
+    provenance: 'Rivendell' (database: no data)
+    customer: 'Elrond' (database: 'X_Test_02')
+ - ID18819935: customer: 'BMST' (database: 'DKMS-BMST')"""
+        self.assertEqual(report, report_exp)
+
 
 
 class TestIncompleteSequences(unittest.TestCase):

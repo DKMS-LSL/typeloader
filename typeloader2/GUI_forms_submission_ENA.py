@@ -22,7 +22,8 @@ import general, db_internal
 from GUI_forms import (CollapsibleDialog, ChoiceSection,
                        ProceedButton, QueryButton, FileChoiceTable, check_project_open)
 from GUI_misc import settings_ok
-from typeloader_functions import submit_alleles_to_ENA
+from GUI_functions_local import check_local
+from typeloader_functions import submit_alleles_to_ENA, update_spatiotemporal_data
 
 
 # ===========================================================
@@ -166,6 +167,7 @@ class ENASubmissionForm(CollapsibleDialog):
         self.problem_samples = []
         self.file_dic = {}
         self.ena_results = {}
+        self.spatiotemporal_msg = ""
         self.show()
 
         ok, msg = settings_ok("ENA", self.settings, self.log)
@@ -307,14 +309,14 @@ class ENASubmissionForm(CollapsibleDialog):
             return
 
         self.project_name = self.proj_widget.field.text()
+
         ENA_ID = self.project_info.ENA_ID
 
         projects_dir = self.settings["projects_dir"]
 
-        self.accepted = False
-
         files = []
         j = 0
+        donors = []
         for i in self.project_files.check_dic:
             box = self.project_files.check_dic[i]
             if box.checkState():
@@ -324,8 +326,28 @@ class ENASubmissionForm(CollapsibleDialog):
                 files.append(os.path.join(projects_dir, self.project_name, sample, file))
                 cell_line = file.split(".")[0]
                 self.samples.append([self.project_name, nr])
+                donors.append(sample)
                 self.choices[j] = [self.project_name, nr, sample, cell_line]
                 j += 1
+
+        if check_local(self.settings, self.log):
+            if self.settings["running_modus"] == "automatic tests":
+                success, self.spatiotemporal_msg = update_spatiotemporal_data(donors, self.mydb, self.log, self)
+                assert success
+
+            else:
+                success, msg = update_spatiotemporal_data(donors, self.mydb, self.log, self)
+                if not success:
+                    return
+                if msg:
+                    reply = QMessageBox.question(self, "Some spatiotemporal data missing or already defined",
+                                                 msg + "\n\nContinue submission?",
+                                                 QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes
+                                                 )
+                    if reply == QMessageBox.No:
+                        return
+
+        self.accepted = False
 
         try:
             self.submission_successful = True
