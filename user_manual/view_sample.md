@@ -27,8 +27,12 @@ This table gives information about the sample from which the target allele was s
   * External sample ID
   * Cell line
   * Customer
+  * Provenance
+  * Collection Date
 
-The table can be edited to add or change the customer. It is also possible to change the external sample ID (to correct mis-spellings etc.) via a rightclick menu.
+The table can be edited to add or change the customer, provenance and collection date. 
+It is also possible to change the external sample ID (to correct mis-spellings etc.) 
+via a rightclick menu.
 
 ##  Alleles 
 This table shows all target alleles generated from this sample, with information to identify them and easily see their status values:

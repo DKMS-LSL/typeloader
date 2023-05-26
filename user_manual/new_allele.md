@@ -23,6 +23,11 @@ If TypeLoader does not find the sample's ID in the raw file (it can be provided 
 
 Here, you enter the sample's internal ID (sample identifier within your lab - this is the main ID TypeLoader will use to identify the sample) and external ID (e.g., the sample identifier provided by the client) and click "Done" to proceed.
 
+You can also enter the sample's provenance (use the [=> Settings dialog](settings.md) 
+to specify preferred provenances, which will then be listed first in the dropdown menu)
+and date of collection here, or leave these empty to add them later. 
+(You will have to enter them before ENA submission.)
+
 **If you get a popup dialog called "Manual choice of reference alleles necessary", please see [=> here](new_allele_restricted_reference.md) for the next steps necessary before you can continue with uploading your allele.**
 
 ##  (2) Specifying allele details (for XML files) 

@@ -33,6 +33,9 @@ The following keys are  currently recognized:
  * **software** (software used for full-length genotyping)
  * **version** (version of the software used for full-length genotyping)
  * **date** (date of secondary genotyping)
+ * **customer** (customer who provided the sample)
+ * **provenance** (country in which the sample was taken)
+ * **collection_date** (timestamp at which the sample was taken; must comply to ISO8601)
 
 ### Fasta file format
 Fasta files are standard text files for sequences. The first line is the header and starts with a ">" followed by the name of the sequence (any name will do) and any additional information separated by a space (see above). The second line and all following lines contain the actual sequence, which ends if the file ends or the next header starts, whichever happens first.

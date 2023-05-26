@@ -1,4 +1,7 @@
 # ![Icon](images/TypeLoader_32.png) Submit alleles to IPD 
+
+Once ENA has notified you by email that they have assigned accession numbers to a project, you can proceed to IPD submission.
+
 ![Important](images/icon_important.png) **Your IPD user settings will be incorporated into the IPD files you generate. So make sure yours are ok before you start (using the [=> Settings Dialog](settings.md)). If this is your first IPD submission, create just one file and manually copy the data into [IPD's Submission Page](https://www.ebi.ac.uk/ipd/imgt/hla/subs/submit.html) to receive your submittor ID for future submissions. ([=> How to feed TypeLoader's results into IPD's webform](ipd_webform.md)). Then follow the instructions for [=> Registering as a bulk submittor with IPD](ipd.md).**
 
 To submit (one or multiple) alleles to IPD (IMGT/HLA or KIR), click ``Submit to IPD`` in the menu or toolbar, or choose ``Submit project to IPD`` in the [=> Project Overview](overview_project.md).
@@ -15,29 +18,29 @@ Your currently selected project will be pre-selected. To choose a different proj
 
 Clicking ``Proceed`` will take you to the next step.
 
-##  (2) Upload additional files 
+##  (2) Upload pretypings file 
 
-Here, you will have to upload the additional files needed for IPD:
+Here, you will have to upload additional data needed for IPD:
 ![IPDSubmission](images/ipd_submission2.png)
 
-###  ENA reply file 
-You will find this file attached to the email you received from ENA once your ENA submission was accepted. (It has no file extension.)
-
-TypeLoader needs it to find the ENA accession number of each allele, which is required for IPD submission.
-
-Save this file to anywhere on your computer and click ``upload email attachment from ENA reply`` to choose and upload it to TypeLoader.
+**Note:** before TypeLoader version 2.14, you had to upload an ENA reply file at 
+this point. 
+These files are no longer sent by ENA. Instead, TypeLoader now receives the ENA 
+accession numbers directly from ENA's server at this point. 
 
 ###  Pretyping file 
 For each target allele, IPD requires the genotyping results for all other loci known for this sample. See [=> Pretypings file](pretypings.csv) for detailed documentation of how to create this file.
 
 Once you have your pretypings file, click ``Choose file with pretypings for each sample`` to choose and upload this file to TypeLoader.
 
+Then click the green ``Proceed`` button.
+
 ##  (3) Choose alleles to submit 
 ![IPDSubmission](images/ipd_submission3.png)
 
 On the left, you can find information about the project you have selected and how many of how many overall alleles you have currently selected for submission.
 
-Of the right, you find a list of all alleles of the project **that were contained in the ENA file you uploaded** with their respective allel status values [=> color-coded](colors_icons.md).
+Of the right, you find a list of all alleles of the project **that have ENA accession numbers and pretypings** with their respective allel status values [=> color-coded](colors_icons.md).
 
 All alleles that have the allele status ``ENA submitted`` or ``ENA accepted`` are automatically pre-selected.
 

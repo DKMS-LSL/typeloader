@@ -118,3 +118,10 @@ poetry run python typeloader2/typeloader_GUI.py
 
 
 See [=> First Start](first_start.md) for how to continue after setup.
+
+
+# TypeLoader Updates
+
+If upon Typeloader start you get a popup notifying you of a new release, please close TypeLoader and call `git pull` in the `typeloader` repository to collect it.
+
+Then restart TypeLoader as usual and you should have the new version.

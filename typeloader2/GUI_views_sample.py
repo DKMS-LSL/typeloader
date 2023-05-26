@@ -111,7 +111,7 @@ class SampleTable(InvertedTable):
         #         query_text = "select * from samples"
         #         editables = {2 : ("update samples SET customer = '{}' where sample_id_int = '{}'", [0])}
         #         self.model = SqlQueryModel_editable(editables, query_text, hasGroupBy = False)
-        self.model = SqlTableModel_protected([0, 1])
+        self.model = SqlTableModel_protected([0, 1, 2])
         self.model.setTable("samples")
         self.model.select()
         self.model.setEditStrategy(edit_on_manual_submit)

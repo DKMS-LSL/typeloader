@@ -17,11 +17,13 @@ To give TypeLoader the files you want to bulk-upload, you need a .csv file conta
   * **sample\_id_int**: the internal sample ID for the sample 
   * **sample\_id_ext**: the external sample ID for the sample
   * **customer**: (optional) the customer who issued the sample
-  * **incomplete_ok**: (optional) if the sequence is known and accepted to be incomplete, write "ok" here (see [=> Sequence Requirements](new_allele_requirements.md))
+  * **incomplete_ok**: (optional) if the sequence is known and accepted to be incomplete, write "ok" or "True" here (see [=> Sequence Requirements](new_allele_requirements.md))
+  * **provenance**: (optional) the country where this sample was taken; must confirm to the [=> Spatiotemporal data](spatiotemporal_data.md) requirements 
+  * **collection_date**: (optional) the timestamp when this sample was taken; needs to be ISO8601 compliant (see [=> Spatiotemporal data](spatiotemporal_data.md))
 
 ![Pic](images/bulk_upload_csv.png)
 
-The customer will be added to the database if provided, or left empty if not.
+The customer, provenance and collection_date will be added to the database if provided, or left empty if not.
 
 ##  Performing a bulk fasta upload 
 To use this feature, use the Menu to choose ``New`` => ``New sequences (bulk fasta upload)``. This will open the New Allele Bulk Upload-dialog:

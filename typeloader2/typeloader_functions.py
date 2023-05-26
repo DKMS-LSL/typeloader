@@ -761,7 +761,7 @@ def save_new_allele_to_db(allele: str, project: str,
                 values ('{allele.sample_id_int}', 
                         '{header_data["Spendernummer"]}', 
                         '{allele.cell_line}',
-                        '{header_data["Customer"]}',
+                        '{header_data["customer"]}',
                         '{header_data["provenance"]}',
                         '{header_data["collection_date"]}'
                 )
@@ -1121,9 +1121,7 @@ def check_spatiotemporal_data_final(samples, files, update_dic, settings, log):
         else:
             if not country in valid_countries:
                 msg += f"{sample_id_int}: invalid provenance '{country}'!\n"
-                invalid_country_msg = "All provenances must adhere to the options at " \
-                                      "https://www.insdc.org/documents/country-qualifier-vocabulary or " \
-                                      "https://www.insdc.org/submitting-standards/missing-value-reporting/"
+                invalid_country_msg = "All provenances must adhere to the controlled vocabulary specified by INSDC (see https://github.com/DKMS-LSL/typeloader/blob/master/user_manual/spatiotemporal_data.md)!"
 
     if invalid_date_msg:
         msg += "\n=> " + invalid_date_msg
