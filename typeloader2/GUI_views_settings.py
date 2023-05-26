@@ -445,7 +445,7 @@ class UserSettingsDialog(QDialog):
 
         if field == "fav_provenances":
             values = value.split("|")
-            ok, msg = typeloader_functions.check_countries_ok(values, self.settings, self.log)
+            ok, msg, _ = typeloader_functions.check_countries_ok(values, self.settings, self.log)
             if not ok:
                 QMessageBox.warning(self, "Not-allowed element(s) in 'Preferred Provenances'!", msg)
                 return False

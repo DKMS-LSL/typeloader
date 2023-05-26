@@ -19,7 +19,7 @@ import string, random, time
 from collections import defaultdict
 from Bio import SeqIO
 
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 
 from typeloader_core import (EMBLfunctions as EF, coordinates as COO, backend_make_ena as BME,
                              backend_enaformat as BE, getAlleleSeqsAndBlast as GASB,
@@ -42,6 +42,12 @@ flatfile_dic = {"function_hla": "antigen presenting molecule",
                 "species": "Homo sapiens"}
 
 PROVENANCE_SOURCE_URL = "https://www.insdc.org/submitting-standards/country-qualifier-vocabulary/"
+
+MISSING_SPATIOTEMPORAL_OPTIONS = [  # source: https://www.insdc.org/submitting-standards/missing-value-reporting/
+    "missing: data agreement established pre-2023",
+    "missing: third party data",
+    "missing: human-identifiable"
+]
 
 DATE_PATTERN = "^\d{4}(-\d{2})?(-\d{2})?$"
 
@@ -1085,6 +1091,103 @@ def id_generator(size: int = 8, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choices(chars, k=size))
 
 
+def check_spatiotemporal_data_final(samples, files, update_dic, settings, log):
+    log.info("Checking present data for completeness and validity...")
+    msg = ""
+    invalid_date_msg = ""
+    invalid_country_msg = ""
+    sample_ids = []
+
+    valid_countries = assemble_country_list(settings, log)
+
+    for entry in files:
+        sample_id_int = Path(entry).parent.name
+        sample_ids.append(sample_id_int)
+
+        # check date:
+        collection_date = update_dic[sample_id_int]["collection_date"]
+        if not collection_date:
+            msg += f"{sample_id_int}: collection date missing!\n"
+        else:
+            ok, mymsg = check_date(collection_date)
+            if not ok:
+                msg += f"{sample_id_int}: invalid collection date '{collection_date}'!\n"
+                invalid_date_msg = mymsg
+
+        # check country:
+        country = update_dic[sample_id_int]["country"]
+        if not country:
+            msg += f"{sample_id_int}: provenance missing!\n"
+        else:
+            if not country in valid_countries:
+                msg += f"{sample_id_int}: invalid provenance '{country}'!\n"
+                invalid_country_msg = "All provenances must adhere to the options at " \
+                                      "https://www.insdc.org/documents/country-qualifier-vocabulary or " \
+                                      "https://www.insdc.org/submitting-standards/missing-value-reporting/"
+
+    if invalid_date_msg:
+        msg += "\n=> " + invalid_date_msg
+    if invalid_country_msg:
+        msg += "\n=> " + invalid_country_msg
+
+    msg = msg.strip()
+    if msg:
+        log.warning("Invalid or missing values for collection dates and/or provenance found!")
+        log.info(msg)
+    else:
+        log.info("All collection dates and provenances present and valid.")
+    return msg.strip(), sample_ids
+
+
+def update_ENA_file_before_submission(file_path, update_dic, log):
+    """Insert the correct country and collection_date from update_dic into the ENA file at file_path.
+
+    Any pre-existing lines with this information are overwritten.
+    """
+    log.info(f"Updating ENA file {file_path} before submission...")
+    temp_file = file_path.replace(".txt", "_temp.txt")
+
+    country = update_dic["country"]
+    collection_date = update_dic["collection_date"]
+
+    with open(file_path) as f, open(temp_file, "w") as g:
+        for line in f:
+            if line.startswith("FT                   /cell_line="):
+                g.write(line)
+                g.write(f'FT                   /country="{country}"\n')
+                g.write(f'FT                   /collection_date="{collection_date}"\n')
+            else:
+                if line.startswith("FT                   /country") or line.startswith(
+                        "FT                   /collection"):
+                    pass
+                else:
+                    g.write(line)
+
+    os.replace(temp_file, file_path)
+    log.info("\t=> success")
+
+
+def update_ena_files(samples, files, update_dic, settings, log) -> Tuple[bool, Optional[str]]:
+    """For each sample od a submission, check if spatiotemporal data is valid and update ENA file accordingly.
+
+    If validity check fails, files are not updated and a human-friendly message is returned instead.
+
+    :returns:
+        - success (bool)
+        - msg (str | None): error-msg if non-valid values were found; otherwise None
+    """
+    log.info("Updating ENA files with provenance and collection_date...")
+    msg, ids = check_spatiotemporal_data_final(samples, files, update_dic, settings, log)
+    if msg:
+        log.info("Aborting submission")
+        return False, msg
+
+    for i, file_path in enumerate(files):
+        update_ENA_file_before_submission(file_path, update_dic[ids[i]], log)
+
+    return True, None
+
+
 def create_ENA_filenames(project_name: str, ENA_ID: str, settings: dict, log):
     """creates the filenames for all files needed for ENA sequence submission,
     returns them as a dict
@@ -1194,13 +1297,18 @@ def submit_sequences_to_ENA_via_CLI(project_name: str, ENA_ID: str, analysis_ali
     return ena_results, True, None, None, problem_samples
 
 
-def submit_alleles_to_ENA(project_name: str, ENA_ID: str, samples, files, settings: dict, log):
+def submit_alleles_to_ENA(project_name: str, ENA_ID: str, samples: List[List[str]], files: List[str],
+                          update_dic: Dict[str, str], settings: dict, log):
     """handles submission of a set of allele files to ENA
 
     :param project_name: name of the project the alleles belong to
     :param ENA_ID: ENA's internal ID (PRJEB-ID) of the project
     :param samples: list of alleles to submit, format: [[project_name, str(allele_nr), sample_id_int]]
     :param files: list of corresponding ENA files, format: ['project_dir/sample_id_int/allele_name.ena.txt']
+    :param update_dic: dict of values that can be used to update existing ENA files before submission, format:
+            update_dic[sample_id_int] = {"collection_date": year,
+                                         "country": country,
+                                         "customer": customer}
     :param settings: the user's settings_dic
     :param log: logger instance
     :return:
@@ -1215,8 +1323,11 @@ def submit_alleles_to_ENA(project_name: str, ENA_ID: str, samples, files, settin
             - err_type, string of the class of error (if any), for the title of the QMessagebox
             - msg: string with the final message for the user, whether positive or negative
     """
-    file_dic, curr_time, analysis_alias = create_ENA_filenames(project_name, ENA_ID, settings, log)
+    success, msg = update_ena_files(samples, files, update_dic, settings, log)
+    if not success:
+        return success, None, None, None, "Invalid spatiotemporal data", msg
 
+    file_dic, curr_time, analysis_alias = create_ENA_filenames(project_name, ENA_ID, settings, log)
     ena_results, success, err_type, msg, problem_samples = submit_sequences_to_ENA_via_CLI(
         project_name,
         ENA_ID,
@@ -1452,15 +1563,7 @@ def sort_country_list(countries: List[str], favourites: List[str], log) -> List[
 def assemble_country_list(settings: dict, log) -> List[str]:
     """Assemble list of country options in conveniently sorted order."""
     raw_countries = read_raw_country_list(settings, log)
-
-    # add options for missing data:
-    missing_options = [  # source: https://www.insdc.org/submitting-standards/missing-value-reporting/
-        "data agreement established pre-2023",
-        "third party data",
-        "human-identifiable"
-    ]
-    for option in missing_options:
-        raw_countries.append(f"missing: {option}")
+    raw_countries += MISSING_SPATIOTEMPORAL_OPTIONS
 
     # resort by preferences:
     try:
@@ -1474,30 +1577,33 @@ def assemble_country_list(settings: dict, log) -> List[str]:
     return countries
 
 
-def check_countries_ok(countries: List[str], settings: dict, log) -> Tuple[bool, Optional[str]]:
+def check_countries_ok(countries: List[str], settings: dict, log) -> Tuple[bool, Optional[str], Optional[List[int]]]:
     """Check all items in countries whether they are allowed."""
     log.info(f"Checking if '{countries}' are valid provenances...")
     possible_countries = assemble_country_list(settings, log)
     not_ok = []
-    for c in countries:
+    not_ok_indices = []
+    for i, c in enumerate(countries):
         if c not in possible_countries:
             not_ok.append(c)
+            not_ok_indices.append(i)
     if not_ok:
         msg = "All items must be exactly spelled like in the official list!\n" \
               f"The following items do not match: \n"
         for c in not_ok:
             msg += f"\t- '{c}'"
-        return False, msg
+        return False, msg, not_ok_indices
 
-    return True, None
+    return True, None, None
 
 
 def check_date(mydate: str) -> Tuple[bool, str | None]:
     """Check whether a date at least looks like a halfway valid ISO8601 date."""
     if not re.match(DATE_PATTERN, mydate):
-        msg = "Dates need to be formatted ISO8601 compliant and contain at least the year!" \
-              "\ne.g. 2024 or 2024-04 or 2024-04-21"
-        return False, msg
+        if not mydate in MISSING_SPATIOTEMPORAL_OPTIONS:
+            msg = "Dates need to be formatted ISO8601 compliant and contain at least the year!" \
+                  "\ne.g. 2024 or 2024-04 or 2024-04-21"
+            return False, msg
     return True, None
 
 
@@ -1529,7 +1635,7 @@ def get_existing_spatiotemporal_data(samples: List[str], log, parent=None) -> di
 
 
 def integrate_spatiotemporal_data(new_spatiotemporal_dic: dict, existing_data_dic: dict) -> Tuple[
-    defaultdict, defaultdict, List[str]]:
+    defaultdict, defaultdict, List[str], dict]:
     """Integrate customer, provenance and collection_date from oracle database with already defined values.
 
     :param new_spatiotemporal_dic: contains results from oracle db
@@ -1543,10 +1649,15 @@ def integrate_spatiotemporal_data(new_spatiotemporal_dic: dict, existing_data_di
         - update_queries: list of queries to update each sample (1 query per sample)
                 => only empty fields are filled with the values from oracle db
                 => everything else is kept as it is
+        - result_dic: result of integration (= the final customer, collection_date and provenance that will be saved)
+                result_dic[sample_id_int] = {"collection_date": year,
+                                            "country": country,
+                                            "customer": customer}
     """
     update_queries = []
     already_defined = defaultdict(list)
     missing = defaultdict(list)
+    result_dic = {}
     for sample_id_int in sorted(new_spatiotemporal_dic.keys()):
         (country, year, customer) = new_spatiotemporal_dic[sample_id_int]
         old_country = existing_data_dic[sample_id_int]["country"]
@@ -1580,8 +1691,11 @@ def integrate_spatiotemporal_data(new_spatiotemporal_dic: dict, existing_data_di
                                     where sample_id_int = '{sample_id_int}'
                                     """
         update_queries.append(update_query)
+        result_dic[sample_id_int] = {"country": country,
+                                     "collection_date": year,
+                                     "customer": customer}
 
-    return missing, already_defined, update_queries
+    return missing, already_defined, update_queries, result_dic
 
 
 def report_spatiotemporal_updates(missing: defaultdict, already_defined: defaultdict) -> str:
@@ -1620,7 +1734,8 @@ def report_spatiotemporal_updates(missing: defaultdict, already_defined: default
     msg = "\n\n".join([msg, msg2]).strip()
     return msg
 
-def update_spatiotemporal_data(samples: List[str], mydb, log, parent=None) -> Tuple[bool, str]:
+
+def update_spatiotemporal_data(samples: List[str], mydb, log, parent=None) -> Tuple[bool, str, dict]:
     """Handle updating of customer, provenance and collection_date from oracle database.
 
     :returns:
@@ -1629,6 +1744,10 @@ def update_spatiotemporal_data(samples: List[str], mydb, log, parent=None) -> Tu
             (noteworthy:    - no data found for a field
                             - discrepancy between data already saved in TypeLoader and oracle db result
                               (In these cases, the original TL data is kept and NOT overwritten.))
+        - result_dic: result of integration (= the final customer, collection_date and provenance that was saved)
+            result_dic[sample_id_int] = {"collection_date": year,
+                                         "country": country,
+                                         "customer": customer}
     """
     log.info(f"Updating provenance and collection_date from external database for {len(samples)} samples...")
 
@@ -1636,7 +1755,8 @@ def update_spatiotemporal_data(samples: List[str], mydb, log, parent=None) -> Tu
 
     new_spatiotemporal_dic = db_external.get_countries_and_dates_from_oracle_db(samples, log)
 
-    missing, already_defined, update_queries = integrate_spatiotemporal_data(new_spatiotemporal_dic, existing_data_dic)
+    missing, already_defined, update_queries, result_dic = integrate_spatiotemporal_data(new_spatiotemporal_dic,
+                                                                                         existing_data_dic)
 
     success = db_internal.execute_transaction(update_queries, mydb, log,
                                               "updating provenance and collection_date for this project",
@@ -1650,7 +1770,7 @@ def update_spatiotemporal_data(samples: List[str], mydb, log, parent=None) -> Tu
         log.info("\t=> successfully updated provenance and collection_date!")
     else:
         log.info("=> provenance and collection_date update failed!")
-    return success, msg
+    return success, msg, result_dic
 
 
 # ===========================================================
@@ -1668,8 +1788,14 @@ def main(settings, log, mydb):
     # bulk_csv = Path(__file__).parent / "sample_files/bulk_upload.csv"
     # alleles, error_dic, i = parse_bulk_csv(bulk_csv, settings, log)
 
-    samples = ['IDTest-HLA01', 'IDTest-KIR01', 'IDTest-KIR01', 'IDTest-MIC01']
-    success, msg = update_spatiotemporal_data(samples, mydb, log)
+    samples = [['20230505_ADMIN_mix_243C', '1']]
+    files = [
+        '\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20230505_ADMIN_mix_243C\\12345\\DKMS-LSL_12345_3DS1_4.ena.txt']
+    update_dic = {'12345': {'country': 'Germany', 'collection_date': '2004', 'customer': ''},
+                  }
+    # 'missing: third party data'
+
+    msg = update_ena_files(samples, files, update_dic, settings, log)
     print(msg)
 
 

@@ -73,23 +73,27 @@ samples_dic = {  # samples to test
                  "submission_id": "1111",
                  "customer": "DKMS",
                  "provenance": "United Kingdom",
-                 "collection_date": "2024-04-25"},
+                 "collection_date": "2023"},
     "sample_2": {"input": "5597571 A.xml",
                  "input_dir_origin": "A_MM",
-                 "local_name": "DKMS-LSL_ID14278154_A_1",
-                 "cell_line": "DKMS-LSL_ID14278154",
+                 "local_name": "DKMS-LSL_ID14278154B_A_1",
+                 "cell_line": "DKMS-LSL_ID14278154B",
                  "gene": "HLA-A",
                  "target_allele": "HLA-A*01:new",
                  "partner_allele": 'HLA-A*33:new',
                  "data_unittest_dir": "new_allele_xml",
-                 "curr_ena_file": "DKMS-LSL_ID14278154_A_1.ena.txt",
-                 "curr_fasta_file": "DKMS-LSL_ID14278154_A_1.fa",
-                 "curr_blast_file": "DKMS-LSL_ID14278154_A_1.blast.xml",
-                 "curr_gendx_file": "DKMS-LSL_ID14278154_A_1.xml",
+                 "curr_ena_file": "DKMS-LSL_ID14278154B_A_1.ena.txt",
+                 "curr_fasta_file": "DKMS-LSL_ID14278154B_A_1.fa",
+                 "curr_blast_file": "DKMS-LSL_ID14278154B_A_1.blast.xml",
+                 "curr_gendx_file": "DKMS-LSL_ID14278154B_A_1.xml",
                  "curr_ipd_befund_file": "Befunde_A_WDH.csv",
-                 "id_int": "ID14278154",
+                 "id_int": "ID14278154B",
                  "id_ext": "1348480",
-                 "submission_id": "2222"},
+                 "submission_id": "2222",
+                 "provenance": "missing: third party data",
+                 "collection_date": "missing: third party data",
+                 "customer": ""
+                 },
     "sample_3": {"input_dir_origin": "confirmation_file",
                  "local_name": "DKMS-LSL_ID15390636_3DP1_1",
                  "cell_line": "DKMS-LSL_ID15390636",
@@ -520,9 +524,10 @@ class Test_Create_New_Allele(unittest.TestCase):
         """
         self.form = ALLELE.NewAlleleForm(log, mydb, self.project_name, curr_settings, None,
                                          samples_dic["sample_1"]["id_int"], samples_dic["sample_1"]["id_ext"])
-        self.form.file_widget.field.setText(os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"],
-                                                         samples_dic["sample_1"]["data_unittest_dir"],
-                                                         samples_dic["sample_1"]["input"]))
+        input_file = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"],
+                                  samples_dic["sample_1"]["data_unittest_dir"],
+                                  samples_dic["sample_1"]["input"])
+        self.form.file_widget.field.setText(input_file)
 
         self.form.upload_btn.setEnabled(True)
         self.form.upload_btn.click()
@@ -806,6 +811,7 @@ class Test_Send_To_ENA(unittest.TestCase):
             self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"],
                                       "ENA_submission")
             self.donor = samples_dic["sample_1"]["id_int"]
+            self.donor2 = samples_dic["sample_2"]["id_int"]
             self.provenance = samples_dic["sample_1"]["provenance"]
             self.collection_date = samples_dic["sample_1"]["collection_date"]
             self.customer = samples_dic["sample_1"]["customer"]
@@ -845,12 +851,16 @@ class Test_Send_To_ENA(unittest.TestCase):
 
     def test_spatiotemporal_data_string(self):
         """Ensure that the displayed text of update_spatiotemporal_data() is correct."""
-        msg_exp = f"""The following 1 samples had already defined values, which were kept:
+        msg_exp = f"""The following 1 samples had missing values in the oracle database:
+ - {self.donor2}: customer, provenance (customer: ), collection date
+=> Using 'missing: third party data' (Customer fields for unknown left empty)
+
+The following 1 samples had already defined values, which were kept:
  - {self.donor}:
     provenance: '{self.provenance}' (database: no data)
     collection date: '{self.collection_date}' (database: no data)
     customer: '{self.customer}' (database: no data)"""
-        self.assertEqual(self.form.spatiotemporal_msg, msg_exp)
+        self.assertEqual(self.form.spatiotemporal_msg.strip(), msg_exp)
 
     def test_parse_ena_manifest_and_flatfile(self):
         """Parse the written ena manifest file and flatfile
@@ -2184,17 +2194,19 @@ class Test_provenance_and_collection_date(unittest.TestCase):
                     missing_options_listed_last = False
         assert missing_options_listed_last
 
-        ok, msg = typeloader_functions.check_countries_ok(ok_provenances, curr_settings, log)
+        ok, msg, not_ok_indices = typeloader_functions.check_countries_ok(ok_provenances, curr_settings, log)
         assert ok
         assert not msg
+        assert not not_ok_indices
 
     def test_provenances_sad(self):
         """test correct refusal of incorrect provenance options"""
-        ok, msg = typeloader_functions.check_countries_ok(self.bad_provenances, curr_settings, log)
+        ok, msg, not_ok_indices = typeloader_functions.check_countries_ok(self.bad_provenances, curr_settings, log)
         assert not ok
         assert msg == "All items must be exactly spelled like in the official list!\n" \
                       "The following items do not match: \n" \
                       "\t- 'Blue'\t- 'United States'\t- 'UK'"
+        assert not_ok_indices == [0, 1, 2]
 
     def test_oracle_db_results(self):
         samples = list(self.sample_dic.keys())
@@ -2212,8 +2224,11 @@ class Test_provenance_and_collection_date(unittest.TestCase):
     def test_integration(self):
         oracle_results = self.__class__.oracle_results
         results = typeloader_functions.integrate_spatiotemporal_data(oracle_results, self.already_defined_dic)
-        missing, already_defined, update_queries = results
+        missing, already_defined, update_queries, result_dic = results
         report = typeloader_functions.report_spatiotemporal_updates(missing, already_defined)
+
+        for id in self.sample_dic:
+            self.assertEqual(result_dic[id], self.already_defined_dic[id])
 
         self.assertEqual(sorted(list(missing.keys())), ['ID1'])
         self.assertEqual(missing['ID1'], ['customer',
@@ -2253,6 +2268,45 @@ The following 2 samples had already defined values, which were kept:
  - ID18819935: customer: 'BMST' (database: 'DKMS-BMST')"""
         self.assertEqual(report, report_exp)
 
+
+class Test_missing_spatiotemporal_data(unittest.TestCase):
+    """
+    test correct handling of missing spatiotemporal data
+    """
+
+    @classmethod
+    def setUpClass(self):
+        oracle_results = {}
+        if skip_other_tests:
+            self.skipTest(self, "Test_missing_spatiotemporal_data because skip_other_tests is set to True")
+        else:
+            self.sample_dic = {"ID12230832": {"collection_date": "2015",  # happy
+                                              "customer": "DKMS",
+                                              "country": "Germany"},
+                               "ID18958619": {"collection_date": "2020",  # happy
+                                              "customer": "DKMSPL",
+                                              "country": "Poland"},
+                               "ID18819935": {"collection_date": "2020",  # customer already defined
+                                              "customer": "DKMS-BMST",
+                                              "country": "India"},
+                               "ID17080773": {"collection_date": "2018",  # customer and country already defined
+                                              "customer": "X_Test_02",
+                                              "country": "missing: third party data"},
+                               "ID1": {"customer": "",  # sample not in database
+                                       "collection_date": "missing: third party data",
+                                       "country": "missing: third party data"}
+                               }
+            self.already_defined_dic = copy.deepcopy(self.sample_dic)
+            self.already_defined_dic["ID17080773"]["customer"] = "Elrond"
+            self.already_defined_dic["ID17080773"]["country"] = "Rivendell"
+            self.already_defined_dic["ID18819935"]["customer"] = "BMST"
+
+    @classmethod
+    def tearDownClass(self):
+        pass
+
+    def test_dates(self):
+        pass
 
 
 class TestIncompleteSequences(unittest.TestCase):

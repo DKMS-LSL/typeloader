@@ -168,6 +168,7 @@ class ENASubmissionForm(CollapsibleDialog):
         self.file_dic = {}
         self.ena_results = {}
         self.spatiotemporal_msg = ""
+        self.spatiotemporal_data = {}
         self.show()
 
         ok, msg = settings_ok("ENA", self.settings, self.log)
@@ -332,11 +333,13 @@ class ENASubmissionForm(CollapsibleDialog):
 
         if check_local(self.settings, self.log):
             if self.settings["running_modus"] == "automatic tests":
-                success, self.spatiotemporal_msg = update_spatiotemporal_data(donors, self.mydb, self.log, self)
+                success, self.spatiotemporal_msg, self.spatiotemporal_data = update_spatiotemporal_data(donors,
+                                                                                                        self.mydb,
+                                                                                                        self.log, self)
                 assert success
 
             else:
-                success, msg = update_spatiotemporal_data(donors, self.mydb, self.log, self)
+                success, msg, self.spatiotemporal_data = update_spatiotemporal_data(donors, self.mydb, self.log, self)
                 if not success:
                     return
                 if msg:
@@ -347,8 +350,6 @@ class ENASubmissionForm(CollapsibleDialog):
                     if reply == QMessageBox.No:
                         return
 
-        self.accepted = False
-
         try:
             self.submission_successful = True
             if self.settings["use_ena_server"] == "PROD":  # submission to productive server
@@ -358,10 +359,15 @@ class ENASubmissionForm(CollapsibleDialog):
                 if not reply:
                     return
 
-            results = submit_alleles_to_ENA(self.project_name, ENA_ID, self.samples, files, self.settings, self.log)
+            results = submit_alleles_to_ENA(self.project_name, ENA_ID, self.samples, files, self.spatiotemporal_data,
+                                            self.settings, self.log)
             success, self.file_dic, self.ena_results, self.problem_samples, err_type, msg = results
+            if not success and not self.problem_samples:
+                QMessageBox.warning(self, err_type, msg + "\n\nSubmission aborted. Please fix the values and try again!")
+                return
 
             if self.ena_results:  # files were created and we got a reply from ENA, positive or negative
+                self.accepted = False
                 self.textbox.setText(self.ena_results[-1])
 
                 if not success:
