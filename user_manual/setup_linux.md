@@ -122,6 +122,12 @@ See [=> First Start](first_start.md) for how to continue after setup.
 
 # TypeLoader Updates
 
-If upon Typeloader start you get a popup notifying you of a new release, please close TypeLoader and call `git pull` in the `typeloader` repository to collect it.
+If upon Typeloader start you get a popup notifying you of a new release, please close TypeLoader and `cd` into the `typeloader` repository`. 
+Then perform the following calls:
 
-Then restart TypeLoader as usual and you should have the new version.
+```
+git pull
+poetry install
+```
+
+Then call TypeLoader as usual, and you should have the new version.
