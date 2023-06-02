@@ -415,8 +415,7 @@ def write_pretypings_file(pretypings, samples, output_file, log):
                     not_found.append(col)
                 if mytyping:
                     if mytyping.startswith("0"):
-                        if mytyping.isdigit():
-                            mytyping = "'{}'".format(mytyping)
+                        mytyping = "'{}'".format(mytyping)
                 row.append(mytyping)
             data.writerow(row)
             i += 1
