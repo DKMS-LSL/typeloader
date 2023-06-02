@@ -1,4 +1,17 @@
 # Version History
+## 2.14.0 (2023-06-02)
+### Features:
+- retrieve ENA accession numbers directly from server, to compensate for a change at ENA (239)
+- explicitly set ENA submissions to publish immediately, to compensate for a change at ENA [TL2-242]
+- add handling of spatiotemporal data [TL2-250, TL2-247, TL2-248, TL2-251, TL2-249, TL2-252, TL2-243, TL2-259]
+- store reference md5 in text file instead of recomputing it => faster startup (#237)
+
+## Docu:
+- updated Linux setup instructions (#234) 
+
+### Backend:
+- update ENA webin CLI to 6.4.1 [TL2-256]
+- poetry update (#238, TL2-258)
 
 ## 2.13.2 (2022-08-31)
 ### Bugfixes for local:
