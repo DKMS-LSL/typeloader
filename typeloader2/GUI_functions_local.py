@@ -14,7 +14,8 @@ contains TypeLoader functionality designed especially for use at DKMS Life Scien
 import os, copy
 from configparser import ConfigParser
 from PyQt5.QtWidgets import QMessageBox
-import db_internal, general, typeloader_functions, GUI_login
+
+from typeloader2 import db_internal, general, typeloader_functions, GUI_login
 
 # ===========================================================
 # parameters:
@@ -48,20 +49,30 @@ def check_local(settings, log):
     """
     permission = False
     local_cf = read_local_settings(settings, log)
+    # return False, None  # uncomment to treat all users as non-local during debugging and development
+
     if not local_cf:
+        log.debug("No local config found")
         return False, None
+
     if settings["lab_of_origin"] == local_cf.get("Local", "company_name"):
         permission = True
+        log.debug("This is an LSL user")
+    else:
+        log.debug("This is an LSL-external user")
     return permission, local_cf
 
 
-def check_nonproductive(settings):
+def check_nonproductive(settings, log):
     """returns True if this user is not a productive user,
     else returns False
     """
     permission = False
     if settings["modus"] != "productive":
         permission = True
+        log.debug("This is a TEST user")
+    else:
+        log.debug("This is a PROD user")
     return permission
 
 

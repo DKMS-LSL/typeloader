@@ -20,9 +20,9 @@ from PyQt5.QtWidgets import (QApplication, QLabel, QMessageBox,
 from PyQt5.Qt import pyqtSignal
 from PyQt5.QtGui import QIcon
 
-import general, db_internal
-from GUI_login import local_patchme_file, user_config_file, company_config_file
-from GUI_forms import ProceedButton
+from typeloader2 import general, db_internal
+from typeloader2.GUI_login import local_patchme_file, user_config_file, company_config_file
+from typeloader2.GUI_forms import ProceedButton
 
 #===========================================================
 # global parameters:

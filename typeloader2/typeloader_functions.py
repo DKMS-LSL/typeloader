@@ -18,13 +18,14 @@ from pathlib import Path
 import string, random, time
 from collections import defaultdict
 from Bio import SeqIO
+from PyQt5.QtSql import QSqlQuery
 
 from typing import List, Optional, Tuple, Dict
 
-from typeloader_core import (EMBLfunctions as EF, coordinates as COO, backend_make_ena as BME,
-                             backend_enaformat as BE, getAlleleSeqsAndBlast as GASB,
-                             closestallele as CA, errors, update_reference)
-import general, db_internal, db_external
+from typeloader2.typeloader_core import (EMBLfunctions as EF, coordinates as COO, backend_make_ena as BME,
+                                         backend_enaformat as BE, getAlleleSeqsAndBlast as GASB,
+                                         closestallele as CA, errors, update_reference)
+from typeloader2 import general, db_internal, db_external
 
 # ===========================================================
 # parameters:
@@ -181,6 +182,161 @@ def update_curr_versions(settings: dict, log) -> None:
         db_versions[db_name] = version
 
     settings["db_versions"] = db_versions
+
+
+def create_project_name(user: str, gene: str, pool: str, settings: dict, log) -> Tuple[bool, str | None, str]:
+    """Create a project name.
+
+    :returns:
+        - success (bool)
+        - error_type (str or None)
+        - project_name or error_msg (str)
+    """
+    if user == settings["user_name"]:
+        initials = settings["short_name"]
+    else:
+        initials = "".join(word[0].upper() for word in user.split())
+
+    date = general.timestamp("%Y%m%d")
+
+    try:
+        project_name = "_".join([date, initials, gene, pool])
+        project_name = project_name.replace(" ", "-")
+    except Exception as E:
+        log.error(E)
+        return False, "Cannot create project name!", \
+            f"Cannot create a project name with the given parameters (see error below).\nPlease adjust them!\n\n{E}"
+
+
+    log.debug(f"=> project name {project_name} assigned")
+    return True, None, project_name
+
+
+def add_project_to_db(project_name: str, user: str, gene: str, pool: str, title: str,
+                      description: str, accession_ID: str, submission_ID: str, log) -> Tuple[
+    bool, str | None]:
+    """Adds all info about one new project to the projects table in the internal database.
+    """
+    log.debug("Adding new project to database...")
+
+    query = f"""INSERT INTO projects VALUES
+    ('{project_name}', 'Open', '{general.timestamp("%d.%m.%Y")}', '{user}', '{gene}', '{pool}', 
+    '{title}', '{description}', '{accession_ID}', '{submission_ID}');
+    """
+
+    q = QSqlQuery()
+    q.exec_(query)
+
+    lasterr = q.lastError()
+    if lasterr.isValid():
+        log.error(lasterr.text())
+        if lasterr.text().startswith("UNIQUE constraint failed:"):
+            return False, "Such a project exists already!"
+
+    log.debug(f"=> Added new project {project_name} to database successfully")
+    return True, None
+
+
+def create_project(project_name: str, title: str, description: str, gene: str, pool: str, user: str,
+                   settings: dict, log) -> Tuple[bool, str | None, str, Path, Path]:
+    """Create a new project and add it to the database.
+
+    :returns:
+        - success (bool)
+        - error_type (str or None)
+        - msg (str):
+            - error message if success == False
+            - accession_ID if success == True
+        - project_dir (path)
+        - project_filename (path)
+    """
+    log.debug(f"Submitting project {project_name} to ENA...")
+    ## create variables:
+    xml_center_name = settings["xml_center_name"]
+    project_dir = Path(settings["projects_dir"]) / project_name
+
+    ## Create XML files:
+    log.debug(f"Creating {project_dir}")
+    try:
+        os.makedirs(project_dir)
+    except WindowsError:
+        log.warning(f"'{project_dir}' already exists")
+
+    project_xml = EF.generate_project_xml(title, description, project_name, xml_center_name)
+    project_filename = project_dir / f"{project_name}.xml"
+
+    if project_filename.exists():
+        info_exists = f"File '{project_filename}' already exist. Please change pool name."
+        log.warning(info_exists)
+        return False, "ALIAS already exists!", info_exists, project_dir, project_filename
+
+    success = EF.write_file(project_xml, project_filename, log)
+    if not success:
+        msg = f"Could not write to {project_filename}!"
+        return False, "Error writing project xml file!", msg, project_dir, project_filename
+
+    # Create submission alias:
+    submission_alias = project_name + "_sub"
+    submission_project_xml = EF.generate_submission_project_xml(submission_alias,
+                                                                xml_center_name,
+                                                                project_filename)
+
+    submission_file = project_dir / f"{submission_alias}.xml"
+    success = EF.write_file(submission_project_xml, submission_file, log)
+
+    if not success:
+        msg = f"Could not write to {submission_file}!"
+        return False, "Error writing project submission xml file!", msg, project_dir, project_filename
+
+    ## Submit to EMBL server:
+    log.info("Submitting new project to EMBL...")
+    server = settings["embl_submission"]
+    proxy = settings["proxy"]
+    output_file = project_dir / f"{project_name}_output.xml"
+
+    study_err = EF.submit_project_ENA(submission_file, project_filename, "PROJECT",
+                                      server, proxy, output_file,
+                                      settings["ftp_user"], settings["ftp_pwd"])
+    if study_err:
+        log.exception(study_err)
+        return False, "Error during ENA submission!", \
+            f"Project submission to ENA did not work:\n\n{study_err}!", project_dir, project_filename
+
+    log.info("=> Submission sent, awaiting response...")
+
+    # Handle response:
+    successful_transmit, submission_ID, info_xml, error_xml, _ = EF.parse_register_EMBL_xml(
+        output_file, "SUBMISSION")
+    successful_transmit, accession_ID, info_xml, error_xml, _ = EF.parse_register_EMBL_xml(
+        output_file, "PROJECT")
+    # TODO: (future) cleanup: put all parsing into one function, add EXT_ID
+
+    if error_xml:
+        if info_xml == "known error":
+            error_msg = error_xml
+        elif error_xml == "Internal Server Error":
+            error_msg = "Internal Server Error.\nPlease check https://wwwdev.ebi.ac.uk/ena/submit/webin/login for details."
+        elif isinstance(error_xml, str):
+            error_msg = error_xml
+        else:
+            error_msg = f"{type(error_xml)}: {str(error_xml)}"
+        log.error(error_xml)
+        log.exception(error_xml)
+        if "The object being added already exists in the submission account with accession" in error_xml:
+            msg = "The project" + error_xml.split("The object")[1]
+            msg += "\nPlease choose another pool name and try again!"
+            return False, "Project name already in use", msg, project_dir, project_filename
+        else:
+            return False, "ENA project submission failed", f"ENA response:\n\n{str(error_msg)}", project_dir, project_filename
+
+    log.debug("\t=> transmission to ENA successful")
+    success, msg = add_project_to_db(project_name, user, gene, pool, title, description, accession_ID, submission_ID,
+                                     log)
+    if not success:
+        return False, "Project exists in db", msg, project_dir, project_filename
+
+    log.info(f"=> new project {project_name} created successfully!")
+    return True, None, accession_ID, project_dir, project_filename
 
 
 def toggle_project_status(proj_name: str, curr_status: str, log, values=["Open", "Closed"],
@@ -432,6 +588,7 @@ def process_sequence_file(project: str, filetype: str, blastXmlFile: str, target
                                                   "hickup. Please refresh your reference database " \
                                                   "or restart TypeLoader, and then try again!"
                 else:
+                    log.exception(E)
                     return False, "Input File Error", repr(E)
             except OverflowError as E:
                 return False, "Too many possible alignments", str(E)
@@ -1166,7 +1323,7 @@ def update_ENA_file_before_submission(file_path, update_dic, log):
 
 
 def update_ena_files(samples, files, update_dic, settings, log) -> Tuple[bool, Optional[str]]:
-    """For each sample od a submission, check if spatiotemporal data is valid and update ENA file accordingly.
+    """For each sample of a submission, check if spatiotemporal data is valid and update ENA file accordingly.
 
     If validity check fails, files are not updated and a human-friendly message is returned instead.
 
@@ -1656,43 +1813,45 @@ def integrate_spatiotemporal_data(new_spatiotemporal_dic: dict, existing_data_di
     already_defined = defaultdict(list)
     missing = defaultdict(list)
     result_dic = {}
-    for sample_id_int in sorted(new_spatiotemporal_dic.keys()):
-        (country, year, customer) = new_spatiotemporal_dic[sample_id_int]
-        old_country = existing_data_dic[sample_id_int]["country"]
-        if old_country:
-            if country != old_country:
-                already_defined[sample_id_int].append(("provenance", old_country, country))
-            country = old_country
+    if new_spatiotemporal_dic:
+        for sample_id_int in sorted(new_spatiotemporal_dic.keys()):
+            (country, year, customer) = new_spatiotemporal_dic[sample_id_int]
+            old_country = existing_data_dic[sample_id_int]["country"]
+            if old_country:
+                if country != old_country:
+                    already_defined[sample_id_int].append(("provenance", old_country, country))
+                country = old_country
 
-        old_date = existing_data_dic[sample_id_int]["collection_date"]
-        if old_date:
-            if year != old_date:
-                already_defined[sample_id_int].append(("collection date", old_date, year))
-            year = old_date
+            old_date = existing_data_dic[sample_id_int]["collection_date"]
+            if old_date:
+                if year != old_date:
+                    already_defined[sample_id_int].append(("collection date", old_date, year))
+                year = old_date
 
-        old_customer = existing_data_dic[sample_id_int]["customer"]
-        if old_customer:
-            if customer != old_customer:
-                already_defined[sample_id_int].append(("customer", old_customer, customer))
-            customer = old_customer
+            old_customer = existing_data_dic[sample_id_int]["customer"]
+            if old_customer:
+                if customer != old_customer:
+                    already_defined[sample_id_int].append(("customer", old_customer, customer))
+                customer = old_customer
 
-        for (name, var) in [("customer", customer), ("provenance", country), ("collection date", year)]:
-            if name == "customer":
-                customer = var
-            if not var or var == "missing: third party data":
-                if name == "provenance":
-                    name = f"provenance (customer: {customer})"
-                missing[sample_id_int].append(name)
+            for (name, var) in [("customer", customer), ("provenance", country), ("collection date", year)]:
+                if name == "customer":
+                    customer = var
+                if not var or var == "missing: third party data":
+                    if name == "provenance":
+                        name = f"provenance (customer: {customer})"
+                    missing[sample_id_int].append(name)
 
-        update_query = f"""update SAMPLES
-                                    set country = '{country}', collection_date = '{year}', customer = '{customer}'
-                                    where sample_id_int = '{sample_id_int}'
-                                    """
-        update_queries.append(update_query)
-        result_dic[sample_id_int] = {"country": country,
-                                     "collection_date": year,
-                                     "customer": customer}
-
+            update_query = f"""update SAMPLES
+                                        set country = '{country}', collection_date = '{year}', customer = '{customer}'
+                                        where sample_id_int = '{sample_id_int}'
+                                        """
+            update_queries.append(update_query)
+            result_dic[sample_id_int] = {"country": country,
+                                         "collection_date": year,
+                                         "customer": customer}
+    else:
+        result_dic = existing_data_dic
     return missing, already_defined, update_queries, result_dic
 
 
@@ -1733,7 +1892,8 @@ def report_spatiotemporal_updates(missing: defaultdict, already_defined: default
     return msg
 
 
-def update_spatiotemporal_data(samples: List[str], mydb, log, parent=None) -> Tuple[bool, str, dict]:
+def update_spatiotemporal_data(samples: List[str], is_local_user: bool, mydb, log, parent=None) -> Tuple[
+    bool, str, dict]:
     """Handle updating of customer, provenance and collection_date from oracle database.
 
     :returns:
@@ -1747,27 +1907,32 @@ def update_spatiotemporal_data(samples: List[str], mydb, log, parent=None) -> Tu
                                          "country": country,
                                          "customer": customer}
     """
-    log.info(f"Updating provenance and collection_date from external database for {len(samples)} samples...")
-
     existing_data_dic = get_existing_spatiotemporal_data(samples, log, parent)
+    print("is_local_user", is_local_user)
+    if is_local_user:
+        log.info(f"Updating provenance and collection_date from external database for {len(samples)} samples...")
+        new_spatiotemporal_dic = db_external.get_countries_and_dates_from_oracle_db(samples, log)
 
-    new_spatiotemporal_dic = db_external.get_countries_and_dates_from_oracle_db(samples, log)
+        missing, already_defined, update_queries, result_dic = integrate_spatiotemporal_data(new_spatiotemporal_dic,
+                                                                                             existing_data_dic)
 
-    missing, already_defined, update_queries, result_dic = integrate_spatiotemporal_data(new_spatiotemporal_dic,
-                                                                                         existing_data_dic)
+        success = db_internal.execute_transaction(update_queries, mydb, log,
+                                                  "updating provenance and collection_date for this project",
+                                                  "Database error", parent)
 
-    success = db_internal.execute_transaction(update_queries, mydb, log,
-                                              "updating provenance and collection_date for this project",
-                                              "Database error", parent)
+        msg = report_spatiotemporal_updates(missing, already_defined)
 
-    msg = report_spatiotemporal_updates(missing, already_defined)
+        if msg:
+            log.info(msg)
+        if success:
+            log.info("\t=> successfully updated provenance and collection_date!")
+        else:
+            log.info("=> provenance and collection_date update failed!")
 
-    if msg:
-        log.info(msg)
-    if success:
-        log.info("\t=> successfully updated provenance and collection_date!")
-    else:
-        log.info("=> provenance and collection_date update failed!")
+    else:  # user outside LSL
+        success = True
+        msg = None
+        result_dic = existing_data_dic
     return success, msg, result_dic
 
 
@@ -1775,31 +1940,38 @@ def update_spatiotemporal_data(samples: List[str], mydb, log, parent=None) -> Tu
 # main:
 
 def main(settings, log, mydb):
+    from random import randint
     project = "20210426_ADMIN_MIC_191XML"
     sample_id_int = "old"
     sample_id_ext = "Blubb"
-    raw_path = r"C:\Daten\local_data\TypeLoader\staging\data_unittest\reject_xml\unsuitable.xml"
+    raw_path = r"C:\Daten\local_data\TypeLoader\staging\data_unittest\start_overhang\sequence_starting_28bp_before_reference.fa"
     customer = "DKMS"
+    provenance = "Germany"
+    sample_date = "2023"
 
-    # upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, customer, provenance, sample_date,
-    #                            settings, mydb, log)
-    # bulk_csv = Path(__file__).parent / "sample_files/bulk_upload.csv"
-    # alleles, error_dic, i = parse_bulk_csv(bulk_csv, settings, log)
+    upload_new_allele_complete(project, sample_id_int, sample_id_ext, raw_path, customer, provenance, sample_date,
+                               settings, mydb, log)
 
-    samples = [['20230505_ADMIN_mix_243C', '1']]
-    files = [
-        '\\\\nasdd12\\daten\\data\\Typeloader\\admin\\projects\\20230505_ADMIN_mix_243C\\12345\\DKMS-LSL_12345_3DS1_4.ena.txt']
-    update_dic = {'12345': {'country': 'Germany', 'collection_date': '2004', 'customer': ''},
-                  }
-    # 'missing: third party data'
+    gene = "mixed"
+    pool = f"pool{str(randint(1, 999999))}"
+    user = settings["user_name"]
+    success, err_type, project_name = create_project_name(user, gene, pool, settings, log)
 
-    msg = update_ena_files(samples, files, update_dic, settings, log)
-    print(msg)
+    success, err_type, accession_id, project_dir, project_filename = create_project(
+        project_name=project_name,
+        title="",
+        description="",
+        gene=gene,
+        pool=pool,
+        user=user,
+        settings=settings,
+        log=log)
+    print(accession_id, project_dir, project_filename)
 
 
 if __name__ == "__main__":
-    from typeloader_GUI import create_connection, close_connection
-    import GUI_login
+    from typeloader2.typeloader_GUI import create_connection, close_connection
+    from typeloader2 import GUI_login
 
     log = general.start_log(level="debug")
     log.info("<Start {}>".format(os.path.basename(__file__)))

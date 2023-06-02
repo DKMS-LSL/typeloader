@@ -15,7 +15,7 @@ setup of the internal Typeloader-SQLite db
 
 import sys, os, csv
 import sqlite3
-import general
+from typeloader2 import general
 
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtSql import QSqlQuery

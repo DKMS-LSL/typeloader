@@ -18,12 +18,12 @@ from PyQt5.QtCore import Qt, pyqtSignal, QPoint, pyqtSlot
 
 import sys, os
 
-import general
-from db_internal import execute_query
-from GUI_overviews import (InvertedTable, FilterableTable, SqlQueryModel_filterable,
+from typeloader2 import general
+from typeloader2.db_internal import execute_query
+from typeloader2.GUI_overviews import (InvertedTable, FilterableTable, SqlQueryModel_filterable,
                            ReadFilesButton, ReadFileDialog,
                            DownloadFilesButton, DownloadFilesDialog)
-from typeloader_functions import toggle_project_status
+from typeloader2.typeloader_functions import toggle_project_status
 
 #===========================================================
 # classes:

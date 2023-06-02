@@ -17,9 +17,9 @@ from PyQt5.Qt import QPushButton
 
 import sys, os, shutil
 
-import general
-from db_internal import check_error
-from GUI_overviews import FilterableTable
+from typeloader2 import general
+from typeloader2.db_internal import check_error
+from typeloader2.GUI_overviews import FilterableTable
 
 #===========================================================
 # classes:

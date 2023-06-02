@@ -22,18 +22,17 @@ from PyQt5.Qt import QWidget, pyqtSlot, pyqtSignal, QDialog, QPushButton
 from PyQt5.QtGui import QIcon
 from pickle import load
 
-import general, typeloader_functions as typeloader
+from typeloader2 import general, typeloader_functions as typeloader
 
 try:
     from .typeloader_core import errors
 except ImportError:
-    from typeloader_core import errors
+    from typeloader2.typeloader_core import errors
 
-from GUI_forms import (CollapsibleDialog, ChoiceSection, ChoiceButton, ChoiceTableWidget,
+from typeloader2.GUI_forms import (CollapsibleDialog, ChoiceSection, ChoiceButton, ChoiceTableWidget,
                        FileButton, ProceedButton, QueryButton, NewProjectButton,
                        check_project_open)
-from GUI_misc import settings_ok
-from typeloader_functions import DATE_PATTERN
+from typeloader2.GUI_misc import settings_ok
 
 
 # ===========================================================
@@ -1107,7 +1106,7 @@ class ChooseReferenceAllelesDialog(CollapsibleDialog):
                     return
 
         # create restricted db:
-        from typeloader_core import update_reference
+        from typeloader2.typeloader_core import update_reference
         self.log.debug("Deleting old restricted database, if necessary...")
         for (dirpath, subdirs, files) in os.walk(os.path.join(self.settings["temp_dir"],
                                                               "restricted_db")):

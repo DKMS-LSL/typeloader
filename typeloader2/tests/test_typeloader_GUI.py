@@ -14,36 +14,35 @@ import os, sys, re, time, platform, datetime, csv
 import difflib  # compare strings
 import shutil
 import copy
+from pathlib import Path
 from random import randint
 from configparser import ConfigParser
 
-module_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-mypath = os.path.join(module_path)
-mypath_inner = os.path.join(mypath, "typeloader2")
-sys.path.append(mypath)
-sys.path.append(mypath_inner)
+mypath_inner = Path(__file__).parent.parent
+mypath = mypath_inner.parent
 
-import general, db_internal, GUI_login
+from typeloader2 import general, db_internal, GUI_login
 from xml.etree import ElementTree
 from collections import namedtuple
 
 # no .pyw import possible in linux
 # deletion in Test_Clean_Stuff
-shutil.copyfile(os.path.join(mypath_inner, "typeloader_GUI.pyw"), os.path.join(mypath_inner, "typeloader_GUI.py"))
+shutil.copyfile(mypath_inner / "typeloader_GUI.pyw", mypath_inner / "typeloader_GUI.py")
 
-import typeloader_GUI
-from typeloader_core import errors, EMBLfunctions as EF, make_imgt_files as MIF, backend_make_ena as BME, \
+from typeloader2 import typeloader_GUI
+from typeloader2.typeloader_core import errors, EMBLfunctions as EF, make_imgt_files as MIF, backend_make_ena as BME, \
     imgt_text_generator as ITG, closestallele as CA, getAlleleSeqsAndBlast as GASB
-import GUI_forms_new_project as PROJECT
-import GUI_forms_new_allele as ALLELE
-import GUI_forms_new_allele_bulk as BULK
-import GUI_forms_submission_ENA as ENA
-import GUI_forms_submission_IPD as IPD
-import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample, GUI_forms, GUI_download_files
-import GUI_mini_dialogs
-import typeloader_functions
-from GUI_login import base_config_file, check_update_needed
-import db_external
+from typeloader2 import GUI_forms_new_project as PROJECT
+from typeloader2 import GUI_forms_new_allele as ALLELE
+from typeloader2 import GUI_forms_new_allele_bulk as BULK
+from typeloader2 import GUI_forms_submission_ENA as ENA
+from typeloader2 import GUI_forms_submission_IPD as IPD
+from typeloader2 import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample, GUI_forms, GUI_download_files
+from typeloader2 import GUI_mini_dialogs
+from typeloader2 import typeloader_functions
+from typeloader2.GUI_login import base_config_file, check_update_needed
+from typeloader2 import db_external
+
 from PyQt5.QtWidgets import (QApplication)
 from PyQt5.QtCore import Qt, QTimer, QModelIndex
 
@@ -860,7 +859,8 @@ The following 1 samples had already defined values, which were kept:
     provenance: '{self.provenance}' (database: no data)
     collection date: '{self.collection_date}' (database: no data)
     customer: '{self.customer}' (database: no data)"""
-        self.assertEqual(self.form.spatiotemporal_msg.strip(), msg_exp)
+
+        self.assertEqual(self.form.spatiotemporal_msg, msg_exp)
 
     def test_parse_ena_manifest_and_flatfile(self):
         """Parse the written ena manifest file and flatfile
@@ -1930,9 +1930,11 @@ class TestMakeIMGTFilesWith5PrimeOverhang(unittest.TestCase):
 
             self.diff_string = "KIR2DS3*002new differs from KIR2DS3*0020103 like so : Mismatches = pos 447 in codon 128 (TGC -> TGA);pos 6267 (G -> T);pos 6303 (T -> C);pos 6307 (T -> G);pos 6390 (G -> A);pos 6392 (A -> G);. Deletions = pos 15069 (T). Insertions = pos 15038 (C)."
 
-            typeloader_functions.upload_new_allele_complete(self.project_name, self.sample_id_int, "bla",
+            success, msg = typeloader_functions.upload_new_allele_complete(self.project_name, self.sample_id_int, "bla",
                                                             self.fasta_file, "DKMS", "Germany", "2024",
                                                             curr_settings, mydb, log)
+            self.assertTrue(success, "Could not upload sequence_starting_28bp_before_reference.fa")
+            log.info(f"{self.fasta_file} uploaded successfully as {self.sample_id_int}")
 
     @classmethod
     def tearDownClass(self):
@@ -2579,7 +2581,7 @@ class Test_multiple_novel_alleles_part1(unittest.TestCase):
     def tearDownClass(self):
         pass
 
-    @patch("GUI_forms_submission_IPD.BothAllelesNovelDialog")
+    @patch("typeloader2.GUI_forms_submission_IPD.BothAllelesNovelDialog")
     def test_multi_allelesDialogCreated(self, mock_dialog):
         """test if target allele with multiple novel alleles according to pretyping
         but unfitting target_allele/partner_allele correctly trigger the BothAllelesNovelDialog
@@ -2662,7 +2664,7 @@ class Test_multiple_novel_alleles_part2(unittest.TestCase):
     def tearDownClass(self):
         pass
 
-    @patch("GUI_forms_submission_IPD.BothAllelesNovelDialog")
+    @patch("typeloader2.GUI_forms_submission_IPD.BothAllelesNovelDialog")
     def test_multi_allelesDialogNotCreated(self, mock_dialog):
         """test if target allele with multiple novel alleles according to pretyping
         but unfitting target_allele/partner_allele correctly trigger the BothAllelesNovelDialog
@@ -2734,7 +2736,7 @@ class Test_pretyping_valid(unittest.TestCase):
             (self.pretypings, self.topics) = MIF.getPatientBefund(os.path.join(self.mydir, "pretypings.csv"))
 
             # pepare error_dic:
-            from typeloader_core import errors
+            from typeloader2.typeloader_core import errors
             self.error_dic = {"Cannot tell which novel allele from pretyping this is": errors.BothAllelesNovelError,
                               "no allele marked as new in pretyping": errors.InvalidPretypingError,
                               "assigned allele name not found in pretyping": errors.InvalidPretypingError,

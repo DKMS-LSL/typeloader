@@ -16,9 +16,9 @@ from PyQt5.QtCore import Qt, pyqtSignal, QPoint, pyqtSlot
 
 import sys, os
 
-import general
-from db_internal import alleles_header_dic
-from GUI_overviews import FilterableTable
+from typeloader2 import general
+from typeloader2.db_internal import alleles_header_dic
+from typeloader2.GUI_overviews import FilterableTable
 
 #===========================================================
 # classes:

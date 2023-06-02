@@ -25,9 +25,9 @@ from PyQt5.QtGui import QBrush, QColor, QIcon
 
 import sys, os, shutil
 
-import general, GUI_flipped
-from GUI_forms import ChoiceButton, FileButton, ChoiceSection, ProceedButton
-from GUI_functions_local import compare_2_files
+from typeloader2 import general, GUI_flipped
+from typeloader2.GUI_forms import ChoiceButton, FileButton, ChoiceSection, ProceedButton
+from typeloader2.GUI_functions_local import compare_2_files
 
 edit_on_manual_submit = QSqlTableModel.OnManualSubmit
 

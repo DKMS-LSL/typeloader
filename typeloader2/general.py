@@ -15,7 +15,7 @@ contains general functions
 import sys, os, datetime, shutil, platform
 from collections import defaultdict
 from PyQt5.QtGui import QFont
-import GUI_stylesheet as stylesheet
+from typeloader2 import GUI_stylesheet as stylesheet
 import pathlib
 
 # ===========================================================

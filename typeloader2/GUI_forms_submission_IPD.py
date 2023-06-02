@@ -23,13 +23,13 @@ from PyQt5.QtWidgets import (QApplication, QFileDialog, QGridLayout,
 from PyQt5.Qt import pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QIcon
 
-import general, db_internal
-from typeloader_core import make_imgt_files as MIF, ena_accession_retrieval as EAR
-from GUI_forms import (CollapsibleDialog, ChoiceSection, FileChoiceTable,
+from typeloader2 import general, db_internal
+from typeloader2.typeloader_core import make_imgt_files as MIF, ena_accession_retrieval as EAR
+from typeloader2.GUI_forms import (CollapsibleDialog, ChoiceSection, FileChoiceTable,
                        FileButton, ProceedButton, QueryButton, check_project_open)
-from GUI_forms_submission_ENA import ProjectInfoTable
-from GUI_misc import settings_ok
-from GUI_functions_local import check_local, check_nonproductive, make_fake_ENA_file, get_pretypings_from_oracledb
+from typeloader2.GUI_forms_submission_ENA import ProjectInfoTable
+from typeloader2.GUI_misc import settings_ok
+from typeloader2.GUI_functions_local import check_local, check_nonproductive, make_fake_ENA_file, get_pretypings_from_oracledb
 
 # ===========================================================
 # parameters:
@@ -574,46 +574,104 @@ class IPDSubmissionForm(CollapsibleDialog):
             self.befund_widget.field.setText(
                 r"H:\Projekte\Bioinformatik\Typeloader\example files\both_new\KIR\invalid_pretypings.csv")
             befund_file_btn.change_to_normal()
-        layout.addWidget(self.befund_widget, 0, 0, 3, 1)
+        layout.addWidget(self.befund_widget, 0, 0, 4, 1)
 
         self.ok_btn2 = ProceedButton("Proceed", [self.befund_widget.field], self.log, 0)
         self.proj_widget.choice.connect(self.ok_btn2.check_ready)
         self.befund_widget.choice.connect(self.ok_btn2.check_ready)
-        layout.addWidget(self.ok_btn2, 2, 1)
+        layout.addWidget(self.ok_btn2, 3, 1)
         self.ok_btn2.proceed.connect(self.proceed_to3)
         self.sections.append(("(2) Upload pretypings file:", mywidget))
 
         # add hidden button to create fake ENA response & fake pretyping file:
         local_user, self.local_cf = check_local(self.settings, self.log)
+        nonproductive_user = check_nonproductive(self.settings, self.log)
         if local_user:  # only visible for LSL users
             self.pretypings_btn = QPushButton("Generate pretyping file")
             self.pretypings_btn.setStyleSheet(general.btn_style_local)
             self.pretypings_btn.clicked.connect(self.get_pretypings)
-            layout.addWidget(self.pretypings_btn, 1, 1)
+            layout.addWidget(self.pretypings_btn, 0, 1)
 
-            if check_nonproductive(self.settings):  # only visible for non-productive LSL users
-                self.fake_btn = QPushButton("Generate fake input")
+            if nonproductive_user:  # only visible for non-productive LSL users
+                self.fake_btn = QPushButton("Generate fake pretypings")
                 self.fake_btn.setStyleSheet(general.btn_style_local)
-                self.fake_btn.clicked.connect(self.create_fake_input_file)
-                layout.addWidget(self.fake_btn, 0, 1)
+                self.fake_btn.clicked.connect(self.create_fake_pretypings_file)
+                layout.addWidget(self.fake_btn, 1, 1)
+
+        if nonproductive_user:  # only visible for non-productive users
+            self.fake_ENA_btn = QPushButton("Generate fake ENA accessions")
+            self.fake_ENA_btn.setStyleSheet(general.btn_style_local)
+            self.fake_ENA_btn.clicked.connect(self.create_fake_ENA_input)
+            if local_user:
+                btn_row = 2
+            else:
+                btn_row = 0
+            layout.addWidget(self.fake_ENA_btn, btn_row, 1)
 
     @pyqtSlot()
-    def create_fake_input_file(self):
-        """creates a fake pretypinsg file
+    def create_fake_ENA_input(self):
+        """creates fake ENA accessions
         which can be used to create fake IPD files of any alleles in this project;
-        this functionality can be used to create IPD formatted files for alleles 
+        this functionality can be used to create IPD formatted files for alleles
          that have not been submitted to ENA or have not received an ENA identifier, yet
         """
+        reply = QMessageBox.question(self, "Please confirm",
+                                     "This will create test IPD files with fictional ENA accession numbers "
+                                     "instead of querying ENA's server for the correct accessions!\n\n"
+                                     "DO NOT EVER SUBMIT THESE FILES TO IPD!\n\n"
+                                     "Do you understand this?",
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.No:
+            return
+
         self.log.info("Creating fake pretypings file...")
         try:
-            success, pretypings_file, self.ENA_id_map, self.ENA_gene_map = make_fake_ENA_file(self.project,
+            success, _, self.ENA_id_map, self.ENA_gene_map = make_fake_ENA_file(self.project,
+                                                                                              self.log,
+                                                                                              self.settings,
+                                                                                              "local_name",
+                                                                                              self)
+            self.fake_ENA_btn.setStyleSheet(general.btn_style_normal)
+
+        except Exception as E:
+            self.log.exception(E)
+            QMessageBox.warning(self, "Problem", "Could not generate fake ENA accessions:\n\n{}".format(repr(E)))
+            success = False
+
+        if success:
+            self.ok_btn2.check_ready()
+        else:
+            QMessageBox.warning(self, "Problem", "Could not generate fake ENA accessions")
+
+
+    @pyqtSlot()
+    def create_fake_pretypings_file(self):
+        """creates a fake pretypinsg file
+        which can be used to create fake IPD files of any alleles in this project;
+        this functionality can be used to look at IPD formatted files for alleles
+         without having to assemble pretypings
+        """
+        reply = QMessageBox.question(self, "Please confirm",
+                                     "This will create a properly formatted pretypings file containing "
+                                     "purely fictional pretypings!\n\n"
+                                     "DO NOT EVER SUBMIT THESE TO IPD!\n\n"
+                                     "Do you understand this?",
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.No:
+            return
+
+        self.log.info("Creating fake pretypings file...")
+        try:
+            success, pretypings_file, _, _ = make_fake_ENA_file(self.project,
                                                                                               self.log,
                                                                                               self.settings,
                                                                                               "local_name",
                                                                                               self)
         except Exception as E:
             self.log.exception(E)
-            QMessageBox.warning(self, "Problem", "Could not generate fake files:\n\n{}".format(repr(E)))
+            QMessageBox.warning(self, "Problem", "Could not generate fake pretypings file:\n\n{}".format(repr(E)))
             success = False
             pretypings_file = "None"
 
@@ -622,7 +680,7 @@ class IPDSubmissionForm(CollapsibleDialog):
             self.fake_btn.setStyleSheet(general.btn_style_normal)
             self.ok_btn2.check_ready()
         else:
-            QMessageBox.warning(self, pretypings_file)
+            QMessageBox.warning(self, "Problem", "Could not generate fake pretypings file:\n\n{}".format(repr(E)))
 
     @pyqtSlot()
     def get_pretypings(self):

@@ -18,10 +18,9 @@ from PyQt5.Qt import QModelIndex, QTreeView, pyqtSlot, pyqtSignal, \
     QInputDialog, QLineEdit, QPushButton
 from PyQt5.QtGui import QIcon
 
-import general, db_internal
-import typeloader_functions
-from GUI_forms_new_allele import NewAlleleForm
-from GUI_mini_dialogs import ResetReferenceDialog
+from typeloader2 import general, db_internal, typeloader_functions
+from typeloader2.GUI_forms_new_allele import NewAlleleForm
+from typeloader2.GUI_mini_dialogs import ResetReferenceDialog
 
 show_extended = True
 

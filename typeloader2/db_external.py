@@ -17,8 +17,8 @@ import cx_Oracle
 
 from typing import List, Tuple, Dict
 
-import general
-import typeloader_functions
+from typeloader2 import general
+from typeloader2 import typeloader_functions
 
 # ===========================================================
 # parameters:
@@ -140,7 +140,7 @@ def query_many(scheme, query, items, log, return_columns=False):
         log.error("\t=> Query failed!")
         log.exception(E)
         log.info(query)
-        sys.exit()
+        raise
 
     log.info("\t=> Success!")
     close_connection(conn, cursor, log)
@@ -532,7 +532,11 @@ def get_countries_and_dates_from_oracle_db(samples: List[str], log) -> Dict[str,
                     on auftrag.auftraggeber = kunde.abbreviation
                 where lims_donor_id = :1
             """
-    data = query_many(ngsrep_scheme, query, items, log)
+    try:
+        data = query_many(ngsrep_scheme, query, items, log)
+    except AttributeError:
+        log.info("Could not reach oracle database")
+        return None
 
     spatiotemporal_dic = {}
     missing_str = "missing: third party data"

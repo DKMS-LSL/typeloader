@@ -15,17 +15,15 @@ from PyQt5.QtWidgets import (QDialog, QFormLayout, QLineEdit,
                              QLabel, QApplication, QComboBox)
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QIcon
+from PyQt5.Qt import QPushButton
 
 import sys, os, re
 from configparser import ConfigParser
 
-from authuser import user
-import general
-import typeloader_functions
-from GUI_misc import ConfirmResetWidget
-from GUI_forms import ProceedButton
-
-from PyQt5.Qt import QPushButton
+from typeloader2.authuser import user
+from typeloader2 import general, typeloader_functions
+from typeloader2.GUI_misc import ConfirmResetWidget
+from typeloader2.GUI_forms import ProceedButton
 
 
 # ===========================================================

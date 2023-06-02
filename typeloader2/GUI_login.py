@@ -21,11 +21,11 @@ from PyQt5.QtWidgets import (QApplication, QDialog, QFormLayout,
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtGui import QIcon
 
-import general, db_internal
-from authuser import user
-from typeloader_functions import perform_reference_update, update_curr_versions
-from typeloader_core import update_reference
-from GUI_forms import ProceedButton
+from typeloader2 import general, db_internal
+from typeloader2.authuser import user
+from typeloader2.typeloader_functions import perform_reference_update, update_curr_versions
+from typeloader2.typeloader_core import update_reference
+from typeloader2.GUI_forms import ProceedButton
 
 # ===========================================================
 # parameters:
@@ -498,6 +498,7 @@ def get_settings(user, log, cf=None):
     """
     log.info("Loading user settings...")
     cf, user_cf_file, myos = get_raw_settings(user, log, cf)
+    log.debug(f"User settings file: {user_cf_file}")
 
     if not os.path.isfile(user_cf_file):
         log.error("\tUser settings file {} not found!".format(user_cf_file))

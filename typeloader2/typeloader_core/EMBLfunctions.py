@@ -65,7 +65,7 @@ def get_coordinates_from_annotation(annotations):
         # the number of exon and introns = key of dictionairy, value = positions
         posHash[dr2sAllele] = {"utr": [], "exons": {}, "introns": {}, "pseudoexons": {}}
         features, coordinates, sequence = annotations[dr2sAllele]["features"], annotations[dr2sAllele]["coordinates"], \
-                                          annotations[dr2sAllele]["sequence"]
+            annotations[dr2sAllele]["sequence"]
         for featureIndex in range(len(features)):
             feature = features[featureIndex]
             if feature == "utr5" or feature == "utr3":
@@ -110,11 +110,11 @@ def write_file(data_string, path, log, pretty=True):
         else:
             file_helper.write(data_string)
     except IOError:
-        log.error("Can't write" + path + " to disk")
+        log.error(f"Can't write {path} to disk")
         return False
     else:
         file_helper.close()
-        log.info("Wrote " + path + " to disk")
+        log.info(f"Wrote {path} to disk")
         return True
 
 

@@ -117,6 +117,7 @@ def parse_blast(xml_records, target_family, query_fasta_file, settings, log):
                 results = fix_incomplete_alignment(ref_sequence, query_sequence, hsp_start, hsp_align_len, queryLength,
                                                    hsp_query, hsp_subject, hsp_match, closestAlleleName, log)
                 (hsp_query, hsp_subject, hsp_match, hsp_align_len, hsp_start, query_start_overhang) = results
+                log.debug("fix_incomplete_alignment finished")
             closestAlleles[queryId] = closest_allele_items(hsp_query, hsp_subject, hsp_match, closestAlleleName,
                                                            concatHSPS,
                                                            hsp_start, hsp_align_len, queryLength, query_start_overhang)
@@ -144,6 +145,7 @@ def make_global_alignment(ref_seq, query_seq, log):
     aligner.mode = "global"
 
     alignments = aligner.align(ref_seq, query_seq)
+    log.info("\t=> done")
     return alignments
 
 
@@ -162,7 +164,7 @@ def remove_end_gaps(ref, matched, query):
 def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query_length,
                              hsp_query, hsp_subject, hsp_match, closest_allele_name, log):
     alignments = make_global_alignment(ref_seq, query_seq, log)
-
+    log.debug(f"=> found {len(alignments)} alignments")
     if not alignments:
         log.error("No alignment found, sorry! Aborting...")
         return hsp_query, hsp_subject, hsp_match, hsp_align_len, hsp_start, None
@@ -264,7 +266,13 @@ def fix_incomplete_alignment(ref_seq, query_seq, hsp_start, hsp_align_len, query
             alignments = make_global_alignment(missing_bases_ref, missing_bases_query, log)
             a = alignments[0]
             # parse missing alignment part from string form of mini-alignment:
-            [ref_aligned, match_aligned, query_aligned] = str(a).strip().split("\n")
+            try:
+                [ref_aligned, match_aligned, query_aligned] = str(a).strip().split("\n")
+            except ValueError:
+                log.error("Could not parse mini-alignment!")
+                log.info("Leaving alignment un-extended")
+                return hsp_query, hsp_subject, hsp_match, hsp_align_len, hsp_start, query_start_overhang
+
             ref_aligned, match_aligned, query_aligned = remove_end_gaps(ref_aligned, match_aligned,
                                                                         query_aligned)
 

@@ -19,7 +19,8 @@ from PyQt5.Qt import (QWidget, pyqtSlot, QVBoxLayout, pyqtSignal,
                       QHBoxLayout, QSpacerItem)
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
-import general
+
+from typeloader2 import general
 
 #===========================================================
 # parameters:

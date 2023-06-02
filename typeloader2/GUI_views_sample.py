@@ -21,9 +21,9 @@ from PyQt5.QtGui import QIcon
 
 import sys, os
 
-import general, GUI_misc, db_internal
-from db_internal import alleles_header_dic
-from GUI_overviews import (InvertedTable, FilterableTable, edit_on_manual_submit,
+from typeloader2 import general, GUI_misc, db_internal
+from typeloader2.db_internal import alleles_header_dic
+from typeloader2.GUI_overviews import (InvertedTable, FilterableTable, edit_on_manual_submit,
                            SqlQueryModel_filterable, SqlQueryModel_editable,
                            SqlTableModel_protected,
                            TabTableSimple, TabTableRelational, TabTableNonEditable,

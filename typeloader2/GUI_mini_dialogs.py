@@ -19,9 +19,9 @@ from PyQt5.Qt import QPushButton, QMessageBox
 import sys, os, shutil
 from shutil import copyfile
 
-import general
-from GUI_login import handle_reference_update
-from typeloader_functions import perform_reference_update, update_curr_versions
+from typeloader2 import general
+from typeloader2.GUI_login import handle_reference_update
+from typeloader2.typeloader_functions import perform_reference_update, update_curr_versions
 
 
 # ===========================================================

@@ -184,7 +184,7 @@ def blast_raw_seqs(input_filename, filetype, settings, log, use_given_reference=
         BlastXMLFile = blastSequences(fastaFilename, parsedFasta, settings, log)
     except Exception as E:
         log.exception(E)
-        return False, "Error while trying to BLAST raw sequence", repr("E")
+        return False, "Error while trying to BLAST raw sequence", repr(E)
     if not BlastXMLFile:
         msg = "BlastXMLFile not generated!\n"
         msg += "Please make sure the BLAST path in your user settings is correct!\n"

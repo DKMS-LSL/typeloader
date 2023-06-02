@@ -18,12 +18,12 @@ from PyQt5.QtWidgets import (QApplication, QMessageBox, QTextEdit, QPushButton,
 from PyQt5.Qt import QWidget, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QIcon
 
-import general, db_internal
-from GUI_forms import (CollapsibleDialog, ChoiceSection,
+from typeloader2 import general, db_internal
+from typeloader2.GUI_forms import (CollapsibleDialog, ChoiceSection,
                        ProceedButton, QueryButton, FileChoiceTable, check_project_open)
-from GUI_misc import settings_ok
-from GUI_functions_local import check_local
-from typeloader_functions import submit_alleles_to_ENA, update_spatiotemporal_data
+from typeloader2.GUI_misc import settings_ok
+from typeloader2.GUI_functions_local import check_local
+from typeloader2.typeloader_functions import submit_alleles_to_ENA, update_spatiotemporal_data
 
 
 # ===========================================================
@@ -331,24 +331,30 @@ class ENASubmissionForm(CollapsibleDialog):
                 self.choices[j] = [self.project_name, nr, sample, cell_line]
                 j += 1
 
-        if check_local(self.settings, self.log):
-            if self.settings["running_modus"] == "automatic tests":
-                success, self.spatiotemporal_msg, self.spatiotemporal_data = update_spatiotemporal_data(donors,
-                                                                                                        self.mydb,
-                                                                                                        self.log, self)
-                assert success
+        is_local_user, _ = check_local(self.settings, self.log)
+        if self.settings["running_modus"] == "automatic tests":
+            is_local_user = True
+            success, self.spatiotemporal_msg, self.spatiotemporal_data = update_spatiotemporal_data(donors,
+                                                                                                    is_local_user,
+                                                                                                    self.mydb,
+                                                                                                    self.log, self)
+            assert success
 
-            else:
-                success, msg, self.spatiotemporal_data = update_spatiotemporal_data(donors, self.mydb, self.log, self)
-                if not success:
+        else:
+            success, msg, self.spatiotemporal_data = update_spatiotemporal_data(donors,
+                                                                                is_local_user,
+                                                                                self.mydb,
+                                                                                self.log,
+                                                                                self)
+            if not success:
+                return
+            if msg:
+                reply = QMessageBox.question(self, "Some spatiotemporal data missing or already defined",
+                                             msg + "\n\nContinue submission?",
+                                             QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes
+                                             )
+                if reply == QMessageBox.No:
                     return
-                if msg:
-                    reply = QMessageBox.question(self, "Some spatiotemporal data missing or already defined",
-                                                 msg + "\n\nContinue submission?",
-                                                 QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes
-                                                 )
-                    if reply == QMessageBox.No:
-                        return
 
         try:
             self.submission_successful = True

@@ -10,8 +10,8 @@ from PyQt5.Qt import QPushButton, QMessageBox
 import sys, os, shutil
 from shutil import copyfile
 
-import general
-from GUI_forms import FileButton, ProceedButton, ChoiceSection
+from typeloader2 import general
+from typeloader2.GUI_forms import FileButton, ProceedButton, ChoiceSection
 
 
 # ===========================================================
@@ -74,16 +74,9 @@ class ExampleFileDialog(QDialog):
         layout.addRow(QLabel("MICA example:"), seq_MICA_btn)
 
         # IPD submission input files:
-        ipd_lbl = QLabel("Example input files for IPD submission:")
+        ipd_lbl = QLabel("Example input file for IPD submission:")
         ipd_lbl.setStyleSheet(general.label_style_2nd)
         layout.addRow(ipd_lbl)
-
-        ENA_reply_btn = QPushButton("Download!", self)
-        self.btn_dic[ENA_reply_btn] = ("ENA reply", "fake_ENA_reply.txt")
-        ENA_reply_btn.clicked.connect(self.download_file)
-        ENA_reply_btn.setWhatsThis(
-            "This file is a truncated version of the file sent by ENA after ID assignment. It can be used as input for IPD file creation of the example sequences.")
-        layout.addRow(QLabel("ENA reply file:"), ENA_reply_btn)
 
         pretypings_btn = QPushButton("Download!", self)
         self.btn_dic[pretypings_btn] = ("pretypings", "pretypings_example.csv")

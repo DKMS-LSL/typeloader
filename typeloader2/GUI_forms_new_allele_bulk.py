@@ -19,11 +19,11 @@ from PyQt5.QtWidgets import (QApplication, QMessageBox, QTextEdit,
 from PyQt5.Qt import QWidget, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QIcon
 
-import general, typeloader_functions as typeloader, db_internal
+from typeloader2 import general, typeloader_functions as typeloader, db_internal
 
-from GUI_forms import (CollapsibleDialog, ChoiceSection, 
+from typeloader2.GUI_forms import (CollapsibleDialog, ChoiceSection,
                        FileButton, ProceedButton, QueryButton, NewProjectButton, check_project_open)
-from GUI_misc import settings_ok
+from typeloader2.GUI_misc import settings_ok
 
 #===========================================================
 # parameters:

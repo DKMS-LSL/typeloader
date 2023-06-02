@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (QDialog, QVBoxLayout,
                              QLabel, QApplication)
 from PyQt5.QtGui import QIcon
 
-import general
+from typeloader2 import general
 
 #===========================================================
 # classes:

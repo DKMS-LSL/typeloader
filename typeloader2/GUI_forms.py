@@ -22,8 +22,8 @@ from PyQt5.Qt import pyqtSlot, pyqtSignal, QTreeWidget
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 
-import general, db_internal
-from GUI_forms_new_project import NewProjectForm
+from typeloader2 import general, db_internal
+from typeloader2.GUI_forms_new_project import NewProjectForm
 
 
 # ===========================================================

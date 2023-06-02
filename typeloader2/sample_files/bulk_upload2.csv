@@ -1,5 +1,0 @@
-nr,file_dir,file_name,sample_id_int,sample_id_ext,customer,incomplete_ok
-1,T:\Skripte\TypeLoader2\src\sample_files,HLA-A_01-01-01-01.fa,IDTest-HLA01,SampleBlue,DKMS,
-2,T:\Skripte\TypeLoader2\src\sample_files,KIR2DL1_0020101.fa,IDTest-KIR01,SampleRed,DKMS,
-3,T:\Skripte\TypeLoader2\src\sample_files,KIR2DL4_0010201.fa,IDTest-KIR01,SampleRed,DKMS,
-4,T:\Skripte\TypeLoader2\src\sample_files,MICA_002_01.fa,IDTest-MIC01,SampleYellow,DKMS,

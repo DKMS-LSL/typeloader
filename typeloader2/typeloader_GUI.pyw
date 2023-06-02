@@ -28,16 +28,16 @@ from PyQt5 import QtSql
 from PyQt5.QtCore import pyqtSlot, Qt
 from configparser import NoSectionError
 
-import general
-import GUI_navigation, GUI_login, GUI_stylesheet
-import GUI_forms_new_project, GUI_forms_new_allele, GUI_forms_new_allele_bulk
-import GUI_forms_submission_ENA, GUI_forms_submission_IPD
-import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample
-import GUI_views_settings
-import GUI_mini_dialogs
-import GUI_download_files, GUI_user_manual
-from GUI_misc import UnderConstruction
-import patches
+from typeloader2 import general
+from typeloader2 import GUI_navigation, GUI_login, GUI_stylesheet
+from typeloader2 import GUI_forms_new_project, GUI_forms_new_allele, GUI_forms_new_allele_bulk
+from typeloader2 import GUI_forms_submission_ENA, GUI_forms_submission_IPD
+from typeloader2 import GUI_views_OVprojects, GUI_views_OValleles, GUI_views_project, GUI_views_sample
+from typeloader2 import GUI_views_settings
+from typeloader2 import GUI_mini_dialogs
+from typeloader2 import GUI_download_files, GUI_user_manual
+from typeloader2.GUI_misc import UnderConstruction
+from typeloader2 import patches
 
 # ===========================================================
 # parameters:
@@ -612,7 +612,7 @@ def remove_lock(settings_dic, log):
 # ===========================================================
 # main:
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: nocover
     if GUI_login.config_files_missing():
         sys.exit(1)
 

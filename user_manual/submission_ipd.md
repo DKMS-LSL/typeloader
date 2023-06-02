@@ -26,7 +26,12 @@ Here, you will have to upload additional data needed for IPD:
 **Note:** before TypeLoader version 2.14, you had to upload an ENA reply file at 
 this point. 
 These files are no longer sent by ENA. Instead, TypeLoader now receives the ENA 
-accession numbers directly from ENA's server at this point. 
+accession numbers directly from ENA's server at this point.
+
+If you use a [=> TypeLoader TEST account](users_test.md), you will see a red ``Generate fake ENA accessions`` button in the upper right corner.
+If you click this, TypeLoader will pretend to find accessions for all alleles in this project. This is only meant for testing purposes (which is why there is no such button for productive accounts). 
+
+**Do not ever send IMGT files generated with fake ENA accessions to IPD!!!**
 
 ###  Pretyping file 
 For each target allele, IPD requires the genotyping results for all other loci known for this sample. See [=> Pretypings file](pretypings.csv) for detailed documentation of how to create this file.
