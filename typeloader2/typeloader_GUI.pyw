@@ -13,6 +13,11 @@ A cross-plattform GUI for Typeloader
 # import modules:
 
 import sys
+from pathlib import Path
+
+mypackage = str(Path(__file__).parent.parent)
+sys.path.append(mypackage)
+
 import os
 import ctypes
 import time
