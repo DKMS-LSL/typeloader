@@ -288,7 +288,7 @@ class NewAlleleForm(CollapsibleDialog):
         file_btn = FileButton("Choose XML or Fasta file", mypath, self)
         self.file_widget = ChoiceSection("Raw File:", [file_btn], self.tree)
         self.file_widget.choice.connect(self.get_file)
-        mypath = r"H:\Projekte\Bioinformatik\Typeloader Projekt\Issues\243_spatiotemporal-data\3DS1_with_header.fa"
+        mypath = r"C:/Daten/local_data/TL_issue_data/ID14278154.xml"
         if self.settings["modus"] == "debugging":
             self.file_widget.field.setText(mypath)
         layout.addWidget(self.file_widget)
@@ -346,8 +346,11 @@ class NewAlleleForm(CollapsibleDialog):
         """
         try:
             self.project = self.proj_widget.field.text().strip()
+            self.upload_btn.setChecked(True)
+            self.upload_btn.setEnabled(False)
 
             proj_open = check_project_open(self.project, self.log, self)
+
             if not proj_open:
                 msg = f"Project {self.project} is currently closed! You cannot add alleles to closed projects.\n"
                 msg += "To add alleles to this project, please open its ProjectView and click the 'Reopen Project' button!"
@@ -357,7 +360,6 @@ class NewAlleleForm(CollapsibleDialog):
                 return False
 
             raw_path = self.file_widget.field.text()
-            self.upload_btn.setChecked(False)
 
             # upload file to temp dir & parse it:
             self.log.debug("Uploading '{}' to temp dir...".format(os.path.basename(raw_path)))
@@ -468,6 +470,8 @@ class NewAlleleForm(CollapsibleDialog):
                 if self.filetype == "XML":
                     self.allele1 = self.myalleles[0]
                     self.allele2 = self.myalleles[1]
+                    self.upload_btn.setChecked(False)
+                    self.upload_btn.setEnabled(True)
                     self.proceed_sections(0, 1)
                     self.fill_section2()
 
@@ -475,6 +479,8 @@ class NewAlleleForm(CollapsibleDialog):
                     self.myallele = self.myalleles[0]
                     self.ENA_widget.setText(self.ENA_text)
                     self.name_lbl.setText(self.myallele.newAlleleName)
+                    self.upload_btn.setEnabled(True)
+                    self.upload_btn.setChecked(False)
                     self.proceed_sections(0, 2)
             else:
                 QMessageBox.warning(self, results[1], results[2])
