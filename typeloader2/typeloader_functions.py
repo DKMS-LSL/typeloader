@@ -1153,11 +1153,14 @@ def bulk_upload_new_alleles(csv_file: str, project: str, settings: dict, mydb, l
     errors_found = False
     if error_dic:
         errors_found = True
-        errors = "Encountered problems in {} of {} alleles:\n".format(len(error_dic), num_rows)
-        for nr in sorted(error_dic):
-            myerror = "  - #{}: {}\n".format(nr, " AND ".join(error_dic[nr]))
-            errors += myerror
-        errors += "\nThe problem-alleles were NOT added. Please fix them and try again!"
+        if num_rows == 0:
+            errors = error_dic["0"][0]
+        else:
+            errors = "Encountered problems in {} of {} alleles:\n".format(len(error_dic), num_rows)
+            for nr in sorted(error_dic):
+                myerror = "  - #{}: {}\n".format(nr, " AND ".join(error_dic[nr]))
+                errors += myerror
+            errors += "\nThe problem-alleles were NOT added. Please fix them and try again!"
     else:
         errors = "\nNo problems encountered."
     report += errors
@@ -1817,6 +1820,8 @@ def integrate_spatiotemporal_data(new_spatiotemporal_dic: dict, existing_data_di
         for sample_id_int in sorted(new_spatiotemporal_dic.keys()):
             (country, year, customer) = new_spatiotemporal_dic[sample_id_int]
             old_country = existing_data_dic[sample_id_int]["country"]
+            db_customer = customer
+
             if old_country:
                 if country != old_country:
                     already_defined[sample_id_int].append(("provenance", old_country, country))
@@ -1839,7 +1844,7 @@ def integrate_spatiotemporal_data(new_spatiotemporal_dic: dict, existing_data_di
                     customer = var
                 if not var or var == "missing: third party data":
                     if name == "provenance":
-                        name = f"provenance (customer: {customer})"
+                        name = f"provenance (customer in database: '{db_customer}')"
                     missing[sample_id_int].append(name)
 
             update_query = f"""update SAMPLES
@@ -1859,6 +1864,7 @@ def report_spatiotemporal_updates(missing: defaultdict, already_defined: default
     """Generate a human-friendly message with all events except for updating of previously empty fields.
     """
     msg = ""
+
     if missing:
         msg += f"The following {len(missing)} samples had missing values in the oracle database:\n"
         for sample in missing:
@@ -1888,7 +1894,7 @@ def report_spatiotemporal_updates(missing: defaultdict, already_defined: default
                     new_value = f"'{new_value}'"
                 msg2 += f" - {sample}: {name}: '{old_value}' (database: {new_value})\n"
 
-    msg = "\n\n".join([msg, msg2]).strip()
+    msg = "\n\n".join([msg2, msg]).strip() + "\n"
     return msg
 
 
