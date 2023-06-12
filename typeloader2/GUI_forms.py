@@ -413,6 +413,8 @@ class CollapsibleDialog(QDialog):
             self.sender().setChecked(False)  # if sent from a button, un-press it
         except:
             pass
+        self.update()
+        self.raise_()
 
 
 class ChoiceSection(QGroupBox):
