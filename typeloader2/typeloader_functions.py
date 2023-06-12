@@ -207,7 +207,6 @@ def create_project_name(user: str, gene: str, pool: str, settings: dict, log) ->
         return False, "Cannot create project name!", \
             f"Cannot create a project name with the given parameters (see error below).\nPlease adjust them!\n\n{E}"
 
-
     log.debug(f"=> project name {project_name} assigned")
     return True, None, project_name
 
@@ -975,7 +974,24 @@ def parse_bulk_csv(csv_file: str, settings: dict, log):
         if data:
             for row in data:
                 if len(row) > 6:
-                    if row[0] != "nr":
+                    if row[0] == "nr":
+                        header_exp = ["nr",
+                                      "file_dir",
+                                      "file_name",
+                                      "sample_id_int",
+                                      "sample_id_ext",
+                                      "customer",
+                                      "incomplete_ok",
+                                      "provenance",
+                                      "collection_date"]
+                        if row != header_exp:
+                            msg = "This bulk file looks invalid!\n\nThe following header row is needed:\n\n"
+                            msg += ",".join(header_exp)
+                            msg += "\n\n=> No alleles were uploaded!"
+                            error_dic["0"].append(msg)
+                            log.warning(msg)
+                            return alleles, error_dic, i
+                    else:
                         i += 1
                         err = False
                         nr = row[0]
