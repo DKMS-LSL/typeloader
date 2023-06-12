@@ -48,7 +48,7 @@ def _download_json_file(study_nr: str, log) -> Tuple[bool, List[dict] | str]:
 
     if not content:
         msg = f"Found this project on ENA's server, but no alleles with accessions!"
-        msg += "\nYou can check https://www.ebi.ac.uk/ena/browser/view/{study_nr} manually, if you'd like."
+        msg += f"\nYou can check https://www.ebi.ac.uk/ena/browser/view/{study_nr} manually, if you'd like."
         return False, msg
 
     return True, content

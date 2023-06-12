@@ -850,17 +850,18 @@ class Test_Send_To_ENA(unittest.TestCase):
 
     def test_spatiotemporal_data_string(self):
         """Ensure that the displayed text of update_spatiotemporal_data() is correct."""
-        msg_exp = f"""The following 1 samples had missing values in the oracle database:
- - {self.donor2}: customer, provenance (customer: ), collection date
-=> Using 'missing: third party data' (Customer fields for unknown left empty)
-
-The following 1 samples had already defined values, which were kept:
+        msg_exp = f"""The following 1 samples had already defined values, which were kept:
  - {self.donor}:
     provenance: '{self.provenance}' (database: no data)
     collection date: '{self.collection_date}' (database: no data)
-    customer: '{self.customer}' (database: no data)"""
+    customer: '{self.customer}' (database: no data)
 
-        self.assertEqual(self.form.spatiotemporal_msg, msg_exp)
+
+The following 1 samples had missing values in the oracle database:
+ - {self.donor2}: customer, provenance (customer in database: ''), collection date
+=> Using 'missing: third party data' (Customer fields for unknown left empty)"""
+
+        self.assertEqual(self.form.spatiotemporal_msg.strip(), msg_exp.strip())
 
     def test_parse_ena_manifest_and_flatfile(self):
         """Parse the written ena manifest file and flatfile
@@ -2234,7 +2235,7 @@ class Test_provenance_and_collection_date(unittest.TestCase):
 
         self.assertEqual(sorted(list(missing.keys())), ['ID1'])
         self.assertEqual(missing['ID1'], ['customer',
-                                          'provenance (customer: )',
+                                          "provenance (customer in database: '')",
                                           'collection date'])
 
         self.assertEqual(sorted(list(already_defined.keys())), ['ID17080773', 'ID18819935'])
@@ -2259,16 +2260,20 @@ class Test_provenance_and_collection_date(unittest.TestCase):
             query_exp = " ".join(queries_exp[i].split())  # set all whitespace to ' '
             self.assertEqual(query, query_exp)
 
-        report_exp = """The following 1 samples had missing values in the oracle database:
- - ID1: customer, provenance (customer: ), collection date
-=> Using 'missing: third party data' (Customer fields for unknown left empty)
-
-The following 2 samples had already defined values, which were kept:
+        report_exp = """The following 2 samples had already defined values, which were kept:
  - ID17080773:
     provenance: 'Rivendell' (database: no data)
     customer: 'Elrond' (database: 'X_Test_02')
- - ID18819935: customer: 'BMST' (database: 'DKMS-BMST')"""
-        self.assertEqual(report, report_exp)
+ - ID18819935: customer: 'BMST' (database: 'DKMS-BMST')
+
+
+The following 1 samples had missing values in the oracle database:
+ - ID1: customer, provenance (customer in database: ''), collection date
+=> Using 'missing: third party data' (Customer fields for unknown left empty)
+"""
+        print(report)
+        print(report_exp)
+        self.assertEqual(report.strip(), report_exp.strip())
 
 
 class Test_missing_spatiotemporal_data(unittest.TestCase):
