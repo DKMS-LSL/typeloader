@@ -1,7 +1,7 @@
 Column,type,PK
 Sample_ID_int,,PK
 Sample_ID_ext,,
-Customer,,
 cell_line,,
+customer,,
 country,,
 collection_date,,

@@ -97,8 +97,8 @@ class SampleTable(InvertedTable):
         self.header_lbl.setText("General Information:")
         self.model.setHeaderData(0, Qt.Horizontal, "Internal Donor-ID")
         self.model.setHeaderData(1, Qt.Horizontal, "External Donor-ID")
-        self.model.setHeaderData(2, Qt.Horizontal, "Cell Line")
-        self.model.setHeaderData(3, Qt.Horizontal, "Customer")
+        self.model.setHeaderData(self.customer_col, Qt.Horizontal, "Customer")
+        self.model.setHeaderData(self.cell_line_col, Qt.Horizontal, "Cell Line")
         self.model.setHeaderData(4, Qt.Horizontal, "Provenance")
         self.model.setHeaderData(5, Qt.Horizontal, "Collection Date")
         self.setMaximumHeight(170)
@@ -108,14 +108,20 @@ class SampleTable(InvertedTable):
         self.table.customContextMenuRequested.connect(self.open_menu)
 
     def create_model(self):
-        #         query_text = "select * from samples"
-        #         editables = {2 : ("update samples SET customer = '{}' where sample_id_int = '{}'", [0])}
-        #         self.model = SqlQueryModel_editable(editables, query_text, hasGroupBy = False)
         self.model = SqlTableModel_protected([0, 1, 2])
         self.model.setTable("samples")
         self.model.select()
         self.model.setEditStrategy(edit_on_manual_submit)
         self.table.setModel(self.model)
+
+        # figure out how CUSTOMER and CELL_LINE are ordered:
+        column2 = self.model.headerData(2, Qt.Horizontal)
+        if column2.upper() == "CELL_LINE":
+            self.cell_line_col = 2
+            self.customer_col = 3
+        else:
+            self.cell_line_col = 3
+            self.customer_col = 2
 
     def filter_sample_table(self, sample_id_int):
         self.model.layoutAboutToBeChanged.emit()
