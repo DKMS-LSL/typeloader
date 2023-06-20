@@ -20,8 +20,9 @@ import general
 # ===========================================================
 # parameters:
 
-NEW_VERSION = "2.13.2"
-BUILD_DIR = r"build/exe.win-amd64-3.10"
+NEW_VERSION = "2.14.1"
+#BUILD_DIR = r"C:\Users\schoene\WorkFolders\Code\TL_build\exe.win-amd64-3.10"
+BUILD_DIR = r"C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10"
 
 INSTALLER_SCRIPT = "typeloader_installer.nsi"
 INSTALLER_SCRIPT_NEW = "typeloader_installer_new.nsi"
@@ -29,10 +30,57 @@ NSIS_PATH = r"C:\Program Files (x86)\NSIS\makensis.exe"
 IGNORE_FILES = [pathlib.Path(BUILD_DIR, "config_base.ini"),
                 pathlib.Path(BUILD_DIR, "config_company.ini"),
                 ]
-
+UPDATE_INSTALLER = True
+BUILD_INSTALLER = True
 
 # ===========================================================
 # functions:
+
+
+def remove_subdir(subdir_name: str, parent_path: pathlib.Path, log):
+    """Remove subdir and all files in it from parent_path.
+    """
+    dir_path = parent_path / subdir_name
+    if dir_path.exists():
+        log.debug(f"\t- removing subfolder {subdir_name} from {parent_path}...")
+        shutil.rmtree(dir_path)
+    assert not dir_path.exists()
+
+
+def cleanup_build_dir(log):
+    """Remove redundant directories (artifacts of typeloader being a package)
+    """
+    log.info("Cleaning up build dir...")
+    global BUILD_DIR
+
+    BUILD_DIR = pathlib.Path(BUILD_DIR)
+    cleanup_dir = {BUILD_DIR / "lib/typeloader2": [
+        ".idlerc",
+        ".idea",
+        "flowcharts",
+        "icons",
+        "installer",
+        "logs",
+        "reference_data2",
+        "sample_files",
+        "tables",
+        "temp",
+        "tests",
+    ],
+        BUILD_DIR / "lib": [
+            "authuser",
+            "typeloader_core"
+        ],
+        BUILD_DIR: [
+            "ENA_Webin_CLI",
+        ],
+    }
+    for parent_path in cleanup_dir:
+        for sub_dir in cleanup_dir[parent_path]:
+            remove_subdir(sub_dir, parent_path, log)
+
+    log.info("\t=> done!")
+
 
 def rebuild_exe(log):
     """renames old BUILD_DIR, if it exists,
@@ -54,6 +102,9 @@ def rebuild_exe(log):
     ret_code = subprocess.call(["poetry", "run", "python", "setup.py", "build"], shell=True)
     if ret_code == 0:
         log.info("\t\t=> Success!")
+
+        cleanup_build_dir(log)
+
         return True
     else:
         log.error("\t\tBuild failed!")
@@ -231,8 +282,10 @@ def adjust_installer(missing_files, deprecated_files, log):
     log.info(f"\t=> removed {removed_files} deprecated file(s)")
 
 
-def compile_installer(log):
-    """compiles the new installer script into a new Setup.exe using NSIS
+def compile_installer(log) -> bool:
+    """compiles the new installer script into a new Setup.exe using NSIS.
+
+    return success (bool)
     """
     log.info("Compiling installer with NSIS...")
     if not os.path.isfile(NSIS_PATH):
@@ -240,17 +293,23 @@ def compile_installer(log):
         return
 
     cmd = [NSIS_PATH, "/NOTIFYHWND", "134742", os.path.abspath(INSTALLER_SCRIPT)]
-    subprocess.call(cmd, shell=True)
-    log.info("\t\t=> Success!")
+    result_code = subprocess.call(cmd, shell=True)
+    if result_code == 0:
+        log.info("\t\t=> Success!")
+        return True
+    else:
+        log.info("\t\t=> Failed!")
+        return False
 
 
 def wrap_up_and_compile_installer(changes, log):
     """ties up all loose ends and compiles the new installer into a Setup.exe
     """
     log.info("Wrapping up...")
-    log.info("\tReplacing installer-script with updated version...")
-    pathlib.Path(INSTALLER_SCRIPT).unlink()
-    pathlib.Path(INSTALLER_SCRIPT_NEW).rename(INSTALLER_SCRIPT)
+    if pathlib.Path(INSTALLER_SCRIPT_NEW).exists():
+        log.info("\tReplacing installer-script with updated version...")
+        pathlib.Path(INSTALLER_SCRIPT).unlink()
+        pathlib.Path(INSTALLER_SCRIPT_NEW).rename(INSTALLER_SCRIPT)
 
     build_dir_old = pathlib.Path(f"{BUILD_DIR}_old")
     if build_dir_old.exists():
@@ -262,16 +321,21 @@ def wrap_up_and_compile_installer(changes, log):
     else:
         log.info("No changes were necessary! The old installer script is still good to go. :-)")
 
-    compile_installer(log)
+    success = compile_installer(log)
 
-    new_name = f"TypeLoader_Setup_V{NEW_VERSION}.exe"
-    try:
-        os.rename("TypeLoader_Setup.exe", new_name)
-    except FileNotFoundError:
-        pass
+    if success:
+        new_name = f"TypeLoader_Setup_V{NEW_VERSION}.exe"
+        try:
+            pathlib.Path(new_name).unlink(missing_ok=True)
+            os.rename("TypeLoader_Setup.exe", new_name)
+        except FileNotFoundError:
+            pass
 
-    log.info(f"The new installer can be found in this directory as {new_name}. \n"
-             "Please test it thoroughly before deploying!")
+        log.info(f"The new installer can be found in this directory as {new_name}. \n"
+                 "Please test it thoroughly before deploying!")
+
+    else:
+        log.info("No installer could be built")
 
 
 # ===========================================================
@@ -285,15 +349,22 @@ def main(log):
         log.info("\t=> User chose not to re-build")
         success = True
 
-    if success:
+    if not success:
+        return
+
+    changes = False
+    if UPDATE_INSTALLER:
         missing_files, deprecated_files, = check_old_script_for_consistency_with_new_files(log)
-        changes = False
         if missing_files or deprecated_files:
             changes = True
         adjust_installer(missing_files, deprecated_files, log)
 
+    if BUILD_INSTALLER:
         wrap_up_and_compile_installer(changes, log)
-    
+
+    else:
+        log.info("Parameter said not to update the installer script => leaving it as it was")
+
     general.play_sound(log)
 
 
