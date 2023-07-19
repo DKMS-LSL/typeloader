@@ -16,7 +16,7 @@ from typing import Tuple, List
 # ===========================================================
 # functions:
 
-def _download_json_file(study_nr: str, log) -> Tuple[bool, List[dict] | str]:
+def _download_json_file(study_nr: str, proxy: str, timeout: int, log) -> Tuple[bool, List[dict] | str]:
     """Download json file from ENA and read it.
 
     Returns:
@@ -27,9 +27,16 @@ def _download_json_file(study_nr: str, log) -> Tuple[bool, List[dict] | str]:
     """
     log.info(f"Downloading accession numbers for {study_nr}...")
     url = f"https://www.ebi.ac.uk/ena/portal/api/filereport?accession={study_nr}&format=json&result=sequence"
+    proxies = {}
+    if proxy:
+        log.debug(f"\tUsing proxy {proxy}...")
+        proxies["https"] = proxy
+        proxies["http"] = proxy
+    else:
+        log.debug("Not using a proxy.")
 
     try:
-        response = requests.get(url=url)
+        response = requests.get(url=url, proxies=proxies, timeout=timeout)
         if response.status_code == 204:
             msg = f"Could not find any accession numbers for this project on ENA's server.\n\n" \
                   f"Please check https://www.ebi.ac.uk/ena/browser/view/{study_nr}?show=related-records \n" \
@@ -38,10 +45,15 @@ def _download_json_file(study_nr: str, log) -> Tuple[bool, List[dict] | str]:
                   f"the stage of this study ({study_nr})."
             return False, msg
         elif response.status_code != 200:
-            msg = f"Could not retrieve the accession numbers for this project from ENA's server.\n({response.status_code}: {response.reason})"
+            msg = f"Could not retrieve the accession numbers for this project from ENA's server.\n" \
+                  f"({response.status_code}: {response.reason})"
             return False, msg
     except requests.exceptions.JSONDecodeError:
         msg = "No data found for this study on ENA's server!"
+        return False, msg
+    except requests.exceptions.ConnectTimeout:
+        msg = "Timeout: Could not reach ENA's server.\n" \
+              "Maybe increase the allowed value for 'ENA timeout after x seconds' in your user settings?"
         return False, msg
 
     content = response.json()
@@ -85,7 +97,7 @@ def _parse_json_file(content: List[dict], log) -> Tuple[dict, dict]:
     return info_dict, gene_dict
 
 
-def get_ENA_results(study: str, log) -> Tuple[dict | bool, dict | str]:
+def get_ENA_results(study: str, proxy: str, timeout: int, log) -> Tuple[dict | bool, dict | str]:
     """Retrieve the accession numbers of a project from ENA.
 
     Returns 2 values:
@@ -96,7 +108,7 @@ def get_ENA_results(study: str, log) -> Tuple[dict | bool, dict | str]:
             - success = False
             - error message
     """
-    success, content = _download_json_file(study, log)
+    success, content = _download_json_file(study, proxy, timeout, log)
     if success:
         info_dict, gene_dict = _parse_json_file(content, log)
         return info_dict, gene_dict
@@ -112,7 +124,8 @@ def main(log):
     good = "PRJEB42349"
     bad = "PRJEB55283"
 
-    result = get_ENA_results(bad, log)
+    result = get_ENA_results(good, "", 0.01, log)
+    print(result)
 
 
 if __name__ == "__main__":

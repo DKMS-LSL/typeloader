@@ -26,10 +26,11 @@ from PyQt5.QtGui import QIcon
 from typeloader2 import general, db_internal
 from typeloader2.typeloader_core import make_imgt_files as MIF, ena_accession_retrieval as EAR
 from typeloader2.GUI_forms import (CollapsibleDialog, ChoiceSection, FileChoiceTable,
-                       FileButton, ProceedButton, QueryButton, check_project_open)
+                                   FileButton, ProceedButton, QueryButton, check_project_open)
 from typeloader2.GUI_forms_submission_ENA import ProjectInfoTable
 from typeloader2.GUI_misc import settings_ok
-from typeloader2.GUI_functions_local import check_local, check_nonproductive, make_fake_ENA_file, get_pretypings_from_oracledb
+from typeloader2.GUI_functions_local import check_local, check_nonproductive, make_fake_ENA_file, \
+    get_pretypings_from_oracledb
 
 # ===========================================================
 # parameters:
@@ -628,10 +629,10 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.log.info("Creating fake pretypings file...")
         try:
             success, _, self.ENA_id_map, self.ENA_gene_map = make_fake_ENA_file(self.project,
-                                                                                              self.log,
-                                                                                              self.settings,
-                                                                                              "local_name",
-                                                                                              self)
+                                                                                self.log,
+                                                                                self.settings,
+                                                                                "local_name",
+                                                                                self)
             self.fake_ENA_btn.setStyleSheet(general.btn_style_normal)
 
         except Exception as E:
@@ -643,7 +644,6 @@ class IPDSubmissionForm(CollapsibleDialog):
             self.ok_btn2.check_ready()
         else:
             QMessageBox.warning(self, "Problem", "Could not generate fake ENA accessions")
-
 
     @pyqtSlot()
     def create_fake_pretypings_file(self):
@@ -665,10 +665,10 @@ class IPDSubmissionForm(CollapsibleDialog):
         self.log.info("Creating fake pretypings file...")
         try:
             success, pretypings_file, _, _ = make_fake_ENA_file(self.project,
-                                                                                              self.log,
-                                                                                              self.settings,
-                                                                                              "local_name",
-                                                                                              self)
+                                                                self.log,
+                                                                self.settings,
+                                                                "local_name",
+                                                                self)
         except Exception as E:
             self.log.exception(E)
             QMessageBox.warning(self, "Problem", "Could not generate fake pretypings file:\n\n{}".format(repr(E)))
@@ -739,7 +739,10 @@ class IPDSubmissionForm(CollapsibleDialog):
         return True
 
     def _get_ENA_results_from_server(self):
-        return EAR.get_ENA_results(self.study_nr, self.log)
+        return EAR.get_ENA_results(self.study_nr,
+                                   self.settings["proxy"],
+                                   self.settings[int(self.settings["timeout_ena"])],
+                                   self.log)
 
     @pyqtSlot(int)
     def proceed_to3(self, _):
