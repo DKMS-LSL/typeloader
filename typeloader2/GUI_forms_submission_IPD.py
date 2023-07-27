@@ -739,10 +739,10 @@ class IPDSubmissionForm(CollapsibleDialog):
         return True
 
     def _get_ENA_results_from_server(self):
-        return EAR.get_ENA_results(self.study_nr,
-                                   self.settings["proxy"],
-                                   self.settings[int(self.settings["timeout_ena"])],
-                                   self.log)
+        return EAR.get_ENA_results(study=self.study_nr,
+                                   proxy=self.settings["proxy"],
+                                   timeout=int(self.settings["timeout_ena"]),
+                                   log=self.log)
 
     @pyqtSlot(int)
     def proceed_to3(self, _):
@@ -844,7 +844,7 @@ class IPDSubmissionForm(CollapsibleDialog):
 
     @pyqtSlot(dict)
     def catch_cell_line(self, old_cell_lines):
-        """catches mapping between cell_line_old and loca_name 
+        """catches mapping between cell_line_old and loca_name
          for files submitted to ENA under the old cell_line identifier
         """
         if old_cell_lines:
@@ -970,7 +970,7 @@ class IPDSubmissionForm(CollapsibleDialog):
         dialog.exec_()
 
     def handle_IPDcounter_lock(self, remove_lock):
-        """catches signal from IPDCounterLockedDialog and issues corresponding actions 
+        """catches signal from IPDCounterLockedDialog and issues corresponding actions
         """
         self.log.debug("Signal received: remove IPD lock: {}!".format(remove_lock))
         if remove_lock:
@@ -1030,7 +1030,7 @@ class IPDSubmissionForm(CollapsibleDialog):
                 self.log.info("Saving changes to db...")
                 update_queries = []
                 for (sample, local_name, _) in self.samples:
-                    # update allele_status for individual alleles:    
+                    # update allele_status for individual alleles:
                     IPD_submission_nr = self.cell_lines[local_name]
                     update_query = """update alleles set allele_status = 'IPD submitted',
                         ENA_accession_nr = '{}', ENA_acception_date = '{}',
