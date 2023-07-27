@@ -4,7 +4,7 @@
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "TypeLoader"
-!define PRODUCT_VERSION "2.14.1"
+!define PRODUCT_VERSION "2.14.2-RC1"
 !define PRODUCT_PUBLISHER "DKMS Life Science Lab GmbH"
 !define PRODUCT_WEB_SITE "https://github.com/DKMS-LSL/typeloader"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\typeloader.exe"
@@ -839,6 +839,14 @@ Section "MainSection" SEC01
   Delete "$INSTDIR\lib\pkg_resources\_vendor\packaging\version.pyc"
   Delete "$INSTDIR\lib\pkg_resources\_vendor\packaging\_musllinux.pyc"
   Delete "$INSTDIR\lib\pkg_resources\_vendor\packaging\__about__.pyc"
+
+  Delete "$INSTDIR\lib\PyQt5\Qt5\plugins\webview\Qt5WebEngineCore.dll"
+  Delete "$INSTDIR\lib\wheel\vendored\vendor.txt"
+  Delete "$INSTDIR\lib\wheel\vendored\packaging\requirements.pyc"
+  Delete "$INSTDIR\lib\wheel\vendored\packaging\utils.pyc"
+  Delete "$INSTDIR\lib\wheel\vendored\packaging\_elffile.pyc"
+  Delete "$INSTDIR\lib\wheel\vendored\packaging\_structures.pyc"
+
   RMDir "$INSTDIR\lib\pkg_resources\_vendor\platformdirs"
   RMDir "$INSTDIR\lib\pkg_resources\_vendor"
   RMDir "$INSTDIR\lib\pkg_resources"
@@ -9224,8 +9232,6 @@ Section "MainSection" SEC01
   Delete "$INSTDIR\icons\error.png"
   Delete "$INSTDIR\icons\done4.png"
   Delete "$INSTDIR\icons\construction.png"
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-3.1.0.jar"
-  Delete "$INSTDIR\ENA_Webin_CLI\java"
   Delete "$INSTDIR\blastn\msvcr120.dll"
   Delete "$INSTDIR\blastn\msvcp120.dll"
   Delete "$INSTDIR\blastn\makeblastdb.exe"
@@ -9249,8 +9255,6 @@ Section "MainSection" SEC01
   Delete "$SMPROGRAMS\typeloader\typeloader.lnk"
 
   Delete "$INSTDIR\lib\cx_Oracle.cp36-win32.pyd"
-
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.2.1.jar"
 
   Delete "$INSTDIR\api-ms-win-crt-heap-l1-1-0.dll"
   Delete "$INSTDIR\api-ms-win-crt-math-l1-1-0.dll"
@@ -11354,17 +11358,11 @@ Section "MainSection" SEC01
   Delete "$INSTDIR\tables\ipd_submissions.csv"
   Delete "$INSTDIR\tables\samples.csv"
 
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.2.2.jar"
-
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.2.3.jar"
-
   Delete "$INSTDIR\lib\pythoncom36.dll"
   Delete "$INSTDIR\lib\win32api.pyd"
   Delete "$INSTDIR\lib\win32evtlog.pyd"
   Delete "$INSTDIR\lib\win32process.pyd"
   Delete "$INSTDIR\lib\_win32sysloader.pyd"
-
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.3.0.jar"
 
   Delete "$INSTDIR\api-ms-win-crt-heap-l1-1-0.dll"
   Delete "$INSTDIR\api-ms-win-crt-math-l1-1-0.dll"
@@ -13418,7 +13416,6 @@ Section "MainSection" SEC01
   Delete "$INSTDIR\tables\ipd_submissions.csv"
   Delete "$INSTDIR\tables\samples.csv"
   Delete "$INSTDIR\python38.dll"
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.4.0.jar"
   Delete "$INSTDIR\lib\cx_Oracle.cp38-win_amd64.pyd"
   Delete "$INSTDIR\lib\libffi-7.dll"
   Delete "$INSTDIR\lib\_asyncio.pyd"
@@ -18222,13 +18219,19 @@ Section "MainSection" SEC01
   RMDir "$INSTDIR\lib\_pytest\_code"
   RMDir "$INSTDIR\lib\_pytest"
 
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.3.0.jar"
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.2.3.jar"
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.2.2.jar"
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.2.1.jar"
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-3.1.0.jar"
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-2.2.0.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\java"
   Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-1.8.4.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-2.2.0.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-3.1.0.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.2.1.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.2.2.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.2.3.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.3.0.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.4.0.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-5.0.0.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-5.1.0.jar"
+  Delete "$INSTDIR\lib\typeloader2\ENA_Webin_CLI\webin-cli-6.4.1.jar"
+  Delete "$INSTDIR\lib\typeloader2\ENA_Webin_CLI\webin-cli-6.5.0.jar"
 
 ; write new files:
   SetOverwrite try
@@ -18252,11 +18255,8 @@ Section "MainSection" SEC01
   File "C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10\blastn\makeblastdb.exe"
   File "C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10\blastn\msvcp120.dll"
   File "C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10\blastn\msvcr120.dll"
-  SetOutPath "$INSTDIR"
-  SetOutPath "$INSTDIR\ENA_Webin_CLI"
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-5.1.0.jar"
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-5.0.0.jar"
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.4.0.jar"
+  SetOutPath "$INSTDIR\lib\typeloader2\ENA_Webin_CLI"
+  File "C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10\lib\typeloader2\ENA_Webin_CLI\webin-cli-6.5.0.jar"
   SetOutPath "$INSTDIR\icons"
   File "C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10\icons\construction.png"
   File "C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10\icons\done4.png"
@@ -23300,7 +23300,6 @@ Section "MainSection" SEC01
   File "C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10\lib\pkg_resources\_vendor\platformdirs\__init__.pyc"
   File "C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10\lib\pkg_resources\_vendor\platformdirs\__main__.pyc"
   SetOutPath "$INSTDIR\lib\typeloader2"
-  File "C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10\lib\typeloader2\TypeLoader_Setup_V2.14.1.exe"
   File "C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10\lib\typeloader2\.coverage"
   File "C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10\lib\typeloader2\.gitattributes"
   File "C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10\lib\typeloader2\config_base.ini"
@@ -23359,8 +23358,6 @@ Section "MainSection" SEC01
   File "C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10\lib\typeloader2\blastn\makeblastdb.exe"
   File "C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10\lib\typeloader2\blastn\msvcp120.dll"
   File "C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10\lib\typeloader2\blastn\msvcr120.dll"
-  SetOutPath "$INSTDIR\lib\typeloader2\ENA_Webin_CLI"
-  File "C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10\lib\typeloader2\ENA_Webin_CLI\webin-cli-6.4.1.jar"
   SetOutPath "$INSTDIR\lib\typeloader2\typeloader_core"
   File "C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10\lib\typeloader2\typeloader_core\backend_enaformat.pyc"
   File "C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10\lib\typeloader2\typeloader_core\backend_make_ena.pyc"
@@ -23519,7 +23516,6 @@ Section Uninstall
   Delete "$INSTDIR\lib\typeloader2\blastn\makeblastdb.exe"
   Delete "$INSTDIR\lib\typeloader2\blastn\msvcp120.dll"
   Delete "$INSTDIR\lib\typeloader2\blastn\msvcr120.dll"
-  Delete "$INSTDIR\lib\typeloader2\ENA_Webin_CLI\webin-cli-6.4.1.jar"
   Delete "$INSTDIR\lib\typeloader2\typeloader_core\backend_enaformat.pyc"
   Delete "$INSTDIR\lib\typeloader2\typeloader_core\backend_make_ena.pyc"
   Delete "$INSTDIR\lib\typeloader2\typeloader_core\befundparser.pyc"
@@ -23539,10 +23535,42 @@ Section Uninstall
   Delete "$INSTDIR\lib\typeloader2\typeloader_core\__init__.pyc"
   Delete "$INSTDIR\lib\typeloader2\TypeLoader_Setup_V2.14.1.exe"
 
-  Delete "$INSTDIR\lib\typeloader2\TypeLoader_Setup_V2.14.1.exe"
+  Delete "$INSTDIR\ENA_Webin_CLI\java"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-1.8.4.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-2.2.0.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-3.1.0.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.2.1.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.2.2.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.2.3.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.3.0.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.4.0.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-5.0.0.jar"
+  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-5.1.0.jar"
+  RMDir "$INSTDIR\ENA_Webin_CLI"
+  Delete "$INSTDIR\lib\typeloader2\ENA_Webin_CLI\webin-cli-6.4.1.jar"
+  Delete "$INSTDIR\lib\typeloader2\ENA_Webin_CLI\webin-cli-6.5.0.jar"
+
+  Delete "$INSTDIR\lib\msvcrt.dll"
+  Delete "$INSTDIR\lib\PyQt5\Qt5\plugins\webview\Qt5WebEngine.dll"
+  Delete "$INSTDIR\lib\wheel\cli\tags.pyc"
+  Delete "$INSTDIR\lib\wheel\vendored\packaging\markers.pyc"
+  Delete "$INSTDIR\lib\wheel\vendored\packaging\specifiers.pyc"
+  Delete "$INSTDIR\lib\wheel\vendored\packaging\version.pyc"
+  Delete "$INSTDIR\lib\wheel\vendored\packaging\_parser.pyc"
+  Delete "$INSTDIR\lib\wheel\vendored\packaging\_tokenizer.pyc"
 
   RMDir "$INSTDIR\lib\typeloader2\typeloader_core"
+  Delete "$INSTDIR\lib\wheel\vendored\packaging\specifiers.pyc"
+  Delete "$INSTDIR\lib\wheel\vendored\packaging\version.pyc"
+  Delete "$INSTDIR\lib\wheel\vendored\packaging\_parser.pyc"
+  Delete "$INSTDIR\lib\wheel\vendored\packaging\_tokenizer.pyc"
+
+  Delete "$INSTDIR\lib\wheel\vendored\packaging\_parser.pyc"
+  Delete "$INSTDIR\lib\wheel\vendored\packaging\_tokenizer.pyc"
+
+  RMDir "$INSTDIR\ENA_Webin_CLI"
   RMDir "$INSTDIR\lib\typeloader2\ENA_Webin_CLI"
+
   RMDir "$INSTDIR\lib\typeloader2\blastn"
   RMDir "$INSTDIR\lib\typeloader2\authuser"
   RMDir "$INSTDIR\lib\typeloader2"
@@ -24919,9 +24947,6 @@ Section Uninstall
   Delete "$INSTDIR\lib\win32com\test\testPyScriptlet.js"
   Delete "$INSTDIR\lib\win32com\test\testxslt.js"
   Delete "$INSTDIR\lib\win32com\test\testxslt.xsl"
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-5.0.0.jar"
-
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-5.1.0.jar"
   Delete "$INSTDIR\lib\_testbuffer.pyd"
   Delete "$INSTDIR\lib\numpy\compat\_pep440.pyc"
   Delete "$INSTDIR\lib\PyQt5\_cx_freeze_qt_debug.pyc"
@@ -37072,8 +37097,6 @@ Section Uninstall
   Delete "$INSTDIR\icons\error.png"
   Delete "$INSTDIR\icons\done4.png"
   Delete "$INSTDIR\icons\construction.png"
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-3.1.0.jar"
-  Delete "$INSTDIR\ENA_Webin_CLI\java"
   Delete "$INSTDIR\config_raw.ini"
   Delete "$INSTDIR\config_local.ini"
   Delete "$INSTDIR\config_company.ini"
@@ -37101,8 +37124,6 @@ Section Uninstall
   Delete "$SMPROGRAMS\typeloader\typeloader.lnk"
 
   Delete "$INSTDIR\lib\cx_Oracle.cp36-win32.pyd"
-
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.2.1.jar"
 
   Delete "$INSTDIR\api-ms-win-crt-heap-l1-1-0.dll"
   Delete "$INSTDIR\api-ms-win-crt-math-l1-1-0.dll"
@@ -39206,17 +39227,11 @@ Section Uninstall
   Delete "$INSTDIR\tables\ipd_submissions.csv"
   Delete "$INSTDIR\tables\samples.csv"
 
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.2.2.jar"
-
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.2.3.jar"
-
   Delete "$INSTDIR\lib\pythoncom36.dll"
   Delete "$INSTDIR\lib\win32api.pyd"
   Delete "$INSTDIR\lib\win32evtlog.pyd"
   Delete "$INSTDIR\lib\win32process.pyd"
   Delete "$INSTDIR\lib\_win32sysloader.pyd"
-
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.3.0.jar"
 
   Delete "$INSTDIR\api-ms-win-crt-heap-l1-1-0.dll"
   Delete "$INSTDIR\api-ms-win-crt-math-l1-1-0.dll"
@@ -41270,7 +41285,6 @@ Section Uninstall
   Delete "$INSTDIR\tables\ipd_submissions.csv"
   Delete "$INSTDIR\tables\samples.csv"
   Delete "$INSTDIR\python38.dll"
-  Delete "$INSTDIR\ENA_Webin_CLI\webin-cli-4.4.0.jar"
   Delete "$INSTDIR\lib\cx_Oracle.cp38-win_amd64.pyd"
   Delete "$INSTDIR\lib\libffi-7.dll"
   Delete "$INSTDIR\lib\_asyncio.pyd"
@@ -45651,6 +45665,10 @@ Section Uninstall
   Delete "$INSTDIR\lib\wheel\vendored\packaging\tags.pyc"
   Delete "$INSTDIR\lib\wheel\vendored\packaging\_typing.pyc"
   Delete "$INSTDIR\lib\wheel\vendored\packaging\__init__.pyc"
+
+  Delete "$INSTDIR\lib\typeloader2\TypeLoader_Setup_V2.14.1.exe"
+  Delete "$INSTDIR\lib\typeloader2\TypeLoader_Setup_V2.14.2-RC1.exe"
+
   RMDir "$INSTDIR\lib\wheel\vendored\packaging"
   RMDir "$INSTDIR\lib\wheel\vendored"
   RMDir "$INSTDIR\lib\wheel\cli"
@@ -46123,7 +46141,6 @@ Section Uninstall
   RMDir "$INSTDIR\lib\pkg_resources"
   RMDir "$INSTDIR\lib"
   RMDir "$INSTDIR\icons"
-  RMDir "$INSTDIR\ENA_Webin_CLI"
   RMDir "$INSTDIR\blastn"
   RMDir "$INSTDIR"
 
