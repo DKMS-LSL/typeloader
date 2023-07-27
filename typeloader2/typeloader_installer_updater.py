@@ -20,7 +20,7 @@ import general
 # ===========================================================
 # parameters:
 
-NEW_VERSION = "2.14.2-RC1"
+NEW_VERSION = "2.14.2-RC2"
 # BUILD_DIR = r"C:\Users\schoene\WorkFolders\Code\TL_build\exe.win-amd64-3.10"
 BUILD_DIR = r"C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10"
 
