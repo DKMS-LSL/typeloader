@@ -1,4 +1,18 @@
 # Version History
+
+## 2.14.2 (2023-10-11)
+## Bugfixes:
+- retrieve ENA accessions via proxy if specified [TL2-278]
+- handle timeout of ENA-request during IPD submission [TL2-282]
+
+### Backend:
+- update ENA webin CLI to 6.5.0 [TL2-270]
+- poetry update [TL2-283]
+
+## 2.14.1 (2023-06-20)
+### Bugfixes:
+- enforce correct header in SampleView [TL2-271]
+
 ## 2.14.0 (2023-06-02)
 ### Features:
 - retrieve ENA accession numbers directly from server, to compensate for a change at ENA (239)
