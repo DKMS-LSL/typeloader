@@ -579,11 +579,11 @@ def handle_webin_CLI(ena_cmd, modus, submission_alias, project_dir, line_dic, se
     output_txt = ""
 
     if modus == "validate":
-        success_txt = 'INFO : The submission has been validated successfully.'
-        if penultimate_line == success_txt:
+        success_txt = 'validated successfully'
+        if success_txt in penultimate_line:
             success = True
             output_txt = penultimate_line.replace("INFO : ", "")
-        elif last_line == success_txt:
+        elif success_txt in success_txt:
             success = True
             output_txt = last_line.replace("INFO : ", "")
         else:  # validation failed
