@@ -13,7 +13,7 @@ functionality to interact with databases outside of TypeLoader
 # import modules:
 
 import sys, os, csv
-import cx_Oracle
+import oracledb
 
 from typing import List, Tuple, Dict
 
@@ -58,7 +58,7 @@ def open_connection(scheme, log):
     log.info("Opening database connection to {}...".format(scheme.name))
     try:
         conn_string = r"%s/%s@%s/%s" % (scheme.user, scheme.pwd, scheme.host, scheme.db)
-        conn = cx_Oracle.connect(conn_string)
+        conn = oracledb.connect(conn_string)
         cursor = conn.cursor()
     except Exception as E:
         log.error("\t=> Could not connect!")
@@ -154,7 +154,7 @@ def call_procedure(procname: str,
                    paramlist: list,
                    num_output_values: int,
                    paramlist2: list,
-                   cursor: cx_Oracle.CURSOR,
+                   cursor: oracledb.CURSOR,
                    log
                    ) -> tuple:
     """

@@ -463,7 +463,7 @@ def remove_other_allele(blast_xml_file: str, fasta_file: str, other_allele_name:
     log.info("Removing non-chosen partner allele from blast_xml file and generated fasta file...")
     log.debug("\tCleaning fasta file...")
     temp = fasta_file + "1"
-    with open(fasta_file, "rU") as f, open(temp, "w") as g:
+    with open(fasta_file, "r") as f, open(temp, "w") as g:
         records = list(SeqIO.parse(f, "fasta"))
         if len(records) == 1:  # only one allele present
             log.debug("\t\t=> only one allele found, no cleaning necessary.")

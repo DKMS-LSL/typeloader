@@ -213,7 +213,7 @@ def get_pretypings_from_oracledb(project, local_cf, settings, log, parent=None):
         import db_external
     except Exception as E:
         log.exception(E)
-        log.error("Could not import db_external, probably because cx_Oracle is missing on this computer!")
+        log.error("Could not import db_external, probably because oracledb is missing on this computer!")
         return False, None, None
 
     success, alleles = find_alleles_per_project(project, log, parent)
