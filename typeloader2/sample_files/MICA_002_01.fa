@@ -1,4 +1,4 @@
->MICA*002:01 locus="MICA";second="MICA*004";SAMPLE_ID_INT="IDTest-MIC01";SAMPLE_ID_EXT="SampleYellow";short_read_data="yes";short_read_type="illumina";long_read_data="yes";long_read_type="pacbio";software="DR2S";version="0.0.4";date="2018-07-16";notes="this is an example confirmatory sequence for a MIC allele"
+>MICA*002:01 locus="MICA";second="MICA*004";SAMPLE_ID_INT="IDTest-MIC01";SAMPLE_ID_EXT="SampleYellow";short_read_data="yes";short_read_type="illumina";long_read_data="yes";long_read_type="pacbio";software="DR2S";version="0.0.4";date="2018-07-16";notes="this is an example confirmatory sequence for a MIC allele";provenance="United Kingdom";customer="HappyCustomerUK";collection_date="2020-12"
 TCTGCAAATCTGGTCACTGGTCTCATTGCCAGTAACGCTGTGCGCGGTTGAGGGAGTGTG
 TTGGGAGAATAGCCACGCGTTGTCTGTCCTGGAAGGAACAAGCCAGTGAGAGCCGGTTTA
 ATGGGGCGGCCGGCGAAAGGGGCTTGGTGAGGCCCGCGCTCCTCGGGGTGGGGGCGCGGG
