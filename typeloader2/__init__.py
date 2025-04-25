@@ -3,13 +3,13 @@
 
 
 '''
-__author__ = "Markus Fuhrmann, Bianca Schoene, Vineeth Surendranath"
-__copyright__ = "Copyright 2018, DKMS Life Science Lab GmbH"
+__author__ = "Bianca Schoene, Vineeth Surendranath, Markus Fuhrmann"
+__copyright__ = "Copyright 2018, DKMS Life Science Lab gGmbH"
 __license__ = "MIT"
 __maintainer__ = "Bianca Schoene"
 __email__ = "schoene@dkms-lab.de"
 
-__version__ = "2.15.0"
+__version__ = "2.15.1-RC1"
 __status__ = "productive"
 __all__ = ["__init__",
            "db_external",

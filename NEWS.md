@@ -1,5 +1,13 @@
 # Version History
 
+## 2.15.1 (2025-04-28)
+### Mini-Features:
+- sample files were adjusted to contain spatiotemporal data [TL2-281]
+
+### Backend:
+- raise Python version to 3.11 and use oracledb instead of cx_Oracle [TL2-306]
+- ENA Webin-CLI update to 8.2.0 [TL2-307]
+
 ## 2.15.0 (2024-04-24)
 ## Features:
 - added support for DRB345 [TL2-286]
