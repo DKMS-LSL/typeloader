@@ -1,6 +1,6 @@
 # Version History
 
-## 2.15.1 (2025-04-28)
+## 2.15.1 (2025-05-12)
 ### Mini-Features:
 - sample files were adjusted to contain spatiotemporal data [TL2-281]
 
