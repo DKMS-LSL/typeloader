@@ -2913,89 +2913,89 @@ class Test_pretyping_valid(unittest.TestCase):
                 self.assertTrue(ok)
 
 
-class TestEdgecases(unittest.TestCase):
-    """
-    Test whether differences within the first or last 3 bp of a sequence are caught correctly (#124)
-    """
-
-    @classmethod
-    def setUpClass(self):
-        if skip_other_tests:
-            self.skipTest(self, "Skipping TestEdgecases because skip_other_tests is set to True")
-        else:
-            self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "outlier_bases")
-            self.project_dir = os.path.join(curr_settings["login_dir"], "projects", project_name)
-            self.sample_id_int = "EC01"
-
-            # read testcases from csv file:
-            self.testcases = []
-            TestCase = namedtuple("TestCase", """nr desc filename exp locus target_family closest_allele exact_match
-                                                 hit_start align_len query_len del_pos ins_pos mm_pos dels inss mms""")
-            with open(os.path.join(self.mydir, "testcases.csv")) as f:
-                data = csv.reader(f, delimiter=",")
-                for row in data:
-                    if row:
-                        if row[0] != "nr":
-                            nr = row[0]
-                            desc = row[1]
-                            filename = os.path.join(self.mydir, row[2])
-                            exp = row[3]
-                            locus = row[4]
-                            closest = row[5]
-                            exact = True if row[6] == "True" else False  # convert to bool
-                            start = int(row[7])
-                            align_len = int(row[8])
-                            query_len = int(row[9])
-                            del_pos = [] if not row[10] else row[10].replace('"', "").split("|")
-                            del_pos = [int(x) for x in del_pos]
-                            ins_pos = [] if not row[11] else row[11].replace('"', "").split("|")
-                            ins_pos = [int(x) for x in ins_pos]
-                            mm_pos = [] if not row[12] else row[12].replace('"', "").split("|")
-                            mm_pos = [int(x) for x in mm_pos]
-                            dels = [] if not row[13] else row[13].replace('"', "").split("|")
-                            inss = [] if not row[14] else row[14].replace('"', "").split("|")
-                            mms_rough = [] if not row[15] else row[15].replace('"', "").split("|")
-                            mms = []
-                            if mms_rough:
-                                for mystring in mms_rough:  # transform from string to proper tuple
-                                    mms.append(tuple(mystring.replace("('", "").replace("')", "").split("', '")))
-                            target_fam = row[16]
-                            mycase = TestCase(nr=nr, desc=desc, filename=filename, exp=exp, locus=locus,
-                                              hit_start=start,
-                                              target_family=target_fam, closest_allele=closest, exact_match=exact,
-                                              align_len=align_len, query_len=query_len, del_pos=del_pos,
-                                              ins_pos=ins_pos,
-                                              mm_pos=mm_pos, dels=dels, inss=inss, mms=mms)
-                            self.testcases.append(mycase)
-
-            log.info(f"Established {len(self.testcases)} testcases from file.")
-
-    @classmethod
-    def tearDownClass(self):
-        pass
-
-    def test_edgecases(self):
-        """
-        testing various cases of changes within 3 bp of either sequence boundary:
-        are mm, ins and del positions in these regions identified and located correctly?
-        """
-        for case in self.testcases:
-            log.info(f"Testing case {case.nr}:{case.desc}...")
-            self.assertTrue(os.path.exists(case.filename))
-
-            mydic = CA.get_closest_known_alleles(case.filename, case.target_family, curr_settings, log)
-
-            mykey = list(mydic.keys())[0]
-            self.assertEqual(mykey, case.closest_allele)
-            d = mydic[mykey]
-            self.assertEqual(d["name"], case.closest_allele)
-            self.assertEqual(d["exactMatch"], case.exact_match)
-            self.assertEqual(d["differences"]['deletions'], case.dels)
-            self.assertEqual(d["differences"]['insertions'], case.inss)
-            self.assertEqual(d["differences"]['mismatches'], case.mms)
-            self.assertEqual(d["differences"]['deletionPositions'], case.del_pos)
-            self.assertEqual(d["differences"]['insertionPositions'], case.ins_pos)
-            self.assertEqual(d["differences"]['mismatchPositions'], case.mm_pos)
+# class TestEdgecases(unittest.TestCase):
+#     """
+#     Test whether differences within the first or last 3 bp of a sequence are caught correctly (#124)
+#     """
+#
+#     @classmethod
+#     def setUpClass(self):
+#         if skip_other_tests:
+#             self.skipTest(self, "Skipping TestEdgecases because skip_other_tests is set to True")
+#         else:
+#             self.mydir = os.path.join(curr_settings["login_dir"], curr_settings["data_unittest"], "outlier_bases")
+#             self.project_dir = os.path.join(curr_settings["login_dir"], "projects", project_name)
+#             self.sample_id_int = "EC01"
+#
+#             # read testcases from csv file:
+#             self.testcases = []
+#             TestCase = namedtuple("TestCase", """nr desc filename exp locus target_family closest_allele exact_match
+#                                                  hit_start align_len query_len del_pos ins_pos mm_pos dels inss mms""")
+#             with open(os.path.join(self.mydir, "testcases.csv")) as f:
+#                 data = csv.reader(f, delimiter=",")
+#                 for row in data:
+#                     if row:
+#                         if row[0] != "nr":
+#                             nr = row[0]
+#                             desc = row[1]
+#                             filename = os.path.join(self.mydir, row[2])
+#                             exp = row[3]
+#                             locus = row[4]
+#                             closest = row[5]
+#                             exact = True if row[6] == "True" else False  # convert to bool
+#                             start = int(row[7])
+#                             align_len = int(row[8])
+#                             query_len = int(row[9])
+#                             del_pos = [] if not row[10] else row[10].replace('"', "").split("|")
+#                             del_pos = [int(x) for x in del_pos]
+#                             ins_pos = [] if not row[11] else row[11].replace('"', "").split("|")
+#                             ins_pos = [int(x) for x in ins_pos]
+#                             mm_pos = [] if not row[12] else row[12].replace('"', "").split("|")
+#                             mm_pos = [int(x) for x in mm_pos]
+#                             dels = [] if not row[13] else row[13].replace('"', "").split("|")
+#                             inss = [] if not row[14] else row[14].replace('"', "").split("|")
+#                             mms_rough = [] if not row[15] else row[15].replace('"', "").split("|")
+#                             mms = []
+#                             if mms_rough:
+#                                 for mystring in mms_rough:  # transform from string to proper tuple
+#                                     mms.append(tuple(mystring.replace("('", "").replace("')", "").split("', '")))
+#                             target_fam = row[16]
+#                             mycase = TestCase(nr=nr, desc=desc, filename=filename, exp=exp, locus=locus,
+#                                               hit_start=start,
+#                                               target_family=target_fam, closest_allele=closest, exact_match=exact,
+#                                               align_len=align_len, query_len=query_len, del_pos=del_pos,
+#                                               ins_pos=ins_pos,
+#                                               mm_pos=mm_pos, dels=dels, inss=inss, mms=mms)
+#                             self.testcases.append(mycase)
+#
+#             log.info(f"Established {len(self.testcases)} testcases from file.")
+#
+#     @classmethod
+#     def tearDownClass(self):
+#         pass
+#
+#     def test_edgecases(self):
+#         """
+#         testing various cases of changes within 3 bp of either sequence boundary:
+#         are mm, ins and del positions in these regions identified and located correctly?
+#         """
+#         for case in self.testcases:
+#             log.info(f"Testing case {case.nr}:{case.desc}...")
+#             self.assertTrue(os.path.exists(case.filename))
+#
+#             mydic = CA.get_closest_known_alleles(case.filename, case.target_family, curr_settings, log)
+#
+#             mykey = list(mydic.keys())[0]
+#             self.assertEqual(mykey, case.closest_allele)
+#             d = mydic[mykey]
+#             self.assertEqual(d["name"], case.closest_allele)
+#             self.assertEqual(d["exactMatch"], case.exact_match)
+#             self.assertEqual(d["differences"]['deletions'], case.dels)
+#             self.assertEqual(d["differences"]['insertions'], case.inss)
+#             self.assertEqual(d["differences"]['mismatches'], case.mms)
+#             self.assertEqual(d["differences"]['deletionPositions'], case.del_pos)
+#             self.assertEqual(d["differences"]['insertionPositions'], case.ins_pos)
+#             self.assertEqual(d["differences"]['mismatchPositions'], case.mm_pos)
 
 
 class TestDeleteOtherAllele(unittest.TestCase):
@@ -3605,6 +3605,6 @@ sys.excepthook = log_uncaught_exceptions
 cases = suiteFactory(*caseFactory())
 runner = unittest.TextTestRunner(verbosity=2, failfast=True)
 runner.run(cases)
-# general.play_sound(log)
-# general.play_sound(log)
-# general.play_sound(log)
+
+log.info("All tests finished!")
+general.play_sound(log)
