@@ -4,7 +4,8 @@
 Created on 2020-08-31
 
 This script re-builds TypeLoader.exe and updates `typeloader_installer.nsi`,
-the NIS script to create the TypeLoader Windows installer.
+the NIS script to create the TypeLoader Windows installer,
+then runs the NSIS compiler to create a new installer.
 
 @author: Bianca Schoene
 """
@@ -20,9 +21,8 @@ import general
 # ===========================================================
 # parameters:
 
-NEW_VERSION = "2.15.0"
-BUILD_DIR = r"C:\Users\schoene\WorkFolders\Code\TL_build\exe.win-amd64-3.10"
-# BUILD_DIR = r"C:\Daten\Arbeit\DKMS\TypeLoader\TL_build\exe.win-amd64-3.10"
+NEW_VERSION = "2.15.1"
+BUILD_DIR = r"C:\temp\TL_BUILD\exe.win-amd64-3.11"
 
 INSTALLER_SCRIPT = "typeloader_installer.nsi"
 INSTALLER_SCRIPT_NEW = "typeloader_installer_new.nsi"
@@ -30,8 +30,11 @@ NSIS_PATH = r"C:\Program Files (x86)\NSIS\makensis.exe"
 IGNORE_FILES = [pathlib.Path(BUILD_DIR, "config_base.ini"),
                 pathlib.Path(BUILD_DIR, "config_company.ini"),
                 ]
+
+REBUILD_EXE = True
 UPDATE_INSTALLER = True
 BUILD_INSTALLER = True
+SIGN_INSTALLER_LOCALLY = False
 
 # ===========================================================
 # functions:
@@ -302,6 +305,24 @@ def compile_installer(log) -> bool:
         return False
 
 
+def sign_installer_locally(installer_path, log) -> bool:
+    """Signs the new installer with a valid certificate."""
+    if not SIGN_INSTALLER_LOCALLY:
+        log.info("Skipping the signing on this machine")
+        return True
+
+    log.info("Signing the installer with local certificate...")
+    sign_cmd = [r'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe', 'sign', '/n', 'Bianca Schöne', '/t', 'http://timestamp.digicert.com', '/fd', 'SHA256',
+                installer_path]
+    sign_result = subprocess.call(sign_cmd, shell=True)
+    if sign_result == 0:
+        log.info("\t\t=> Installer signed successfully!")
+        return True
+    else:
+        log.warning("\t\t=> Failed to sign installer!")
+        return False
+
+
 def wrap_up_and_compile_installer(changes, log):
     """ties up all loose ends and compiles the new installer into a Setup.exe
     """
@@ -321,6 +342,14 @@ def wrap_up_and_compile_installer(changes, log):
     else:
         log.info("No changes were necessary! The old installer script is still good to go. :-)")
 
+    if not SIGN_INSTALLER_LOCALLY:
+        log.info("Skipping the signing on this machine")
+    else:
+        go_on = general.confirm(f"Have you signed the new TypeLoader.exe in {BUILD_DIR} with a valid certificate?")
+        if not go_on:
+            log.info("Aborting...")
+            return
+
     success = compile_installer(log)
 
     if success:
@@ -328,6 +357,10 @@ def wrap_up_and_compile_installer(changes, log):
         try:
             pathlib.Path(new_name).unlink(missing_ok=True)
             os.rename("TypeLoader_Setup.exe", new_name)
+            if not sign_installer_locally(new_name, log):
+                log.error("Could not sign installer locally. Please sign it manually.")
+                return
+
         except FileNotFoundError:
             pass
 
@@ -342,15 +375,17 @@ def wrap_up_and_compile_installer(changes, log):
 # main:
 
 def main(log):
-    rebuild = general.confirm("Should I completely rebuild the TypeLoader.exe?")
-    if rebuild:
-        success = rebuild_exe(log)
+    if REBUILD_EXE:
+        rebuild = general.confirm("Should I completely rebuild the TypeLoader.exe?")
+        if rebuild:
+            success = rebuild_exe(log)
+        else:
+            log.info("\t=> User chose not to re-build")
+            success = True
+        if not success:
+            return
     else:
-        log.info("\t=> User chose not to re-build")
-        success = True
-
-    if not success:
-        return
+        log.info("Parameter said not to rebuild TypeLoader.exe => leaving it as it was")
 
     changes = False
     if UPDATE_INSTALLER:
